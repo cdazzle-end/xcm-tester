@@ -1,0 +1,1158 @@
+[
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "BifrostKusama",
+    "currency": "BNC",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "NativeAssetId": {
+              "Token": "BNC"
+            }
+          },
+          "name": "Bifrost Native Token",
+          "symbol": "BNC",
+          "decimals": "12",
+          "minimalBalance": "8000000000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2001"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "BNC"
+      },
+      "originChainParaId": "2001",
+      "originParaspellChainName": "BifrostKusama"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "Turing",
+    "currency": "TUR",
+    "amount": "10000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "ForeignAssetId": "16"
+          },
+          "name": "Turing",
+          "symbol": "TUR",
+          "decimals": "10",
+          "minimalBalance": "40000000000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2114"
+          }
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "TUR",
+        "assetId": "16"
+      },
+      "originChainParaId": "2114",
+      "originParaspellChainName": "Turing"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "ParallelHeiko",
+    "currency": "HKO",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "ForeignAssetId": "4"
+          },
+          "name": "Heiko",
+          "symbol": "HKO",
+          "decimals": "12",
+          "minimalBalance": "100000000000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2085"
+            },
+            {
+              "GeneralKey": {
+                "length": "3",
+                "data": "0x484b4f0000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "HKO",
+        "assetId": "4"
+      },
+      "originChainParaId": "2085",
+      "originParaspellChainName": "ParallelHeiko"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "Quartz",
+    "currency": "QTZ",
+    "amount": "1000000000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "ForeignAssetId": "2"
+          },
+          "name": "Quartz",
+          "symbol": "QTZ",
+          "decimals": "18",
+          "minimalBalance": "1000000000000000000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2095"
+          }
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "QTZ",
+        "assetId": "2"
+      },
+      "originChainParaId": "2095",
+      "originParaspellChainName": "Quartz"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "AssetHubKusama",
+    "currency": "RMRK",
+    "amount": "10000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "ForeignAssetId": "0"
+          },
+          "name": "RMRK",
+          "symbol": "RMRK",
+          "decimals": "10",
+          "minimalBalance": "100000000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "8"
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "RMRK",
+        "assetId": "0"
+      },
+      "originChainParaId": "1000",
+      "originParaspellChainName": "AssetHubKusama"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "CrustShadow",
+    "currency": "CSM",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "ForeignAssetId": "5"
+          },
+          "name": "Crust Shadow Native Token",
+          "symbol": "CSM",
+          "decimals": "12",
+          "minimalBalance": "1000000000000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2012"
+          }
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "CSM",
+        "assetId": "5"
+      },
+      "originChainParaId": "2012",
+      "originParaspellChainName": "CrustShadow"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "Kintsugi",
+    "currency": "KINT",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "NativeAssetId": {
+              "Token": "KINT"
+            }
+          },
+          "name": "Kintsugi Native Token",
+          "symbol": "KINT",
+          "decimals": "12",
+          "minimalBalance": "133330000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2092"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x000c000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "KINT"
+      },
+      "originChainParaId": "2092",
+      "originParaspellChainName": "Kintsugi"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "BifrostKusama",
+    "currency": "VSKSM",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "NativeAssetId": {
+              "Token": "VSKSM"
+            }
+          },
+          "name": "Bifrost Voucher Slot KSM",
+          "symbol": "VSKSM",
+          "decimals": "12",
+          "minimalBalance": "100000000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2001"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0404000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "VSKSM"
+      },
+      "originChainParaId": "2001",
+      "originParaspellChainName": "BifrostKusama"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "Altair",
+    "currency": "AIR",
+    "amount": "1000000000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "ForeignAssetId": "12"
+          },
+          "name": "Altair",
+          "symbol": "AIR",
+          "decimals": "18",
+          "minimalBalance": "100000000000000000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2088"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "AIR",
+        "assetId": "12"
+      },
+      "originChainParaId": "2088",
+      "originParaspellChainName": "Altair"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "AssetHubKusama",
+    "currency": "USDT",
+    "amount": "1000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "ForeignAssetId": "7"
+          },
+          "name": "Tether USD",
+          "symbol": "USDT",
+          "decimals": "6",
+          "minimalBalance": "10000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "USDT",
+        "assetId": "7"
+      },
+      "originChainParaId": "1000",
+      "originParaspellChainName": "AssetHubKusama"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Karura",
+    "to": "Shiden",
+    "currency": "SDN",
+    "amount": "1000000000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Karura",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "localId": {
+            "ForeignAssetId": "18"
+          },
+          "name": "Shiden Native Token",
+          "symbol": "SDN",
+          "decimals": "18",
+          "minimalBalance": "10000000000000000",
+          "chain": 2000
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2007"
+          }
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "SDN",
+        "assetId": "18"
+      },
+      "originChainParaId": "2007",
+      "originParaspellChainName": "Shiden"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "BifrostKusama",
+    "to": "AssetHubKusama",
+    "currency": "RMRK",
+    "amount": "10000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "BifrostKusama",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2001,
+          "localId": {
+            "Token": "RMRK"
+          },
+          "name": "RMRK Token",
+          "symbol": "RMRK",
+          "decimals": "10",
+          "minimalBalance": "10000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "8"
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "RMRK"
+      },
+      "originChainParaId": "1000",
+      "originParaspellChainName": "AssetHubKusama"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "BifrostKusama",
+    "to": "AssetHubKusama",
+    "currency": "USDT",
+    "amount": "1000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "BifrostKusama",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2001,
+          "localId": {
+            "Token2": "0"
+          },
+          "name": "Tether USD",
+          "symbol": "USDT",
+          "decimals": "6",
+          "minimalBalance": "1000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "USDT"
+      },
+      "originChainParaId": "1000",
+      "originParaspellChainName": "AssetHubKusama"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "BifrostKusama",
+    "to": "Kintsugi",
+    "currency": "KINT",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "BifrostKusama",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2001,
+          "localId": {
+            "Token2": "1"
+          },
+          "name": "Kintsugi",
+          "symbol": "KINT",
+          "decimals": "12",
+          "minimalBalance": "10000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2092"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x000c000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "KINT"
+      },
+      "originChainParaId": "2092",
+      "originParaspellChainName": "Kintsugi"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "BifrostKusama",
+    "to": "Karura",
+    "currency": "KAR",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "BifrostKusama",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2001,
+          "localId": {
+            "Token": "KAR"
+          },
+          "name": "Karura",
+          "symbol": "KAR",
+          "decimals": "12",
+          "minimalBalance": "100000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0080000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "KAR"
+      },
+      "originChainParaId": "2000",
+      "originParaspellChainName": "Karura"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "BifrostKusama",
+    "to": "Karura",
+    "currency": "KUSD",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "BifrostKusama",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2001,
+          "localId": {
+            "Stable": "KUSD"
+          },
+          "name": "Karura Dollar",
+          "symbol": "KUSD",
+          "decimals": "12",
+          "minimalBalance": "100000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0081000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "KUSD"
+      },
+      "originChainParaId": "2000",
+      "originParaspellChainName": "Karura"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "BifrostKusama",
+    "to": "Shiden",
+    "currency": "SDN",
+    "amount": "1000000000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "BifrostKusama",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2001,
+          "localId": {
+            "Token2": "3"
+          },
+          "name": "Shiden",
+          "symbol": "SDN",
+          "decimals": "18",
+          "minimalBalance": "10000000000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2007"
+          }
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "SDN"
+      },
+      "originChainParaId": "2007",
+      "originParaspellChainName": "Shiden"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "BifrostKusama",
+    "to": "Mangata",
+    "currency": "MGX",
+    "amount": "10000000000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "BifrostKusama",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2001,
+          "localId": {
+            "Token2": "4"
+          },
+          "name": "Mangata Native Token",
+          "symbol": "MGX",
+          "decimals": "18",
+          "minimalBalance": "10000000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2110"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "MGX"
+      },
+      "originChainParaId": "2110",
+      "originParaspellChainName": "Mangata"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "BifrostKusama",
+    "to": "Kintsugi",
+    "currency": "KBTC",
+    "amount": "100000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "BifrostKusama",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2001,
+          "localId": {
+            "Token2": "2"
+          },
+          "name": "kintsugiBTC",
+          "symbol": "KBTC",
+          "decimals": "8",
+          "minimalBalance": "100"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2092"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x000b000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "KBTC"
+      },
+      "originChainParaId": "2092",
+      "originParaspellChainName": "Kintsugi"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "ParallelHeiko",
+    "to": "Kintsugi",
+    "currency": "KBTC",
+    "amount": "100000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "ParallelHeiko",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2085,
+          "localId": "121",
+          "name": "KBTC",
+          "symbol": "KBTC",
+          "decimals": "8",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2092"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x000b000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "KBTC",
+        "assetId": "121"
+      },
+      "originChainParaId": "2092",
+      "originParaspellChainName": "Kintsugi"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "ParallelHeiko",
+    "to": "Karura",
+    "currency": "LKSM",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "ParallelHeiko",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2085,
+          "localId": "109",
+          "name": "LKSM",
+          "symbol": "LKSM",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0083000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "LKSM",
+        "assetId": "109"
+      },
+      "originChainParaId": "2000",
+      "originParaspellChainName": "Karura"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "ParallelHeiko",
+    "to": "Kintsugi",
+    "currency": "KINT",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "ParallelHeiko",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2085,
+          "localId": "119",
+          "name": "KINT",
+          "symbol": "KINT",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2092"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x000c000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "KINT",
+        "assetId": "119"
+      },
+      "originChainParaId": "2092",
+      "originParaspellChainName": "Kintsugi"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "ParallelHeiko",
+    "to": "AssetHubKusama",
+    "currency": "USDT",
+    "amount": "1000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "ParallelHeiko",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2085,
+          "localId": "102",
+          "name": "USDT",
+          "symbol": "USDT",
+          "decimals": "6",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "USDT",
+        "assetId": "102"
+      },
+      "originChainParaId": "1000",
+      "originParaspellChainName": "AssetHubKusama"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "ParallelHeiko",
+    "to": "Karura",
+    "currency": "KAR",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "ParallelHeiko",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2085,
+          "localId": "107",
+          "name": "KAR",
+          "symbol": "KAR",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0080000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "KAR",
+        "assetId": "107"
+      },
+      "originChainParaId": "2000",
+      "originParaspellChainName": "Karura"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "ParallelHeiko",
+    "to": "Khala",
+    "currency": "PHA",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "ParallelHeiko",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2085,
+          "localId": "115",
+          "name": "PHA",
+          "symbol": "PHA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2004"
+          }
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "PHA",
+        "assetId": "115"
+      },
+      "originChainParaId": "2004",
+      "originParaspellChainName": "Khala"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Mangata",
+    "to": "AssetHubKusama",
+    "currency": "USDT",
+    "amount": "1000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Mangata",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2110,
+          "localId": "30",
+          "name": "Tether USD",
+          "symbol": "USDT",
+          "decimals": "6"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "USDT",
+        "assetId": "30"
+      },
+      "originChainParaId": "1000",
+      "originParaspellChainName": "AssetHubKusama"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Mangata",
+    "to": "Turing",
+    "currency": "TUR",
+    "amount": "10000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Mangata",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2110,
+          "localId": "7",
+          "name": "Turing native token",
+          "symbol": "TUR",
+          "decimals": "10"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2114"
+          }
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "TUR",
+        "assetId": "7"
+      },
+      "originChainParaId": "2114",
+      "originParaspellChainName": "Turing"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Mangata",
+    "to": "BifrostKusama",
+    "currency": "BNC",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Mangata",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2110,
+          "localId": "14",
+          "name": "Bifrost Native Token",
+          "symbol": "BNC",
+          "decimals": "12"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2001"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "BNC",
+        "assetId": "14"
+      },
+      "originChainParaId": "2001",
+      "originParaspellChainName": "BifrostKusama"
+    }
+  }
+]

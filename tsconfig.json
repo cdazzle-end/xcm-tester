@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "target": "es2019",
+        "module": "CommonJS",
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        // ... other options from Bridge's tsconfig ...
+        "baseUrl": ".",
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "emitDeclarationOnly": false,
+        "outDir": "build",
+        "typeRoots": ["./node_modules/@polkadot/ts", "./node_modules/@types"],
+        "jsx": "preserve",
+        "declaration": true,
+        "strict": true,
+        "noImplicitAny": true,
+        // "noUnusedLocals": true,
+        // "noImplicitReturns": true,
+        "moduleResolution": "node",
+
+    },
+    // Include and exclude can be adjusted as per your project's structure
+    "include": ["./**/*"],
+    "exclude": ["dist"]
+}

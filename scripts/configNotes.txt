@@ -1,0 +1,15 @@
+KARURA 2000
+
+&& testParam.transferParams.to != "Calamari" //Works i think but chopsticks doesnt
+            && testParam.transferParams.to != "Genshiro"
+            && testParam.transferParams.to != "Integritee"
+            && testParam.transferParams.to != "Litmus" // No balance adapter for litmus
+            && testParam.transferParams.to != "Pioneer" // No adapter
+            && testParam.transferParams.to != "Crab" // Works but need to configure for AccoundId20/erc address
+            && testParam.transferParams.to != "Basilisk" // Basilisk too expensive, needs ref time 400000000, chopsticks sets to 200000000. But i think it works
+            && testParam.transferParams.to != "Moonriver" // MOVR works, run with npx @beta and configure for erc20
+            && testParam.transferParams.to != "Mangata" // MGX might work, no balance adapter
+            && testParam.transferParams.to != undefined
+            && testParam.transferParams.currency != undefined
+            && testParam.transferParams.currency != "ARIS" // TX too expensive??
+            && testParam.transferParams.currency != "KBTC" // Chopsticks failed to transact error

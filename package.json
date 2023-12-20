@@ -1,0 +1,35 @@
+{
+  "name": "xcm-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@acala-network/sdk": "^4.1.9",
+    "@acala-network/sdk-core": "^4.1.9",
+    "@mangata-finance/sdk": "^2.1.1",
+    "@paraspell/sdk": "file:../xcm-sdk",
+    "@polkadot/api": "^10.11.1",
+    "@polkadot/api-base": "^10.11.1",
+    "@polkadot/apps-config": "^0.133.1",
+    "@polkadot/types": "^10.11.1",
+    "@polkadot/util": "^12.6.1",
+    "@polkawallet/bridge": "file:../bridge",
+    "json-stringify-safe": "^5.0.1"
+  },
+  "resolutions": {
+    "@polkadot/api": "10.10.1",
+    "@polkadot/api-base": "10.10.1",
+    "@polkadot/rpc-core": "10.10.1",
+    "@polkadot/apps-config": "^0.133.1",
+    "@polkadot/types": "10.10.1",
+    "@polkadot/util": "^12.6.1",
+    "@acala-network/sdk": "^4.1.9-12",
+    "@acala-network/sdk-core": "^4.1.9-12"
+  }
+}

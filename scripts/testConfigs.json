@@ -1,0 +1,26 @@
+[
+    {
+        "sourceChain": 2000,
+        "name": "karura",
+        "toSkip": ["Karura", "Calamari", "Genshiro", "Integritee", "Litmus", "Pioneer", "Crab", "Basilisk", "Moonriver", "Mangata"],
+        "currencySkip": ["ARIS", "KBTC"]
+    },
+    {
+        "sourceChain": 2001,
+        "name": "bifrostKusama",
+        "toSkip":["Moonriver"],
+        "currencySkip": []
+    },
+    {
+        "sourceChain": 2085,
+        "name": "heiko",
+        "toSkip":["Moonriver"],
+        "currencySkip": []
+    },
+    {
+        "sourceChain": 2110,
+        "name": "mangata",
+        "toSkip":["Moonriver"],
+        "currencySkip": ["ZLK"]
+    }
+]
