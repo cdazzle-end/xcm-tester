@@ -356,16 +356,20 @@
         ],
         "relaychain": "kusama"
     },
-    "kusama-2124": {
-        "chainkey": "kusama-2124",
-        "name": "Amplitude",
-        "id": "amplitude",
-        "paraID": 2124,
+    "kusama-2125": {
+        "chainkey": "kusama-2125",
+        "name": "InvArch Tinkernet",
+        "id": "tinkernet",
+        "paraID": 2125,
         "WSEndpoints": [
-            "wss://rpc-amplitude.pendulumchain.tech"
+            "wss://tinkernet-rpc.dwellir.com",
+            "wss://tinker.invarch.network",
+            "wss://invarch-tinkernet.api.onfinality.io/public-ws"
         ],
         "relaychain": "kusama"
     },
+    
+
     "kusama-2222": {
         "chainkey": "kusama-2222",
         "name": "DAO IPCI",

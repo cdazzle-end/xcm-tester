@@ -8,35 +8,35 @@ import { u8aToHex } from '@polkadot/util'
 import { EventRecord, Phase, Event, Hash } from '@polkadot/types/interfaces'
 import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
-// import { getAssetBySymbolOrId } from './test'
-// import * as bridge from '@polkawallet/bridge'
-// import * as adapters from '@polkawallet/bridge/adapters/index'
-import {BifrostAdapter} from '@polkawallet/bridge/adapters/bifrost'
-import { BalanceData } from '@polkawallet/bridge'
+import { BalanceData, getAdapter } from '@polkawallet/bridge'
 import { exec, execSync, spawn, ChildProcess } from 'child_process';
 import path from 'path';
-import { getAdapter } from './adapters'
+// import { getAdapter } from './adapters'
+
 import { RegistryError } from '@polkadot/types/types/registry';
 // import * as s from 'json-stringify-safe';
 import flatted from 'flatted';
 import { encodeAddress, decodeAddress } from "@polkadot/keyring";
 import { BalanceChangeStatue } from '../src/types';
 import {Mangata} from '@mangata-finance/sdk'
+import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from './testParams'
+// import { u8aToHex } from '@polkadot/util';
+import { mnemonicToLegacySeed, hdEthereum } from '@polkadot/util-crypto';
 
-const wsLocalFrom = "ws://172.26.130.75:8000"
-const wsLocalBifrost = "ws://172.26.130.75:8009"
-const wsLocalDestination = "ws://172.26.130.75:8001"
+const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
+
+
+
 const mgxRpc = 'wss://kusama-rpc.mangata.online'
 const dazzleMgxAddres = '5G22cv9fT5RNVm2AV4MKgagmKH9aoZL4289UDcYrToP9K6hQ'
 const localHost = "ws://172.26.130.75:"
-const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
 const aliceErc20 = "0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac"
-const nodeOne = getNode('Mangata')
-const nodeTwo = getNode('AssetHubKusama').node
-const nodeThree = 'Khala'
-const fromNode = "Mangata"
-const toNode = "AssetHubKusama"
-const assetSymbol = "USDT"
+
+const fromNode = getNode(fromChain)
+const toNode = getNode(toChain)
+
+
+
     
 let scriptPid: string | null = null;
 let chopsticksPid: string | null = null;
@@ -56,12 +56,15 @@ async function testTx(){
     // let api = new ApiPromise({provider});
     // await api.isReady;
 
-    let mangataNode = getNode('Mangata')
-    let api = await mangataNode.createApiInstance(wsLocalFrom)
+    // let mangataNode = getNode('Mangata')
+    let provider = new WsProvider(wsLocalFrom);
+    let api = await fromNode.createApiInstance(wsLocalFrom);
 
     console.log("Api ready")
-    let assetId = paraspell.getAssetId(fromNode, assetSymbol)
-    let assetSymbolOrId = getAssetBySymbolOrId(fromNode, assetSymbol)
+    let assetId = paraspell.getAssetId(fromChain, assetSymbol)
+    let assetSymbolOrId = getAssetBySymbolOrId(fromChain, assetSymbol)
+    console.log("Asset Symbol or Id: ")
+    console.log(assetSymbolOrId)
     if(!assetSymbolOrId){
         throw new Error("Cant find asset symbol or id")
     }
@@ -71,10 +74,13 @@ async function testTx(){
     }
     console.log("Asset Id: " + assetId)
     console.log("Currency Parameter " + currencyParameter)
-    let decimals = paraspell.getAssetDecimals(fromNode, assetSymbol);
-    let amount = new FixedPointNumber(0.01, Number(decimals));
+    let decimals = paraspell.getAssetDecimals(fromChain, assetSymbol);
+    let amount = new FixedPointNumber(1, Number(decimals));
 
-    const xcmTx = paraspell.Builder(api).from(fromNode).to(toNode).currency(currencyParameter).amount(amount.toChainData()).address(aliceAddress).build()
+    // const xcmTx2 = paraspell.Builder(api).from(fromChain).to(toChain).currency(currencyParameter).amount(amount.toChainData()).address(aliceAddress)
+    // console.log(flatted.stringify(xcmTx2, null, 2))
+    // console.log(JSON.stringify(xcmTx2, null, 2));
+    const xcmTx = paraspell.Builder(api).from(fromChain).to(toChain).currency(currencyParameter).amount(amount.toChainData()).address(aliceAddress).build()
     
     // const xcmTx = paraspell.Builder(api).from("BifrostKusama").to("Karura").currency("KAR").amount(1000000000000).address(aliceAddress).build()
     console.log(JSON.stringify(xcmTx.toHuman()));
@@ -84,8 +90,20 @@ async function testTx(){
         Object.entries(obj).filter(([key, value]) => typeof value !== 'function')
     );
     // console.log(propertiesOnly);
-    const keyring = new Keyring({ type: 'sr25519' });
-    const alice = keyring.addFromUri('//Alice');
+    const mnemonic = 'bottom drive obey lake curtain smoke basket hold race lonely fit walk';
+    let privateKey = "0x5fb92d6e98884f76de468fa3f6278f8807c48bebc13595d45af5bdc4da702133"
+    const keyring = new Keyring({ type: 'ethereum' });
+    const index = 0;
+    let ethDerPath = `m/44'/60'/0'/0/${index}`;
+    const alice = keyring.addFromUri(`${privateKey}/${ethDerPath}`);
+    console.log(`Derived Ethereum Address from Mnemonic: ${alice.address}`);
+// console.log(alice.address)
+// console.log(alice)
+    // const privateKey = u8aToHex(
+    //     hdEthereum(mnemonicToLegacySeed(mnemonic, '', false, 64), ethDerPath)
+    //     .secretKey
+    // );
+    console.log(`Derived Private Key from Mnemonic: ${privateKey}`);
 
     try{
         let txResult: any= new Promise((resolve, reject) => {
@@ -165,7 +183,12 @@ const getAssetBySymbolOrId = (
     const { otherAssets, nativeAssets, relayChainAssetSymbol } = getAssetsObject(node)
   
     const asset = [...otherAssets, ...nativeAssets].find(
-      ({ symbol, assetId }) => symbol === symbolOrId || assetId === symbolOrId
+      ({ symbol, assetId }) => {
+        if(typeof symbolOrId === 'string'){
+            symbolOrId = symbolOrId.toUpperCase()
+        }
+        return symbol?.toUpperCase() === symbolOrId || assetId === symbolOrId
+        }
     )
   
     if (asset !== undefined) {

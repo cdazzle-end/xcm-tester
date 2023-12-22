@@ -1,5 +1,6 @@
 // import { firstValueFrom } from "rxjs";
-import {BifrostAdapter} from '@polkawallet/bridge/adapters/bifrost'
+// import {BifrostAdapter} from '@polkawallet/bridge/adapters/bifrost'
+import { BifrostAdapter } from "@polkawallet/bridge";
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { BalanceData } from '@polkawallet/bridge';
 

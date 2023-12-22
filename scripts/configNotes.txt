@@ -13,3 +13,6 @@ KARURA 2000
             && testParam.transferParams.currency != undefined
             && testParam.transferParams.currency != "ARIS" // TX too expensive??
             && testParam.transferParams.currency != "KBTC" // Chopsticks failed to transact error
+Mangata
+
+KAR is not transferrable

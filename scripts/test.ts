@@ -11,10 +11,10 @@ import { TNode, getAssetsObject, getNode, getTNode } from '@paraspell/sdk'
 // import * as bridge from '@polkawallet/bridge'
 // import * as adapters from '@polkawallet/bridge/adapters/index'
 // import {BifrostAdapter} from '@polkawallet/bridge/adapters/bifrost'
-import { BalanceData } from '@polkawallet/bridge'
+import { BalanceData, getAdapter } from '@polkawallet/bridge'
 import { exec, execSync, spawn, ChildProcess } from 'child_process';
 import path from 'path';
-import { getAdapter } from './adapters'
+// import { getAdapter } from './adapters'
 import { finalize } from 'rxjs/operators';
 import { ApiBase } from '@polkadot/api/types'
 // import { UI8 } from '@polkadot/types/primitive';
@@ -40,7 +40,7 @@ const nodeThree = 'Khala'
 let sourceChainApi: ApiPromise | null = null;
 let destChainApi: ApiPromise | null = null;
 
-const successfullTests = ["BNC, TUR, HKO, QTZ"]
+// const successfullTests = ["BNC, TUR, HKO, QTZ"]
 
 let chopsticksProcess: ChildProcess | null = null;
 let bashScriptPid: string | null;
@@ -190,16 +190,25 @@ async function watchTokenDeposit(paraId: number, destChainApi: ApiPromise, destP
     // let destChainApi = new ApiPromise({provider});
     // await destChainApi.isReady;
 
-    logToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
+    printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
     let destAdapter = getAdapter(paraId)
     let currentBalance: BalanceData;
     await destAdapter.init(destChainApi);
-    logToFile("Subscribing to balance for destination chain " + paraId + " for asset " + transferrableAssetObject.paraspellAssetSymbol.symbol + " for address " + aliceAddress)
+    printAndLogToFile("Subscribing to balance for destination chain " + paraId + " for asset " + transferrableAssetObject.paraspellAssetSymbol.symbol + " for address " + aliceAddress)
     if(!transferrableAssetObject.paraspellAssetSymbol.symbol){
-        throw new Error("Asset symbol is null. Cant subscribe to token balance")
+        throw logError(new Error("Asset symbol is null. Cant subscribe to token balance"))
     }
     const bncAliceAddress = "gXCcrjjFX3RPyhHYgwZDmw8oe4JFpd5anko3nTY8VrmnJpe"
-    const balanceObservable = destAdapter.subscribeTokenBalance(transferrableAssetObject.paraspellAssetSymbol.symbol, aliceAddress);
+
+    console.log("Transferrable asset object: " + JSON.stringify(transferrableAssetObject))
+    let tokenSymbol = transferrableAssetObject.paraspellAssetSymbol.symbol;
+    console.log(`Source Chain Name ${transferrableAssetObject.sourceParaspellChainName} | Token Symbol ${tokenSymbol}`)
+    if(transferrableAssetObject.sourceParaspellChainName == "Moonriver" && transferrableAssetObject.paraspellAssetSymbol.symbol.toUpperCase().startsWith("XC")){
+        console.log("Removing XC from token symbol")
+        tokenSymbol = tokenSymbol.slice(2)
+    }
+
+    const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, aliceAddress);
     console.log("Subscribed to balance")
     console.log(destChainApi.registry.chainTokens)
     return new Observable<BalanceData>((subscriber) => {
@@ -216,7 +225,7 @@ async function watchTokenDeposit(paraId: number, destChainApi: ApiPromise, destP
                 }
             },
             error(err) {
-                subscriber.error(err);
+                subscriber.error(logError(new Error(err), "Error watching token deposit"));
                 subscriber.complete(); // Complete the outer Observable on error
                 // destChainApi.disconnect()
             },
@@ -234,6 +243,8 @@ async function watchTokenDeposit(paraId: number, destChainApi: ApiPromise, destP
 }
 
 async function getBalanceChange(balanceObservable$: Observable<BalanceData>){
+    logToFile(" Waiting for balance change")
+
     let currentBalance: BalanceData;
     const balanceChangePromise = new Promise<boolean>((resolve, reject) => {
         const subscription = balanceObservable$.pipe(timeout(600000)).subscribe({
@@ -259,6 +270,7 @@ async function getBalanceChange(balanceObservable$: Observable<BalanceData>){
             error(err) {
                 if(err.name == 'TimeoutError'){
                     console.log('No balance change reported within 120 seconds');
+                    logError(err, "No balance change reported within 120 seconds")
                     subscription.unsubscribe();
                     resolve(false)
                 } else {
@@ -283,8 +295,17 @@ function logToFile(message: string) {
     const logFilePath = path.join(__dirname, 'testResults.log');
     fs.appendFileSync(logFilePath, message + '\n', 'utf8');
 }
+function printAndLogToFile(message: string){
+    console.log(message)
+    logToFile(message)
+}
+function logError(error: Error, message?: string): Error{
+    const logFilePath = path.join(__dirname, 'testErrors.log');
+    fs.appendFileSync(logFilePath, message + '\n' + error + '\n', 'utf8');
+    return error
+}
 let newTestRound = true;
-function logSuccessOrFail(testParams: TransferParams, success: boolean){
+function logSuccessOrFail(testParams: TransferParams, success: boolean, fromChain: string, destinationChain: string, currency?: string){
     const logFilePath = path.join(__dirname, 'testSuccessOrFailure.log');
     const successJsonFilePath = path.join(__dirname, 'success.json');
     let successParams = JSON.parse(fs.readFileSync(successJsonFilePath, 'utf8'))
@@ -297,7 +318,7 @@ function logSuccessOrFail(testParams: TransferParams, success: boolean){
     }
     let resultLogMessage;
     if(success){
-        resultLogMessage = `Source chain: ${testParams.from} --- Destination chain: ${testParams.to} --- Asset: ${testParams.currency} --- Result: SUCCESS`
+        resultLogMessage = `Source chain: ${fromChain} --- Destination chain: ${destinationChain} --- Asset: ${currency} --- Result: SUCCESS`
         // let resultJson = JSON.stringify(testParams, null, 2)
         console.log("Result JSON")
         console.log(testParams)
@@ -322,17 +343,21 @@ async function runXcmTransferTests(sourceChain: number){
     let testIndex = 0;
     let testExceptions = await getTestExceptions(sourceChain)
     for (const testParam of testParams) {
-        // console.log(`Source chain: ${testParam.transferParams.from} --- Destination chain: ${testParam.transferParams.to} --- Asset: ${testParam.transferParams.currency}`)
+        let transferrableAsset = testParam.transferParams.transferrableAssetObject;
+        let fromChainName = testParam.transferParams.from;
+        let destinationChainName = testParam.transferParams.to ?? testParam.transferParams.transferrableAssetObject.originParaspellChainName;
+        let destinationChainId = testParam.transferParams.transferrableAssetObject.originChainParaId;
+        let transferCurrency = testParam.transferParams.currency ?? testParam.transferParams.transferrableAssetObject.paraspellAssetSymbol.symbol;
 
         // SKIP calamari, genshiro, chopsticks breaks
         // Some chain names arent being read properly and coming back as undefined
         if(
              
-            testParam.transferParams.type == "paraToPara"
-            && testParam.transferParams.from != testParam.transferParams.to
-            && testParam.transferParams.to != undefined
-            && testParam.transferParams.currency != undefined
-            && !successfullTests.includes(testParam.transferParams.currency)
+            // (testParam.transferParams.type == "paraToPara" || testParam.transferParams.type == "paraToRelay")
+            testParam.transferParams.from != testParam.transferParams.to
+            && (testParam.transferParams.to != undefined || testParam.transferParams.transferrableAssetObject.originParaspellChainName == "Kusama")
+            && (testParam.transferParams.currency != undefined || testParam.transferParams.transferrableAssetObject.originParaspellChainName == "Kusama")
+            // && !successfullTests.includes(testParam.transferParams.currency?)
             && !testExceptions.toSkip.includes(testParam.transferParams.to)
             && !testExceptions.currencySkip.includes(testParam.transferParams.currency)
             // && testIndex < 2
@@ -341,82 +366,82 @@ async function runXcmTransferTests(sourceChain: number){
             try{
 
                 if(chopsticksProcess != null){
-                    throw new Error("Chopsticks process already running")
+                    throw logError(new Error("Chopsticks process already running"))
                 }
-                console.log(`*** Currently running: Source chain: ${testParam.transferParams.from} --- Destination chain: ${testParam.transferParams.to} --- Asset: ${testParam.transferParams.currency}`)
-                let fromChainName = testParam.transferParams.from;
-                let toChainName = testParam.transferParams.to;
-                logToFile("----------------------------------------------------------")
-                logToFile("New test starting:")
-                logToFile(`Source chain: ${testParam.transferParams.from} --- Destination chain: ${testParam.transferParams.to} --- Asset: ${testParam.transferParams.currency}`)
-                logToFile(JSON.stringify(testParam))
-                chopsticksProcess = runChopsticksInstance(testParam.chopsticksCommand, testParam.transferParams.from, testParam.transferParams.to);
-                // let chopsticksInstanceConnected = await runChopsticksInstance2(testParam.transferParams.from, testParam.transferParams.to);
-                // console.log(chopsticksProcess?.pid)
-                console.log("Chopsticks process started, getting ports")
-                let ports = await getChopstickPorts(chopsticksProcess);
-                logToFile("Successfully initiated chopsticks instance.")
-                console.log("Windows process id " + chopsticksProcess?.pid)
-                console.log("Script Id " + bashScriptPid)
-                console.log("Chopsticks Id " + chopsticksPid)
-                logToFile(`Process IDs ${chopsticksProcess?.pid} ${bashScriptPid} ${chopsticksPid}`)
+                
+                
+                console.log(`----------------------------New test starting---------------------------- \n Source chain: ${fromChainName} --- Destination chain: ${destinationChainName} --- Asset: ${transferCurrency}`)
+                
+                logToFile("----------------------------New test starting----------------------------")
+                logToFile(`Source chain: ${fromChainName} --- Destination chain: ${destinationChainName} --- Asset: ${transferCurrency}`)
+                logToFile("\n TEST PARAMETERS: \n " + JSON.stringify(testParam))
+                
+                chopsticksProcess = runChopsticksInstance(testParam.chopsticksCommand, fromChainName, destinationChainName);
+                let ports = await getChopstickPorts(chopsticksProcess, testParam.transferParams.type);
+                if(testParam.transferParams.type == "relayToPara"){
+                    let reversedPorts = {
+                        portOne: ports.portTwo,
+                        portTwo: ports.portOne,
+                        portThree: ports.portThree
+                    }
+                    ports = reversedPorts;
+                }
+                logToFile(`Successfully initiated chopsticks instance. \n Windows Process ID: ${chopsticksProcess?.pid} | Script ID: ${bashScriptPid} | Chopsticks ID: ${chopsticksPid}`)
+                console.log("Windows process id " + chopsticksProcess?.pid + "\n Script Id " + bashScriptPid + "\n Chopsticks Id " + chopsticksPid)
+                
 
-                let apis = await connectApis(ports.portOne, fromChainName, ports.portTwo, toChainName)
+                let apis = await connectApis(ports.portOne, fromChainName, ports.portTwo, destinationChainName)
                 sourceChainApi = apis.sourceChainApi;
                 destChainApi = apis.destChainApi;
-                console.log("Connected to apis")
-                logToFile("Initiating destination chain balance observer")
-                let balanceObservable$ = await watchTokenDeposit(testParam.transferParams.transferrableAssetObject.originChainParaId, destChainApi, ports.portTwo, testParam.transferParams.transferrableAssetObject);
+                
+                
+                let balanceObservable$ = await watchTokenDeposit(destinationChainId, destChainApi, ports.portTwo, transferrableAsset);
                 logToFile("Successfully initiated balance observer.")
                 
-            // ... rest of your code
-                logToFile("Executing XCM transfer test")
-                let txDetails: TxDetails = await executeTest(sourceChainApi, chopsticksProcess, testParam.transferParams)
-                logToFile("Transaction details:")
-                logToFile(JSON.stringify(txDetails))
-                console.log(txDetails.success)
-                logToFile("Successfully submitted extrinsic. Waiting for balance change")
-                let balanceChanged = await getBalanceChange(balanceObservable$)
-                logToFile("Balance change observed " + balanceChanged)
                 
-                testIndex++;
+                let txDetails: TxDetails = await executeTest(sourceChainApi, chopsticksProcess, testParam.transferParams)
+                logToFile("Successfully submitted extrinsic. Transaction details: \n" + JSON.stringify(txDetails))
+                console.log("Transaction success? --- " + txDetails.success)
+                
+                let balanceChanged = await getBalanceChange(balanceObservable$)
+                logToFile("Balance change observed? --- " + balanceChanged)
+
                 let chopsticksClosed = waitForChopsticksToClose();
-                logToFile("Stopping chopsticks instance. Initiated waitForChopsticksToClose promise")
+                
                 await stopChopsticks();
                 let wslProcessEnded = await confirmWslScriptEnded(bashScriptPid)
-                console.log("WSL Processes ended : " + wslProcessEnded)
-                logToFile("Chopsticks instance stop command called")
+
                 await chopsticksClosed.then( () => {
                     console.log("Chopsticks instance closed, promise resolved")
                     if(!wslProcessEnded){
-                        throw new Error("Wsl Processes not closed correctly")
+                        throw logError(new Error("Wsl Processes not closed correctly"))
                     }
                 }).catch((error) => {
-                    console.log("Chopsticks close promise rejected")
+                    console.log(logError(error, "Chopsticks close promise rejected"))
                 });
                 if (chopsticksProcess){
-                    logToFile("Chopsticks instance not killed")
-
-                    throw new Error("Chopsticks instance not killed")
+                    throw logError(new Error("Chopsticks process not killed"))
                 } else {
-                    console.log("Chopsticks instance killed")
-                    logToFile("Chopsticks instance killed")
-                    // return txDetails;
+                    printAndLogToFile("Chopsticks process killed")
                 }
                 logToFile("----------------------")
-                logSuccessOrFail(testParam.transferParams, balanceChanged)
+                logSuccessOrFail(testParam.transferParams, balanceChanged, fromChainName, destinationChainName, transferCurrency)
                 
 
-            } catch (error) {
-                console.log(error)
+            } catch (error: any) {
+                console.log(logError(new Error(JSON.stringify(error)), "Error in test execution"))
                 logToFile(JSON.stringify(error))
+                printAndLogToFile(JSON.stringify(error.stack, null, 2))
+                logError(error, JSON.stringify(error.stack, null, 2))
+
                 let chopsticksClosed = waitForChopsticksToClose();
                 await stopChopsticks();
+
                 if(bashScriptPid != null){
                     confirmWslScriptEnded(bashScriptPid)
                 }
                 await chopsticksClosed;
-                logSuccessOrFail(testParam.transferParams, false)
+                logSuccessOrFail(testParam.transferParams, false, fromChainName, destinationChainName, transferCurrency)
                 logToFile("----------------------")
                 console.log("Failed test. Stopping chopsticks instance")
                 await disconnectApis(sourceChainApi, destChainApi)
@@ -424,17 +449,9 @@ async function runXcmTransferTests(sourceChain: number){
             } finally {
                 await disconnectApis(sourceChainApi, destChainApi)
             }
-            // if(sourceChainApi.isConnected){
-            //     await sourceChainApi.disconnect()
-            // }
-
             await disconnectApis(sourceChainApi, destChainApi)
         }
     }
-   
-    // let testResults = await runXcmTransferTest(testParams)
-    // console.log(testResults)
-    // return testResults
 }
 
 async function getTestExceptions(sourceChain: number){
@@ -446,35 +463,49 @@ async function getTestExceptions(sourceChain: number){
     return sourceChainTestExceptions
 }
 
-async function executeTest(sourceApi: ApiPromise, chopsticksInstance: ChildProcess | null, testParams: any){
+async function executeTest(sourceApi: ApiPromise, chopsticksInstance: ChildProcess | null, testParams: TransferParams){
+    logToFile("Executing XCM transfer test")
+
     if(chopsticksInstance == null){
-        throw new Error("Chopsticks instance is null when executing test")
+        throw logError(new Error("Chopsticks instance is null when executing test"))
     }
-    // let localHost = "ws://172.26.130.75:";
-    // let sourceChainWs = `${localHost}${ports.portOne}`
-    // let destinationChainWs = `${localHost}${ports.portTwo}`
-    // const sourceWsProvider = new WsProvider(sourceChainWs)
-    // let sourceApi = await ApiPromise.create({ provider: sourceWsProvider })
+
     await sourceApi.isReady;
     let xcmTx: paraspell.Extrinsic;
-    if(testParams.type == "paraToRelay"){
+    if(testParams.type == "paraToRelay" && testParams.address){
         xcmTx = paraspell.Builder(sourceApi).from(testParams.from).amount(testParams.amount).address(testParams.address).build()
-    } else if(testParams.from != testParams.to && testParams.type == "paraToPara"){
+    } else if(testParams.to != "Kusama" && testParams.to != undefined && testParams.from != testParams.to && testParams.type == "paraToPara" && testParams.currency != undefined && testParams.amount != undefined && testParams.address != undefined){
         xcmTx = paraspell.Builder(sourceApi).from(testParams.from).to(testParams.to).currency(testParams.currency).amount(testParams.amount).address(testParams.address).build()
     } else{
         console.log("Invalid test params, Maybe relay to para" )
         sourceApi.disconnect()
-        throw new Error("Invalid test params, Maybe relay to para")
+        throw logError(new Error("Invalid test params, Maybe relay to para"))
     }
 
     if(!xcmTx){
         sourceApi.disconnect()
-        throw new Error("XCM TX is null")
+        throw logError(new Error("XCM TX is null"))
+    }
+
+    let fromChainName = testParams.from;
+    let privateKey = "0x5fb92d6e98884f76de468fa3f6278f8807c48bebc13595d45af5bdc4da702133"
+    let keyring;
+    let alice;
+    if(fromChainName == "Moonriver"){
+        const index = 0;
+        let ethDerPath = `m/44'/60'/0'/0/${index}`;
+        keyring = new Keyring({ type: 'ethereum' });
+        alice = keyring.addFromUri(`${privateKey}/${ethDerPath}`);
+    } else {
+        keyring = new Keyring({ type: 'sr25519' });
+        alice = keyring.addFromUri('//Alice');
     }
     if(xcmTx != null){
-        const keyring = new Keyring({ type: 'sr25519' });
-        const alice = keyring.addFromUri('//Alice');
+        let keyring = fromChainName === "Moonriver" ? new Keyring({ type: 'ethereum' }) : new Keyring({ type: 'sr25519' });
+        let alice = fromChainName === "Moonriver" ? keyring.addFromUri(`${privateKey}/m/44'/60'/0'/0/0`) : keyring.addFromUri('//Alice');
         let txResult: any= new Promise((resolve, reject) => {
+            // const keyring = new Keyring({ type: 'sr25519' });
+            // const alice = keyring.addFromUri('//Alice');
             let success = false;
             let included: EventRecord[] = [];
             let finalized: EventRecord[] = [];
@@ -486,7 +517,9 @@ async function executeTest(sourceApi: ApiPromise, chopsticksInstance: ChildProce
                         `📀 Transaction ${xcmTx.meta.name}(..) included at blockHash ${status.asInBlock} [success = ${success}]`
                     );
                     included = [...events];
-    
+                    if(dispatchError){
+                        logError(new Error(JSON.stringify(dispatchError, null, 2)), "Dispatch error in XCM transfer test")
+                    }
                 } else if (status.isBroadcast) {
                     console.log(`🚀 Transaction broadcasted.`);
                 } else if (status.isFinalized) {
@@ -510,18 +543,23 @@ async function executeTest(sourceApi: ApiPromise, chopsticksInstance: ChildProce
         return txDetails;
     } else {
         sourceApi.disconnect()
-        throw new Error("XCM TX is null")
+        throw logError(new Error("XCM TX is null"))
     }
 
 }
 
 async function constructXcmTransferTests(sourceChain: number){
     let transferrableAssetObjects: TransferrableAssetObject[] = await getTransferrableAssetsForSourceChain(sourceChain)
-    let testParams: XcmTestParams[] = transferrableAssetObjects.map((transferrableAssetObject: TransferrableAssetObject) => {
-        let chopsticksCommand = constructChopsticksParams(sourceChain, transferrableAssetObject.originChainParaId)
-        let transferParams = constructTransferParams(sourceChain, transferrableAssetObject)
-        return {chopsticksCommand, transferParams}
+    let testParams: XcmTestParams[] = transferrableAssetObjects
+    .filter((transferrableAssetObject: TransferrableAssetObject) => {
+        // Only include the objects that don't match the condition you want to skip
+        return !(transferrableAssetObject.assetRegistryObject.tokenData.chain == 2023 && transferrableAssetObject.assetRegistryObject.tokenData.symbol == "ZLK");
     })
+    .map((transferrableAssetObject: TransferrableAssetObject) => {
+        let chopsticksCommand = constructChopsticksParams(sourceChain, transferrableAssetObject.originChainParaId);
+        let transferParams = constructTransferParams(sourceChain, transferrableAssetObject);
+        return {chopsticksCommand, transferParams};
+    });
     let testsToRun: XcmTestParams[] = [];
     let alreadySuccessfulTests = await JSON.parse(await fs.readFileSync('./scripts/success.json', 'utf8'))
     alreadySuccessfulTests.forEach((test: any) => {
@@ -547,6 +585,11 @@ async function constructXcmTransferTests(sourceChain: number){
     console.log("Tests to run: ")
     testsToRun.forEach((testParam: any) => {
         console.log(`Source chain: ${testParam.transferParams.from} --- Destination chain: ${testParam.transferParams.to} --- Asset: ${testParam.transferParams.currency}`)
+        if(testParam.transferParams.to == undefined || testParam.transferParams.currency == undefined){
+            console.log("********UNDEFINED TRANSFER PARAMS********")
+            console.log(JSON.stringify(testParam, null, 2))
+            console.log("*****************************************")
+        }
     })
     return testsToRun
 
@@ -555,8 +598,8 @@ async function constructXcmTransferTests(sourceChain: number){
 
 function constructTransferParams(sourceChain: number, transferrableAssetObject: TransferrableAssetObject): TransferParams{
     if(!transferrableAssetObject.paraspellAssetSymbol.symbol){
-        console.log(transferrableAssetObject.paraspellAssetSymbol)
-        throw new Error("Asset symbol is null. Can't find decimals. Might be polkadex")
+        console.log("Transferrable Asset Object: " + JSON.stringify(transferrableAssetObject))
+        throw logError(new Error("Asset symbol is null. Cant find asset registry object from allAssets in paraspell assets list"))
     }
     const assetDecimals = paraspell.getAssetDecimals(transferrableAssetObject.sourceParaspellChainName, transferrableAssetObject.paraspellAssetSymbol.symbol)
     
@@ -624,7 +667,8 @@ function constructChopsticksParams(sourceChain: number, destinationChain: number
     }
 
     if (!sourceParachainInfo || !destinationParachainInfo) {
-        throw new Error('Chain not found');
+        console.log(`Source chain: ${sourceChain} --- Destination chain: ${destinationChain}`)
+        throw logError(new Error('Chain not found'));
     }
 
     // let chainOneYmlConfig = `configs/${sourceParachainInfo.id}.yml`
@@ -703,9 +747,10 @@ const getAssetBySymbolOrId = (
     symbolOrId: string | number
   ): { symbol?: string; assetId?: string } | null => {
     const { otherAssets, nativeAssets, relayChainAssetSymbol } = getAssetsObject(node)
-  
+    
     const asset = [...otherAssets, ...nativeAssets].find(
       ({ symbol, assetId }) => {
+        console.log("Asset symobl or id " + JSON.stringify(symbolOrId) + " --- " + symbol + " --- " + assetId)
         if(typeof symbolOrId === 'string'){
             return symbol?.toLowerCase() === symbolOrId.toLowerCase() || assetId?.toLowerCase() === symbolOrId.toLowerCase()
         }
@@ -742,9 +787,10 @@ function findValueByKey(obj: any, targetKey: any): any {
     return null;
 }
 
-async function getChopstickPorts(chopsticksInstance: ChildProcess | null){
+async function getChopstickPorts(chopsticksInstance: ChildProcess | null, scenario: string){
+    printAndLogToFile("Getting ports")
     if(chopsticksInstance == null){
-        throw new Error("Chopsticks instance is null when getting ports")
+        throw logError(new Error("Chopsticks instance is null when getting ports"))
     }
     let portOne: number;
     let portTwo: number;
@@ -767,6 +813,11 @@ async function getChopstickPorts(chopsticksInstance: ChildProcess | null){
                 }
             }
             if (output.includes("Connected relaychain")) {
+                if(scenario != "paraToPara"){
+                    chopsticksConnected = true;
+                    console.log('Chopsticks connected. Continuing with the script...');
+                    resolve({portOne, portTwo, portThree});
+                }
                 isConnected = true;
                 connectedParachains++;
                 if(connectedParachains == 2){
@@ -884,7 +935,7 @@ function checkProcessInWSL(processId: string | null): Promise<boolean> {
                 
             }
             if(!processId){
-                throw new Error("Script PID not found. Should be initiated already")
+                throw logError(new Error("Script PID not found. Should be initiated already"))
             }
             // If stdout includes the PID, it means the process is running
             if (stdout.includes(processId.toString())) {
@@ -902,7 +953,7 @@ function checkProcessInWSL(processId: string | null): Promise<boolean> {
 // Check after stopping, confirm nothing is running and set process IDs to null
 async function confirmWslScriptEnded(processId: string | null){
     if(!processId){
-        throw new Error("Script PID not found. Should be initiated already")
+        throw logError(new Error("Script PID not found. Should be initiated already"))
         
     } else {
         let processRunning = await checkProcessInWSL(processId)
@@ -920,24 +971,14 @@ async function confirmWslScriptEnded(processId: string | null){
     }
 }
 async function stopChopsticks() {
-    console.log("Checking wsl bash script process and chopsticks process before closing: ")
+    logToFile("Executing stopChopsticks()")
+    
     let scriptProcessRunning = await checkProcessInWSL(bashScriptPid)
     let chopsticksProcessRunning = await checkProcessInWSL(chopsticksPid)
     if(scriptProcessRunning){
         console.log("Script process running")
         let bashScriptKilled = await killProcessInWslTermSync(Number(bashScriptPid))
         console.log("Bash script killed: " + bashScriptKilled)
-    }
-    if(chopsticksProcessRunning){
-        console.log("Chopsticks process running")
-    }
-    if(await scriptProcessRunning && await chopsticksProcessRunning){
-        console.log("Script and chopsticks process running. Now stopping...")
-        // killProcessInWslTermSync(Number(scriptPid));
-        // killProcessInWslTermSync(Number(chopsticksPid));
-    } else {
-        console.log("Script and chopsticks process not running. Now stopping...")
-        
     }
     if(chopsticksConnected){
         let wslProcessesKilled = await killProcessInWslTermSync(Number(bashScriptPid)); // Will block script until finished
@@ -957,6 +998,8 @@ async function stopChopsticks() {
 }
 
 function waitForChopsticksToClose(): Promise<void> {
+    logToFile("Stopping chopsticks instance. Initiated waitForChopsticksToClose promise")
+
     return new Promise((resolve, reject) => {
         if (!chopsticksProcess) {
             resolve();
@@ -971,6 +1014,7 @@ function waitForChopsticksToClose(): Promise<void> {
 
         chopsticksProcess.on('error', (error) => {
             console.error(`Chopsticks process encountered an error: ${error}`);
+            logError(error, "Chopsticks process encountered an error")
             reject(error);
         });
     });
@@ -999,18 +1043,7 @@ async function testListen(){
     // let destChainApi = new ApiPromise({provider});
 }
 async function run(){
-    runXcmTransferTests(2110)
-    // getTestExceptions(2000)
-    // constructXcmTransferTests(2000)
-    // testApi()
-    // getTransferrableAssetsForSourceChain(2000)
-    // let chain = await getKsmChainByParaId(2000)
-    // console.log(chain)
-    // let confirmed = await confirmCrossChainTransfer()
-    // console.log(confirmed)
-    // process.exit(0)
-    // checkDepositOnTargerChain()
-    // watchTokenDeposit()
+    runXcmTransferTests(2023)
 }
 run()
 async function checkDepositOnTargerChain(token: string){
@@ -1039,7 +1072,7 @@ async function getExtrinsicInfo(blockHash: string, txHash: string, api: ApiPromi
         return ex.hash.toHex() == txHash
     })
     if(!extrinsic){
-        throw new Error("Cant find tx hash")
+        throw logError(new Error("Cant find tx hash"))
     }
     console.log("EXTRINSIC INFO")
     console.log(extrinsic.toHuman())
@@ -1053,6 +1086,7 @@ function killProcessInWslTermSync(wslPid: number) {
     } catch (error: any) {
         // Error will include the entire stdout and stderr as part of the message
         console.error(`Error: ${error.message}`);
+        logError(error, "Error in killProcessInWslTermSync()")
         return false
     }
 }
@@ -1075,5 +1109,6 @@ process.on('exit', () => {
 });
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    logError(reason as Error, "Unhandled Rejection")
     // Application specific logging, throwing an error, or other logic here
 });

@@ -20,7 +20,19 @@
     {
         "sourceChain": 2110,
         "name": "mangata",
-        "toSkip":["Moonriver"],
-        "currencySkip": ["ZLK"]
+        "toSkip":["Moonriver", "Imbue"],
+        "currencySkip": ["KAR", "vBNC"]
+    },
+    {
+        "sourceChain": 2090,
+        "name": "basilisk",
+        "toSkip":[],
+        "currencySkip": ["DAI", "USDCet", "wETH", "XRT"]
+    },
+    {
+        "sourceChain": 2023,
+        "name": "moonriver",
+        "toSkip":["Calamari"],
+        "currencySkip": ["ZLK", "xcXRT", "xcLIT", "xcCRAB", "xcvKSM", "xcTEER", "xcMGX", "xcUSDT"]
     }
 ]
