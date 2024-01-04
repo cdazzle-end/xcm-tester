@@ -32,7 +32,8 @@
     {
         "sourceChain": 2023,
         "name": "moonriver",
-        "toSkip":["Calamari"],
-        "currencySkip": ["ZLK", "xcXRT", "xcLIT", "xcCRAB", "xcvKSM", "xcTEER", "xcMGX", "xcUSDT"]
+        "toSkip":["Calamari", "Kusama"],
+        "currencySkip": ["ZLK", "xcXRT", "xcLIT", "xcCRAB", "xcvKSM", "xcTEER", "xcMGX", "xcRMRK", "xcKSM", "xcBNC"],
+        "liveSuccess": ["xcRMRK", "xcKSM"]
     }
 ]

@@ -17,6 +17,7 @@ import path from 'path';
 // import { getAdapter } from './adapters'
 import { finalize } from 'rxjs/operators';
 import { ApiBase } from '@polkadot/api/types'
+import { wsLocalFrom } from './testParams'
 // import { UI8 } from '@polkadot/types/primitive';
 // import { getAssetBySymbolOrId } from '@paraspell/sdk/asset'
 // import { BifrostAdapter } from '../../bridge/src/adapters/bifrost'
@@ -28,10 +29,9 @@ import { ApiBase } from '@polkadot/api/types'
 // import * as xcmPallet from '../../xcmPallet'
 // import * as xyk from '../../xyk'
 // import { getRelayChainSymbol } from '../../assets'
-// import { Builder } from './Builder'
-
-const wsLocalKarura = "ws://172.26.130.75:8008"
-const wsLocalBifrost = "ws://172.26.130.75:8009"
+// 182365888117048807484804376330534607370
+// 182365888117048807484804376330534607370
+// 
 const localHost = "ws://172.26.130.75:"
 const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
 const nodeOne = getNode('Karura').node
@@ -102,7 +102,7 @@ async function buildAndSubmitXcmTx(){
     console.log("Connecting to api")
     let nodeOneEndpoints = paraspell.getNodeEndpointOption(nodeOne)
     // console.log(nodeOneEndpoints)
-    const wsProvider = new WsProvider(wsLocalKarura)
+    const wsProvider = new WsProvider(wsLocalFrom)
     let api =  await ApiPromise.create({ provider: wsProvider })
 
     const asset = "KAR"
@@ -360,6 +360,7 @@ async function runXcmTransferTests(sourceChain: number){
             // && !successfullTests.includes(testParam.transferParams.currency?)
             && !testExceptions.toSkip.includes(testParam.transferParams.to)
             && !testExceptions.currencySkip.includes(testParam.transferParams.currency)
+            && !testExceptions.toSkip.includes(testParam.transferParams.transferrableAssetObject.originParaspellChainName)
             // && testIndex < 2
         ){
             
@@ -1031,7 +1032,7 @@ async function testListen(){
     console.log(api.registry.chainTokens)
     api.disconnect()
 
-    provider = new WsProvider(wsLocalKarura);
+    provider = new WsProvider(wsLocalFrom);
     let api2 = new ApiPromise({provider});
     await api2.isReady;
 
@@ -1047,7 +1048,7 @@ async function run(){
 }
 run()
 async function checkDepositOnTargerChain(token: string){
-    const wsProvider = new WsProvider(wsLocalKarura)
+    const wsProvider = new WsProvider(wsLocalFrom)
     let api =  await ApiPromise.create({ provider: wsProvider })
     await api.isReady
     

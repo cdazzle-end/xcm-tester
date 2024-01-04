@@ -1815,5 +1815,137 @@
       "originChainParaId": "2092",
       "originParaspellChainName": "Kintsugi"
     }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Moonriver",
+    "to": "BifrostKusama",
+    "currency": "xcvMOVR",
+    "amount": "1000000000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Moonriver",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2023,
+          "localId": "203223821023327994093278529517083736593",
+          "name": "Bifrost Voucher MOVR",
+          "symbol": "xcvMOVR",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF98e37bf6a393504b5adc5b53b4d0ba11"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2001"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x010a000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "xcvMOVR",
+        "assetId": "203223821023327994093278529517083736593"
+      },
+      "originChainParaId": "2001",
+      "originParaspellChainName": "BifrostKusama"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Moonriver",
+    "to": "AssetHubKusama",
+    "currency": "xcUSDT",
+    "amount": "1000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Moonriver",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2023,
+          "localId": "311091173110107856861649819128533077277",
+          "name": "Tether USD",
+          "symbol": "xcUSDT",
+          "decimals": "6",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFFea09fb06d082fd1275cd48b191cbcd1d"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "xcUSDT",
+        "assetId": "311091173110107856861649819128533077277"
+      },
+      "originChainParaId": "1000",
+      "originParaspellChainName": "AssetHubKusama"
+    }
+  },
+  {
+    "type": "paraToPara",
+    "from": "Moonriver",
+    "to": "Karura",
+    "currency": "xcKAR",
+    "amount": "1000000000000",
+    "address": "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
+    "transferrableAssetObject": {
+      "sourceParaspellChainName": "Moonriver",
+      "assetRegistryObject": {
+        "tokenData": {
+          "network": "kusama",
+          "chain": 2023,
+          "localId": "10810581592933651521121702237638664357",
+          "name": "Karura",
+          "symbol": "xcKAR",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF08220ad2e6e157f26ed8bd22a336a0a5"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0080000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      "paraspellAssetSymbol": {
+        "symbol": "xcKAR",
+        "assetId": "10810581592933651521121702237638664357"
+      },
+      "originChainParaId": "2000",
+      "originParaspellChainName": "Karura"
+    }
   }
 ]

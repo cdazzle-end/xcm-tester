@@ -11,9 +11,9 @@ import { u8aToHex } from '@polkadot/util'
 import { EventRecord, Phase, Event, Hash } from '@polkadot/types/interfaces'
 import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 
-export const wsLocalFrom = "ws://172.26.130.75:8000"
-export const wsLocalDestination = "ws://172.26.130.75:8001"
-export const assetSymbol = "xcCSM"
+export const wsLocalFrom = "ws://172.26.130.75:8010"
+export const wsLocalDestination = "ws://172.26.130.75:8008"
+export const assetSymbol = "KSM"
 
 export const fromChain = "Moonriver"
-export const toChain = "CrustShadow"
+export const toChain = "Karura"

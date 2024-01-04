@@ -59,6 +59,8 @@ async function testTx(){
     // let mangataNode = getNode('Mangata')
     let provider = new WsProvider(wsLocalFrom);
     let api = await fromNode.createApiInstance(wsLocalFrom);
+    let keyring = new Keyring({ type: 'sr25519' });
+    let alice = keyring.addFromUri('//Alice');
 
     console.log("Api ready")
     let assetId = paraspell.getAssetId(fromChain, assetSymbol)
@@ -69,6 +71,7 @@ async function testTx(){
         throw new Error("Cant find asset symbol or id")
     }
     let currencyParameter = assetSymbolOrId.assetId ?? assetSymbolOrId.symbol
+    currencyParameter = currencyParameter
     if(!currencyParameter){
         throw new Error("Cant find currency parameter")
     }
@@ -76,12 +79,15 @@ async function testTx(){
     console.log("Currency Parameter " + currencyParameter)
     let decimals = paraspell.getAssetDecimals(fromChain, assetSymbol);
     let amount = new FixedPointNumber(1, Number(decimals));
+    let ksmAmount = new FixedPointNumber(1, 12);
 
     // const xcmTx2 = paraspell.Builder(api).from(fromChain).to(toChain).currency(currencyParameter).amount(amount.toChainData()).address(aliceAddress)
     // console.log(flatted.stringify(xcmTx2, null, 2))
     // console.log(JSON.stringify(xcmTx2, null, 2));
     const xcmTx = paraspell.Builder(api).from(fromChain).to(toChain).currency(currencyParameter).amount(amount.toChainData()).address(aliceAddress).build()
-    
+    // const xcmTx = paraspell.Builder(api).from(fromChain).amount(ksmAmount.toChainData()).address(aliceAddress).build()
+    // const xcmTx = paraspell.Builder(api).to(toChain).amount(ksmAmount.toChainData()).address(aliceAddress).build()
+
     // const xcmTx = paraspell.Builder(api).from("BifrostKusama").to("Karura").currency("KAR").amount(1000000000000).address(aliceAddress).build()
     console.log(JSON.stringify(xcmTx.toHuman()));
     console.log(xcmTx.toHuman())
@@ -90,20 +96,20 @@ async function testTx(){
         Object.entries(obj).filter(([key, value]) => typeof value !== 'function')
     );
     // console.log(propertiesOnly);
-    const mnemonic = 'bottom drive obey lake curtain smoke basket hold race lonely fit walk';
-    let privateKey = "0x5fb92d6e98884f76de468fa3f6278f8807c48bebc13595d45af5bdc4da702133"
-    const keyring = new Keyring({ type: 'ethereum' });
-    const index = 0;
-    let ethDerPath = `m/44'/60'/0'/0/${index}`;
-    const alice = keyring.addFromUri(`${privateKey}/${ethDerPath}`);
-    console.log(`Derived Ethereum Address from Mnemonic: ${alice.address}`);
+    // const mnemonic = 'bottom drive obey lake curtain smoke basket hold race lonely fit walk';
+    // let privateKey = "0x5fb92d6e98884f76de468fa3f6278f8807c48bebc13595d45af5bdc4da702133"
+    // const keyring = new Keyring({ type: 'ethereum' });
+    // const index = 0;
+    // let ethDerPath = `m/44'/60'/0'/0/${index}`;
+    // const alice = keyring.addFromUri(`${privateKey}/${ethDerPath}`);
+    // console.log(`Derived Ethereum Address from Mnemonic: ${alice.address}`);
 // console.log(alice.address)
 // console.log(alice)
     // const privateKey = u8aToHex(
     //     hdEthereum(mnemonicToLegacySeed(mnemonic, '', false, 64), ethDerPath)
     //     .secretKey
     // );
-    console.log(`Derived Private Key from Mnemonic: ${privateKey}`);
+    // console.log(`Derived Private Key from Mnemonic: ${privateKey}`);
 
     try{
         let txResult: any= new Promise((resolve, reject) => {
