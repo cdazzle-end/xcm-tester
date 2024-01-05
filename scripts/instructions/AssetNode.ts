@@ -54,7 +54,7 @@ export class AssetNode implements AssetNodeData{
     getAssetOriginRegistryObject(): MyAssetRegistryObject {
         // console.log("Searching for asset origin registry object for asset: " + JSON.stringify(this, null, 2))
         let originChainId = this.getAssetOriginChainId()
-        let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../allAssets.json'), 'utf8'));
+        let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
         let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
             if(assetRegistryObject.tokenData.chain == originChainId && assetRegistryObject.hasLocation == true){
                 // console.log("Running deep equal check for asset: " + JSON.stringify(assetRegistryObject))

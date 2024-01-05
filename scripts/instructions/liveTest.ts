@@ -16,7 +16,7 @@ import { firstValueFrom, combineLatest, map, Observable, race, EMPTY } from "rxj
 
 // import { RegistryError } from '@polkadot/types/types/registry';
 // import { encodeAddress, decodeAddress } from "@polkadot/keyring";
-import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from './testParams'
+import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../xcm_tests/testParams'
 // import { mnemonicToLegacySeed, hdEthereum } from '@polkadot/util-crypto';
 
 import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getEndpointsForChain, connectFirstApi, getAssetRegistryObjectBySymbol } from './utils'
@@ -24,6 +24,7 @@ import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, Instru
 import { AssetNode } from './AssetNode'
 import { prodRelayPolkadot, prodRelayKusama, createWsEndpoints, prodParasKusamaCommon, prodParasKusama } from '@polkadot/apps-config/endpoints'
 import { buildInstructions } from './instructionUtils';
+import { getKarSwapExtrinsicBestPath } from '../swaps/karSwap';
 // import { ApiOptions } from '@polkadot/api/types';
 
 export const allConnectionPromises = new Map<string, Promise<ApiPromise>>();
@@ -50,7 +51,7 @@ let chopsticksPid: string | null = null;
 
 
 function constructRoute() {
-    const resultsFolderPath = path.join(__dirname, '/../../test2/arb-dot-2/arb_handler/result_log_data');
+    const resultsFolderPath = path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/result_log_data');
     const testResultFile = path.join(resultsFolderPath, '2023-06-17_18-26-43.json');
     const testResults: ResultDataObject[] = JSON.parse(fs.readFileSync(testResultFile, 'utf8'));
 
@@ -73,22 +74,37 @@ function buildInstructionSet(assetPath: AssetNode[]) {
 
 // Build extrinsics from instructions
 function buildExtrinsicSet(instructionSet: (SwapInstruction | TransferInstruction)[]) {
-    let extrinsicSet = []
+    let extrinsicSet = [];
+    let swapInstructions = [];
 
-    for(const instruction of instructionSet){
-        switch(instruction.type){
+    for (const instruction of instructionSet) {
+        switch (instruction.type) {
             case InstructionType.Swap:
-                extrinsicSet.push(buildSwapExtrinsic(instruction))
+                // Accumulate swap instructions
+                swapInstructions.push(instruction);
                 break;
-            case InstructionType.TransferToHomeChain:
+            default:
+                // For other types of instructions
+                if (swapInstructions.length > 0) {
+                    // Build swap extrinsic for the accumulated swap instructions
+                    extrinsicSet.push(buildSwapExtrinsic(swapInstructions));
+                    // Reset swapInstructions array for future swap instructions
+                    swapInstructions = [];
+                }
+                // Handle other types of instructions (e.g., TransferToHomeChain)
+                // Add the extrinsic for the current instruction (if needed)
+                // extrinsicSet.push(buildOtherExtrinsic(instruction));
+                extrinsicSet.push(buildTransferExtrinsic(instruction))
                 break;
-            case InstructionType.TransferAwayFromHomeChain:
-                break;
-            case InstructionType.TransferToHomeThenDestination:
-                break;
-
         }
     }
+
+    // Handle any remaining swap instructions at the end of the instruction set
+    if (swapInstructions.length > 0) {
+        extrinsicSet.push(buildSwapExtrinsic(swapInstructions));
+    }
+
+    return extrinsicSet;
 }
 function buildTransferExtrinsic(instruction: TransferInstruction) {
     switch(instruction.type){
@@ -100,8 +116,17 @@ function buildTransferExtrinsic(instruction: TransferInstruction) {
             break;
     }
 }
-function buildSwapExtrinsic(instruction: SwapInstruction) {
-
+function buildSwapExtrinsic(instructions: SwapInstruction[]) {
+    let chainId = instructions[0].chain
+    if(chainId == 2000){
+        // Can use symbol or local id
+        let startAsset = instructions[0].assetNodes[0].getAssetRegistrySymbol()
+        let destAsset = instructions[instructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
+        let amountIn = instructions[0].assetNodes[0].pathValue;
+        let expectedAmountOut = instructions[instructions.length - 1].assetNodes[1].pathValue;
+        let swapExtrinsic = getKarSwapExtrinsicBestPath(startAsset, destAsset, amountIn, expectedAmountOut)
+        return swapExtrinsic
+    }
 }
 
 function run() {
@@ -110,7 +135,7 @@ function run() {
     instructions.forEach((instruction) => {
         // console.log(InstructionType[instruction.type])
         if(instruction.type == 0){
-            console.log(`(${InstructionType[instruction.type]})${instruction.chain} ${JSON.stringify(instruction.assetNodes[0].getAssetLocalId())} -> ${JSON.stringify(instruction.assetNodes[1].getAssetLocalId())}`)
+            console.log(`(${InstructionType[instruction.type]})${instruction.chain} ${JSON.stringify(instruction.assetNodes[0].getAssetLocalId())} ${JSON.stringify(instruction.assetNodes[0].pathValue)} -> ${JSON.stringify(instruction.assetNodes[1].getAssetLocalId())} ${JSON.stringify(instruction.assetNodes[1].pathValue)}`)
         } else {
             console.log(`(${InstructionType[instruction.type]})${instruction.fromChainId} ${JSON.stringify(instruction.assetNodes[0].getAssetLocalId())} ${JSON.stringify(instruction.startAssetNode.paraspellAsset)} -> ${instruction.toChainId} ${JSON.stringify(instruction.assetNodes[1].getAssetLocalId())} ${JSON.stringify(instruction.destinationAssetNode.paraspellAsset)}`)
         }

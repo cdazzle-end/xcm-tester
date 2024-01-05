@@ -127,7 +127,7 @@ export const getAssetBySymbolOrId = (
 }
 
 export function getAssetRegistryObject(chainId: number, localId: string): MyAssetRegistryObject{
-    let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../allAssets.json'), 'utf8'));
+    let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
     let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
         return assetRegistryObject.tokenData.chain == chainId && JSON.stringify(assetRegistryObject.tokenData.localId) == localId
     })
@@ -137,7 +137,7 @@ export function getAssetRegistryObject(chainId: number, localId: string): MyAsse
     return asset
 }
 export function getAssetRegistryObjectBySymbol(chainId: number, symbol: string): MyAssetRegistryObject{
-    let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../allAssets.json'), 'utf8'));
+    let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
     let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
         return assetRegistryObject.tokenData.chain == chainId && JSON.stringify(assetRegistryObject.tokenData.symbol).toLowerCase() == JSON.stringify(symbol).toLowerCase()
     })

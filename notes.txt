@@ -32,3 +32,5 @@ transfer in over 100 days. error: XcmV3TraitsError - WeightLimitReached - Weight
 
 -------------------------------------------------
 
+(Swap)2000 {"NativeAssetId":{"Token":"KSM"}} -> {"NativeAssetId":{"Token":"KUSD"}}
+(Swap)2000 {"NativeAssetId":{"Token":"KUSD"}} -> {"NativeAssetId":{"Token":"BNC"}}

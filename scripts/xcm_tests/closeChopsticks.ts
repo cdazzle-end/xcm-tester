@@ -15,7 +15,7 @@ import {BifrostAdapter} from '@polkawallet/bridge/adapters/bifrost'
 import { BalanceData } from '@polkawallet/bridge'
 import { exec, execSync, spawn, ChildProcess } from 'child_process';
 import path from 'path';
-import { getAdapter } from './adapters'
+import { getAdapter } from '../adapters'
 import { RegistryError } from '@polkadot/types/types/registry';
 // import * as s from 'json-stringify-safe';
 import flatted from 'flatted';

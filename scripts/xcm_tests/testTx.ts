@@ -17,7 +17,7 @@ import { RegistryError } from '@polkadot/types/types/registry';
 // import * as s from 'json-stringify-safe';
 import flatted from 'flatted';
 import { encodeAddress, decodeAddress } from "@polkadot/keyring";
-import { BalanceChangeStatue } from '../src/types';
+import { BalanceChangeStatue } from '../../src/types';
 import {Mangata} from '@mangata-finance/sdk'
 import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from './testParams'
 // import { u8aToHex } from '@polkadot/util';
