@@ -1,7 +1,10 @@
 {
+    "ts-node": {
+        "esm": true,
+    },
     "compilerOptions": {
-        "target": "es2020",
-        "module": "CommonJS",
+        "target": "es2015",
+        "module": "esnext",
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         // ... other options from Bridge's tsconfig ...
@@ -13,11 +16,12 @@
         "typeRoots": ["./node_modules/@polkadot/ts", "./node_modules/@types"],
         "jsx": "preserve",
         "declaration": true,
-        "strict": true,
-        "noImplicitAny": true,
+        "strict":  false,
+        "noImplicitAny": false,
         // "noUnusedLocals": true,
         // "noImplicitReturns": true,
         "moduleResolution": "node",
+        
 
     },
     // Include and exclude can be adjusted as per your project's structure
