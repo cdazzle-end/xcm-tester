@@ -21,6 +21,7 @@
     "@mangata-finance/sdk": "file:../mangata-sdk",
     "@mangata-finance/type-definitions": "^2.1.2",
     "@mangata-finance/types": "^2.2.2",
+    "@moonbeam-network/api-augment": "^0.2600.0",
     "@paraspell/sdk": "file:../xcm-sdk",
     "@polkadot/api": "10.10.1",
     "@polkadot/api-base": "^10.11.1",
@@ -32,7 +33,13 @@
     "@zenlink-dex/sdk-core": "0.0.4",
     "@zenlink-dex/sdk-router": "0.0.4",
     "dotenv": "^16.3.1",
-    "json-stringify-safe": "^5.0.1"
+    "ethers": "^6.9.2",
+    "json-stringify-safe": "^5.0.1",
+    "solc": "0.8.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "viem": "^2.0.2",
+    "web3": "^4.3.0"
   },
   "resolutions": {
     "@polkadot/api": "10.10.1",

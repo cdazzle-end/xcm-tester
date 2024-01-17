@@ -23,6 +23,8 @@ import { MangataInstance, Mangata, MultiswapBuyAsset, MultiswapSellAsset } from 
 import { BN } from '@polkadot/util';
 const wsLocalChain = "ws://172.26.130.75:8000"
 
+
+
 async function main(assetInSymbol: string, assetOutSymbol: string, amount: number) {
   // Connect to the mainet (also testnet, mainnet)
   const mangata: MangataInstance = Mangata.instance([wsLocalChain]);
@@ -56,7 +58,7 @@ async function main(assetInSymbol: string, assetOutSymbol: string, amount: numbe
         }
     }
     if(!assetIn || !assetOut){
-      throw new Error("Asset not found")
+      throw new Error("MGX Asset not found from given symbols")
     }
     console.log(`assetIn: ${JSON.stringify(assetIn)} `)
     console.log(`assetOut: ${JSON.stringify(assetOut)} `)
