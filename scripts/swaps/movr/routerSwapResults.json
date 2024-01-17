@@ -1,0 +1,86 @@
+[
+  {
+    "dexContractAddress": "0xe537f70a8b62204832b8ba91940b77d3f79aeb81",
+    "success": false,
+    "token0": "MOVR",
+    "token1": "0xE3F5a90F9cb311505cd691a46596599aA1A0AD7D",
+    "nonce": 592
+  },
+  {
+    "dexContractAddress": "0x0d171b55fc8d3bddf17e376fdb2d90485f900888",
+    "success": false,
+    "token0": "0x639A647fbe20b6c8ac19E48E2de44ea792c62c5C",
+    "token1": "MOVR",
+    "nonce": 592
+  },
+  {
+    "dexContractAddress": "0x7eda899b3522683636746a2f3a7814e6ffca75e1",
+    "success": false,
+    "token0": "0x6bD193Ee6D2104F14F94E2cA6efefae561A4334B",
+    "token1": "MOVR",
+    "nonce": 592
+  },
+  {
+    "dexContractAddress": "0xe6bfc609a2e58530310d6964ccdd236fc93b4adb",
+    "success": false,
+    "token0": "MOVR",
+    "token1": "0xBb8d88bcD9749636BC4D2bE22aaC4Bb3B01A58F1",
+    "nonce": 592
+  },
+  {
+    "dexContractAddress": "0xaefafaa837cdd8a35afc11100069e073257c0e3e",
+    "success": false,
+    "token0": "0x639A647fbe20b6c8ac19E48E2de44ea792c62c5C",
+    "token1": "MOVR",
+    "nonce": 592
+  },
+  {
+    "dexContractAddress": "0x89bb1bd89c764e1c2d4aa6469062590732b26323",
+    "success": false,
+    "token0": "0x4545E94974AdACb82FC56BCf136B07943e152055",
+    "token1": "MOVR",
+    "nonce": 592
+  },
+  {
+    "dexContractAddress": "0xcc2a7cef44caa59847699104629e034ea7d89f6a",
+    "nonce": 598,
+    "success": true,
+    "dexType": "solar",
+    "token0": "0x98878B06940aE243284CA214f92Bb71a2b032B8A",
+    "token1": "0xE3F5a90F9cb311505cd691a46596599aA1A0AD7D",
+    "token0Symbol": "WMOVR",
+    "token1Symbol": "USDC",
+    "preSwapBalance0": "97770000000000000000",
+    "preSwapBalance1": "56130881",
+    "postSwapBalance0": "97760000000000000000",
+    "postSwapBalance1": "57629572"
+  },
+  {
+    "dexContractAddress": "0x3faf6e9bf107199db347b146f80a68cbd0b598b2",
+    "success": false,
+    "token0": "0x78F811A431D248c1EDcF6d95ec8551879B2897C3",
+    "token1": "MOVR",
+    "nonce": 592
+  },
+  {
+    "dexContractAddress": "0x042e54b2b28265a7ce171f97391334bd47fe384c",
+    "success": false,
+    "token0": "MOVR",
+    "token1": "0xE3F5a90F9cb311505cd691a46596599aA1A0AD7D",
+    "nonce": 592
+  },
+  {
+    "dexContractAddress": "0x0317fb62cd298445266d1bdee42312266654ec94",
+    "nonce": 600,
+    "success": true,
+    "dexType": "solar",
+    "token0": "0x98878B06940aE243284CA214f92Bb71a2b032B8A",
+    "token1": "0xE3F5a90F9cb311505cd691a46596599aA1A0AD7D",
+    "token0Symbol": "WMOVR",
+    "token1Symbol": "USDC",
+    "preSwapBalance0": "97760000000000000000",
+    "preSwapBalance1": "57629572",
+    "postSwapBalance0": "97750000000000000000",
+    "postSwapBalance1": "59128252"
+  }
+]

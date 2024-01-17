@@ -1,0 +1,27 @@
+{
+    "name": "xcm-test",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "dependencies": {
+        "@moonbeam-network/api-augment": "^0.2600.0",
+        "@polkadot/api": "^10.11.2",
+        "dotenv": "^16.3.1",
+        "ethers": "^6.9.2",
+        "json-stringify-safe": "^5.0.1",
+        "mutexify": "^1.4.0",
+        "solc": "0.8.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3",
+        "viem": "^2.0.2",
+        "web3": "^4.3.0"
+    },
+    "resolutions": {}
+}
