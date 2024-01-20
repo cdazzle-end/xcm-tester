@@ -505,7 +505,7 @@ async function approve(tokenContractWithSigner: ethers.Contract, spenderAddress:
 class LoggingProvider extends ethers.JsonRpcProvider {
     async call(transaction) {
       // Log the transaction data
-    //   console.log("eth_call transaction data:", transaction);
+      console.log("eth_call transaction data:", transaction);
       return super.call(transaction);
     }
   }

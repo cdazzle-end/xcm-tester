@@ -9,6 +9,7 @@ import { dirname } from 'path';
 import { ethers } from 'ethers';
 import { privateKeyToAccount } from 'viem/accounts';
 import { dexAbis, localRpc, movrContractAddress, routerFees } from './const.ts';
+import { erc20Abi } from 'viem';
 // import { dexAbis, localRpc, routerFees } from './const';
 // const acquireMutex2 = require('mutexify')();
 // 
@@ -77,6 +78,7 @@ export async function logBatchContractResults(inputResultsObject: any, acquireMu
 export async function logDoubleSwapResults(inputResultsObject: any, acquireMutex: any, inputErrObject?: any): Promise<void> {
     let release: Function | undefined;
     // console.log("M 1")
+    // console.log("Logging double swap results")
     // console.log(typeof acquireMutex); // Should print 'function'
 
     try {
@@ -96,9 +98,11 @@ export async function logDoubleSwapResults(inputResultsObject: any, acquireMutex
 
         const findByContractAddress = (array: any[], contractAddress: string) => array.find((item: any) => item.contractAddress === contractAddress);
 
-        updateOrAppendData(doubleSwapResultsDatabase, inputResultsObject, 0, findByContractAddress);
-        updateOrAppendData(doubleSwapRecieptsDatabase, inputResultsObject, 1, findByContractAddress);
-        updateOrAppendData(doubleSwapErrorsDatabase, inputResultsObject, 2, findByContractAddress, inputErrObject);
+        // console.log("Input object: ", inputResultsObject)
+        // console.log("Input Error: ", inputErrObject)
+        updateOrAppendSwapTxData(doubleSwapResultsDatabase, inputResultsObject, 0, findByContractAddress);
+        updateOrAppendSwapTxData(doubleSwapRecieptsDatabase, inputResultsObject, 1, findByContractAddress);
+        updateOrAppendSwapTxData(doubleSwapErrorsDatabase, inputResultsObject, 2, findByContractAddress, inputErrObject);
 
         await fsPromises.writeFile(doubleSwapResults, JSON.stringify(convertBigIntToString(doubleSwapResultsDatabase), null, 2));
         await fsPromises.writeFile(doubleSwapTxReceiptsPath, JSON.stringify(doubleSwapRecieptsDatabase, null, 2));
@@ -194,7 +198,69 @@ function updateOrAppendData(database: any[], inputResultsObject: any, databaseIn
         
     }
 
-    const existingObject = findFunction(database, inputResultsObject.contractAddress);
+const existingObject = findFunction(database, inputResultsObject.contractAddress);
+
+    if (existingObject) {
+        // Update existing object
+        Object.assign(existingObject, dataToUpdate);
+    } else {
+        // Append new object
+        database.push(dataToUpdate);
+    }
+}
+
+// Function to update or append data in a database array
+function updateOrAppendSwapTxData(database: any[], inputResultsObject: any, databaseIndex: number, findFunction: (array: any[], key: string) => any,  errorInputObject?: any,) {
+    let dataToUpdate;
+    
+    if(databaseIndex === 0){
+        dataToUpdate = {
+            success: inputResultsObject.success,
+            wallet: inputResultsObject.wallet,
+            walletIndex: inputResultsObject.walletIndex,
+            nonce: inputResultsObject.nonce,
+            contractAddress: inputResultsObject.contractAddress,
+            token0: inputResultsObject.token0,
+            token1: inputResultsObject.token1,
+            tokenIn: inputResultsObject.tokenIn,
+            tokenOut: inputResultsObject.tokenOut,
+            abiIndex: inputResultsObject.abiIndex,
+            slippage: inputResultsObject.slippage,
+            failureReason: inputResultsObject.failureStatus,
+            swapData: inputResultsObject.swapData,
+        };
+    } else if (databaseIndex === 1){
+        dataToUpdate = {
+            contractAddress: inputResultsObject.contractAddress,
+            swapTxReceipt: inputResultsObject.swapTxReceipt,
+        }
+    } else if (databaseIndex === 2){
+        if(!errorInputObject){
+            dataToUpdate = {
+                contractAddress: inputResultsObject.contractAddress,
+                success: true,
+                error: errorInputObject,
+            }
+        } else {
+            const errorObject = parseError(errorInputObject)
+            dataToUpdate = {
+                contractAddress: inputResultsObject.contractAddress,
+                success: false,
+                tokenIn: inputResultsObject.tokenIn,
+                tokenOut: inputResultsObject.tokenOut,
+                error: errorObject,
+            }
+        }
+        
+        // console.log(JSON.stringify(errorObject, null, 2))
+        
+    }
+
+    // const existingObject = findFunction(database, inputResultsObject.contractAddress);
+    let matchingObjects = database.filter((item: any) => item.contractAddress === inputResultsObject.contractAddress)
+    // console.log("Matching objects: ", matchingObjects.length)
+    const existingObject = matchingObjects.find((item: any) => item.tokenIn === inputResultsObject.tokenIn && item.tokenOut === inputResultsObject.tokenOut)
+    // console.log("Existing object: ", existingObject)
 
     if (existingObject) {
         // Update existing object
@@ -235,34 +301,46 @@ export async function getBestSwapRoute(tokenInContract: string, tokenOutContract
     })
     const dexAddressesForTokenA = tokenContractToDexAddress[tokenInContract] || [];
     const dexAddressesForTokenB = tokenContractToDexAddress[tokenOutContract] || [];
-
+ 
     const provider = new ethers.JsonRpcProvider(localRpc);
 
     // Find common Dex addresses
     const commonDexAddresses = dexAddressesForTokenA.filter(address => dexAddressesForTokenB.includes(address));
+    // console.log("Common dex addresses: ", commonDexAddresses)
 
     let dexOutputs = await Promise.all(commonDexAddresses.map(async (dexAddress: string) => {
         const dexData = dexSwapData.find((dataObject: any) => dataObject.contractAddress == dexAddress)
         const dexAbi = dexAbis[dexData.abiIndex]
+        
 
         let dexContract = new ethers.Contract(dexAddress, dexAbi, provider)
         let [reserves0, reserves1, timestamp] = await dexContract.getReserves()
-
-        const outputAmount = calculateSwapAmountRouterFormula(amount, reserves0, reserves1, 100, routerFees[dexData.abiIndex])
+        let token0 = await dexContract.token0()
+        let tokenInReserves: bigint, tokenOutReserves: bigint;
+        if(token0 == tokenInContract){
+            tokenInReserves = reserves0;
+            tokenOutReserves = reserves1;
+        } else {
+            tokenInReserves = reserves1;
+            tokenOutReserves = reserves0;
+        }
+        // console.log(`Calculate swap parameters Best route: ${tokenInReserves}, ${tokenOutReserves}, ${amount}`)
+        const outputAmount = calculateSwapAmountRouterFormula(amount, tokenInReserves, tokenOutReserves, 100, routerFees[dexData.abiIndex])
         return [dexAddress, outputAmount]
     }))
-    let bestDex = [ '', 0]
+    let bestDex = ['', 0]
     dexOutputs.forEach((output: any) => {
         if(output[1] > bestDex[1]){
             bestDex = output
         }
     })
+    // console.log("Best dex: ", bestDex)
     return bestDex
 }
 
 export function calculateSwapAmountRouterFormula(input: bigint, inputReserve: bigint, outputReserve: bigint, slippageTolerance: number, fee: number): bigint{
-    const feeMultiplier = BigInt(10000) - BigInt(fee)
-    const slipMultiplier = BigInt(10000) - BigInt(slippageTolerance)
+    const feeMultiplier: bigint = BigInt(10000) - BigInt(fee)
+    const slipMultiplier: bigint = BigInt(10000) - BigInt(slippageTolerance)
 
     // FEE MULTIPLIER
     // const amountInWithFee = input * feeMultiplier
@@ -270,10 +348,10 @@ export function calculateSwapAmountRouterFormula(input: bigint, inputReserve: bi
     // const denominator = (inputReserve * BigInt(10000)) + amountInWithFee
     // const formulatAmountOut = numerator / denominator
 
-    const amountInWithSlippage = input * slipMultiplier
-    const slipNumerator = amountInWithSlippage * outputReserve
-    const slipDenominator = (inputReserve * BigInt(10000)) + amountInWithSlippage
-    const slippageAmountOut = slipNumerator / slipDenominator
+    const amountInWithSlippage:bigint = BigInt(input) * BigInt(slipMultiplier)
+    const slipNumerator: bigint = amountInWithSlippage * outputReserve
+    const slipDenominator: bigint = (BigInt(inputReserve) * BigInt(10000)) + amountInWithSlippage
+    const slippageAmountOut: bigint = slipNumerator / slipDenominator
     return slippageAmountOut
 }
 
@@ -292,29 +370,44 @@ export function checkForSubstrateToken(address: string){
     }
 }
 export function getContractAbiIndex(contractAddress: string){
-    const contractData = JSON.parse(fs.readFileSync('./resultLogs/abiResults.json', 'utf8'));
-    const contract = contractData.find((contract: any) => contract.contractAddress == contractAddress && contract.txType == "swap")
+    // const contractData = JSON.parse(fs.readFileSync('./resultLogs/abiResults.json', 'utf8'));
+    const contractData = JSON.parse(fs.readFileSync('./batchResults/batch_contract_results_archive.json', 'utf8'));
+    // const contract = contractData.find((contract: any) => contract.contractAddress == contractAddress && contract.txType == "swap")
+    const contract = contractData.find((contract: any) => {
+        // console.log(`Database contract address: ${contract["contractAddress"]} --- Input contract address: ${contractAddress}`)
+        return contract["contractAddress"] == contractAddress
+    })
+    
     if(!contract){
         console.log("Contract not found: ", contractAddress)
     }else {
         // console.log("Contract found")
     }
-    return contract["txResultData"]["abiIndex"]
+    return contract["abiIndex"]
 }
 export function getContractAbi(contractAddress: string){
 
     return dexAbis[getContractAbiIndex(contractAddress)]
 }
-export async function getTokenContractData(tokenContractAddress: string){
+export async function getTokenContractData(tokenContractAddress: string, walletAddress?: string){
     const provider = new ethers.JsonRpcProvider(localRpc);
     const tokenAbi = tokenContractAddress === movrContractAddress ? JSON.parse(fs.readFileSync('./abi/movrContractAbi.json', 'utf8')) : JSON.parse(fs.readFileSync('./abi/usdcContractAbi.json', 'utf8'));
     const tokenContract = new ethers.Contract(tokenContractAddress, tokenAbi, provider)
     const tokenSymbol = await tokenContract.symbol()
     const tokenDecimals = await tokenContract.decimals()
+    let tokenBalance: bigint;
+
+    if(walletAddress){
+        tokenBalance = await tokenContract.balanceOf(walletAddress)
+        // console.log("Token balance: ", tokenBalance)
+    }
+
     const tokenData ={
         symbol: tokenSymbol,
-        decimals: tokenDecimals
+        decimals: tokenDecimals,
+        tokenBalance: tokenBalance
     }
+
     return tokenData
 }
 export async function checkApproval(tokenContract: ethers.Contract, walletAddress: string, spenderAddress: string) {
@@ -326,4 +419,19 @@ export async function checkApproval(tokenContract: ethers.Contract, walletAddres
         // console.log(`The spender address ${spenderAddress} is NOT approved to spend tokens for the user ${walletAddress}.`);
         return false
     }
+}
+
+export async function checkAndApproveToken(tokenContractAddress: string, wallet: ethers.Wallet, spender: string, inputAmount: bigint){
+    const tokenContract = new ethers.Contract(tokenContractAddress, erc20Abi, wallet)
+    const allowance = await tokenContract.allowance(wallet.address, spender);
+    if (allowance < inputAmount) {
+        // console.log(`The spender address ${spender} is NOT approved to spend tokens for the user ${wallet.address}. Approving...`);
+        const approveTx = await tokenContract.approve(spender, inputAmount)
+        await approveTx.wait()
+        return true
+    } else {
+        // console.log(`The spender address ${spender} is approved to spend tokens for the user ${wallet.address}.`);
+        return false
+    }
+
 }

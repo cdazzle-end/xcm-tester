@@ -1,6 +1,6 @@
 import '@moonbeam-network/api-augment/moonriver'
-import { calculateSwapAmountRouterFormula, checkForSubstrateToken, getBestSwapRoute, logBatchContractResults, getContractAbi, checkApproval, getTokenContractData, logDoubleSwapResults, getContractAbiIndex } from './utils/utils.ts';
-import { batchContractAddress2, boxContractAddress, dexAbis, ignoreList, localRpc, movrContractAddress, solarFee, test_account_pk, xcKsmContractAddress, zenFee } from './utils/const.ts';
+import { calculateSwapAmountRouterFormula, checkForSubstrateToken, getBestSwapRoute, logBatchContractResults, getContractAbi, checkApproval, getTokenContractData, logDoubleSwapResults, getContractAbiIndex, checkAndApproveToken } from './utils/utils.ts';
+import { batchArtifact, batchContractAddress2, boxContractAddress, dexAbis, ignoreList, localRpc, movrContractAbi, movrContractAddress, solarFee, test_account_pk, usdcContractAbi, usdcContractAddress, wmovrUsdcDexAddress, xcKsmContractAddress, zenFee } from './utils/const.ts';
 import * as mutex from 'mutexify'
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 // import { MangataInstance, Mangata, MultiswapBuyAsset, MultiswapSellAsset } from "@mangata-finance/sdk"
@@ -302,7 +302,7 @@ async function executeBatchContractTransactions(transactions: GenericTx[], slipp
                 let approved = await checkApproval(wmovrToken, wallet.address, batchContractAddress2)
                 if(!approved){
                     // console.log("Approving tokens")
-                    console.log(`(${tx.walletIndex}) APPROVED: FALSE`)
+                    // console.log(`(${tx.walletIndex}) APPROVED: FALSE`)
                     const approveResults = await wmovrToken.approve(batchContractAddress2, inputMovrAmount)
                     const approveReceipt = await approveResults.wait()
                     transactions.forEach((transaction, index) => {
@@ -311,7 +311,7 @@ async function executeBatchContractTransactions(transactions: GenericTx[], slipp
                         }
                     })
                 } else {
-                    console.log(`(${tx.walletIndex}) APPROVED: TRUE`)
+                    // console.log(`(${tx.walletIndex}) APPROVED: TRUE`)
                 }
 
             } catch (e){
@@ -326,7 +326,7 @@ async function executeBatchContractTransactions(transactions: GenericTx[], slipp
             let swapTx;
             try{
                 if(txAbiIndex == 0){
-                    console.log(`(${tx.walletIndex}) Solar Dex`)
+                    // console.log(`(${tx.walletIndex}) Solar Dex`)
                     if(token0 == movrContractAddress){
                         // console.log("Token 0 is movr")
                         calculatedAmountOut = calculateSwapAmountRouterFormula(inputMovrAmount, reserves0, reserves1, slippage, 25)
@@ -344,7 +344,7 @@ async function executeBatchContractTransactions(transactions: GenericTx[], slipp
                     }
                     
                 } else if (txAbiIndex == 1){
-                    console.log(`(${tx.walletIndex}) Zenlink Dex`)
+                    // console.log(`(${tx.walletIndex}) Zenlink Dex`)
                     if(token0 == movrContractAddress){
                         calculatedAmountOut = calculateSwapAmountRouterFormula(inputMovrAmount, reserves0, reserves1, slippage, 30)
                         const swapParams = [0, calculatedAmountOut, wallet.address];
@@ -462,6 +462,10 @@ async function swapTokensForMovr(){
     // let nonce = await wallet.getNonce() 
     let transactions = []
     let walletIndex = 0
+
+    // TEST FAILED ADDRESSES
+    // let failedDexAddresses = getSwapFailures()
+    // for(const lp of failedDexAddresses){
     for(const lp of movrLps){
         let wallet = walletProviders[walletIndex]
         // let nonce;
@@ -472,6 +476,7 @@ async function swapTokensForMovr(){
                 latestNonce = tx.nonce + 1;
             }
         })
+        // console.log("FAILED DEX ADDRESS", lp)
         let contractSwapTx = {
             type: "contractSwap",
             to: lp.contractAddress,
@@ -484,20 +489,34 @@ async function swapTokensForMovr(){
     }
 
     let batchResults = await executeDoubleSwaps(transactions)
-    console.log("MOVR LPS LENGTH", movrLps.length)
-    console.log("TRANSACTIONS LENGTH", transactions.length)
-    const results = JSON.parse(fs.readFileSync('./batchResults/batch_contract_results.json', 'utf8'));
-    console.log("RESULTS FILE LENGTH", results.length)
-    console.log("BatchResults Length ", batchResults.length)
+    // console.log("MOVR LPS LENGTH", movrLps.length)
+    // console.log("TRANSACTIONS LENGTH", transactions.length)
+    // const results = JSON.parse(fs.readFileSync('./batchResults/batch_contract_results.json', 'utf8'));
+    // console.log("RESULTS FILE LENGTH", results.length)
+    // console.log("BatchResults Length ", batchResults.length)
+}
+function getSwapFailures(){
+    const resultData = JSON.parse(fs.readFileSync('./batchResults/double_swap_results.json', 'utf8'));
+    let failedDexAddresses = []
+    resultData.forEach((result: any) => {
+        if(result.success == false){
+            // console.log(result)
+            let contractSwapTx = {
+                contractAddress: result.contractAddress,
+            }
+            failedDexAddresses.push(contractSwapTx)
+        }
+    })
+    return failedDexAddresses
 }
 async function executeDoubleSwaps(transactions, batchSize = 1, slippage = 100){
-    const provider = new ethers.JsonRpcProvider(localRpc);
+    const provider = new LoggingProvider(localRpc);
     const wallet = new ethers.Wallet(test_account_pk, provider);
 
     let wmovrContractAbi = JSON.parse(fs.readFileSync('./../movrContract.json', 'utf8'));
-    let inputMovrAmount = ethers.parseUnits("1", 18)
+    let inputMovrAmount = ethers.parseUnits("0.6", 18)
     
-    
+
     let txResults = []
     for (let i = 0; i < transactions.length; i += batchSize){
         
@@ -508,339 +527,285 @@ async function executeDoubleSwaps(transactions, batchSize = 1, slippage = 100){
         })
         const batchPromises = transactionBatch.map(async (tx, index) => {
             
-            console.log("DEX: ", tx.to)
+            // console.log("DEX: ", tx.to)
             let wallet = tx.wallet
             const walletIndex = tx.walletIndex
-            let wmovrToken = new ethers.Contract(movrContractAddress, wmovrContractAbi, wallet);
-            const batchArtifact = JSON.parse(fs.readFileSync('./contractArtifacts/Batch.json', 'utf8')) as any;
-            const batchAbi = batchArtifact.abi;
             const txAbiIndex = getContractAbiIndex(tx.to)
             const txAbi = dexAbis[txAbiIndex]
 
-            let resultDefault = {
+            let transactionData = {
                 success: false,
                 wallet: wallet.address,
                 walletIndex: tx.walletIndex,
+                tokenIn: null,
+                tokenOut: null,
                 nonce: tx.nonce,
                 contractAddress: tx.to,
-                inTokenSymbol: null,
-                outTokenSymbol: null,
-                token0Address: null,
-                token1Address: null,
+                token0: null,
+                token1: null,
                 abiIndex: txAbiIndex,
                 slippage: slippage,
-                movrBefore: null,
-                movrAfter: null,
-                movrDifference: null,
-                otherTokenBefore: null,
-                otherTokenAfter: null,
-                otherTokenDifference: null,
-                movrBefore2: null,
-                movrAfter2: null,
-                otherTokenAfter2: null,
-                otherTokenBefore2: null,
-                calculatedAmountOut: null,
-                swapTxReceipt: null,
-                failureReason: "Default",
-                otherTokenDifference2: null,
-                movrDifference2: null,
-                swap2success: false
+                failureStatus: "None",
+                swapData: null,
+                swapTxReceipt: null
             }
             let defaultError = {
                 wallet: wallet.address,
                 walletIndex: tx.walletIndex,
                 nonce: tx.nonce,
                 contractAddress: tx.to,
+                tokenIn: null,
+                tokenOut: null,
                 inTokenSymbol: null,
                 outTokenSymbol: null,
                 abiIndex: txAbiIndex,
                 error: null
             }
 
-            const batchContract = await new ethers.Contract(batchContractAddress2, batchAbi, wallet)
-
-            
-            resultDefault.failureReason = "Dex contract instantiation"
-            let dexContract, reserves0, reserves1, timestamp;
+            // resultDefault.failureReason = "Dex contract instantiation"
+            let dexContract, reserves0, reserves1, timestamp, token0, token1;
 
             // Get dex contract
+            transactionData.failureStatus = "Instantiating dex contract"
             try{
                 dexContract = await new ethers.Contract(tx.to, txAbi, wallet);
-                resultDefault.failureReason = "Dex contract get reserves";
                 [reserves0, reserves1, timestamp] = await dexContract.getReserves()
-                // console.log(reserves0)
+                token0 = await dexContract.token0()
+                token1 = await dexContract.token1()
+                transactionData.token0 = token0
+                transactionData.token1 = token1
+                
             } catch (e){
+                transactionData.failureStatus = "Failed to instantiating batch contract"
                 defaultError.error = e
-                // await logBatchContractResults(resultDefault, defaultError)
-                await logDoubleSwapResults(resultDefault, acquireMutex, defaultError)
-                return resultDefault
-            }
-            const token0 = await dexContract.token0()
-            const token1 = await dexContract.token1()
-            resultDefault.token0Address = token0
-            resultDefault.token1Address = token1
-            const erc20Abi = JSON.parse(fs.readFileSync('./abi/usdcContractAbi.json', 'utf8'))
-            const outTokenAddress = token0 == movrContractAddress ? token1 : token0
-            // const outTokenDecimals = token0 == movrContractAddress ? 18 : 6
-            let otherTokenContract, outTokenSymbol, outTokenDecimals;
-
-            // Get out token contract
-            try{
-                otherTokenContract = new ethers.Contract(outTokenAddress, erc20Abi, wallet);
-                outTokenSymbol = await otherTokenContract.symbol()
-                outTokenDecimals = await otherTokenContract.decimals()
-                resultDefault.outTokenSymbol = outTokenSymbol
-                defaultError.outTokenSymbol = outTokenSymbol
-                resultDefault.inTokenSymbol = "MOVR"
-                defaultError.inTokenSymbol = "MOVR"
-            } catch(e){
-                resultDefault.failureReason = "Out token contract instantiation"
-                defaultError.error = e
+                console.log("Failed to instantiate dex contract")
                 console.log(e)
-                await logDoubleSwapResults(resultDefault, acquireMutex, defaultError)
-                // await logBatchContractResults(resultDefault, acquireMutex, defaultError)
-                return resultDefault
+                // await logBatchContractResults(resultDefault, defaultError)
+                await logDoubleSwapResults(transactionData, acquireMutex, defaultError)
+                return transactionData
             }
-
-           
-            // console.log(`EXECUTING SWAP (${tx.walletIndex}) ${tx.nonce}:: MOVR -- ${outTokenSymbol} Dex: ${tx.to}`)
-
-            let movrBalanceBefore = await wmovrToken.balanceOf(wallet.address)
-            let outTokenBalanceBefore = await otherTokenContract.balanceOf(wallet.address)
-            resultDefault.movrBefore = movrBalanceBefore
-            resultDefault.otherTokenBefore = outTokenBalanceBefore
             
+            // Double swap, first movr then other token
+            const tokenIn = token0 == movrContractAddress ? token0 : token1
+            const tokenOut = token0 == movrContractAddress ? token1 : token0
+            transactionData.tokenIn = tokenIn
+            defaultError.tokenIn = tokenIn
+            transactionData.tokenOut = tokenOut
+            defaultError.tokenOut = tokenOut
+
+            const wmovrContract = await new ethers.Contract(movrContractAddress, wmovrContractAbi, wallet)
+            const tokenInBalanceBefore = await wmovrContract.balanceOf(wallet.address)
+            const nativeMovrBalance = await wallet.provider.getBalance(wallet.address)
+            if(tokenInBalanceBefore < inputMovrAmount && nativeMovrBalance < inputMovrAmount ){
+                throw new Error("Not enough movr to swap")
+            }
+            if(tokenInBalanceBefore < inputMovrAmount && nativeMovrBalance > inputMovrAmount ){
+                // console.log(`Wrapping ${inputMovrAmount} movr`)
+                await wrapMovr(wallet, inputMovrAmount)
+                transactions.forEach((transaction, index) => {
+                    if(transaction.walletIndex == walletIndex ){
+                        transaction.nonce = transaction.nonce + 1;
+                    }
+                })
+            }
             // Approving batch contract to use input movr amounr
             try{
-                let approved = await checkApproval(wmovrToken, wallet.address, batchContractAddress2)
-                if(!approved){
-                    // console.log("Approving tokens")
-                    console.log(`(${tx.walletIndex}) APPROVED: FALSE`)
-                    const approveResults = await wmovrToken.approve(batchContractAddress2, inputMovrAmount)
-                    const approveReceipt = await approveResults.wait()
+                let approved = await checkAndApproveToken(movrContractAddress, wallet, batchContractAddress2, inputMovrAmount)
+                if(approved == true){
                     transactions.forEach((transaction, index) => {
                         if(transaction.walletIndex == walletIndex ){
                             transaction.nonce = transaction.nonce + 1;
                         }
                     })
-                } else {
-                    console.log(`(${tx.walletIndex}) APPROVED: TRUE`)
                 }
-
+                
             } catch (e){
-                resultDefault.failureReason = "Approval failed"
+                transactionData.failureStatus = "Approval failed"
                 defaultError.error = e
-                await logDoubleSwapResults(resultDefault, acquireMutex, defaultError)
-                // await logBatchContractResults(resultDefault, acquireMutex, defaultError)
-                return resultDefault
+                console.log("Approval failed")
+                console.log(e)
+                await logDoubleSwapResults(transactionData, acquireMutex, defaultError)
+                return transactionData
             }
-            
+
             // Swap with specified ABI parameters
-            let calculatedAmountOut;
-            let swapTx;
+            let swapTxData: SwapData
+            let swapTxReceipt;
+            let currentNonceDynamic = await wallet.getNonce()
+            console.log(`SWAP 1: Contract: ${tx.to} In: ${tokenIn} -> Out: ${tokenOut} `)
             try{
-                if(txAbiIndex == 0){
-                    console.log(`(${tx.walletIndex}) Solar Dex`)
-                    if(token0 == movrContractAddress){
-                        // console.log("Token 0 is movr")
-                        calculatedAmountOut = calculateSwapAmountRouterFormula(inputMovrAmount, reserves0, reserves1, slippage, 25)
-                        const swapParams = [0, calculatedAmountOut, wallet.address, '0x'];
-                        const swapFunction = "swap(uint, uint, address, bytes)";
-                        const swapCallData = dexContract.interface.encodeFunctionData(swapFunction, swapParams);
-                        swapTx = await batchContract.transferAndSwap(movrContractAddress, otherTokenContract, tx.to, inputMovrAmount, swapCallData, calculatedAmountOut, {nonce: tx.nonce})
-                    } else {
-                        // console.log("Token 1 is movr")
-                        calculatedAmountOut = calculateSwapAmountRouterFormula(inputMovrAmount, reserves1, reserves0, slippage, 25)
-                        const swapParams = [calculatedAmountOut, 0, wallet.address, '0x'];
-                        const swapFunction = "swap(uint, uint, address, bytes)";
-                        const swapCallData = dexContract.interface.encodeFunctionData(swapFunction, swapParams);
-                        swapTx = await batchContract.transferAndSwap(movrContractAddress, otherTokenContract, tx.to, inputMovrAmount, swapCallData, calculatedAmountOut, {nonce: tx.nonce})
-                    }
-                    
-                } else if (txAbiIndex == 1){
-                    console.log(`(${tx.walletIndex}) Zenlink Dex`)
-                    if(token0 == movrContractAddress){
-                        calculatedAmountOut = calculateSwapAmountRouterFormula(inputMovrAmount, reserves0, reserves1, slippage, 30)
-                        const swapParams = [0, calculatedAmountOut, wallet.address];
-                        const swapFunction = "swap(uint, uint, address)";
-                        const swapCallData = dexContract.interface.encodeFunctionData(swapFunction, swapParams);
-                        swapTx = await batchContract.transferAndSwap(movrContractAddress, otherTokenContract, tx.to, inputMovrAmount, swapCallData, calculatedAmountOut, {nonce: tx.nonce})
-                    } else {
-                        calculatedAmountOut = calculateSwapAmountRouterFormula(inputMovrAmount, reserves1, reserves0, slippage, 30)
-                        const swapParams = [calculatedAmountOut, 0, wallet.address];
-                        const swapFunction = "swap(uint, uint, address)";
-                        const swapCallData = dexContract.interface.encodeFunctionData(swapFunction, swapParams);
-                        swapTx = await batchContract.transferAndSwap(movrContractAddress, otherTokenContract, tx.to, inputMovrAmount, swapCallData, calculatedAmountOut, {nonce: tx.nonce})
-                    }
-                    
-                } else if (txAbiIndex == 2){
-                    // throw new Error("Huckleberry Dex Abi (2) not implemented")
-                    resultDefault.failureReason = "Huckleberry Dex Abi (2) not implemented"
-                    // await logBatchContractResults(resultDefault, acquireMutex, defaultError)
-                    return resultDefault
-                }
+                transactionData.failureStatus = "Executing swap"
+                let swapResult = await swapAForB(tokenIn, tokenOut, inputMovrAmount, wallet, currentNonceDynamic, slippage)
+                swapTxData = swapResult[0]
+                swapTxReceipt = swapResult[1]
             } catch (e){
-                resultDefault.failureReason = "Swap failed"
+                transactionData.failureStatus = "Swap failed"
                 defaultError.error = e
+                console.log("Swap failed")
+                console.log(e)
                 transactions.forEach((transaction, index) => {
                     if(transaction.walletIndex == walletIndex ){
                         transaction.nonce = transaction.nonce - 1;
                     }
                 })
-                await logDoubleSwapResults(resultDefault, acquireMutex, defaultError)
+                await logDoubleSwapResults(transactionData, acquireMutex, defaultError)
                 // await logBatchContractResults(resultDefault, acquireMutex, defaultError)
-                return resultDefault
+                // return transactionData
             }
-
-           
             
-            let swapTxReceipt = await swapTx.wait()
-            let movrBalanceAfter = await wmovrToken.balanceOf(wallet.address)
-            let outTokenBalanceAfter: bigint = await otherTokenContract.balanceOf(wallet.address)
-            // console.log(`BALANCES (${tx.walletIndex}) ${movrBalanceBefore} --- ${outTokenBalanceBefore} 
-            // POST BALANCES: (${tx.walletIndex}) ${movrBalanceAfter} --- ${outTokenBalanceAfter} 
-            // SUCCESS 
-            // ---------------------------------------`)
-            // console.log(`POST BALANCES: (${tx.walletIndex}) ${movrBalanceAfter} --- ${outTokenBalanceAfter}`)
-            // console.log("SUCCESS")
-            // console.log("---------------------------------------")
-
             
-            resultDefault.movrAfter = movrBalanceAfter
-            resultDefault.otherTokenAfter = outTokenBalanceAfter
-            resultDefault.calculatedAmountOut = calculatedAmountOut
-            resultDefault.swapTxReceipt = swapTxReceipt
-            resultDefault.failureReason = null
 
-            const movrBalanceDifference = movrBalanceBefore - movrBalanceAfter
-            const outTokenBalanceDifference: bigint = outTokenBalanceAfter - outTokenBalanceBefore
-            resultDefault.movrDifference = movrBalanceDifference
-            resultDefault.otherTokenDifference = outTokenBalanceDifference
-            if (resultDefault.otherTokenDifference < calculatedAmountOut){
-                resultDefault.failureReason = "Out token difference is less than calculated amount out"
-                defaultError.error = "Out token difference is less than calculated amount out"
-                // await logBatchContractResults(resultDefault, acquireMutex, defaultError)
-                return resultDefault
-            }
-
-            resultDefault.success = true
-            
-             // Add 1 to nonce for next transaction and execute other token swap
-             transactions.forEach((transaction, index) => {
-                if(transaction.walletIndex == walletIndex ){
-                    transaction.nonce = transaction.nonce + 1;
+            if(swapTxData){
+                transactionData.swapData = swapTxData
+                transactionData.swapTxReceipt = swapTxReceipt
+                const tokenInBalanceChange = swapTxData.tokenInBalanceBefore - swapTxData.tokenInBalanceAfter
+                const tokenOutBalanceChange = swapTxData.tokenOutBalanceAfter - swapTxData.tokenOutBalanceBefore
+                if(tokenInBalanceChange == inputMovrAmount && tokenOutBalanceChange >= swapTxData.calculatedAmountOut && tokenOutBalanceChange > 0){
+                    transactionData.success = true
+                    console.log("SWAP 1 SUCCESS")
+                    // Add 1 to nonce for next transaction and execute other token swap
+                    transactions.forEach((transaction, index) => {
+                       if(transaction.walletIndex == walletIndex ){
+                           transaction.nonce = transaction.nonce + 1;
+                       }
+                   })
+                   await logDoubleSwapResults(transactionData, acquireMutex)
+                } else {
+                    transactionData.failureStatus = "Swap executed but Token output does not match"
+                    defaultError.error = "Token balance change does not match calculated amount out"
+                    console.log("Swap executed but Token output does not match")
+                    await logDoubleSwapResults(transactionData, acquireMutex, defaultError)
                 }
-            })
+            }
+
+            
+
             // ---------------------------------------------------------------
             // Approve for other token
+            currentNonceDynamic = await wallet.getNonce()
+            const transactionData2 = {
+                success: false,
+                wallet: wallet.address,
+                walletIndex: tx.walletIndex,
+                tokenIn: transactionData.tokenOut,
+                tokenOut: transactionData.tokenIn,
+                nonce: currentNonceDynamic,
+                contractAddress: tx.to,
+                token0: transactionData.token0,
+                token1: transactionData.token1,
+                abiIndex: txAbiIndex,
+                slippage: slippage,
+                failureStatus: "None",
+                swapData: null,
+                swapTxReceipt: null
+            }
+            let defaultError2 = {
+                wallet: wallet.address,
+                walletIndex: tx.walletIndex,
+                nonce: tx.nonce,
+                contractAddress: tx.to,
+                tokenIn: transactionData.tokenOut,
+                tokenOut: transactionData.tokenIn,
+                inTokenSymbol: null,
+                outTokenSymbol: null,
+                abiIndex: txAbiIndex,
+                error: null
+            }
+
+            if(!swapTxData){
+                transactionData2.failureStatus = "Swap 1 failed"
+                defaultError2.error = "Swap 1 failed"
+                await logDoubleSwapResults(transactionData2, acquireMutex, defaultError2)
+                return transactionData2
+            }
+            let tokenInAmountSwap2: bigint = transactionData.swapData.tokenOutBalanceChange
+
+
             try{
-                let approved = await checkApproval(otherTokenContract, wallet.address, batchContractAddress2)
-                if(!approved){
-                    // console.log("Approving tokens")
-                    console.log(`(${tx.walletIndex}) APPROVED: FALSE`)
-                    const approveResults = await otherTokenContract.approve(batchContractAddress2, outTokenBalanceDifference)
-                    const approveReceipt = await approveResults.wait()
+                [reserves0, reserves1, timestamp] = await dexContract.getReserves()
+            } catch (e){
+                transactionData2.failureStatus = "Failed to instantiating batch contract"
+                defaultError2.error = e
+                console.log("Failed to instantiate dex contract")
+                console.log(e)
+                // await logBatchContractResults(resultDefault, defaultError)
+                await logDoubleSwapResults(transactionData2, acquireMutex, defaultError2)
+                return transactionData2
+            }
+            try{
+                let approved = await checkAndApproveToken(transactionData2.tokenIn, wallet, batchContractAddress2, tokenInAmountSwap2)
+                // console.log("APPROVED: ", approved)
+                if(approved == true){
                     transactions.forEach((transaction, index) => {
                         if(transaction.walletIndex == walletIndex ){
                             transaction.nonce = transaction.nonce + 1;
                         }
                     })
-                } else {
-                    console.log(`(${tx.walletIndex}) APPROVED: TRUE`)
                 }
 
-            } catch (e){
-                resultDefault.failureReason = "Approval failed"
-                defaultError.error = e
-                await logDoubleSwapResults(resultDefault, acquireMutex, defaultError)
-                // await logBatchContractResults(resultDefault, acquireMutex, defaultError)
-                return resultDefault
+            } catch(e) {
+                transactionData2.failureStatus = "Approval failed"
+                defaultError2.error = e
+                console.log("Approval failed")
+                console.log(e)
+                await logDoubleSwapResults(transactionData2, acquireMutex, defaultError2)
+                return transactionData
             }
-            let otherTokenBalance2Before = await otherTokenContract.balanceOf(wallet.address)
-            let movrBalance2Before = await wmovrToken.balanceOf(wallet.address)
-            resultDefault.movrBefore2 = movrBalance2Before
-            resultDefault.otherTokenBefore2 = otherTokenBalance2Before
-            try{
-                const otherTokenInput = outTokenBalanceDifference
-                let calculatedMovrOut;
-                if(txAbiIndex == 0){
-                    console.log(`(${tx.walletIndex}) Solar Dex`)
-                    if(token0 == movrContractAddress){
-                        // console.log("Token 0 is movr")
-                        calculatedMovrOut = calculateSwapAmountRouterFormula(otherTokenInput, reserves0, reserves1, slippage, 25)
-                        const swapParams = [calculatedMovrOut, 0, wallet.address, '0x'];
-                        const swapFunction = "swap(uint, uint, address, bytes)";
-                        const swapCallData = dexContract.interface.encodeFunctionData(swapFunction, swapParams);
-                        swapTx = await batchContract.transferAndSwap(otherTokenContract, movrContractAddress, tx.to, otherTokenInput, swapCallData, calculatedMovrOut, {nonce: tx.nonce})
-                    } else {
-                        // console.log("Token 1 is movr")
-                        calculatedMovrOut = calculateSwapAmountRouterFormula(otherTokenInput, reserves0, reserves1, slippage, 25)
-                        const swapParams = [0, calculatedMovrOut, wallet.address, '0x'];
-                        const swapFunction = "swap(uint, uint, address, bytes)";
-                        const swapCallData = dexContract.interface.encodeFunctionData(swapFunction, swapParams);
-                        swapTx = await batchContract.transferAndSwap(otherTokenContract, movrContractAddress, tx.to, otherTokenInput, swapCallData, calculatedMovrOut, {nonce: tx.nonce})
-                    }
-                    
-                } else if (txAbiIndex == 1){
-                    console.log(`(${tx.walletIndex}) Zenlink Dex`)
-                    if(token0 == movrContractAddress){
-                        calculatedMovrOut = calculateSwapAmountRouterFormula(otherTokenInput, reserves0, reserves1, slippage, 25)
-                        const swapParams = [calculatedMovrOut, 0, wallet.address, '0x'];
-                        const swapFunction = "swap(uint, uint, address)";
-                        const swapCallData = dexContract.interface.encodeFunctionData(swapFunction, swapParams);
-                        swapTx = await batchContract.transferAndSwap(otherTokenContract, movrContractAddress, tx.to, otherTokenInput, swapCallData, calculatedMovrOut, {nonce: tx.nonce})
-                    } else {
-                        calculatedMovrOut = calculateSwapAmountRouterFormula(otherTokenInput, reserves0, reserves1, slippage, 25)
-                        const swapParams = [0, calculatedMovrOut, wallet.address, '0x'];
-                        const swapFunction = "swap(uint, uint, address)";
-                        const swapCallData = dexContract.interface.encodeFunctionData(swapFunction, swapParams);
-                        swapTx = await batchContract.transferAndSwap(otherTokenContract, movrContractAddress, tx.to, otherTokenInput, swapCallData, calculatedMovrOut, {nonce: tx.nonce})
-                    }
-                    
-                } else if (txAbiIndex == 2){
-                    // throw new Error("Huckleberry Dex Abi (2) not implemented")
-                    resultDefault.failureReason = "Huckleberry Dex Abi (2) not implemented"
-                    // await logBatchContractResults(resultDefault, acquireMutex, defaultError)
-                    return resultDefault
-                }
 
-                resultDefault.calculatedAmountOut = calculatedMovrOut
+            let swapTxData2: SwapData, swapTxReceipt2;
+            currentNonceDynamic = await wallet.getNonce()
+            
+            console.log(`SWAP 2: Contract: ${tx.to} In: ${transactionData2.tokenIn} -> Out: ${transactionData2.tokenOut} `)
+            try{
+                // console.log("Executing swap 2 at nonce ", tx.nonce)
+                transactionData2.failureStatus = "Executing swap"
+                // console.log(`Swap tx parameters: ${transactionData2.tokenIn} ${transactionData2.tokenOut} ${tokenInAmountSwap2} ${wallet.address} ${tx.nonce} ${slippage}`)
+                // console.log(`Swap tx parameters: Tokrn In${transactionData2.tokenIn} Token Out: ${transactionData2.tokenOut} TokenIn Amount: ${tokenInAmountSwap2} Nonce: ${currentNonceDynamic}`)
+                let swapResult = await swapAForB(transactionData2.tokenIn, transactionData2.tokenOut, tokenInAmountSwap2, wallet, currentNonceDynamic, slippage)
+                swapTxData2 = swapResult[0]
+                swapTxReceipt2 = swapResult[1]
             } catch (e){
-                resultDefault.failureReason = "Swap failed"
-                defaultError.error = e
+                transactionData2.failureStatus = "Swap failed"
+                defaultError2.error = e
+                console.log("Swap failed")
+                console.log(e)
                 transactions.forEach((transaction, index) => {
                     if(transaction.walletIndex == walletIndex ){
                         transaction.nonce = transaction.nonce - 1;
                     }
                 })
-                await logDoubleSwapResults(resultDefault, acquireMutex, defaultError)
-                return resultDefault
+                await logDoubleSwapResults(transactionData2, acquireMutex, defaultError2)
+                // await logBatchContractResults(resultDefault, acquireMutex, defaultError)
+                // return transactionData2
             }
 
-            let otherTokenBalance2After = await otherTokenContract.balanceOf(wallet.address)
-            let movrBalance2After = await wmovrToken.balanceOf(wallet.address)
-            resultDefault.movrAfter2 = movrBalance2After
-            resultDefault.otherTokenAfter2 = otherTokenBalance2After
-
-            let movrBalanceDifference2 = movrBalance2After - movrBalance2Before
-            let otherTokenBalanceDifference2 = otherTokenBalance2Before - otherTokenBalance2After
-            resultDefault.movrDifference2 = movrBalanceDifference2
-            resultDefault.otherTokenDifference2 = otherTokenBalanceDifference2
-
-            if(otherTokenBalance2After >= otherTokenBalance2Before){
-                throw new Error("Didnt successfully swap other token for movr")
-            }
-            if(movrBalance2After <= movrBalance2Before){
-                throw new Error("Didnt successfully swap other token for movr")
-            }
             
-            resultDefault.swap2success = true
-            // console.log("LOGGING RESULTS")
-            // await logBatchContractResults(resultDefault, acquireMutex)
-            await logDoubleSwapResults(resultDefault, acquireMutex, defaultError)
+
+            if(swapTxData2){
+                transactionData2.swapData = swapTxData2
+                transactionData2.swapTxReceipt = swapTxReceipt2
+                const tokenInBalanceChange2: bigint = swapTxData2.tokenInBalanceBefore - swapTxData2.tokenInBalanceAfter
+                const tokenOutBalanceChange2 = swapTxData2.tokenOutBalanceAfter - swapTxData2.tokenOutBalanceBefore
+                if(tokenInBalanceChange2 == tokenInAmountSwap2 && tokenOutBalanceChange2 >= swapTxData2.calculatedAmountOut && tokenOutBalanceChange2 > 0){
+                    transactionData2.success = true
+                    logDoubleSwapResults(transactionData2, acquireMutex)
+                    console.log("SWAP 2 SUCCESS")
+                    return transactionData2
+                } else {
+                    transactionData2.failureStatus = "Swap executed but Token output does not match"
+                    defaultError2.error = "Token balance change does not match calculated amount out"
+                    console.log("Swap executed but Token output does not match")
+                    await logDoubleSwapResults(transactionData2, acquireMutex, defaultError2)
+                    return transactionData2
+                }
+            }
+
             
-            return resultDefault
+
+            
         })
+
+        
 
         const batchResults = await Promise.all(batchPromises)
         batchResults.forEach((result, index) => {
@@ -853,23 +818,133 @@ async function executeDoubleSwaps(transactions, batchSize = 1, slippage = 100){
     return txResults
 }
 
+async function executeSwaps(){
+
+}
+
 async function logDoubleSwap(){
 
 }
+interface SwapData {
+    swapTx: any,
+    calculatedAmountOut: bigint,
+    dexAddress: string,
+    tokenIn: string,
+    tokenInSymbol: string,
+    tokenInBalanceBefore: bigint,
+    tokenInBalanceAfter: bigint,
+    tokenInBalanceChange: bigint,
+    tokenOut: string,
+    tokenOutSymbol: string,
+    tokenOutBalanceBefore: bigint,
+    tokenOutBalanceAfter: bigint,
+    tokenOutBalanceChange: bigint,
+    // swapTxReceipt?: any
+}
+async function swapAForB(tokenAContract: string, tokenBContract:string, inputAmount: bigint, wallet: ethers.Wallet, inputNonce: any, slippage = 100): Promise<[SwapData, any]>{
 
-async function swapAForB(tokenAContract: string, tokenBContract:string, inputAmount: number){
+    const tokenAData = await getTokenContractData(tokenAContract, wallet.address)
+    const tokenBData = await getTokenContractData(tokenBContract, wallet.address)
 
-    const provider = new ethers.JsonRpcProvider(localRpc);
-    const wallet = new ethers.Wallet(test_account_pk, provider);
+    const [dexAddress, calculatedOutput] = await getBestSwapRoute(tokenAContract, tokenBContract, inputAmount)
 
-    const tokenAData = await getTokenContractData(tokenAContract)
-    const tokenBData = await getTokenContractData(tokenBContract)
+    const dexAbiIndex = getContractAbiIndex(dexAddress.toString())
+    const dexAbi = dexAbis[dexAbiIndex]
 
-    const inputAmountFormatted = ethers.parseUnits(inputAmount.toString(), tokenAData.decimals)
-    await getBestSwapRoute(tokenAContract, tokenBContract, inputAmountFormatted)
+    let dexContract = new ethers.Contract(dexAddress.toString(), dexAbi, wallet);
+    let reserves0, reserves1, timestamp;
+    let token0, token1, symbol0, symbol1;
+    
+    let tokenInReserves: bigint, tokenOutReserves: bigint;
+    try{
+        [reserves0, reserves1, timestamp] = await dexContract.getReserves()
+        token0 = await dexContract.token0()
+        token1 = await dexContract.token1()
+        if(token0 == tokenAContract){
+            tokenInReserves = reserves0;
+            tokenOutReserves = reserves1;
+        } else {
+            tokenInReserves = reserves1;
+            tokenOutReserves = reserves0;
+        }
+
+    } catch (e){
+        throw new Error("Dex contract failed getting reserves or tokens")
+    }
+
+    const batchContract = await new ethers.Contract(batchContractAddress2, batchArtifact.abi, wallet)
+    let calculatedAmountOut, swapParams, swapFunction, swapCallData, swapTx;
+    if(dexAbiIndex == 0){
+        if(tokenAContract == token0){
+            calculatedAmountOut = calculateSwapAmountRouterFormula(inputAmount, tokenInReserves, tokenOutReserves, slippage, 25) 
+            swapParams = [0, calculatedAmountOut, wallet.address, '0x'];
+            
+        } else {
+            calculatedAmountOut = calculateSwapAmountRouterFormula(inputAmount, tokenInReserves, tokenOutReserves, slippage, 25)
+            swapParams = [calculatedAmountOut, 0, wallet.address, '0x'];
+        }
+
+        swapFunction = "swap(uint, uint, address, bytes)";
+        swapCallData = dexContract.interface.encodeFunctionData(swapFunction, swapParams);
+        
+        
+    } else if (dexAbiIndex == 1){
+        if(token0 == movrContractAddress){
+            calculatedAmountOut = calculateSwapAmountRouterFormula(inputAmount, tokenInReserves, tokenOutReserves, slippage, 30)
+            swapParams = [0, calculatedAmountOut, wallet.address];
+            
+        } else {
+            calculatedAmountOut = calculateSwapAmountRouterFormula(inputAmount, tokenInReserves, tokenOutReserves, slippage, 30)
+            swapParams = [calculatedAmountOut, 0, wallet.address];
+            
+        }
+        swapFunction = "swap(uint, uint, address)";
+        swapCallData = dexContract.interface.encodeFunctionData(swapFunction, swapParams);
+    } else if (dexAbiIndex == 2){
+        console.log("WRONG ABI INDEX")
+        throw new Error("Huckleberry Dex Abi (2) not implemented")
+    }
+    const amount0Out: bigint = swapParams[0]
+    const amount1Out: bigint = swapParams[1]
+    const to: string = swapParams[2]
+    const data: string = swapParams[3]
+
+    try{
+        console.log("Executing batch swap contract")
+        swapTx = await batchContract.transferAndSwapHigh(tokenAContract, tokenBContract, dexAddress, inputAmount, calculatedAmountOut, amount0Out, amount1Out, to, data, {nonce: inputNonce})
+    } catch (e) {
+        console.log(dexAddress)
+        throw new Error(e)
+    }
+    // console.log("Swap tx: ", swapTx)
+    const swapTxReceipt = await swapTx.wait()
+    // console.log(swapTxReceipt)
+    const tokenADataAfter = await getTokenContractData(tokenAContract, wallet.address)
+    const tokenBDataAfter = await getTokenContractData(tokenBContract, wallet.address)
+
+    const tokenInBalanceChange = tokenAData.tokenBalance - tokenADataAfter.tokenBalance
+    const tokenOutBalanceChange = tokenBDataAfter.tokenBalance - tokenBData.tokenBalance
+
+    let swapData: SwapData = {
+        swapTx: swapTx,
+        calculatedAmountOut: calculatedAmountOut,
+        dexAddress: dexAddress.toString(),
+        tokenIn: tokenAContract,
+        tokenInSymbol: tokenAData.symbol,
+        tokenInBalanceBefore: tokenAData.tokenBalance,
+        tokenInBalanceAfter: tokenADataAfter.tokenBalance,
+        tokenOut: tokenBContract,
+        tokenOutSymbol: tokenBData.symbol,
+        tokenOutBalanceBefore: tokenBData.tokenBalance,
+        tokenOutBalanceAfter: tokenBDataAfter.tokenBalance,
+        tokenInBalanceChange: tokenInBalanceChange,
+        tokenOutBalanceChange: tokenOutBalanceChange,
+        // swapTxReceipt: swapTxReceipt
+    }
+    return [swapData, swapTxReceipt]
 }
 
-async function allWalletsWrapMovr(){
+async function allWalletscMovr(){
     let wallets = JSON.parse(fs.readFileSync('./wallets.json', 'utf8'));
     const loggingProvider = new ethers.JsonRpcProvider(localRpc);
     let walletProviders = wallets.map((wallet: any) => {
@@ -896,6 +971,31 @@ async function allWalletsWrapMovr(){
         }
     })
 }
+async function wrapMovr(wallet: ethers.Wallet, inputAmount: bigint){
+    let movrContractPath = path.join('./../movrContract.json')
+    let movrContractAbi = JSON.parse(fs.readFileSync(movrContractPath, 'utf8'));
+
+
+    const movrToken = new ethers.Contract(movrContractAddress, movrContractAbi, wallet);
+    const currentMovrBalance = await movrToken.balanceOf(wallet.address)
+    // console.log(`Wallet Address: ${wallet.address} Movr Balance: ${currentMovrBalance}`)
+
+    // const wrapAmount = ethers.parseUnits("100", 18);
+
+    const depositTransaction = {
+        to: movrContractAddress, // The address of the WMOVR contract
+        value: inputAmount // The amount of MOVR to deposit
+    };
+    // console.log("NONCE: ", await wallet.getNonce())
+    let tx = await wallet.sendTransaction(depositTransaction);
+    let receipt = await tx.wait();
+    // console.log(receipt);
+    const afterMovrBalance = await movrToken.balanceOf(wallet.address)
+    // console.log(`Wallet Address: ${wallet.address} Movr Balance: ${afterMovrBalance}`)
+    
+
+
+}
 function cleanLpsOfDuplicates(){
     const contractAddressOccurrences = {};
     const allLps = JSON.parse(fs.readFileSync('./lps.json', 'utf8'));
@@ -918,27 +1018,92 @@ function cleanLpsOfDuplicates(){
 }
 // xcKsmContractAddress
 const blastRpc = "https://moonriver.public.blastapi.io"
-async function testKsm(){
+async function testSwap(){
     // const chopsticksRpc = "ws://172.26.130.75:8000"
 
     // const provider = new ethers.WebSocketProvider(localRpc);
-    const provider = new ethers.JsonRpcProvider(blastRpc);
+    const provider = new ethers.JsonRpcProvider(localRpc);
     const wallet = new ethers.Wallet(test_account_pk, provider);
+    // let wallets = JSON.parse(fs.readFileSync('./wallets.json', 'utf8'));
+    // const loggingProvider = new ethers.JsonRpcProvider(localRpc);
+    // let walletProviders = wallets.map((wallet: any) => {
+    //     return new ethers.Wallet(wallet.private_key, provider)
+    // })
+    const batchContract = await new ethers.Contract(batchContractAddress2, batchArtifact.abi, wallet)
+    const movrContract = await new ethers.Contract(movrContractAddress, movrContractAbi, wallet)
+    const usdcContract = await new ethers.Contract(usdcContractAddress, usdcContractAbi, wallet)
+    const dexContract = await new ethers.Contract(wmovrUsdcDexAddress, dexAbis[0], wallet)
 
-    const ksmContractAbi = JSON.parse(fs.readFileSync('./abi/xcTokenAbi.json', 'utf8'));
-    const ksmContract = new ethers.Contract(xcKsmContractAddress, ksmContractAbi, wallet)
+    const [reserves0, reserves1, time] = await dexContract.getReserves()
+    console.log(`Reserves0: ${reserves0} Reserves1: ${reserves1} Time: ${time}`)
+    // await wrapMovr(wallet, ethers.parseUnits("1", 18))
 
-    const ksmBalance = await ksmContract.decimals()
-    console.log(`KSM Balance: ${ksmBalance}`)
+    const wmovrBalance = await movrContract.balanceOf(wallet.address)
+    const movrBalance = await wallet.provider.getBalance(wallet.address)
+    const usdcBalance = await usdcContract.balanceOf(wallet.address)
+    console.log(`BEFORE Movr Balance: ${movrBalance} Wmovr Balance ${wmovrBalance} USDC Balance: ${usdcBalance}`)
+    const inputAmount = ethers.parseUnits("0.1", 18);
+    const calculatedAmountOut = calculateSwapAmountRouterFormula(inputAmount, reserves0, reserves1, 100, 25)
+
+    console.log(`Batch function parameters: ${movrContractAddress} ${usdcContractAddress} ${wmovrUsdcDexAddress} ${inputAmount} ${calculatedAmountOut} ${0} ${calculatedAmountOut} ${wallet.address} 0x`)
+    const testData = await batchContract.testCall()
+    // console.log(testData)
+    // console.log(JSON.stringify(batchContract.interface, null, 2))
+    let approved = await checkAndApproveToken(movrContractAddress, wallet, batchContractAddress2, inputAmount)
+    let batchSwapTx = await batchContract.transferAndSwapHigh(movrContractAddress, usdcContractAddress, wmovrUsdcDexAddress, inputAmount, calculatedAmountOut, 0, calculatedAmountOut, wallet.address, '0x')
+    // let batchSwapTxReceipt = await batchSwapTx.wait()
+    // console.log(batchSwapTxReceipt)
+
+    const movrBalanceAfter = await wallet.provider.getBalance(wallet.address)
+    const wmovrBalanceAfter = await movrContract.balanceOf(wallet.address)
+    const usdcBalanceAfter = await usdcContract.balanceOf(wallet.address)
+    console.log(`AFTER Movr Balance: ${movrBalanceAfter} WMovr Balance: ${wmovrBalanceAfter} USDC Balance: ${usdcBalanceAfter}`)
+
+    // function transferAndSwapHigh(
+    //     address inputToken,
+    //     address outputToken,
+    //     address dex, 
+    //     uint256 amountIn, 
+    //     uint256 expectedAmount,
+    //     uint256 amount0Out,
+    //     uint256 amount1Out,
+    //     address to,
+    //     bytes memory data
+    // ) public {
     // let ksmCall = ksmContract.interface.encodeFunctionData("decimals")
     // console.log(ksmCall)
     // const symbol = await ksmContract.symbol()
     // const name = await ksmContract.name()
     // console.log(`Symbol: ${symbol} Name: ${name}`)
 }
+async function traceTransaction(txHash) {
+    const provider = new ethers.JsonRpcProvider(localRpc);
+    try {
+        // Ensure txHash is a valid transaction hash
+        if (!ethers.isHexString(txHash, 32)) {
+            throw new Error("Invalid transaction hash");
+        }
+
+        // Request a transaction trace
+        // const trace = await provider.send("debug_traceTransaction", [txHash]);
+        const trace = await provider.send("debug_traceCall", [txHash]);
+        console.log(trace);
+    } catch (error) {
+        console.error("Error during transaction trace:", error);
+    }
+}
+class LoggingProvider extends ethers.JsonRpcProvider {
+    async call(transaction) {
+      // Log the transaction data
+      console.log("eth_call transaction data:", transaction);
+      return super.call(transaction);
+    }
+  }
+// traceTransaction("0x401c12371be8cb77dc8569421b3a56989891bbf1b8ca6722dc6f1b5de02bf8ee")
 // testKsm()
 // executeDoubleSwaps()
 swapTokensForMovr()
+// testSwap()
 // testBatch()
 // testBoxContract()
 // testBalance()
