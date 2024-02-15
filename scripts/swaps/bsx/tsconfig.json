@@ -4,7 +4,7 @@
     },
     "compilerOptions": {
         "target": "esnext",
-        "module": "EsNext",
+        "module": "CommonJS",
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "allowImportingTsExtensions": true,
@@ -21,7 +21,7 @@
         "noImplicitAny": false,
         // "noUnusedLocals": true,
         // "noImplicitReturns": true,
-        "moduleResolution": "Node",
+        "moduleResolution": "node",
     },
     // Include and exclude can be adjusted as per your project's structure
     "include": ["./**/*"],

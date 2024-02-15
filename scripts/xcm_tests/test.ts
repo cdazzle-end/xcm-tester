@@ -218,7 +218,6 @@ async function watchTokenDeposit(paraId: number, destChainApi: ApiPromise, destP
                     subscriber.next(balance);
                     subscriber.complete();
                     console.log("Token deposit complete")
-                    // destChainApi.disconnect()
                 } else {
                     currentBalance = balance;
                     subscriber.next(balance);
@@ -227,18 +226,14 @@ async function watchTokenDeposit(paraId: number, destChainApi: ApiPromise, destP
             error(err) {
                 subscriber.error(logError(new Error(err), "Error watching token deposit"));
                 subscriber.complete(); // Complete the outer Observable on error
-                // destChainApi.disconnect()
             },
             complete() {
                 subscriber.complete(); // Complete the outer Observable when the inner one completes
-                // destChainApi.disconnect()
             }
         });
         return () => {
             subscription.unsubscribe();
-            // destChainApi.disconnect();
         };
-    // }).pipe(finalize(() => destChainApi.disconnect()));
     })
 }
 

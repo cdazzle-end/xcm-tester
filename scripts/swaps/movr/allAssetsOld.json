@@ -2632,7 +2632,7 @@
       "decimals": "12",
       "deposit": "0",
       "isFrozen": false,
-      "contractAddress": "0xffFfFFFf519811215E05eFA24830Eebe9c43aCD7"
+      "contractAddress": "0xFFFFFFFF519811215e05efa24830eebe9c43acd7"
     },
     "hasLocation": true,
     "tokenLocation": {
@@ -2929,7 +2929,7 @@
       "decimals": "12",
       "deposit": "0",
       "isFrozen": false,
-      "contractAddress": "0xfffFFFFF83F4f317d3cbF6EC6250AeC3697b3fF2"
+      "contractAddress": "0xFFFFFFFF83f4f317d3cbf6ec6250aec3697b3ff2"
     },
     "hasLocation": true,
     "tokenLocation": {
@@ -3064,7 +3064,7 @@
       "decimals": "10",
       "deposit": "0",
       "isFrozen": false,
-      "contractAddress": "0xffffffFF893264794d9d57E1E0E21E0042aF5A0A"
+      "contractAddress": "0xFFFFFFFF893264794d9d57e1e0e21e0042af5a0a"
     },
     "hasLocation": true,
     "tokenLocation": {
@@ -3091,7 +3091,7 @@
       "decimals": "12",
       "deposit": "0",
       "isFrozen": false,
-      "contractAddress": "0xFfFFfFff1FcaCBd218EDc0EbA20Fc2308C778080"
+      "contractAddress": "0xFFFFFFFF1fcacbd218edc0eba20fc2308c778080"
     },
     "hasLocation": true,
     "tokenLocation": "here"

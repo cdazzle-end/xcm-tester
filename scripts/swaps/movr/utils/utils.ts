@@ -17,7 +17,7 @@ import { erc20Abi } from 'viem';
 
 // Use import.meta.url to get the current module's URL
 const currentUrl = import.meta.url;
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // Convert the URL to a file path
 const currentPath = fileURLToPath(currentUrl);
 
@@ -32,6 +32,37 @@ const doubleSwapResults = path.resolve(currentDir, '../batchResults/double_swap_
 const doubleSwapTxReceiptsPath = path.resolve(currentDir, '../batchResults/double_swap_receipts.json');
 const doubleSwapErrorsPath = path.resolve(currentDir, '../batchResults/double_swap_errors.json');
 
+export async function wrapMovr(wallet: ethers.Wallet, inputAmount: bigint){
+    let movrContractPath = path.join('./../movrContract.json')
+    let movrContractAbi = JSON.parse(fs.readFileSync(movrContractPath, 'utf8'));
+    console.log("Wrapping MOVR")
+
+    const movrToken = new ethers.Contract(movrContractAddress, movrContractAbi, wallet);
+    const currentMovrBalance = await movrToken.balanceOf(wallet.address)
+    const depositTransaction = {
+        to: movrContractAddress, // The address of the WMOVR contract
+        value: inputAmount // The amount of MOVR to deposit
+    };
+    let tx = await wallet.sendTransaction(depositTransaction);
+    let receipt = await tx.wait();
+    return receipt
+}
+export async function logLiveWalletTransaction(receipt: ethers.TransactionReceipt, txNote: string){
+    let txData = {
+        txHash: receipt.hash,
+        txNote: txNote,
+        txReceipt: receipt,
+    }
+    let receipts = JSON.parse(fs.readFileSync('./liveWalletReceipts.json', 'utf8'));
+    let receiptsArray;
+    if(Array.isArray(receipts)){
+        receiptsArray = receipts
+    } else {
+        receiptsArray = [receipts]
+    }
+    receiptsArray.push(txData)
+    fs.writeFileSync('./liveWalletReceipts.json', JSON.stringify(receiptsArray, null, 2))
+}
 export async function logBatchContractResults(inputResultsObject: any, acquireMutex: any, inputErrObject?: any): Promise<void> {
     let release: Function | undefined;
     // console.log("M 1")
@@ -281,32 +312,59 @@ async function readFromFile(filePath): Promise<any[]> {
       return [];
     }
 }
-
-export async function getBestSwapRoute(tokenInContract: string, tokenOutContract:string, amount: bigint){
+function lookupXcLocalIdByAddress(address: string){
+    const assetRegistry = JSON.parse(fs.readFileSync(path.join(__dirname, '../allAssets.json'), 'utf8'));
+    // console.log(assetRegistry)
+    const xcToken = assetRegistry.find((asset: any) => asset.tokenData.chain == 2023 && asset.tokenData.contractAddress.toString().toLowerCase() == address.toLowerCase())
+    return xcToken.tokenData.localId
+}
+function lookupXcAddressByLocalId(localId: string){
+    const assetRegistry = JSON.parse(fs.readFileSync('./allAssets.json', 'utf8'));
+    const xcToken = assetRegistry.find((asset: any) => asset.tokenData.chainId == 2023 && asset.tokenData.localId == localId)
+    return xcToken.tokenData.contractAddress
+}
+export async function getBestSwapRoute(tokenInContract: string, tokenOutContract:string, amount: bigint, rpc: string){
+    // console.log(`Get best swap route for ${tokenInContract} to ${tokenOutContract}`)
     let tokenContractToDexAddress = {}
-    const  dexSwapData = JSON.parse(fs.readFileSync('./batchResults/batch_contract_results.json', 'utf8'));
+    // let tokenInId = lookupXcLocalIdByAddress(tokenInContract)
+    // let tokenOutId = lookupXcLocalIdByAddress(tokenOutContract)
+    let dexSwapData = JSON.parse(fs.readFileSync(path.join(__dirname, '../dexInfo.json'), 'utf8'));
     dexSwapData.forEach((lp: any) => {
+        // If object is empty, initialize array
         if (!tokenContractToDexAddress[lp.token0]) {
             tokenContractToDexAddress[lp.token0] = [];
         }
         if (!tokenContractToDexAddress[lp.token1]) {
             tokenContractToDexAddress[lp.token1] = [];
         }
-        if (!tokenContractToDexAddress[lp.token0].includes(lp.contractAddress)) {
+        if(lp.token0.toLowerCase() == tokenOutContract.toLowerCase()){
+            tokenOutContract = lp.token0
+        }
+        if(lp.token1.toLowerCase() == tokenOutContract.toLowerCase()){
+            tokenOutContract = lp.token1
+        }
+        if(lp.token0.toLowerCase() == tokenInContract.toLowerCase()){
+            tokenInContract = lp.token0
+        }
+        if(lp.token1.toLowerCase() == tokenInContract.toLowerCase()){
+            tokenInContract = lp.token1
+        }
+        let token0Array = tokenContractToDexAddress[lp.token0].map((address: string) => address.toLowerCase())
+        let token1Array = tokenContractToDexAddress[lp.token1].map((address: string) => address.toLowerCase())
+        if (!token0Array.includes(lp.contractAddress.toLowerCase())) {
             tokenContractToDexAddress[lp.token0].push(lp.contractAddress);
         }
-        if (!tokenContractToDexAddress[lp.token1].includes(lp.contractAddress)) {
+        if (!token1Array.includes(lp.contractAddress.toLowerCase())) {
         tokenContractToDexAddress[lp.token1].push(lp.contractAddress);
         }
     })
     const dexAddressesForTokenA = tokenContractToDexAddress[tokenInContract] || [];
     const dexAddressesForTokenB = tokenContractToDexAddress[tokenOutContract] || [];
  
-    const provider = new ethers.JsonRpcProvider(localRpc);
+    const provider = new ethers.JsonRpcProvider(rpc);
 
     // Find common Dex addresses
     const commonDexAddresses = dexAddressesForTokenA.filter(address => dexAddressesForTokenB.includes(address));
-    // console.log("Common dex addresses: ", commonDexAddresses)
 
     let dexOutputs = await Promise.all(commonDexAddresses.map(async (dexAddress: string) => {
         const dexData = dexSwapData.find((dataObject: any) => dataObject.contractAddress == dexAddress)
@@ -326,6 +384,7 @@ export async function getBestSwapRoute(tokenInContract: string, tokenOutContract
         }
         // console.log(`Calculate swap parameters Best route: ${tokenInReserves}, ${tokenOutReserves}, ${amount}`)
         const outputAmount = calculateSwapAmountRouterFormula(amount, tokenInReserves, tokenOutReserves, 100, routerFees[dexData.abiIndex])
+        // console.log(`Output amount: ${outputAmount}`)
         return [dexAddress, outputAmount]
     }))
     let bestDex = ['', 0]
@@ -424,11 +483,13 @@ export async function checkApproval(tokenContract: ethers.Contract, walletAddres
 export async function checkAndApproveToken(tokenContractAddress: string, wallet: ethers.Wallet, spender: string, inputAmount: bigint){
     const tokenContract = new ethers.Contract(tokenContractAddress, erc20Abi, wallet)
     const allowance = await tokenContract.allowance(wallet.address, spender);
+    console.log(`ALLOWANCE CHECK 1: Batch contract address: ${spender} -- Wallet address: ${wallet.address} -- Allowance: ${allowance}`)
     if (allowance < inputAmount) {
+        console.log(`Approving ${spender} to spend ${inputAmount} tokens for the user ${wallet.address}.`);
         // console.log(`The spender address ${spender} is NOT approved to spend tokens for the user ${wallet.address}. Approving...`);
         const approveTx = await tokenContract.approve(spender, inputAmount)
-        await approveTx.wait()
-        return true
+        let approvalReceipt = await approveTx.wait()
+        return approvalReceipt
     } else {
         // console.log(`The spender address ${spender} is approved to spend tokens for the user ${wallet.address}.`);
         return false

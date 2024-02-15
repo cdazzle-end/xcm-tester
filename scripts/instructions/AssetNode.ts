@@ -1,14 +1,20 @@
 import { TNode } from "@paraspell/sdk";
-import { MyAssetRegistryObject } from "./types";
-import { findValueByKey } from "./utils";
+import { MyAssetRegistryObject } from "./types.ts";
+import { findValueByKey } from "./utils.ts";
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url';
+import { FixedPointNumber } from "@acala-network/sdk-core";
+
+// Get the __dirname equivalent in ES module
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export interface AssetNodeData {
     paraspellAsset: { symbol?: string; assetId?: string } | null,
     paraspellChain: TNode | "Kusama",
     assetRegistryObject: MyAssetRegistryObject,
     pathValue: number,
+    pathType: number,
 }
 
 export class AssetNode implements AssetNodeData{
@@ -16,14 +22,29 @@ export class AssetNode implements AssetNodeData{
     paraspellChain: TNode | "Kusama";
     assetRegistryObject: MyAssetRegistryObject;
     pathValue: number;
+    pathValueFixed: FixedPointNumber
+    pathType: number;
+    
 
     constructor(data: AssetNodeData) {
         this.paraspellAsset = data.paraspellAsset;
         this.paraspellChain = data.paraspellChain;
         this.assetRegistryObject = data.assetRegistryObject;
         this.pathValue = data.pathValue;
+        this.pathType = data.pathType;
+
+        let assetDecimals = this.assetRegistryObject.tokenData.decimals
+        this.pathValueFixed = new FixedPointNumber(this.pathValue, Number.parseInt(assetDecimals))
     }
 
+    // Reduce path by 2% to ensure trade amount for reverse
+    getReducedPathValue() {
+        let assetDecimals = this.assetRegistryObject.tokenData.decimals
+        let amountFn = new FixedPointNumber(this.pathValue, Number.parseInt(assetDecimals))
+        let amountToSubtract = amountFn.mul(new FixedPointNumber(2)).div(new FixedPointNumber(100))
+        let reducedAmount = amountFn.sub(amountToSubtract)
+        return reducedAmount.toNumber()
+    }
 
     getChainId(): number{
         return this.assetRegistryObject.tokenData.chain

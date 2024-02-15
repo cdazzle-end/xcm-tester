@@ -4,7 +4,7 @@ import { Observable, firstValueFrom } from 'rxjs'
 import { timeout } from 'rxjs/operators'
 import { WsProvider, ApiPromise, Keyring } from '@polkadot/api'
 import { History } from '@acala-network/sdk'
-import { u8aToHex } from '@polkadot/util'
+import { BN, u8aToHex } from '@polkadot/util'
 import { EventRecord, Phase, Event, Hash } from '@polkadot/types/interfaces'
 import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
@@ -15,13 +15,13 @@ import path from 'path';
 
 import { RegistryError } from '@polkadot/types/types/registry';
 // import * as s from 'json-stringify-safe';
-import flatted from 'flatted';
-import { encodeAddress, decodeAddress } from "@polkadot/keyring";
-import { BalanceChangeStatue } from '../../src/types';
-import {Mangata} from '@mangata-finance/sdk'
-import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../xcm_tests/testParams'
+// import flatted from 'flatted';
+// import { encodeAddress, decodeAddress } from "@polkadot/keyring";
+// import { BalanceChangeStatue } from '../../src/types';
+// import {Mangata} from '@mangata-finance/sdk'
+// import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../xcm_tests/testParams'
 // import { u8aToHex } from '@polkadot/util';
-import { mnemonicToLegacySeed, hdEthereum } from '@polkadot/util-crypto';
+// import { mnemonicToLegacySeed, hdEthereum } from '@polkadot/util-crypto';
 // const { ApiPromise } = require('@polkadot/api');
 // const { WsProvider } = require('@polkadot/rpc-provider');
 import { options } from '@acala-network/api';
@@ -29,14 +29,21 @@ import { options } from '@acala-network/api';
 import { WalletPromise } from "@acala-network/sdk-wallet";
 import {cryptoWaitReady} from "@polkadot/util-crypto"
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
-import { Wallet,  } from "@acala-network/sdk"
+import { Wallet } from "@acala-network/sdk/wallet/wallet.js"
 import { AcalaDex, AggregateDex } from "@acala-network/sdk-swap"
-import { AggregateDexSwapParams } from '@acala-network/sdk-swap/types'
+import { AggregateDexSwapParams, TradingPath } from '@acala-network/sdk-swap/types.js'
+// import { AggregateDexSwapParams } from '../../node_modules/.pnpm/@acala-network+sdk-swap@4.1.9-13_@acala-network+api@5.1.2_@acala-network+eth-providers@2.7.19_7m57xuskb5lxcqt46rnn4nnyhe/node_modules/@acala-network/sdk-swap/index.ts'
+import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
+import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
+import { increaseIndex } from './../instructions/utils.ts'
+import { AssetNode } from 'scripts/instructions/AssetNode.ts'
+// import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
 // const { options } = require('@acala-network/api');
 // import { Fixed18, convertToFixed18, calcSwapTargetAmount } from '@acala-network/api';
 
 const wsLocalChain = "ws://172.26.130.75:8008"
 // const wsLocalDestination = "ws://172.26.130.75:8008" 
+const karRpc = "wss://karura-rpc-0.aca-api.network"
 
 async function karuraSwap() {
     const provider = new WsProvider(wsLocalChain);
@@ -83,65 +90,300 @@ async function karuraSwap() {
     const aUSDAccount = await api.query.tokens.accounts(address, 'AUSD');
     console.log(aUSDAccount.toHuman());
 }
-export async function getKarSwapExtrinsicBestPath(startAsset: any, destAsset: any, amountIn: number, expectedAmountOut: number){
-    const provider = new WsProvider(wsLocalChain);
+
+async function testErrorCodes(){
+    const provider = new WsProvider(karRpc);
     const api = new ApiPromise(options({ provider }));
     await api.isReady;
 
+    let errorModule = {index:"91",error:"0x09000000"}
+
+    const moduleIndex = parseInt(errorModule.index, 10);
+
+    const errorIndexHex = errorModule.error.substring(2, 4); // "09"
+    const errorIndexParsed = parseInt(errorIndexHex, 16); 
+    let index = new BN(moduleIndex)
+    let errorIndex = new BN(errorIndexParsed)
+
+    let error = await api.registry.findMetaError({index: index, error: errorIndex} )
+    console.log(JSON.stringify(error, null, 2))
+    // // console.log(JSON.stringify(api.errors, null, 2))
+    // const { docs, name, section } = error
+    // console.log(JSON.stringify(error, null, 2))
+    // console.log(`Error: ${name} Section: ${section} Docs: ${docs}`)
+    // console.log("Error Index Array: " + u8aToHex(errorIndexArray))
+}
+export async function getKarSwapExtrinsicBestPath(
+    swapType: number, 
+    startAsset: any, 
+    destAsset: any, 
+    amountIn: number, 
+    expectedAmountOut: number, 
+    swapInstructions: SwapInstruction[], 
+    test: boolean = false, 
+    txIndex: number, 
+    extrinsicIndex: IndexObject, 
+    instructionIndex: number[], 
+    pathNodeValues: PathNodeValues,
+    priceDeviationPercent: number = 2
+    ): Promise<SwapExtrinsicContainer[]>{
+// export async function getKarSwapExtrinsicBestPath(startAsset: any, destAsset: any, amountIn: number, expectedAmountOut: number, swapInstructions: SwapInstruction[]): Promise<SubmittableExtrinsic<"promise", ISubmittableResult> | SubmittableExtrinsic<"rxjs", ISubmittableResult>>{
+    // console.log("Getting kar swap extrinsic best path")
+    let rpc = test ? wsLocalChain : karRpc
+    const provider = new WsProvider(rpc);
+    const api = new ApiPromise(options({ provider }));
+    await api.isReady;
+
+    // console.log(`SWAP INSTRUCTION ${JSON.stringify(swapInstructions, null, 2)}`)
+
     const signer = await getSigner();
   
-    // const wallet = new WalletPromise(api);
-    const wallet = await new Wallet(api)
+    let accountNonce = await api.query.system.account(signer.address)
+    let nonce = accountNonce.nonce.toNumber()
+    nonce += txIndex
+
+    const wallet = new Wallet(api)
     await wallet.isReady
-    const allTokens = await wallet.getTokens()
-
-    for( let key in allTokens){
-        if(allTokens.hasOwnProperty(key)){
-            console.log(allTokens[key].name)
-        }
-    }
-
+    
+    // This is what we return for data needed to construct reverse tx
+    // let assetNodes: AssetNode[] = [swapInstructions[0].assetNodes[0]]
 
     const startToken = wallet.getToken(startAsset);
     const destToken = wallet.getToken(destAsset);
 
-    const path = [startToken, destToken] as [Token, Token];
-    const supplyAmount = new FixedPointNumber(amountIn, startToken.decimal);
-    const expectedOutAmountFixed = new FixedPointNumber(expectedAmountOut, destToken.decimal);
-    let supplyConverted = supplyAmount.toChainData();
-    console.log("Supply amount: " + supplyConverted)
-    // set slippage 1%
-    const slippage = new FixedPointNumber(0.01);
-    const configs = {
-        api: api,
-        wallet: wallet,
-    }
-    const dex = new AcalaDex(configs)
-    const dexConfigs = {
-        api: api,
-        wallet: wallet,
-        providers: [dex]
-    }
-    const aDex = new AggregateDex(dexConfigs);
-    const swapParams: AggregateDexSwapParams = {
-        source: "aggregate",
-        mode: "EXACT_INPUT",
-        path: path,
-        input: supplyAmount,
-        acceptiveSlippage: slippage.toNumber(),
-    }
-    let swapResults = await firstValueFrom(aDex.swap(swapParams))
-    console.log(swapResults.result)
-    console.log(JSON.stringify(swapResults.tracker[0], null, 2))
-    let tradingTx = aDex.getTradingTx(swapResults)
-    console.log(JSON.stringify(tradingTx.toHuman(), null, 2))
+    let [tokenPaths, extrinsicNodes] = buildTokenPaths(startAsset, swapInstructions)
+    // let extrinsicNodesIndex = 0;
+    let swapTxsPromise = tokenPaths.map(async (tokenPath, index) => {
+        // console.log("EXTRINSIC NODE INDEX: " + extrinsicNodesIndex)
+        // console.log("MAP FUNCTION INDEX: " + index)
+        let path = tokenPath.map((token)=> {
+            return wallet.getToken(token).toChainData()
+        })
+        const supplyAmount = new FixedPointNumber(amountIn, startToken.decimals);
+        const expectedOutAmountFixed = new FixedPointNumber(expectedAmountOut, destToken.decimals);
     
-    console.log("Expected amount out: " + expectedOutAmountFixed.toChainData())
+        const priceDeviation = expectedOutAmountFixed.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100));
+        let expectedAmountOutWithDeviation = expectedOutAmountFixed.sub(priceDeviation);
+        
+        let swapTx: SubmittableExtrinsic<"promise", ISubmittableResult> | SubmittableExtrinsic<"rxjs", ISubmittableResult>;
+        if(swapType == 1){
+            // Dex swap
+            swapTx = await api.tx.dex
+                .swapWithExactSupply(
+                    path,
+                    supplyAmount.toChainData(),
+                    expectedAmountOutWithDeviation.toChainData()
+                )
+        } else {
+            let stablePools = await api.query.stableAsset.pools.entries()
+            const matchingStablePool = findObjectWithEntry(stablePools, path[0])
+            if(!matchingStablePool){
+                throw new Error("No matching stable pool found for asset: " + JSON.stringify(path[0], null, 2))
+            }
+
+            const poolData = matchingStablePool[1].toJSON()
+            const poolAssets = poolData["assets"]
+            const stablePoolIndex = poolData["poolAsset"]["stableAssetPoolToken"]
+            const startAssetIndex = getAssetIndex(poolAssets, path[0])
+            const endAssetIndex = getAssetIndex(poolAssets, path[1])
+            const assetLength = poolAssets.length
+            swapTx = await api.tx.stableAsset
+                .swap(
+                    stablePoolIndex,
+                    startAssetIndex, 
+                    endAssetIndex, 
+                    supplyAmount.toChainData(), 
+                    expectedAmountOutWithDeviation.toChainData(), 
+                    assetLength
+                )
+        }
+        let assetNodes = extrinsicNodes[index]
+        let swapTxContainer: SwapExtrinsicContainer = {
+            chainId: 2000,
+            chain: "Karura",
+            assetNodes: assetNodes,
+            extrinsic: swapTx,
+            extrinsicIndex: extrinsicIndex.i,
+            instructionIndex: instructionIndex,
+            nonce: nonce,
+            assetAmountIn: supplyAmount,
+            expectedAmountOut: expectedOutAmountFixed,
+            assetSymbolIn: startAsset,
+            assetSymbolOut: destAsset,
+            pathInLocalId: pathNodeValues.pathInLocalId,
+            pathOutLocalId: pathNodeValues.pathOutLocalId,
+            pathSwapType: swapType,
+            pathAmount: amountIn,
+            api: api,
+            // reverseTx: reverseTx
+        }
+
+        // extrinsicNodesIndex += 1;
+        return swapTxContainer
+    })
+
+    let swapTxContainers = await Promise.all(swapTxsPromise)
+    increaseIndex(extrinsicIndex)
+    return swapTxContainers
+
     
-    let accuracy = isWithinPercentage(expectedOutAmountFixed, swapResults.result.output.amount, 1)
-    console.log("Actual output amount is within 1% of expected amount: " + accuracy)
-    await api.disconnect()
-    return {tradingTx, accuracy}
+    // // assetNodes.push(swapInstructions[i].assetNodes[1])
+    // let path = tokenPath.map((token)=> {
+    //     return wallet.getToken(token).toChainData()
+    // })
+    // const supplyAmount = new FixedPointNumber(amountIn, startToken.decimals);
+    // const expectedOutAmountFixed = new FixedPointNumber(expectedAmountOut, destToken.decimals);
+
+    // const priceDeviation = expectedOutAmountFixed.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100));
+    // let expectedAmountOutWithDeviation = expectedOutAmountFixed.sub(priceDeviation);
+
+    
+    // let swapTx: SubmittableExtrinsic<"promise", ISubmittableResult> | SubmittableExtrinsic<"rxjs", ISubmittableResult>;
+    // // let reverseTx: ReverseSwapExtrinsicParams;
+    // if(swapType == 1){
+    //     // Dex swap
+    //     swapTx = await api.tx.dex
+    //     .swapWithExactSupply(
+    //       path,
+    //       supplyAmount.toChainData(),
+    //       expectedAmountOutWithDeviation.toChainData()
+    //     )
+    //     let reversePath = path.reverse()
+    //     let reverseSupply = expectedAmountOutWithDeviation
+
+    //     let reversePriceDev = supplyAmount.mul(new FixedPointNumber(5)).div(new FixedPointNumber(100));
+    //     let reverseExpectedOut = supplyAmount.sub(reversePriceDev)
+    //     let module = "dex"
+    //     let call = "swapWithExactSupply"
+    //     // let reverseTxBuilder = api.tx[module][call]
+    //     // reverseTx = {
+    //     //     chainId: 2000,
+    //     //     type: swapType,
+    //     //     path: reversePath,
+    //     //     supply: reverseSupply,
+    //     //     target: reverseExpectedOut,
+    //     //     module: module,
+    //     //     call: call,
+    //     //     supplyAssetId: destAsset,
+    //     //     targetAssetId: startAsset,
+    //     //     // txBuilder: reverseTxBuilder
+    //     // }
+    // } else{
+    //     // Stable swap
+    //     // Requires pool index so need to query stable pools and find the corresponding pool
+    //     let stablePools = await api.query.stableAsset.pools.entries()
+    //     const matchingStablePool = findObjectWithEntry(stablePools, path[0])
+    //     if(!matchingStablePool){
+    //         throw new Error("No matching stable pool found for asset: " + JSON.stringify(path[0], null, 2))
+    //     }
+
+    //     const poolData = matchingStablePool[1].toJSON()
+    //     const poolAssets = poolData["assets"]
+    //     const stablePoolIndex = poolData["poolAsset"]["stableAssetPoolToken"]
+    //     const startAssetIndex = getAssetIndex(poolAssets, path[0])
+    //     const endAssetIndex = getAssetIndex(poolAssets, path[1])
+    //     const assetLength = poolAssets.length
+    //     swapTx = await api.tx.stableAsset
+    //         .swap(
+    //             stablePoolIndex,
+    //             startAssetIndex,
+    //             endAssetIndex,
+    //             supplyAmount.toChainData(),
+    //             expectedAmountOutWithDeviation.toChainData(),
+    //             assetLength
+    //         )
+    // }
+
+    // let swapTxContainer: SwapExtrinsicContainer = {
+    //     chainId: 2000,
+    //     chain: "Karura",
+    //     assetNodes: assetNodes,
+    //     extrinsic: swapTx,
+    //     extrinsicIndex: extrinsicIndex.i,
+    //     instructionIndex: instructionIndex,
+    //     nonce: nonce,
+    //     assetAmountIn: supplyAmount,
+    //     expectedAmountOut: expectedOutAmountFixed,
+    //     assetSymbolIn: startAsset,
+    //     assetSymbolOut: destAsset,
+    //     pathInLocalId: pathNodeValues.pathInLocalId,
+    //     pathOutLocalId: pathNodeValues.pathOutLocalId,
+    //     pathSwapType: swapType,
+    //     pathAmount: amountIn,
+    //     api: api,
+    //     // reverseTx: reverseTx
+    // }
+    // increaseIndex(extrinsicIndex)
+    // return swapTxContainer
+}
+
+function buildTokenPaths(startAsset: string, swapInstructions: any[]): [string[][], AssetNode[][]] {
+    let tokenPaths: string[][] = [];
+    let tokenPath: string[] = [startAsset];
+    let extrinsicNodes: AssetNode[][] = [];
+    let assetNodes: AssetNode[] = [swapInstructions[0].assetNodes[0]];
+    let swapLength = 0; // To track the number of swaps added to the current tokenPath
+
+    for (let i = 0; i < swapInstructions.length; i++) {
+        // Add the current asset to the tokenPath
+        tokenPath.push(swapInstructions[i].assetNodes[1].getAssetRegistrySymbol());
+        assetNodes.push(swapInstructions[i].assetNodes[1])
+        swapLength += 1;
+
+        // Check if the tokenPath reached its maximum length or it's the last instruction
+        if (swapLength === 3 || i === swapInstructions.length - 1) {
+            // Add the current tokenPath to tokenPaths
+            tokenPaths.push(tokenPath);
+            extrinsicNodes.push(assetNodes)
+            // If it's not the last instruction, prepare for the next tokenPath
+            if (i !== swapInstructions.length - 1) {
+                // Start a new tokenPath with the last item of the current tokenPath
+                tokenPath = [tokenPath[tokenPath.length - 1]];
+                assetNodes = [assetNodes[assetNodes.length - 1]];
+                // Reset swapLength for the new tokenPath
+                swapLength = 0;
+            }
+        }
+    }
+
+    return [tokenPaths, extrinsicNodes];
+}
+
+
+function getAssetIndex(stablePoolAssets: any[], targetAsset: any){
+    let assetType = Object.keys(targetAsset)[0];
+    let assetId = targetAsset[assetType];
+    let assetIndex = stablePoolAssets.findIndex((asset) => {
+        const poolAssetKey = Object.keys(asset)[0]
+        const poolAssetId = asset[poolAssetKey]
+        return poolAssetKey.toLowerCase() == assetType.toLowerCase() && poolAssetId.toString().toLowerCase() == assetId.toString().toLowerCase()
+        
+    })
+    return assetIndex;
+}
+
+function findObjectWithEntry(stablePools, targetAsset) {
+    let assetType = Object.keys(targetAsset)[0];
+    let assetId = targetAsset[assetType];
+    // console.log("Asset Type: " + assetType + " Asset Id: " + assetId)
+    let matchingStablePool = stablePools.find(([poolKey, poolData]) => {
+        let poolAssets = poolData.toJSON()["assets"]
+        // console.log("Pool Assets: " + JSON.stringify(poolAssets, null, 2))
+        let matchedPool = false;
+        poolAssets.forEach((asset) => {
+            const poolAssetKey = Object.keys(asset)[0]
+            const poolAssetId = asset[poolAssetKey]
+            // console.log("Pool Asset Key: " + poolAssetKey + " Pool Asset Id: " + poolAssetId)
+            if(poolAssetKey.toLowerCase() == assetType.toLowerCase() && poolAssetId.toString().toLowerCase() == assetId.toString().toLowerCase()){
+                // console.log("FOUND MATCH")
+                matchedPool = true;
+            }
+        })
+        return matchedPool;
+    })
+    // console.log("Matching Stable Pool: " + JSON.stringify(matchingStablePool, null, 2))
+    return matchingStablePool;
+
 }
 
 function isWithinPercentage(expected: FixedPointNumber, actual: FixedPointNumber, thresholdPercentage: number) {
@@ -197,6 +439,13 @@ async function swapWithSDK(){
         input: supplyAmount,
         acceptiveSlippage: slippage.toNumber(),
     }
+    // const swapParams = {
+    //     source: "aggregate",
+    //     mode: "EXACT_INPUT",
+    //     path: path,
+    //     input: supplyAmount,
+    //     acceptiveSlippage: slippage.toNumber(),
+    // }
     let swapResults = await firstValueFrom(aDex.swap(swapParams))
     console.log(swapResults.result)
     console.log(JSON.stringify(swapResults.tracker[0], null, 2))
@@ -251,51 +500,6 @@ async function tradingPaths(){
       });
 }
 
-async function swapWithADex(){
-    const provider = new WsProvider(wsLocalChain);
-    const api = new ApiPromise(options({ provider }));
-    await api.isReady;
-
-    const signer = await getSigner();
-  
-    // const wallet = new WalletPromise(api);
-    const wallet = new Wallet(api)
-    await wallet.isReady
-
-    const dex = new AcalaDex({api, wallet})
-    const dexConfigs = {
-        api: api,
-        wallet: wallet,
-        providers: [dex]
-    }
-
-    const karToken = wallet.getToken("KAR");
-    const kusdToken = wallet.getToken("KUSD");
-    const path = [karToken, kusdToken] as [Token, Token];
-
-    const supplyAmount = new FixedPointNumber(10, karToken.decimal);
-    const slippage = new FixedPointNumber(0.01);
-
-    const aDex = new AggregateDex(dexConfigs);
-    const swapParams: AggregateDexSwapParams = {
-        source: "aggregate",
-        mode: "EXACT_INPUT",
-        path: path,
-        input: supplyAmount,
-        acceptiveSlippage: slippage.toNumber(),
-    }
-    let swapResults = await firstValueFrom(aDex.swap(swapParams))
-    let tradingTx = aDex.getTradingTx(swapResults)
-    let txResult = await tradingTx.signAndSend(signer)
-
-    console.log(JSON.stringify(swapResults.tracker[0], null, 2))
-    console.log(JSON.stringify(tradingTx.toHuman(), null, 2))
-    
-    
-    console.log(txResult.toString())
-    await api.disconnect()
-}
-
 async function swapWithDex(){
         // const api = await getPolkadotApi();
         const provider = new WsProvider(wsLocalChain);
@@ -347,9 +551,10 @@ async function run(){
     // await swapWithSDK();
     // await swapWithDex();
     // await tradingPaths();
+    // let karTx = await getKarSwapExtrinsicBestPath(2, "USDT", "KUSD", 1, 1.6, [])
     // await getSwapExtrinsicBestPath("KSM", "KUSD", 1, 43.194656695628)
-    // await getSwapExtrinsicBestPath("KSM", "KUSD", 1, 43.194656695628)
+    // await testErrorCodes()
     process.exit(0)
 }
 
-run()
+// run()

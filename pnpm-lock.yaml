@@ -19,17 +19,20 @@ importers:
   .:
     dependencies:
       '@acala-network/api':
-        specifier: ^5.1.1
-        version: 5.1.2(@polkadot/api@10.10.1)(@polkadot/types@10.10.1)
+        specifier: ^6.1.0
+        version: 6.1.0(@polkadot/api@10.10.1)
+      '@acala-network/eth-providers':
+        specifier: ^2.7.20
+        version: 2.7.20(@acala-network/api@6.1.0)(@polkadot/api@10.10.1)(@polkadot/util-crypto@12.6.2)
       '@acala-network/sdk':
         specifier: ^4.1.9-12
-        version: 4.1.9-13(@acala-network/api@5.1.2)(@acala-network/eth-providers@2.7.19)(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)(ethers@6.9.2)
+        version: 4.1.9-13(@acala-network/api@6.1.0)(@acala-network/eth-providers@2.7.20)(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)(ethers@6.9.2)
       '@acala-network/sdk-core':
         specifier: ^4.1.9-12
-        version: 4.1.9-13(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)
+        version: 4.1.9-13(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)
       '@acala-network/sdk-swap':
         specifier: ^4.1.9-13
-        version: 4.1.9-13(@acala-network/api@5.1.2)(@acala-network/eth-providers@2.7.19)(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)(ethers@6.9.2)
+        version: 4.1.9-13(@acala-network/api@6.1.0)(@acala-network/eth-providers@2.7.20)(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)(ethers@6.9.2)
       '@acala-network/sdk-wallet':
         specifier: ^4.1.5
         version: 4.1.5
@@ -51,6 +54,9 @@ importers:
       '@moonbeam-network/api-augment':
         specifier: ^0.2600.0
         version: 0.2600.0
+      '@parallel-finance/api':
+        specifier: ^2.0.1
+        version: 2.0.1
       '@paraspell/sdk':
         specifier: file:../xcm-sdk
         version: file:../xcm-sdk(@polkadot/api-base@10.10.1)(@polkadot/api@10.10.1)(@polkadot/apps-config@0.133.1)(@polkadot/types@10.10.1)(@polkadot/util@12.6.2)
@@ -63,15 +69,21 @@ importers:
       '@polkadot/apps-config':
         specifier: ^0.133.1
         version: 0.133.1(@polkadot/keyring@12.6.2)(@polkadot/util-crypto@12.6.2)(react-dom@18.2.0)(react-is@18.2.0)(react@18.2.0)
+      '@polkadot/keyring':
+        specifier: ^12.6.2
+        version: 12.6.2(@polkadot/util-crypto@12.6.2)(@polkadot/util@12.6.2)
       '@polkadot/types':
         specifier: 10.10.1
         version: 10.10.1
       '@polkadot/util':
         specifier: ^12.6.1
         version: 12.6.2
+      '@polkadot/util-crypto':
+        specifier: ^12.6.2
+        version: 12.6.2(@polkadot/util@12.6.2)
       '@polkawallet/bridge':
         specifier: file:../bridge
-        version: file:../bridge(@acala-network/api@5.1.2)(@acala-network/eth-providers@2.7.19)(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)(@polkadot/keyring@12.6.2)(@polkadot/util-crypto@12.6.2)(ethers@6.9.2)(react-dom@18.2.0)(react-is@18.2.0)(react@18.2.0)
+        version: file:../bridge(@acala-network/api@6.1.0)(@acala-network/eth-providers@2.7.20)(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)(@polkadot/keyring@12.6.2)(@polkadot/util-crypto@12.6.2)(ethers@6.9.2)(react-dom@18.2.0)(react-is@18.2.0)(react@18.2.0)
       '@zenlink-dex/sdk-api':
         specifier: 0.0.4
         version: 0.0.4
@@ -81,6 +93,9 @@ importers:
       '@zenlink-dex/sdk-router':
         specifier: 0.0.4
         version: 0.0.4
+      axios:
+        specifier: ^1.6.7
+        version: 1.6.7
       dotenv:
         specifier: ^16.3.1
         version: 16.3.1
@@ -90,12 +105,15 @@ importers:
       json-stringify-safe:
         specifier: ^5.0.1
         version: 5.0.1
+      rxjs:
+        specifier: ^7.8.1
+        version: 7.8.1
       solc:
         specifier: 0.8.0
         version: 0.8.0
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@types/node@20.10.6)(typescript@5.3.3)
+        version: 10.9.2(@types/node@20.11.17)(typescript@5.3.3)
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
@@ -105,45 +123,45 @@ importers:
       web3:
         specifier: ^4.3.0
         version: 4.3.0(typescript@5.3.3)
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.17
+        version: 20.11.17
 
 packages:
 
-  /@acala-network/api-derive@5.1.2(@polkadot/api@10.10.1)(@polkadot/types@10.10.1):
-    resolution: {integrity: sha512-wj1x4gm7waLrVmCQ4Excxdz+by3lk2ZPrKTWuc3ZwyU5yxb8UCGvdc/MvxUy3tpRMjNU8Bsf+Btd7eOl01ExCA==}
+  /@acala-network/api-derive@6.1.0(@polkadot/api@10.10.1):
+    resolution: {integrity: sha512-BiBGDuG+RgNaarHr18Hnx8dQ0loHJIPr9ajWtWUEypz2X3iYbac8U9+R82cGOueTNnzP/rOKiw5hBWee59N9rQ==}
     peerDependencies:
       '@polkadot/api': 10.10.1
     dependencies:
-      '@acala-network/types': 5.1.2(@polkadot/api@10.10.1)(@polkadot/types@10.10.1)
+      '@acala-network/types': 6.1.0(@polkadot/api@10.10.1)
       '@polkadot/api': 10.10.1
-    transitivePeerDependencies:
-      - '@polkadot/types'
     dev: false
 
-  /@acala-network/api@5.1.2(@polkadot/api@10.10.1)(@polkadot/types@10.10.1):
-    resolution: {integrity: sha512-bw2kK6cPD+ZC/0J3Jtoh8Fap7HY+LKvqaITUstfFXN3PS6qgkFNu151Pv+Y+5eJHZISIFpd7V0iuKt6gJt0AyA==}
+  /@acala-network/api@6.1.0(@polkadot/api@10.10.1):
+    resolution: {integrity: sha512-SOjaHc5/wo6aacdYgfySfg3fhEfYjqPbKNDRE+JfgaOxx5K2j1Qy3lqRHYeyw7nPXTlR0kqM8axCachm4I6HFg==}
     peerDependencies:
       '@polkadot/api': 10.10.1
     dependencies:
-      '@acala-network/api-derive': 5.1.2(@polkadot/api@10.10.1)(@polkadot/types@10.10.1)
-      '@acala-network/types': 5.1.2(@polkadot/api@10.10.1)(@polkadot/types@10.10.1)
+      '@acala-network/api-derive': 6.1.0(@polkadot/api@10.10.1)
+      '@acala-network/types': 6.1.0(@polkadot/api@10.10.1)
       '@polkadot/api': 10.10.1
-    transitivePeerDependencies:
-      - '@polkadot/types'
     dev: false
 
   /@acala-network/contracts@4.3.4:
     resolution: {integrity: sha512-oBgXGUjRW+lRo9TWGtCB1+OpEOFfhxW//wReb7V/YdbEElVvYuKw3lmfly/eZ/mdBgqxA3eXxNW0AgXiyOn2NQ==}
     dev: false
 
-  /@acala-network/eth-providers@2.7.19(@acala-network/api@5.1.2)(@polkadot/api@10.10.1)(@polkadot/util-crypto@12.6.2):
-    resolution: {integrity: sha512-Ojnj8Mr49SDAH5rdzGTTNBQfU8PlOB1IJJ4Fjtc00utf+kUiLcBDbCXabbMPLhYdZK6ElmUimD0COQZO81hzfQ==}
+  /@acala-network/eth-providers@2.7.20(@acala-network/api@6.1.0)(@polkadot/api@10.10.1)(@polkadot/util-crypto@12.6.2):
+    resolution: {integrity: sha512-x/qF9efl3gDF+FEpELM6vgM5p222i17DrMVZtDjIjDLOuXgd8Ac5pK9XMOKpqgSRnasWqwzJhDeND2/82rS5Rg==}
     peerDependencies:
-      '@acala-network/api': ~6.0.4
+      '@acala-network/api': 6.1.0
       '@polkadot/api': 10.10.1
     dependencies:
-      '@acala-network/api': 5.1.2(@polkadot/api@10.10.1)(@polkadot/types@10.10.1)
+      '@acala-network/api': 6.1.0(@polkadot/api@10.10.1)
       '@acala-network/contracts': 4.3.4
-      '@acala-network/eth-transactions': 2.7.19(@polkadot/util-crypto@12.6.2)
+      '@acala-network/eth-transactions': 2.7.20(@polkadot/util-crypto@12.6.2)
       '@polkadot/api': 10.10.1
       bn.js: 5.2.1
       ethers: 5.7.2
@@ -157,8 +175,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@acala-network/eth-transactions@2.7.19(@polkadot/util-crypto@12.6.2):
-    resolution: {integrity: sha512-2tOkXctiB02sQQpv+kG/1r5u/fhVNeNce/P94PWwLXFf3W5H7GDQ++aYjlWNrjKDGgMsOjHsAQLRV+XPR90oUQ==}
+  /@acala-network/eth-transactions@2.7.20(@polkadot/util-crypto@12.6.2):
+    resolution: {integrity: sha512-HFuXkXCFQ4svHMSuHWR8LOM7Gk9UQubSTFBExDXhtYEfF9KJtFDy5VGO5lHrsrWtV+Qdyns/aSrruA3uxi3pQg==}
     peerDependencies:
       '@polkadot/util-crypto': ^12.4.2
     dependencies:
@@ -169,27 +187,27 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@acala-network/sdk-core@4.1.9-13(@acala-network/types@6.0.4)(@polkadot/api@10.10.1):
+  /@acala-network/sdk-core@4.1.9-13(@acala-network/types@6.1.0)(@polkadot/api@10.10.1):
     resolution: {integrity: sha512-29cV/cZfeBdrNgGE1m0LJBJ5+4rxjRXGYLRaxkoXXVbns8UWaY7BY/JvisY0mgiJNOKfEvEHvGQIgu+MwMNrsw==}
     peerDependencies:
       '@acala-network/types': ^6
       '@polkadot/api': 10.10.1
     dependencies:
-      '@acala-network/types': 6.0.4(@polkadot/api@10.10.1)
+      '@acala-network/types': 6.1.0(@polkadot/api@10.10.1)
       '@polkadot/api': 10.10.1
       bignumber.js: 9.1.2
       lodash: 4.17.21
     dev: false
 
-  /@acala-network/sdk-swap@4.1.9-13(@acala-network/api@5.1.2)(@acala-network/eth-providers@2.7.19)(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)(ethers@6.9.2):
+  /@acala-network/sdk-swap@4.1.9-13(@acala-network/api@6.1.0)(@acala-network/eth-providers@2.7.20)(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)(ethers@6.9.2):
     resolution: {integrity: sha512-QZDfNrQVkJi+wbfYanJ2/5BOPsb4mgl7gRventgDh0QQsT2MAz700dS1NFmey+tAsy53B/KLVSKoI3sRRs/3Eg==}
     peerDependencies:
       '@acala-network/types': ^6
       '@polkadot/api': 10.10.1
     dependencies:
-      '@acala-network/sdk': 4.1.9-13(@acala-network/api@5.1.2)(@acala-network/eth-providers@2.7.19)(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)(ethers@6.9.2)
-      '@acala-network/sdk-core': 4.1.9-13(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)
-      '@acala-network/types': 6.0.4(@polkadot/api@10.10.1)
+      '@acala-network/sdk': 4.1.9-13(@acala-network/api@6.1.0)(@acala-network/eth-providers@2.7.20)(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)(ethers@6.9.2)
+      '@acala-network/sdk-core': 4.1.9-13(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)
+      '@acala-network/types': 6.1.0(@polkadot/api@10.10.1)
       '@polkadot/api': 10.10.1
       rxjs: 7.8.1
     transitivePeerDependencies:
@@ -213,7 +231,7 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@acala-network/sdk@4.1.9-13(@acala-network/api@5.1.2)(@acala-network/eth-providers@2.7.19)(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)(ethers@6.9.2):
+  /@acala-network/sdk@4.1.9-13(@acala-network/api@6.1.0)(@acala-network/eth-providers@2.7.20)(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)(ethers@6.9.2):
     resolution: {integrity: sha512-fpJGMI66pbFeRg37TP6z0T8tk3hCdlsjFgAwAdVBcVD0zYrQrTf31gCctDP+E7fPrCPEanRq6wrisie/ECz62A==}
     peerDependencies:
       '@acala-network/api': ^5
@@ -221,9 +239,9 @@ packages:
       '@polkadot/api': 10.10.1
       ethers: ~5.7.0
     dependencies:
-      '@acala-network/api': 5.1.2(@polkadot/api@10.10.1)(@polkadot/types@10.10.1)
-      '@acala-network/eth-providers': 2.7.19(@acala-network/api@5.1.2)(@polkadot/api@10.10.1)(@polkadot/util-crypto@12.6.2)
-      '@acala-network/sdk-core': 4.1.9-13(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)
+      '@acala-network/api': 6.1.0(@polkadot/api@10.10.1)
+      '@acala-network/eth-providers': 2.7.20(@acala-network/api@6.1.0)(@polkadot/api@10.10.1)(@polkadot/util-crypto@12.6.2)
+      '@acala-network/sdk-core': 4.1.9-13(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)
       '@polkadot/api': 10.10.1
       axios: 0.24.0
       ethers: 6.9.2
@@ -246,19 +264,8 @@ packages:
       '@polkadot/types': 10.10.1
     dev: false
 
-  /@acala-network/types@5.1.2(@polkadot/api@10.10.1)(@polkadot/types@10.10.1):
-    resolution: {integrity: sha512-mU8yJQcxVB9WLhGSItlL6vTchI70Dxd+WXlZZkjL6kWsSrEzj2oP3hcOC9d43tSsWABacDkOjbCyh11EIpZSfA==}
-    peerDependencies:
-      '@polkadot/api': 10.10.1
-    dependencies:
-      '@acala-network/type-definitions': 5.1.2(@polkadot/types@10.10.1)
-      '@polkadot/api': 10.10.1
-    transitivePeerDependencies:
-      - '@polkadot/types'
-    dev: false
-
-  /@acala-network/types@6.0.4(@polkadot/api@10.10.1):
-    resolution: {integrity: sha512-3OGhsht1dISF7++EYF9ShDtu2ydvAwpKf7LzgtzPEH3wrmbJLHSHN1HDm/FlTXKi8WIQQNzvELCFxAl550vbzA==}
+  /@acala-network/types@6.1.0(@polkadot/api@10.10.1):
+    resolution: {integrity: sha512-4u+z1VmROyWCU9aeo/1Nn3thgalrmpoQuVbyqKwHn/ev65GTOYllWuAyJQsCk74O7O+PK6svzO2YSbT92iZZFA==}
     peerDependencies:
       '@polkadot/api': 10.10.1
     dependencies:
@@ -866,6 +873,16 @@ packages:
     resolution: {integrity: sha512-hOUk6AyBFmqVrv7k5WAw/LpszxVbj9gGN4JRkIX52fdFAj1UA61KXmZDvqVEm+pOyec3+fIeZB02LYa/pWOArw==}
     dev: false
 
+  /@open-web3/orml-api-derive@2.0.1(@polkadot/api@10.10.1):
+    resolution: {integrity: sha512-Xr7PyKVyCuNMJznddIb///VXzllcf5tCUEsiFF1PHnxzfWCUv2s9QWhkotUO/vD8udXPvOIp2skkA1sjnQTIwQ==}
+    peerDependencies:
+      '@polkadot/api': 10.10.1
+    dependencies:
+      '@polkadot/api': 10.10.1
+      memoizee: 0.4.15
+      rxjs: 7.8.1
+    dev: false
+
   /@open-web3/orml-type-definitions@0.8.2-11:
     resolution: {integrity: sha512-cUv5+mprnaGNt0tu3FhK1nFRBK7SGjPhA1O0nxWWeRmuuH5fjkr0glbHE9kcKuCBfsh7nt6NGwxwl9emQtUDSA==}
     dev: false
@@ -888,10 +905,48 @@ packages:
       lodash.merge: 4.6.2
     dev: false
 
+  /@open-web3/orml-types@2.0.1(@polkadot/api@10.10.1):
+    resolution: {integrity: sha512-YkJPPtGJHqNS416dpLlyWgzUckV/O4PqYockHAzOKSB8mSv9rhzqDrUzjqvEjduznCxy+bARyLs6C4Bh0DZlvg==}
+    peerDependencies:
+      '@polkadot/api': 10.10.1
+    dependencies:
+      '@open-web3/orml-type-definitions': 2.0.1
+      '@polkadot/api': 10.10.1
+    dev: false
+
+  /@parallel-finance/api@2.0.1:
+    resolution: {integrity: sha512-Ste3CnYDZ9TTfzfg2U7/toJx+YRFj5XZI2tB3lwyLEvWcXr+23WbJfHBOss53YF+UrW5F48CSgQ+63pFyYoEvg==}
+    dependencies:
+      '@open-web3/orml-api-derive': 2.0.1(@polkadot/api@10.10.1)
+      '@parallel-finance/types': 2.0.1(@polkadot/api@10.10.1)
+      '@polkadot/api': 10.10.1
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+    dev: false
+
   /@parallel-finance/type-definitions@2.0.0:
     resolution: {integrity: sha512-PUivdP1bJlbY8BUWtO+LBGVCD5YJ4ljlQO1/8jrINy7iZE8S0XlxOb4aGMuynhmp5XKrFJotO+5vmZGxR4lYAQ==}
     dependencies:
       '@open-web3/orml-type-definitions': 2.0.1
+    dev: false
+
+  /@parallel-finance/type-definitions@2.0.1:
+    resolution: {integrity: sha512-fC1QfhFFd8oSZqdIh6kmoMNvTxZdQGw1sTAbdYSINyVxyCxKiDg47ZP9bAZFDexL7POqnXnn4pYM7kUAnsT+8Q==}
+    dependencies:
+      '@open-web3/orml-type-definitions': 2.0.1
+    dev: false
+
+  /@parallel-finance/types@2.0.1(@polkadot/api@10.10.1):
+    resolution: {integrity: sha512-nDmZ/EK1U1FvmT8JtRyHPX6gLSWXYUYfmaWy5OHmw9cC7tGIjJ8fmS0R1aU66QhL2jxB8LomCbtc5vW4ji8pLw==}
+    dependencies:
+      '@babel/runtime': 7.23.7
+      '@open-web3/orml-types': 2.0.1(@polkadot/api@10.10.1)
+      '@parallel-finance/type-definitions': 2.0.1
+      '@polkadot/types': 10.10.1
+    transitivePeerDependencies:
+      - '@polkadot/api'
     dev: false
 
   /@peaqnetwork/type-definitions@0.0.4:
@@ -1916,13 +1971,13 @@ packages:
   /@types/bn.js@5.1.5:
     resolution: {integrity: sha512-V46N0zwKRF5Q00AZ6hWtN0T8gGmDUaUzLWQvHFo5yThtVwK/VCenFY3wXVbOvNfajEpsTfQM4IN9k/d6gUVX3A==}
     dependencies:
-      '@types/node': 20.10.6
+      '@types/node': 20.11.17
     dev: false
 
   /@types/node-fetch@2.6.10:
     resolution: {integrity: sha512-PPpPK6F9ALFTn59Ka3BaL+qGuipRfxNE8qVgkp0bVixeiR2c2/L+IVOiBdu9JhhT22sWnQEp6YyHGI2b2+CMcA==}
     dependencies:
-      '@types/node': 20.10.6
+      '@types/node': 20.11.17
       form-data: 4.0.0
     dev: false
 
@@ -1930,11 +1985,10 @@ packages:
     resolution: {integrity: sha512-N+0kuo9KgrUQ1Sn/ifDXsvg0TTleP7rIy4zOBGECxAljqvqfqpTfzx0Q1NUedOixRMBfe2Whhb056a42cWs26Q==}
     dev: false
 
-  /@types/node@20.10.6:
-    resolution: {integrity: sha512-Vac8H+NlRNNlAmDfGUP7b5h/KA+AtWIzuXy0E6OyP8f1tCLYAtPvKRRDJjAPqhpCb0t6U2j7/xqAuLEebW2kiw==}
+  /@types/node@20.11.17:
+    resolution: {integrity: sha512-QmgQZGWu1Yw9TDyAP9ZzpFJKynYNeOvwMJmaxABfieQoVoiVOS6MN1WSpqpRcbeA5+RW82kraAVxCCJg+780Qw==}
     dependencies:
       undici-types: 5.26.5
-    dev: false
 
   /@types/stylis@4.2.0:
     resolution: {integrity: sha512-n4sx2bqL0mW1tvDf/loQ+aMX7GQD3lc3fkCMC55VFNDu/vBOabO+LTIeXKM14xK0ppk5TUGcWRjiSpIlUpghKw==}
@@ -1947,13 +2001,13 @@ packages:
   /@types/websocket@1.0.10:
     resolution: {integrity: sha512-svjGZvPB7EzuYS94cI7a+qhwgGU1y89wUgjT6E2wVUfmAGIvRfT7obBvRtnhXCSsoMdlG4gBFGE7MfkIXZLoww==}
     dependencies:
-      '@types/node': 20.10.6
+      '@types/node': 20.11.17
     dev: false
 
   /@types/ws@8.5.3:
     resolution: {integrity: sha512-6YOoWjruKj1uLf3INHH7D3qTXwFfEsg1kf3c0uDdSBJwfa/llkwIjrAGV7j7mVgGNbzTQ3HiHKKDXl6bJPD97w==}
     dependencies:
-      '@types/node': 20.10.6
+      '@types/node': 20.11.17
     dev: false
 
   /@unique-nft/opal-testnet-types@942.57.0(@polkadot/api@10.10.1)(@polkadot/types@10.10.1):
@@ -2148,6 +2202,16 @@ packages:
       - debug
     dev: false
 
+  /axios@1.6.7:
+    resolution: {integrity: sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==}
+    dependencies:
+      follow-redirects: 1.15.4
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+    dev: false
+
   /balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
     dev: false
@@ -2206,7 +2270,7 @@ packages:
   /canvas-renderer@2.2.1:
     resolution: {integrity: sha512-RrBgVL5qCEDIXpJ6NrzyRNoTnXxYarqm/cS/W6ERhUJts5UQtt/XPEosGN3rqUkZ4fjBArlnCbsISJ+KCFnIAg==}
     dependencies:
-      '@types/node': 20.10.6
+      '@types/node': 20.11.17
     dev: false
 
   /colord@2.9.3:
@@ -2387,6 +2451,15 @@ packages:
       ext: 1.7.0
     dev: false
 
+  /es6-weak-map@2.0.3:
+    resolution: {integrity: sha512-p5um32HOTO1kP+w7PRnB+5lQ43Z6muuMuIMffvDN8ZB4GcnjLBV6zGStpbASIMk4DCAvEaamhe2zhyCb/QXXsA==}
+    dependencies:
+      d: 1.0.1
+      es5-ext: 0.10.62
+      es6-iterator: 2.0.3
+      es6-symbol: 3.1.3
+    dev: false
+
   /ethereum-blockies-base64@1.0.2:
     resolution: {integrity: sha512-Vg2HTm7slcWNKaRhCUl/L3b4KrB8ohQXdd5Pu3OI897EcR6tVRvUqdTwAyx+dnmoDzj8e2bwBLDQ50ByFmcz6w==}
     dependencies:
@@ -2454,6 +2527,13 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    dev: false
+
+  /event-emitter@0.3.5:
+    resolution: {integrity: sha512-D9rRn9y7kLPnJ+hMq7S/nhvoKwwvVJahBi2BPmx3bvbsEdK3W9ii8cBSGjP+72/LnM4n6fo3+dkCX5FeTQruXA==}
+    dependencies:
+      d: 1.0.1
+      es5-ext: 0.10.62
     dev: false
 
   /eventemitter3@4.0.7:
@@ -2690,6 +2770,10 @@ packages:
       has-tostringtag: 1.0.0
     dev: false
 
+  /is-promise@2.2.2:
+    resolution: {integrity: sha512-+lP4/6lKUBfQjZ2pdxThZvLUAafmZb8OAxFb8XXtiQmS35INgr85hdOGoEs124ez1FCnZJt6jau/T+alh58QFQ==}
+    dev: false
+
   /is-typed-array@1.1.12:
     resolution: {integrity: sha512-Z14TF2JNG8Lss5/HMqt0//T9JeHXttXy5pH/DBU4vi98ozO2btxzq9MwYDZYnKwU8nRsz/+GVFVRDq3DkVuSPg==}
     engines: {node: '>= 0.4'}
@@ -2786,8 +2870,27 @@ packages:
     engines: {node: '>=12'}
     dev: false
 
+  /lru-queue@0.1.0:
+    resolution: {integrity: sha512-BpdYkt9EvGl8OfWHDQPISVpcl5xZthb+XPsbELj5AQXxIC8IriDZIQYjBJPEm5rS420sjZ0TLEzRcq5KdBhYrQ==}
+    dependencies:
+      es5-ext: 0.10.62
+    dev: false
+
   /make-error@1.3.6:
     resolution: {integrity: sha512-s8UhlNe7vPKomQhC1qFelMokr/Sc3AgNbso3n74mVPA5LTZwkB9NlXf4XPamLxJE8h0gh73rM94xvwRT2CVInw==}
+    dev: false
+
+  /memoizee@0.4.15:
+    resolution: {integrity: sha512-UBWmJpLZd5STPm7PMUlOw/TSy972M+z8gcyQ5veOnSDRREz/0bmpyTfKt3/51DhEBqCZQn1udM/5flcSPYhkdQ==}
+    dependencies:
+      d: 1.0.1
+      es5-ext: 0.10.62
+      es6-weak-map: 2.0.3
+      event-emitter: 0.3.5
+      is-promise: 2.2.2
+      lru-queue: 0.1.0
+      next-tick: 1.1.0
+      timers-ext: 0.1.7
     dev: false
 
   /memorystream@0.3.1:
@@ -2969,6 +3072,10 @@ packages:
     engines: {node: '>= 8'}
     dev: false
 
+  /proxy-from-env@1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+    dev: false
+
   /react-copy-to-clipboard@5.1.0(react@18.2.0):
     resolution: {integrity: sha512-k61RsNgAayIJNoy9yDsYzDe/yAZAzEbEgcz3DZMhF686LEyukcE1hzurxe85JandPUG+yTfGVFzuEw3xt8WP/A==}
     peerDependencies:
@@ -3132,6 +3239,13 @@ packages:
     resolution: {integrity: sha512-EQepAV+wMsIaGVGX1RECzgrcqRRU/0sYOHkeLsZ3fzHaHXZy4DaOOX0vOlGQdlsjkh3mFHAIlVimpwAs4dslyQ==}
     dev: false
 
+  /timers-ext@0.1.7:
+    resolution: {integrity: sha512-b85NUNzTSdodShTIbky6ZF02e8STtVVfD+fu4aXXShEELpozH+bCpJLYMPZbsABN2wDH7fJpqIoXxJpzbf0NqQ==}
+    dependencies:
+      es5-ext: 0.10.62
+      next-tick: 1.1.0
+    dev: false
+
   /tiny-invariant@1.3.1:
     resolution: {integrity: sha512-AD5ih2NlSssTCwsMznbvwMZpJ1cbhkGd2uueNxzv2jDlEeZdU04JQfRnggJQ8DrcVBGjAsCKwFBbDlVNtEMlzw==}
     dev: false
@@ -3155,7 +3269,7 @@ packages:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
     dev: false
 
-  /ts-node@10.9.2(@types/node@20.10.6)(typescript@5.3.3):
+  /ts-node@10.9.2(@types/node@20.11.17)(typescript@5.3.3):
     resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
     hasBin: true
     peerDependencies:
@@ -3174,7 +3288,7 @@ packages:
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 20.10.6
+      '@types/node': 20.11.17
       acorn: 8.11.3
       acorn-walk: 8.3.1
       arg: 4.1.3
@@ -3235,7 +3349,6 @@ packages:
 
   /undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
-    dev: false
 
   /utf-8-validate@5.0.10:
     resolution: {integrity: sha512-Z6czzLq4u8fPOyx7TU6X3dvUZVvoJmxSQ+IcrlmagKhilxlhZgxPK6C5Jqbkw1IDUmFTM+cz9QDnnLTwDz/2gQ==}
@@ -3706,7 +3819,7 @@ packages:
       lodash.clonedeep: 4.5.0
     dev: false
 
-  file:../bridge(@acala-network/api@5.1.2)(@acala-network/eth-providers@2.7.19)(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)(@polkadot/keyring@12.6.2)(@polkadot/util-crypto@12.6.2)(ethers@6.9.2)(react-dom@18.2.0)(react-is@18.2.0)(react@18.2.0):
+  file:../bridge(@acala-network/api@6.1.0)(@acala-network/eth-providers@2.7.20)(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)(@polkadot/keyring@12.6.2)(@polkadot/util-crypto@12.6.2)(ethers@6.9.2)(react-dom@18.2.0)(react-is@18.2.0)(react@18.2.0):
     resolution: {directory: ../bridge, type: directory}
     id: file:../bridge
     name: '@polkawallet/bridge'
@@ -3716,9 +3829,9 @@ packages:
       '@polkadot/api': 10.10.1
       ethers: ^5
     dependencies:
-      '@acala-network/api': 5.1.2(@polkadot/api@10.10.1)(@polkadot/types@10.10.1)
-      '@acala-network/sdk': 4.1.9-13(@acala-network/api@5.1.2)(@acala-network/eth-providers@2.7.19)(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)(ethers@6.9.2)
-      '@acala-network/sdk-core': 4.1.9-13(@acala-network/types@6.0.4)(@polkadot/api@10.10.1)
+      '@acala-network/api': 6.1.0(@polkadot/api@10.10.1)
+      '@acala-network/sdk': 4.1.9-13(@acala-network/api@6.1.0)(@acala-network/eth-providers@2.7.20)(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)(ethers@6.9.2)
+      '@acala-network/sdk-core': 4.1.9-13(@acala-network/types@6.1.0)(@polkadot/api@10.10.1)
       '@polkadot/api': 10.10.1
       '@polkadot/apps-config': 0.133.1(@polkadot/keyring@12.6.2)(@polkadot/util-crypto@12.6.2)(react-dom@18.2.0)(react-is@18.2.0)(react@18.2.0)
       '@polkadot/types': 10.10.1

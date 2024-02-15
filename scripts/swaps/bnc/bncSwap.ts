@@ -1,27 +1,35 @@
-import * as fs from 'fs';
-import path from 'path';
+// import * as fs from 'fs';
+// import path from 'path';
 // import { MyJunction, MyAsset, MyAssetRegistryObject, MyMultiLocation } from '../../assets/asset_types';
 // import { MyLp } from '../lp_types';
 // const axios = require('axios').default;
-import axios from 'axios';
+// import axios from 'axios';
+// const axios = await import('axios');
 // const axios = await import('axios');
 // import * from 'axios';
-import { WsProvider, Keyring, ApiPromise } from '@polkadot/api';
+// import { WsProvider, Keyring, ApiPromise } from '@polkadot/api';
 
-import { firstValueFrom } from 'rxjs';;
-import { cryptoWaitReady } from '@polkadot/util-crypto';
-import { SmartRouterV2 } from '@zenlink-dex/sdk-router';
-import { FixedPointNumber } from '@acala-network/sdk-core';
-import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
-import { ModuleBApi, ModuleBChainOption, BifrostConfig } from '@zenlink-dex/sdk-api';
-// const sdkApi = await import('@zenlink-dex/sdk-api');
-// const { ModuleBApi } = sdkApi;
+// import { firstValueFrom } from 'rxjs';;
+// import { cryptoWaitReady } from '@polkadot/util-crypto';
+// import { SmartRouterV2 } from '@zenlink-dex/sdk-router';
+// import { FixedPointNumber } from '@acala-network/sdk-core';
+// import { SwapInstruction } from './../../instructions/types';
+// const SwapInstruction = require('./../../instructions/types');
+// import { ModuleBApi, BifrostConfig } from '@zenlink-dex/sdk-api';
+// import { Percent, Token, TokenAmount,  StablePair } from '@zenlink-dex/sdk-core';
+const firstValueFrom = require('rxjs').firstValueFrom;
+const { SmartRouterV2 } = require('@zenlink-dex/sdk-router');
+const { FixedPointNumber } = require('@acala-network/sdk-core');
+const { ModuleBApi, BifrostConfig } = require('@zenlink-dex/sdk-api');
+const { Percent, Token, TokenAmount,  StablePair, Currency } = require('@zenlink-dex/sdk-core');
+const { cryptoWaitReady } = require('@polkadot/util-crypto');
+const { WsProvider, Keyring, ApiPromise } = require('@polkadot/api');
 
-// import { BifrostConfig } from '@zenlink-dex/sdk-api/chain/config';
-import { Percent, Token, TokenAmount,  StablePair } from '@zenlink-dex/sdk-core';
-import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
-import { ISubmittableResult, IU8a } from '@polkadot/types/types'
-import { increaseIndex } from './../instructions/utils.ts';
+
+
+
+
+
 // import { Token } from '@zenlink-dex/sdk-core';
 // import sdkRouter from '@zenlink-dex/sdk-router';
 // import sdkCore from '@zenlink-dex/sdk-core';
@@ -32,42 +40,17 @@ import { increaseIndex } from './../instructions/utils.ts';
 // const { SmartRouterV2 } = await import ('@zenlink-dex/sdk-router');
 
 const wsLocalChain = "ws://172.26.130.75:8009"
-const bncRpc = "wss://bifrost-parachain.api.onfinality.io/public-ws"
-// const BifrostConfig = {
-//   chainName: 'Bifrost',
-//   networkId: 200,
-//   chainId: 2001,
-//   dexType: 'moduleB',
-//   wss: ['wss://bifrost-parachain.api.onfinality.io/public-ws']
-// };
-export async function getBncSwapExtrinsic(
-    startAssetSymbol: string, 
-    endAssetSymbol: string, 
-    amountIn: number, 
-    expectedAmountOut: number, 
-    swapInstructions: SwapInstruction[], 
-    test: boolean = false, 
-    txIndex: number, 
-    extrinsicIndex: IndexObject, 
-    instructionIndex: number[], 
-    pathNodeValues: PathNodeValues,
-    priceDeviationPercent: number = 2
-    ): Promise<SwapExtrinsicContainer> {
+const axios = require('axios').default;
+async function getBncSwapExtrinsic(startAssetSymbol: string, endAssetSymbol: string, amountIn: number, expectedAmountOut: number, swapInstructions: any): Promise<any> {
+    // const axios = await import('axios');
     const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-list/main/tokens/bifrost-kusama.json');
     const tokensMeta = response.data.tokens;
     await cryptoWaitReady();
 
-    let rpc = test ? wsLocalChain : bncRpc
     // prepare wallet
     const keyring = new Keyring({ type: 'sr25519', ss58Format: 6 });
     const PHRASE = 'YOUR SEEDS';
     const accountPair = keyring.addFromUri("//Alice");
-
-
-    let assetNodes = [swapInstructions[0].assetNodes[0]]
-    swapInstructions.forEach((instruction) => {
-      assetNodes.push(instruction.assetNodes[1])
-    })
 
     console.log(`account address ${accountPair.address}`);
 
@@ -76,22 +59,10 @@ export async function getBncSwapExtrinsic(
       return new Token(item);
     });
 
-    let tokenInSymbol, tokenOutSymbol;
-    if(startAssetSymbol.toLowerCase() == 'aseed' || startAssetSymbol.toLowerCase() == 'kusd' ){
-      tokenInSymbol = 'aUSD'
-    } else{
-      tokenInSymbol = startAssetSymbol
-    }
-    if(endAssetSymbol.toLowerCase() == 'aseed' || endAssetSymbol.toLowerCase() == 'kusd' ){
-      tokenOutSymbol = 'aUSD'
-    } else{
-      tokenOutSymbol = endAssetSymbol
-    }
-
-    const tokenIn = tokens.find((item) => item.symbol.toLowerCase() === tokenInSymbol.toLowerCase());
-    const tokenOut = tokens.find((item) => item.symbol.toLowerCase() === tokenOutSymbol.toLowerCase());
-    console.log('token0', tokenIn);
-    console.log('token1', tokenOut);
+    const token0 = tokens.find((item) => item.symbol === startAssetSymbol);
+    const token1 = tokens.find((item) => item.symbol === endAssetSymbol);
+    console.log('token0', token0);
+    console.log('token1', token1);
 
     const tokensMap: Record<string, typeof Token> = {};
     tokens.reduce((total: any, cur: any) => {
@@ -100,22 +71,14 @@ export async function getBncSwapExtrinsic(
     }, tokensMap);
 
     // generate the dex api
-    const provider = new WsProvider(rpc);
+    const provider = new WsProvider(wsLocalChain);
     const dexApi = new ModuleBApi(
       provider,
       BifrostConfig
     );
 
-
-
     await provider.isReady;
     await dexApi.initApi(); // init the api;
-
-    let accountNonce = await dexApi.api.query.system.account(accountPair.address)
-    // let accountNonce = await api.query.system.account(signer.address)
-    let nonce = accountNonce.nonce.toNumber()
-    nonce += txIndex
-    // console.log("BNC Nonce: " + nonce)
 
     const account = accountPair.address;
     const standardPairs = await firstValueFrom(dexApi.standardPairOfTokens(tokens));
@@ -123,115 +86,57 @@ export async function getBncSwapExtrinsic(
     const stablePairs = await firstValueFrom(dexApi.stablePairOf());
     const stablePools = await firstValueFrom(dexApi.stablePoolOfPairs(stablePairs));
 
-    let tokenInAmountFN = new FixedPointNumber(amountIn, tokenIn.decimals);
-    const tokenInAmount = new TokenAmount(tokenIn, tokenInAmountFN.toChainData());
-    const tokenOutAmountFn = new FixedPointNumber(expectedAmountOut, tokenOut.decimals);
-    
-    let reversePriceDev = tokenInAmountFN.mul(new FixedPointNumber(5)).div(new FixedPointNumber(100))
-    let reverseExpectedAmountOut = tokenInAmountFN.sub(reversePriceDev)
-    let reverseOut = new TokenAmount(tokenIn, reverseExpectedAmountOut.toChainData());
-    
-
+    let token0AmountFN = new FixedPointNumber(amountIn, token0.decimals);
+    const token0Amount = new TokenAmount(token0, token0AmountFN.toChainData());
     // use smart router to get the best trade;
     const result = SmartRouterV2.swapExactTokensForTokens(
-      tokenInAmount,
-      tokenOut,
+      token0Amount,
+      token1,
       standardPools,
       stablePools
     );
   
     const trade = result.trade;
-    // trade.minimumAmountOut(new Percent(5, 100));
     if (!trade) {
       console.log('There is no match for this trade');
       return;
     }
-    
-    // Allow for 2% price deviation from expected value,should probably be tighter
-    let slipAmount = tokenOutAmountFn.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-    let amountOutFnMinusSlip = tokenOutAmountFn.sub(slipAmount)
-
-    console.log(`Token out amount: ${tokenOutAmountFn.toChainData()} Minus slip: ${amountOutFnMinusSlip.toChainData()}`)
-    console.log(`Slip amount: ${slipAmount.toChainData()}`)
-
-    const tokenOutAmount = new TokenAmount(tokenOut, amountOutFnMinusSlip.toChainData());
+  
+    console.log(
+      'The match trade is swap', `${
+        trade.inputAmount.toPrecision(8)} ${trade.inputAmount.token.symbol
+        } to ${trade.outputAmount.toPrecision(8)} ${trade.outputAmount.token.symbol}`
+    );
+    console.log('The executionPrice is',
+    `1 ${trade.inputAmount.token.symbol} = ${trade.executionPrice.toPrecision(8)} ${trade.outputAmount.token.symbol}`
+    );
+    console.log('The route path is ', trade.route.tokenPath.map((item) => item.symbol).join(' -> '));
+  
+    console.log('The route path is ', trade.route.routePath.map((item) => item.stable));
+  
+    // set slippage of 5%
+    const slippageTolerance = new Percent(5, 100);
     if (!dexApi.api) return;
   
     const blockNumber = await dexApi.api.query.system.number();
   
-    const deadline = Number(blockNumber.toString()) + 40; // deadline is block height
+    const deadline = Number(blockNumber.toString()) + 20; // deadline is block height
   
-    // console.log('deadline', deadline);
+    console.log('deadline', deadline);
   
     // get the extrinsics of this swap
     const extrinsics = dexApi.swapExactTokensForTokens(
       trade.route.routePath, // path
       trade.inputAmount, // input token and amount
-      tokenOutAmount, // min amount out
+      trade.minimumAmountOut(slippageTolerance), // min amount out
       account, // recipient
       deadline // deadline
-    ); 
-
-    let reverseInAmount = tokenOutAmount
-    let reverseTokenOut = tokenIn;
-    const reverseResult = SmartRouterV2.swapExactTokensForTokens(
-      reverseInAmount,
-      reverseTokenOut,
-      standardPools,
-      stablePools
     );
-    const reverseTrade = reverseResult.trade;
-    if(!reverseTrade){
-      throw new Error("Cant construct reverse trade BNC")
-    }
-    let reversePath = reverseTrade.route.routePath
-    let reverseExtrinsic: ReverseSwapExtrinsicParams = {
-      chainId: 2001,
-      chain: "BifrostKusama",
-      path: trade.route.routePath.reverse(),
-      supply: reverseInAmount,
-      supplyFn: amountOutFnMinusSlip,
-      target: reverseOut,
-      targetFn: reverseExpectedAmountOut,
-      recipient: account,
-      deadline: deadline,
-      call: "swapExactTokensForTokens",
-      moduleBApi: dexApi,
-      supplyAssetId: startAssetSymbol,
-      targetAssetId: endAssetSymbol
-    }
   
     if (!extrinsics) return;
-    // console.log(JSON.stringify(extrinsics, null, 2));
-    // let assetNodes 
-    let swapTxContainer: SwapExtrinsicContainer = {
-      chainId: 2001,
-      chain: "BifrostKusama",
-      assetNodes: assetNodes,
-      extrinsic: extrinsics,
-      extrinsicIndex: extrinsicIndex.i,
-      instructionIndex: instructionIndex,
-      nonce: nonce,
-      assetAmountIn: tokenInAmountFN,
-      assetSymbolIn: startAssetSymbol,
-      // pathInLocalId: tokenIn.assetId,
-      assetSymbolOut: endAssetSymbol,
-      // pathOutLocalId: tokenOut.assetId,
-      pathInLocalId: pathNodeValues.pathInLocalId,
-      pathOutLocalId: pathNodeValues.pathOutLocalId,
-      pathSwapType: pathNodeValues.pathSwapType,
-      pathAmount: amountIn,
-      expectedAmountOut: tokenOutAmountFn,
-      api: dexApi.api,
-      reverseTx: reverseExtrinsic
-    }
-
-    increaseIndex(extrinsicIndex)
-
-    return swapTxContainer
+    return extrinsics
 
 }
-
 
 // async function example () {
 //     const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-list/main/tokens/bifrost-kusama.json');
@@ -358,6 +263,13 @@ export async function getBncSwapExtrinsic(
 //   }
 
 async function run(){
-  // get("KSM", "BNC", 1)
+  getBncSwapExtrinsic("KSM", "BNC", 1, 0, [])
 }
 // run()
+
+// module.exports = {
+//     getBncSwapExtrinsic
+// };
+module.exports = {
+    getBncSwapExtrinsic
+};

@@ -1,3 +1,13 @@
+#custom ignore folders/files
+/scripts/instructions/arbExecutionResults
+/scripts/instructions/instructionResults
+/scripts/instructions/reverse
+/scripts/instructions/submittableExtrinsics
+/scripts/instructions/swapExecutionResults
+/scripts/instructions/swapExecutionStats
+/scripts/instructions/transferExecutionResults
+
+
 # Logs
 logs
 *.log

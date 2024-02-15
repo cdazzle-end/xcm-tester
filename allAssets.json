@@ -15,6 +15,41 @@
   {
     "tokenData": {
       "network": "kusama",
+      "chain": 2048,
+      "localId": "XRT",
+      "name": "Robonomics Native Token",
+      "symbol": "XRT",
+      "decimals": "9",
+      "deposit": "0",
+      "isFrozen": false
+    },
+    "hasLocation": true,
+    "tokenLocation": {
+      "X1": {
+        "Parachain": "2048"
+      }
+    }
+  },
+  {
+    "tokenData": {
+      "network": "kusama",
+      "chain": 2004,
+      "localId": "PHA",
+      "name": "Phala Native Token",
+      "symbol": "PHA",
+      "decimals": "12",
+      "minimalBalance": "40000000000"
+    },
+    "hasLocation": true,
+    "tokenLocation": {
+      "X1": {
+        "Parachain": "2004"
+      }
+    }
+  },
+  {
+    "tokenData": {
+      "network": "kusama",
       "chain": 2001,
       "localId": {
         "VSBond": [
@@ -5646,32 +5681,6 @@
     "tokenData": {
       "network": "kusama",
       "chain": 1000,
-      "localId": "11",
-      "name": "USDT",
-      "symbol": "USDT",
-      "decimals": "4",
-      "deposit": "6,691,999,680",
-      "isFrozen": false
-    },
-    "hasLocation": true,
-    "tokenLocation": {
-      "X3": [
-        {
-          "Parachain": "1000"
-        },
-        {
-          "PalletInstance": "50"
-        },
-        {
-          "GeneralIndex": "11"
-        }
-      ]
-    }
-  },
-  {
-    "tokenData": {
-      "network": "kusama",
-      "chain": 1000,
       "localId": "224",
       "name": "SikCoin",
       "symbol": "SIK",
@@ -8368,32 +8377,6 @@
         },
         {
           "GeneralIndex": "23"
-        }
-      ]
-    }
-  },
-  {
-    "tokenData": {
-      "network": "kusama",
-      "chain": 1000,
-      "localId": "19840",
-      "name": "Tether USD",
-      "symbol": "USDt",
-      "decimals": "3",
-      "deposit": "669,399,966",
-      "isFrozen": false
-    },
-    "hasLocation": true,
-    "tokenLocation": {
-      "X3": [
-        {
-          "Parachain": "1000"
-        },
-        {
-          "PalletInstance": "50"
-        },
-        {
-          "GeneralIndex": "19840"
         }
       ]
     }

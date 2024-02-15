@@ -11,7 +11,8 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@acala-network/api": "^5.1.1",
+    "@acala-network/api": "^6.1.0",
+    "@acala-network/eth-providers": "^2.7.20",
     "@acala-network/sdk": "^4.1.9-7",
     "@acala-network/sdk-core": "^4.1.9-7",
     "@acala-network/sdk-swap": "^4.1.9-13",
@@ -22,19 +23,24 @@
     "@mangata-finance/type-definitions": "^2.1.2",
     "@mangata-finance/types": "^2.2.2",
     "@moonbeam-network/api-augment": "^0.2600.0",
+    "@parallel-finance/api": "^2.0.1",
     "@paraspell/sdk": "file:../xcm-sdk",
     "@polkadot/api": "10.10.1",
     "@polkadot/api-base": "^10.11.1",
     "@polkadot/apps-config": "^0.133.1",
+    "@polkadot/keyring": "^12.6.2",
     "@polkadot/types": "^10.11.1",
     "@polkadot/util": "^12.6.1",
+    "@polkadot/util-crypto": "^12.6.2",
     "@polkawallet/bridge": "file:../bridge",
     "@zenlink-dex/sdk-api": "0.0.4",
     "@zenlink-dex/sdk-core": "0.0.4",
     "@zenlink-dex/sdk-router": "0.0.4",
+    "axios": "^1.6.7",
     "dotenv": "^16.3.1",
     "ethers": "^6.9.2",
     "json-stringify-safe": "^5.0.1",
+    "rxjs": "^7.8.1",
     "solc": "0.8.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
@@ -50,5 +56,8 @@
     "@polkadot/util": "^12.6.1",
     "@acala-network/sdk": "^4.1.9-12",
     "@acala-network/sdk-core": "^4.1.9-12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17"
   }
 }
