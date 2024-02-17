@@ -22,14 +22,7 @@ import { Percent, Token, TokenAmount,  StablePair } from '@zenlink-dex/sdk-core'
 import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
 import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 import { increaseIndex } from './../instructions/utils.ts';
-// import { Token } from '@zenlink-dex/sdk-core';
-// import sdkRouter from '@zenlink-dex/sdk-router';
-// import sdkCore from '@zenlink-dex/sdk-core';
-// import sdkApi from '@zenlink-dex/sdk-api';
-// const { ModuleBApi, BifrostConfig } = await import ('@zenlink-dex/sdk-api');
-// const { ModuleBApi, BifrostConfig } = sdkApi;
-// const { Percent, Token, TokenAmount,  StablePair, Currency } = await import('@zenlink-dex/sdk-core')
-// const { SmartRouterV2 } = await import ('@zenlink-dex/sdk-router');
+import { getSigner } from './../instructions/utils.ts';
 
 const wsLocalChain = "ws://172.26.130.75:8009"
 const bncRpc = "wss://bifrost-parachain.api.onfinality.io/public-ws"
@@ -46,7 +39,7 @@ export async function getBncSwapExtrinsic(
     amountIn: number, 
     expectedAmountOut: number, 
     swapInstructions: SwapInstruction[], 
-    test: boolean = false, 
+    chopsticks: boolean = true, 
     txIndex: number, 
     extrinsicIndex: IndexObject, 
     instructionIndex: number[], 
@@ -57,7 +50,7 @@ export async function getBncSwapExtrinsic(
     const tokensMeta = response.data.tokens;
     await cryptoWaitReady();
 
-    let rpc = test ? wsLocalChain : bncRpc
+    let rpc = chopsticks ? wsLocalChain : bncRpc
     // prepare wallet
     const keyring = new Keyring({ type: 'sr25519', ss58Format: 6 });
     const PHRASE = 'YOUR SEEDS';
@@ -234,7 +227,7 @@ export async function getBncSwapExtrinsic(
 
 export async function getBncSwapExtrinsicDynamic( 
   swapInstructions: SwapInstruction[], 
-  test: boolean = false, 
+  chopsticks: boolean = true, 
   txIndex: number, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[], 
@@ -250,11 +243,9 @@ export async function getBncSwapExtrinsicDynamic(
   let amountIn = swapInstructions[0].assetNodes[0].pathValue;
   let expectedAmountOut = swapInstructions[swapInstructions.length - 1].assetNodes[1].pathValue;
 
-  let rpc = test ? wsLocalChain : bncRpc
-  // prepare wallet
-  const keyring = new Keyring({ type: 'sr25519', ss58Format: 6 });
-  const PHRASE = 'YOUR SEEDS';
-  const accountPair = keyring.addFromUri("//Alice");
+  let rpc = chopsticks ? wsLocalChain : bncRpc
+
+  let accountPair = await getSigner(chopsticks, false);
 
 
   let assetNodes = [swapInstructions[0].assetNodes[0]]
@@ -262,7 +253,7 @@ export async function getBncSwapExtrinsicDynamic(
     assetNodes.push(instruction.assetNodes[1])
   })
 
-  console.log(`account address ${accountPair.address}`);
+  // console.log(`account address ${accountPair.address}`);
 
   // generate Tokens
   const tokens = tokensMeta.map((item: any) => {

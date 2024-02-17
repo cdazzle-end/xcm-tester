@@ -40,6 +40,7 @@ import { AssetNode } from 'scripts/instructions/AssetNode.ts'
 // import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
 // const { options } = require('@acala-network/api');
 // import { Fixed18, convertToFixed18, calcSwapTargetAmount } from '@acala-network/api';
+import { getSigner } from '../instructions/utils.ts'
 
 const wsLocalChain = "ws://172.26.130.75:8008"
 // const wsLocalDestination = "ws://172.26.130.75:8008" 
@@ -120,21 +121,21 @@ export async function getKarSwapExtrinsicBestPath(
     amountIn: number, 
     expectedAmountOut: number, 
     swapInstructions: SwapInstruction[], 
-    test: boolean = false, 
+    chopsticks: boolean = false, 
     txIndex: number, 
     extrinsicIndex: IndexObject, 
     instructionIndex: number[], 
     pathNodeValues: PathNodeValues,
     priceDeviationPercent: number = 2
     ): Promise<SwapExtrinsicContainer[]>{
-    let rpc = test ? wsLocalChain : karRpc
+    let rpc = chopsticks ? wsLocalChain : karRpc
     const provider = new WsProvider(rpc);
     const api = new ApiPromise(options({ provider }));
     await api.isReady;
 
     // console.log(`SWAP INSTRUCTION ${JSON.stringify(swapInstructions, null, 2)}`)
 
-    const signer = await getSigner();
+    const signer = await getSigner(chopsticks, false);
   
     let accountNonce = await api.query.system.account(signer.address)
     let nonce = accountNonce.nonce.toNumber()
@@ -263,7 +264,7 @@ export async function getKarSwapExtrinsicDynamic(
     amountIn: number, 
     expectedAmountOut: number, 
     swapInstructions: SwapInstruction[], 
-    chopsticks: boolean = false, 
+    chopsticks: boolean = true, 
     txIndex: number, 
     extrinsicIndex: IndexObject, 
     instructionIndex: number[], 
@@ -276,7 +277,7 @@ export async function getKarSwapExtrinsicDynamic(
     await api.isReady;
 
     
-    const signer = await getSigner();
+    const signer = await getSigner(chopsticks, false);
   
     let accountNonce = await api.query.system.account(signer.address)
     let nonce = accountNonce.nonce.toNumber()
@@ -459,159 +460,159 @@ function isWithinPercentage(expected: FixedPointNumber, actual: FixedPointNumber
 
     return percentageDifference.isLessOrEqualTo(new FixedPointNumber(thresholdPercentage));
 }
-async function swapWithSDK(){
-    // const api = await getPolkadotApi();
-    const provider = new WsProvider(wsLocalChain);
-    const api = new ApiPromise(options({ provider }));
-    await api.isReady;
+// async function swapWithSDK(){
+//     // const api = await getPolkadotApi();
+//     const provider = new WsProvider(wsLocalChain);
+//     const api = new ApiPromise(options({ provider }));
+//     await api.isReady;
 
-    const signer = await getSigner();
+//     const signer = await getSigner();
   
-    // const wallet = new WalletPromise(api);
-    const wallet = await new Wallet(api)
-    await wallet.isReady
-    const allTokens = await wallet.getTokens()
+//     // const wallet = new WalletPromise(api);
+//     const wallet = await new Wallet(api)
+//     await wallet.isReady
+//     const allTokens = await wallet.getTokens()
 
-    for( let key in allTokens){
-        if(allTokens.hasOwnProperty(key)){
-            console.log(allTokens[key].name)
-        }
-    }
+//     for( let key in allTokens){
+//         if(allTokens.hasOwnProperty(key)){
+//             console.log(allTokens[key].name)
+//         }
+//     }
 
 
-    const karToken = wallet.getToken("KAR");
-    const kusdToken = wallet.getToken("KUSD");
+//     const karToken = wallet.getToken("KAR");
+//     const kusdToken = wallet.getToken("KUSD");
 
-    const path = [karToken, kusdToken] as [Token, Token];
-    const supplyAmount = new FixedPointNumber(10, karToken.decimal);
-    let supplyConverted = supplyAmount.toChainData();
-    console.log("Supply amount: " + supplyConverted)
-    // set slippage 1%
-    const slippage = new FixedPointNumber(0.01);
-    const configs = {
-        api: api,
-        wallet: wallet,
-    }
-    const dex = new AcalaDex(configs)
-    const dexConfigs = {
-        api: api,
-        wallet: wallet,
-        providers: [dex]
-    }
-    const aDex = new AggregateDex(dexConfigs);
-    const swapParams: AggregateDexSwapParams = {
-        source: "aggregate",
-        mode: "EXACT_INPUT",
-        path: path,
-        input: supplyAmount,
-        acceptiveSlippage: slippage.toNumber(),
-    }
-    // const swapParams = {
-    //     source: "aggregate",
-    //     mode: "EXACT_INPUT",
-    //     path: path,
-    //     input: supplyAmount,
-    //     acceptiveSlippage: slippage.toNumber(),
-    // }
-    let swapResults = await firstValueFrom(aDex.swap(swapParams))
-    console.log(swapResults.result)
-    console.log(JSON.stringify(swapResults.tracker[0], null, 2))
-    let tradingTx = aDex.getTradingTx(swapResults)
-    console.log(JSON.stringify(tradingTx.toHuman(), null, 2))
-    let txResult = await tradingTx.signAndSend(signer)
+//     const path = [karToken, kusdToken] as [Token, Token];
+//     const supplyAmount = new FixedPointNumber(10, karToken.decimal);
+//     let supplyConverted = supplyAmount.toChainData();
+//     console.log("Supply amount: " + supplyConverted)
+//     // set slippage 1%
+//     const slippage = new FixedPointNumber(0.01);
+//     const configs = {
+//         api: api,
+//         wallet: wallet,
+//     }
+//     const dex = new AcalaDex(configs)
+//     const dexConfigs = {
+//         api: api,
+//         wallet: wallet,
+//         providers: [dex]
+//     }
+//     const aDex = new AggregateDex(dexConfigs);
+//     const swapParams: AggregateDexSwapParams = {
+//         source: "aggregate",
+//         mode: "EXACT_INPUT",
+//         path: path,
+//         input: supplyAmount,
+//         acceptiveSlippage: slippage.toNumber(),
+//     }
+//     // const swapParams = {
+//     //     source: "aggregate",
+//     //     mode: "EXACT_INPUT",
+//     //     path: path,
+//     //     input: supplyAmount,
+//     //     acceptiveSlippage: slippage.toNumber(),
+//     // }
+//     let swapResults = await firstValueFrom(aDex.swap(swapParams))
+//     console.log(swapResults.result)
+//     console.log(JSON.stringify(swapResults.tracker[0], null, 2))
+//     let tradingTx = aDex.getTradingTx(swapResults)
+//     console.log(JSON.stringify(tradingTx.toHuman(), null, 2))
+//     let txResult = await tradingTx.signAndSend(signer)
     
-    console.log(txResult.toString())
-    await api.disconnect()
-}
+//     console.log(txResult.toString())
+//     await api.disconnect()
+// }
 
-async function tradingPaths(){
-    const provider = new WsProvider(wsLocalChain);
-    const api = new ApiPromise(options({ provider }));
-    await api.isReady;
+// async function tradingPaths(){
+//     const provider = new WsProvider(wsLocalChain);
+//     const api = new ApiPromise(options({ provider }));
+//     await api.isReady;
 
-    const signer = await getSigner();
+//     const signer = await getSigner();
   
-    // const wallet = new WalletPromise(api);
-    const wallet = new Wallet(api)
-    await wallet.isReady
+//     // const wallet = new WalletPromise(api);
+//     const wallet = new Wallet(api)
+//     await wallet.isReady
 
-    const dex = new AcalaDex({api, wallet})
-    const dexConfigs = {
-        api: api,
-        wallet: wallet,
-        providers: [dex]
-    }
+//     const dex = new AcalaDex({api, wallet})
+//     const dexConfigs = {
+//         api: api,
+//         wallet: wallet,
+//         providers: [dex]
+//     }
 
-    const karToken = wallet.getToken("KAR");
-    const kusdToken = wallet.getToken("KUSD");
-    const path = [karToken, kusdToken] as [Token, Token];
+//     const karToken = wallet.getToken("KAR");
+//     const kusdToken = wallet.getToken("KUSD");
+//     const path = [karToken, kusdToken] as [Token, Token];
 
-    const supplyAmount = new FixedPointNumber(10, karToken.decimal);
-    const slippage = new FixedPointNumber(0.01);
+//     const supplyAmount = new FixedPointNumber(10, karToken.decimal);
+//     const slippage = new FixedPointNumber(0.01);
 
-    const aDex = new AggregateDex(dexConfigs);
+//     const aDex = new AggregateDex(dexConfigs);
 
-    let tradingPaths = aDex.getTradingPaths(path[0], path[1], dex.source)
-    console.log(JSON.stringify(tradingPaths, null, 2))
+//     let tradingPaths = aDex.getTradingPaths(path[0], path[1], dex.source)
+//     console.log(JSON.stringify(tradingPaths, null, 2))
 
-    // let useablePaths = this.getTradingPaths(path[0], path[1]);
+//     // let useablePaths = this.getTradingPaths(path[0], path[1]);
 
 
-      // remove include other source path when source is not aggregate
-      tradingPaths = tradingPaths.filter((path) => {
-        console.log("Path: " + JSON.stringify(path, null, 2))
-        return path.reduce((acc, item) => {
-            console.log("Item: " + JSON.stringify(item, null, 2) + " Source: " + item[0] + " Acc: " + acc)
-          return acc && dex.source === item[0];
-        }, true as boolean);
-      });
-}
+//       // remove include other source path when source is not aggregate
+//       tradingPaths = tradingPaths.filter((path) => {
+//         console.log("Path: " + JSON.stringify(path, null, 2))
+//         return path.reduce((acc, item) => {
+//             console.log("Item: " + JSON.stringify(item, null, 2) + " Source: " + item[0] + " Acc: " + acc)
+//           return acc && dex.source === item[0];
+//         }, true as boolean);
+//       });
+// }
 
-async function swapWithDex(){
-        // const api = await getPolkadotApi();
-        const provider = new WsProvider(wsLocalChain);
-        const api = new ApiPromise(options({ provider }));
-        await api.isReady;
+// async function swapWithDex(){
+//         // const api = await getPolkadotApi();
+//         const provider = new WsProvider(wsLocalChain);
+//         const api = new ApiPromise(options({ provider }));
+//         await api.isReady;
     
-    const signer = await getSigner();
-    const wallet = new Wallet(api);
-    await wallet.isReady
-    const allTokens = await wallet.getTokens()
+//     const signer = await getSigner(true, false);
+//     const wallet = new Wallet(api);
+//     await wallet.isReady
+//     const allTokens = await wallet.getTokens()
 
-    for( let key in allTokens){
-        if(allTokens.hasOwnProperty(key)){
-            console.log(allTokens[key].name)
-        }
-    }
+//     for( let key in allTokens){
+//         if(allTokens.hasOwnProperty(key)){
+//             console.log(allTokens[key].name)
+//         }
+//     }
 
-    const karToken = wallet.getToken("KAR");
-    const karCurrencyId = await karToken.toCurrencyId(api)
-    const kusdToken = wallet.getToken("KUSD");
-    const kusdCurrencyId = await kusdToken.toCurrencyId(api)
+//     const karToken = wallet.getToken("KAR");
+//     const karCurrencyId = await karToken.toCurrencyId(api)
+//     const kusdToken = wallet.getToken("KUSD");
+//     const kusdCurrencyId = await kusdToken.toCurrencyId(api)
 
-    const path = [karCurrencyId, kusdCurrencyId]
-    const supplyAmount = new FixedPointNumber(10, karToken.decimal);
-    let supplyConverted = supplyAmount.toChainData();
-    console.log("Supply amount: " + supplyConverted)
-    // set slippage 1%
-    const slippage = new FixedPointNumber(0.01);
+//     const path = [karCurrencyId, kusdCurrencyId]
+//     const supplyAmount = new FixedPointNumber(10, karToken.decimal);
+//     let supplyConverted = supplyAmount.toChainData();
+//     console.log("Supply amount: " + supplyConverted)
+//     // set slippage 1%
+//     const slippage = new FixedPointNumber(0.01);
   
-    const swapTx = api.tx.dex.swapWithExactSupply(path, supplyConverted, "0x0");
-    console.log(swapTx.toHuman())
-    let tx = await swapTx.signAndSend(signer);  
-    console.log(tx.toHuman())
-    await api.disconnect()
-}
+//     const swapTx = api.tx.dex.swapWithExactSupply(path, supplyConverted, "0x0");
+//     console.log(swapTx.toHuman())
+//     let tx = await swapTx.signAndSend(signer);  
+//     console.log(tx.toHuman())
+//     await api.disconnect()
+// }
 
-const getSigner = async () => {
-    await cryptoWaitReady()
-    const keyring = new Keyring({
-      type: "sr25519",
-    });
+// const getSigner = async () => {
+//     await cryptoWaitReady()
+//     const keyring = new Keyring({
+//       type: "sr25519",
+//     });
   
-    // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
-    return keyring.addFromUri("//Alice");
-  };
+//     // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
+//     return keyring.addFromUri("//Alice");
+//   };
 
 async function run(){
     // await karuraSwap();

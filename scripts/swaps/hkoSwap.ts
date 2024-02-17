@@ -7,7 +7,7 @@ const wsLocalChain = "ws://172.26.130.75:8012"
 const hkoWs = "wss://heiko-rpc.parallel.fi"
 import path from 'path'
 import { fileURLToPath } from 'url';
-import { increaseIndex } from './../instructions/utils.ts'
+import { increaseIndex, getSigner } from './../instructions/utils.ts'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -17,14 +17,14 @@ export async function getHkoSwapExtrinsic(
   assetInAmount: number, 
   assetOutAmount: number, 
   swapInstructions: any[], 
-  test: boolean = false, 
+  chopsticks: boolean = true, 
   txIndex: number, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
   pathNodeValues: PathNodeValues,
   priceDeviationPercent: number = 2
   ) {
-  let rpc = test ? wsLocalChain : hkoWs  
+  let rpc = chopsticks ? wsLocalChain : hkoWs  
   const api = await ApiPromise.create(options({
         provider: new WsProvider(rpc)
       }))
@@ -34,7 +34,7 @@ export async function getHkoSwapExtrinsic(
       assetNodes.push(instruction.assetNodes[1])
     })
 
-      let signer = await getSigner()
+      let signer = await getSigner(chopsticks, false)
 
       let accountNonce = await api.query.system.account(signer.address)
       let nonce = accountNonce.nonce.toNumber()
@@ -180,15 +180,15 @@ function getAssetById(id: number){
     return matchedAsset
 }
 
-const getSigner = async () => {
-    await cryptoWaitReady()
-    const keyring = new Keyring({
-      type: "sr25519",
-    });
+// const getSigner = async () => {
+//     await cryptoWaitReady()
+//     const keyring = new Keyring({
+//       type: "sr25519",
+//     });
   
-    // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
-    return keyring.addFromUri("//Alice");
-  };
+//     // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
+//     return keyring.addFromUri("//Alice");
+//   };
 
 // main()
 // getHkoSwapExtrinsic("KSM", "USDT", 1, 1, [])

@@ -25,8 +25,9 @@ import '@galacticcouncil/api-augment/basilisk';
 
 import { SubmittableExtrinsic } from '@polkadot/api/promise/types';
 import { ZERO, INFINITY, ONE, TradeRouter, PoolService, Router, BigNumber, Asset } from '@galacticcouncil/sdk';
-import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from "scripts/instructions/types";
+import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from "./../instructions/types.ts";
 import { increaseIndex } from './../instructions/utils.ts';
+import { getSigner } from './../instructions/utils.ts';
 
 // const gSdk = await import('@galacticcouncil/sdk');
 // const { ZERO, INFINITY, ONE, TradeRouter, PoolService, Router, BigNumber } = await import('@galacticcouncil/sdk');
@@ -44,7 +45,7 @@ export async function getBsxSwapExtrinsic(
   assetInAmount: number, 
   assetOutAmount: number, 
   swapInstructions: any[], 
-  test: boolean = false, 
+  chopsticks: boolean = false, 
   txIndex: number = 0, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
@@ -53,13 +54,13 @@ export async function getBsxSwapExtrinsic(
   ) {
   console.log("GETTING BSX SWAP EXTRINSIC")
   console.log(`startAssetSymbol: ${startAssetSymbol} destAssetSymbol: ${destAssetSymbol} assetInAmount: ${assetInAmount} assetOutAmount: ${assetOutAmount}`)
-  let rpc = test ? wsLocalChain : niceEndpoint
+  let rpc = chopsticks ? wsLocalChain : niceEndpoint
     const provider = new WsProvider(rpc);
     const api = new ApiPromise({ provider });
     await api.isReady;
     const poolService = new PoolService(api);
     const router = new TradeRouter(poolService);
-    let signer = await getSigner()
+    let signer = await getSigner(chopsticks, false)
     let accountNonce = await api.query.system.account(signer.address)
     let nonce = accountNonce.nonce.toNumber()
     nonce += txIndex
@@ -108,7 +109,6 @@ export async function getBsxSwapExtrinsic(
   
       let bestBuy = await router.getBestSell(assetIn.id, assetOut.id, assetInAmount.toString())
       let swapZero = bestBuy.toTx(number)
-      let key = await getSigner()
       let tx: SubmittableExtrinsic = swapZero.get()
       
       const route = tx.toHuman()["method"]["args"]["route"]
@@ -220,7 +220,7 @@ export async function getBsxSwapExtrinsicDynamic(
   assetInAmount: number, 
   assetOutAmount: number, 
   swapInstructions: any[], 
-  test: boolean = false, 
+  chopsticks: boolean = true, 
   txIndex: number = 0, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
@@ -229,13 +229,13 @@ export async function getBsxSwapExtrinsicDynamic(
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
     console.log("GETTING BSX SWAP EXTRINSIC")
     console.log(`startAssetSymbol: ${startAssetSymbol} destAssetSymbol: ${destAssetSymbol} assetInAmount: ${assetInAmount} assetOutAmount: ${assetOutAmount}`)
-    let rpc = test ? wsLocalChain : niceEndpoint
+    let rpc = chopsticks ? wsLocalChain : niceEndpoint
     const provider = new WsProvider(rpc);
     const api = new ApiPromise({ provider });
     await api.isReady;
     const poolService = new PoolService(api);
     const router = new TradeRouter(poolService);
-    let signer = await getSigner()
+    let signer = await getSigner(chopsticks, false)
     let accountNonce = await api.query.system.account(signer.address)
     let nonce = accountNonce.nonce.toNumber()
     nonce += txIndex
@@ -401,12 +401,12 @@ async function run(){
 
 // run()
 
-const getSigner = async () => {
-  await cryptoWaitReady()
-  const keyring = new Keyring({
-    type: "sr25519",
-  });
+// const getSigner = async () => {
+//   await cryptoWaitReady()
+//   const keyring = new Keyring({
+//     type: "sr25519",
+//   });
 
-  // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
-  return keyring.addFromUri("//Alice");
-};
+//   // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
+//   return keyring.addFromUri("//Alice");
+// };

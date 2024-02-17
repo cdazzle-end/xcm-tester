@@ -17,9 +17,11 @@ import BN from 'bn.js';
 import {toBigInt} from 'ethers'
 import { BigNumberish } from 'ethers';
 import { BatchSwapParams, SwapData } from './utils/types.ts';
-import {SwapInstruction} from '../../instructions/types.ts'
+import {ChainNonces, IndexObject, SwapExtrinsicContainer, SwapInstruction} from '../../instructions/types.ts'
 import { fileURLToPath } from 'url';
 import { AssetNode } from '../../instructions/AssetNode.ts';
+import { increaseIndex } from '../../instructions/utils.ts';
+import { FixedPointNumber } from '@acala-network/sdk-core';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 console.log(__dirname)
 // Patch BigInt for JSON serialization
@@ -458,24 +460,26 @@ async function testXcTokensMoonbase(){
 
     // })
 }
-export async function getMovrSwapTx(swapInstructions: SwapInstruction[], test: boolean): Promise<BatchSwapParams>{
-    let liveProvider;
+export async function getMovrSwapTx(swapInstructions: SwapInstruction[], testnet: boolean): Promise<BatchSwapParams>{
+    let rpcProvider;
     // let testProvider = new ethers.JsonRpcProvider(localRpc)
-    let liveWallet;
+    let wallet;
     let batchContractAddress;
-    if(test){
-        liveProvider = new ethers.JsonRpcProvider(localRpc)
-        liveWallet = new ethers.Wallet(test_account_pk, liveProvider)
+    if(testnet){
+        //Local testnet and test account
+        rpcProvider = new ethers.JsonRpcProvider(localRpc)
+        wallet = new ethers.Wallet(test_account_pk, rpcProvider)
         batchContractAddress = batchContractAddress2
     } else {
-        liveProvider = new ethers.JsonRpcProvider(defaultRpc)
-        liveWallet = new ethers.Wallet(liveWallet3Pk, liveProvider)
+        //Live network and live wallet
+        rpcProvider = new ethers.JsonRpcProvider(defaultRpc)
+        wallet = new ethers.Wallet(liveWallet3Pk, rpcProvider)
         batchContractAddress = liveBatchContract
     }
 
 
-    let movrContract = new ethers.Contract(movrContractAddress, erc20Abi, liveWallet)
-    const batchContract = await new ethers.Contract(batchContractAddress, batchArtifact.abi, liveWallet)
+    let movrContract = new ethers.Contract(movrContractAddress, erc20Abi, wallet)
+    const batchContract = await new ethers.Contract(batchContractAddress, batchArtifact.abi, wallet)
     let tokenPathLocalId = [];
     let tokenPathAssetNodes: AssetNode[] = []
     let tokenPathAddresses = []
@@ -501,8 +505,8 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], test: b
 
         // If first token is MOVR, check if we need to wrap first
         if(i == 0 && tokenPathAddresses[i] == movrContractAddress){
-            let wmovrBalance = await movrContract.balanceOf(liveWallet.address)
-            let nativeMovrBalance = await liveWallet.provider.getBalance(liveWallet.address)
+            let wmovrBalance = await movrContract.balanceOf(wallet.address)
+            let nativeMovrBalance = await wallet.provider.getBalance(wallet.address)
             if(wmovrBalance < inputAmount && nativeMovrBalance < inputAmount){
                 throw new Error("Not enough movr or wmovr for input amount")
             } else if (wmovrBalance < inputAmount){
@@ -596,7 +600,7 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], test: b
     let batchSwapParams: BatchSwapParams = {
         chainId: 2023,
         batchContract: batchContract,
-        wallet: liveWallet,
+        wallet: wallet,
         dexAddresses: dexAddresses,
         abiIndexes: abiIndexes,
         inputTokens: inputTokens,
@@ -614,6 +618,79 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], test: b
     // const swapTx = await batchContract.executeSwaps(dexAddresses, abiIndexes, inputTokens, outputTokens, amount0Ins, amount1Ins, amount0Outs, amount1Outs, movrWrapAmounts, data, {value: wrapMovrAmount})
     // let swapReceipt = await swapTx.wait()
     // logLiveWalletTransaction(swapReceipt, "Execute Swaps")
+}
+export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapInstructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, instructionIndex: number[]) {
+    let liveWallet = movrBatchSwapParams.wallet;
+    let batchContract = movrBatchSwapParams.batchContract;
+    
+    let batchContractAddress = await batchContract.getAddress()
+    console.log(`Wallet: ${liveWallet.address} | Batch Contract: ${batchContractAddress}`)
+    let tokens = movrBatchSwapParams.inputTokens
+
+    // //WHEN we execute the tx, we need to approve batch contract to spend tokens first
+    for(let i = 0; i < tokens.length; i++){
+        let tokenInput = movrBatchSwapParams.amount0Ins[i] > 0 ? movrBatchSwapParams.amount0Ins[i] : movrBatchSwapParams.amount1Ins[i]
+        let approval = await checkAndApproveToken(tokens[i], liveWallet, batchContractAddress, tokenInput)
+    }
+    let wrapMovrAmount = movrBatchSwapParams.movrWrapAmounts[0]
+
+    let assetInNode = swapInstructions[0].assetNodes[0]
+    let assetOutNode = swapInstructions[swapInstructions.length - 1].assetNodes[1]
+    let assetInDecimals = assetInNode.assetRegistryObject.tokenData.decimals
+    let assetOutDecimals = assetOutNode.assetRegistryObject.tokenData.decimals
+    let inputAmount = swapInstructions[0].assetInAmount
+    let outputAmount = swapInstructions[swapInstructions.length - 1].assetOutTargetAmount
+    
+    let inputFixedPoint = new FixedPointNumber(inputAmount, Number.parseInt(assetInDecimals))
+    let outputFixedPoint = new FixedPointNumber(outputAmount, Number.parseInt(assetOutDecimals))
+    // let inputFixedPoint = new FixedPointNumber(inputAmount.toString(), 18)
+
+    let movrTx = async function executeSwapTx() {
+        return await batchContract.executeSwaps(
+            movrBatchSwapParams.dexAddresses, 
+            movrBatchSwapParams.abiIndexes, 
+            movrBatchSwapParams.inputTokens,
+            movrBatchSwapParams.outputTokens, 
+            movrBatchSwapParams.amount0Ins, 
+            movrBatchSwapParams.amount1Ins, 
+            movrBatchSwapParams.amount0Outs, 
+            movrBatchSwapParams.amount1Outs, 
+            movrBatchSwapParams.movrWrapAmounts, 
+            movrBatchSwapParams.data, 
+            {value: wrapMovrAmount}
+        );
+    };
+    let startAsset = swapInstructions[0].assetNodes[0].getAssetRegistrySymbol()
+    let destAsset = swapInstructions[swapInstructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
+    const descriptorString = `MOVR ${startAsset} -> ${destAsset}`
+    let pathStartLocalId = swapInstructions[0].assetInLocalId
+    let pathDestLocalId = swapInstructions[swapInstructions.length - 1].assetOutLocalId
+    let amountIn = swapInstructions[0].assetNodes[0].pathValue;
+    let swapType = swapInstructions[0].pathType
+
+    let assetNodes = swapInstructions[0].assetNodes
+    let swapTxContainer: SwapExtrinsicContainer = {
+        chainId: 2023,
+        chain: "Moonriver",
+        assetNodes: assetNodes,
+        extrinsic: movrTx,
+        extrinsicIndex: extrinsicIndex.i,
+        instructionIndex: instructionIndex,
+        txString: descriptorString,
+        nonce: chainNonces[2023],
+        assetSymbolIn: startAsset,
+        assetSymbolOut: destAsset,
+        assetAmountIn: inputFixedPoint,
+        expectedAmountOut: outputFixedPoint,
+        pathInLocalId: pathStartLocalId,
+        pathOutLocalId: pathDestLocalId,
+        pathSwapType: swapType,
+        pathAmount: amountIn,
+        // reverseTx: reverseMovrBatchSwapParams,
+        movrBatchSwapParams: movrBatchSwapParams
+    }
+    increaseIndex(extrinsicIndex)
+    return swapTxContainer
 }
 async function buildReverseSwapParams(swapParams: BatchSwapParams){
 

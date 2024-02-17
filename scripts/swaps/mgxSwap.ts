@@ -19,6 +19,7 @@ import { MangataInstance, Mangata, MultiswapBuyAsset, MultiswapSellAsset } from 
 import { BN } from '@polkadot/util';
 import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
 import { increaseIndex } from './../instructions/utils.ts';
+import { getSigner } from './../instructions/utils.ts';
 const wsLocalChain = "ws://172.26.130.75:8011"
 const mgxRpc = "wss://kusama-rpc.mangata.online"
 
@@ -29,7 +30,7 @@ export async function getMgxSwapExtrinsic(
   amountIn: number, 
   assetOutAmount, 
   swapInstructions: SwapInstruction[], 
-  test: boolean = false,
+  chopsticks: boolean = false,
   txIndex: number, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
@@ -39,7 +40,7 @@ export async function getMgxSwapExtrinsic(
   // Connect to the mainet (also testnet, mainnet)
   console.log("Getting mgx swap extrinsic")
   console.log(`assetInSymbol: ${assetInSymbol} assetOutSymbol: ${assetOutSymbol} amountIn: ${amountIn} assetOutAmount: ${assetOutAmount}`)
-  let rpc = test ? wsLocalChain : mgxRpc
+  let rpc = chopsticks ? wsLocalChain : mgxRpc
   const mangata: MangataInstance = Mangata.instance([rpc]);
   // const provider = new WsProvider(wsLocalChain);
   // const apiStandard = await ApiPromise.create({ provider });
@@ -48,7 +49,7 @@ export async function getMgxSwapExtrinsic(
       assetNodes.push(instruction.assetNodes[1])
     })
   // await apiStandard.isReady;
-  let signer = await getSigner()
+  let signer = await getSigner(chopsticks, false)
   let accountNonce = await mangata.query.getNonce(signer.address)
   let nonce = accountNonce.toNumber()
   nonce += txIndex
@@ -65,7 +66,6 @@ export async function getMgxSwapExtrinsic(
   console.log(
     `You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`
   );
-    let key = await getSigner()
     let assets = await mangata.query.getAssetsInfo()
     let tokenPathSymbols = [assetInSymbol]
     swapInstructions.forEach((instruction) => {
@@ -154,12 +154,12 @@ async function run(){
 
 // run()
 
-const getSigner = async () => {
-    await cryptoWaitReady()
-    const keyring = new Keyring({
-      type: "sr25519",
-    });
+// const getSigner = async () => {
+//     await cryptoWaitReady()
+//     const keyring = new Keyring({
+//       type: "sr25519",
+//     });
   
-    // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
-    return keyring.addFromUri("//Alice");
-  };
+//     // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
+//     return keyring.addFromUri("//Alice");
+//   };
