@@ -10,7 +10,7 @@ import { cryptoWaitReady } from "@polkadot/util-crypto"
 import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../xcm_tests/testParams.ts'
 import { BN, compactStripLength, u8aToHex } from '@polkadot/util'
 import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getEndpointsForChain, connectFirstApi, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange, getSigner, watchTokenBalance, printInstruction, increaseIndex } from './utils.ts'
-import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, ReverseSwapExtrinsicParams, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode } from './types.ts'
+import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, ReverseSwapExtrinsicParams, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { prodRelayPolkadot, prodRelayKusama, createWsEndpoints, prodParasKusamaCommon, prodParasKusama } from '@polkadot/apps-config/endpoints'
 import { buildInstructions, getTransferrableAssetObject } from './instructionUtils.ts';
@@ -35,8 +35,8 @@ import { EventRecord } from '@polkadot/types/interfaces/index';
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { ISubmittableResult } from '@polkadot/types/types/extrinsic';
 // import { BalanceData, getAdapter } from '@polkawallet/bridge';
-import { arb_wallet, localRpcs, mainWalletAddress, testNets } from './txConsts.ts';
-import { buildSwapExtrinsic, buildTransferExtrinsicReworked } from './extrinsicUtils.ts';
+import { arb_wallet, ksmTargetNode, localRpcs, mainWalletAddress, testNets } from './txConsts.ts';
+import { buildSwapExtrinsic, buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, buildTransferExtrinsicReworked, createTransferExtrinsicObject } from './extrinsicUtils.ts';
 
 // Get the __dirname equivalent in ES module
 // const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -351,6 +351,8 @@ async function executeExtrinsicSet(extrinsicSet: ExtrinsicObject[], logFilePath:
                         let arbString: ArbExecutionResult = { 
                             assetSymbolIn: currency,
                             assetSymbolOut: currency,
+                            assetAmountIn: Math.abs(Number.parseFloat(transferAmount.toString())),
+                            assetAmountOut: 0,
                             result: `FAILURE: TRANSFER: (${startChain} ${startParaId} ${currency} ${transferAmount}-> ${destChain}) ${destParaId} | ERROR: ${e}` 
                         }
                         
@@ -405,6 +407,8 @@ async function executeExtrinsicSet(extrinsicSet: ExtrinsicObject[], logFilePath:
                     let arbString: ArbExecutionResult = {
                         assetSymbolIn: currency,
                         assetSymbolOut: currency,
+                        assetAmountIn: Math.abs(Number.parseFloat(transferAmount.toString())),
+                        assetAmountOut: Math.abs(Number.parseFloat(transferAmount.toString())),
                         result:`SUCCESS: ${successMetric} - TRANSFER: (${startChain} ${startParaId} ${currency} ${transferAmount}-> ${destChain}) ${destParaId} | FEES: ${feesAndGasAmount.toString()}`
                     }
                     
@@ -484,6 +488,8 @@ async function executeExtrinsicSet(extrinsicSet: ExtrinsicObject[], logFilePath:
                     let arbString: ArbExecutionResult = {
                         assetSymbolIn: assetInSymbol,
                         assetSymbolOut: assetOutSymbol,
+                        assetAmountIn: Math.abs(Number.parseFloat(expectedAmountIn.toString())),
+                        assetAmountOut: 0,
                         result:`FAILURE: SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn.toNumber()}-> ${assetOutSymbol} | ERROR: ${e}`
                     }
                     
@@ -582,6 +588,8 @@ async function executeExtrinsicSet(extrinsicSet: ExtrinsicObject[], logFilePath:
                 let arbResultString: ArbExecutionResult = {
                     assetSymbolIn: assetInSymbol,
                     assetSymbolOut: assetOutSymbol,
+                    assetAmountIn: Math.abs(Number.parseFloat(actualAmountIn)),
+                    assetAmountOut: Math.abs(Number.parseFloat(actualAmountOut)),
                     result:`SUCCESS: ${tx.txDetails.success} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut} | `
                 }
                 
@@ -733,7 +741,9 @@ async function executeExtrinsicSet(extrinsicSet: ExtrinsicObject[], logFilePath:
                     let arbResultString: ArbExecutionResult = {
                         assetSymbolIn: assetInSymbol,
                         assetSymbolOut: assetOutSymbol,
-                        result: `SUCCESS: ${false} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut}| Dexes: ${JSON.stringify(dexes)}`
+                        assetAmountIn: Math.abs(Number.parseFloat(actualAmountIn)),
+                        assetAmountOut: Math.abs(Number.parseFloat(actualAmountOut)),
+                        result: `SUCCESS: ${true} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut}| Dexes: ${JSON.stringify(dexes)}`
                     }
                     let txDetails: TxDetails = {
                         success: true,
@@ -790,6 +800,8 @@ async function executeExtrinsicSet(extrinsicSet: ExtrinsicObject[], logFilePath:
                     let arbResultString: ArbExecutionResult = {
                         assetSymbolIn: assetInSymbol,
                         assetSymbolOut: assetOutSymbol,
+                        assetAmountIn: Math.abs(Number.parseFloat(expectedAmountIn.toString())),
+                        assetAmountOut: 0,
                         result: `SUCCESS: ${false} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn} -> ${assetOutSymbol} | Dexes: ${JSON.stringify(dexes)}`
                     }
                     let pathNode: PathNodeValues = {
@@ -849,6 +861,907 @@ async function executeExtrinsicSet(extrinsicSet: ExtrinsicObject[], logFilePath:
     return extrinsicSetResults
 }
 
+async function buildAndExecuteExtrinsics(instructionSet: (SwapInstruction | TransferInstruction)[], chopsticks: boolean, executeMovr: boolean, testLoops: number): Promise<ExtrinsicSetResultDynamic> {
+    let swapInstructions: SwapInstruction[] = [];
+    let extrinsicIndex: IndexObject = {i: 0}
+    let allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) [] = [];
+    let chainNonces: ChainNonces = {
+        2000: 0,
+        2023: 0,
+        2001: 0,
+        2090: 0,
+        2110: 0,
+        2085: 0
+    }
+    let nextInputValue: number = 0;
+    let testLoopIndex = 0;
+    // let lastNode: LastNode;
+    try{
+        for (const instruction of instructionSet) {
+            if(testLoopIndex > testLoops){
+                break;
+            }
+            testLoopIndex += 1;
+            switch (instruction.type) {
+                case InstructionType.Swap:
+                    //If MOVR, SKIP and set next to 0
+                    if(chopsticks == true && instruction.assetNodes[0].getChainId() == 2023){
+                        nextInputValue = 0
+                        break;
+                    }
+                    // If swap is of the same type, accumulate
+                    if(swapInstructions.length == 0 || swapInstructions[swapInstructions.length - 1].pathType == instruction.pathType){
+                        swapInstructions.push(instruction);
+                    } else {
+                        // If swap is of a different type, build extrinsic for the so far accumulated swap instructions
+                        if(nextInputValue > 0){
+                            swapInstructions[0].assetNodes[0].pathValue = nextInputValue
+                        }
+
+                        let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(swapInstructions, chainNonces, extrinsicIndex, chopsticks);
+                        let extrinsicObj: ExtrinsicObject = {
+                            type: "Swap",
+                            instructionIndex: swapExtrinsicContainer.instructionIndex,
+                            extrinsicIndex: swapExtrinsicContainer.extrinsicIndex,
+                            swapExtrinsicContainer: swapExtrinsicContainer
+                        }
+                        
+                        let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+                        if(extrinsicResultData.success == false){
+                            console.log("Extrinsic failed")
+                            console.log(extrinsicResultData.arbExecutionResult)
+                            printExtrinsicSetResults(allExtrinsicResultData)
+                            let lastNode = await getLastNodeFromResultData(allExtrinsicResultData)
+                            let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+                                success: false,
+                                extrinsicData: allExtrinsicResultData,
+                                lastSuccessfulNode: lastNode,
+                            }
+                            return extrinsicSetResults
+                        }
+
+                        // If undefined, not error just skip
+                        if(!extrinsicResultData){
+                            nextInputValue = 0
+                            break;
+                        }
+
+                        allExtrinsicResultData.push(extrinsicResultData)
+                        nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
+                        while(remainingInstructions.length > 0){
+                            remainingInstructions[0].assetNodes[0].pathValue = nextInputValue
+                            let [nextSwapContainer, furtherRemainingInstructions] = await buildSwapExtrinsicDynamic(remainingInstructions, chainNonces, extrinsicIndex, chopsticks);
+                            let nextExtrinsicObj: ExtrinsicObject = {
+                                type: "Swap",
+                                instructionIndex: nextSwapContainer.instructionIndex,
+                                extrinsicIndex: nextSwapContainer.extrinsicIndex,
+                                swapExtrinsicContainer: nextSwapContainer
+                            }
+
+                            let nextExtrinsicResultData = await executeAndReturnExtrinsic(nextExtrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+                            if(nextExtrinsicResultData.success == false){
+                                console.log("Extrinsic failed")
+                                console.log(nextExtrinsicResultData.arbExecutionResult)
+                                printExtrinsicSetResults(allExtrinsicResultData)
+                                let lastNode = await getLastNodeFromResultData(allExtrinsicResultData)
+                                let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+                                    success: false,
+                                    extrinsicData: allExtrinsicResultData,
+                                    lastSuccessfulNode: lastNode,
+                                }
+                                return extrinsicSetResults
+                            }
+                            allExtrinsicResultData.push(nextExtrinsicResultData)
+                            nextInputValue = Number.parseFloat(nextExtrinsicResultData.lastNode.assetValue)
+
+                            remainingInstructions = furtherRemainingInstructions
+                        }
+                        swapInstructions = [instruction];
+                    }
+                    break;
+                default:
+                    // For other types of instructions
+                    if (swapInstructions.length > 0) {
+                        if( nextInputValue > 0){
+                            swapInstructions[0].assetNodes[0].pathValue = nextInputValue
+                        }
+                        let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(swapInstructions, chainNonces, extrinsicIndex, chopsticks);
+                        let extrinsicObj: ExtrinsicObject = {
+                            type: "Swap",
+                            instructionIndex: swapExtrinsicContainer.instructionIndex,
+                            extrinsicIndex: swapExtrinsicContainer.extrinsicIndex,
+                            swapExtrinsicContainer: swapExtrinsicContainer
+                        }
+                        let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+                        // If undefined, not error just skip
+                        if(!extrinsicResultData){
+                            nextInputValue = 0
+                            break;
+                        }
+                        if(extrinsicResultData.success == false){
+                            console.log("Extrinsic failed")
+                            console.log(extrinsicResultData.arbExecutionResult)
+                            printExtrinsicSetResults(allExtrinsicResultData)
+                            let lastNode = await getLastNodeFromResultData(allExtrinsicResultData)
+                            let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+                                success: false,
+                                extrinsicData: allExtrinsicResultData,
+                                lastSuccessfulNode: lastNode,
+                            }
+                            return extrinsicSetResults
+                        }
+                        allExtrinsicResultData.push(extrinsicResultData)
+                        nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
+                        while(remainingInstructions.length > 0){
+                            remainingInstructions[0].assetNodes[0].pathValue = nextInputValue
+                            let [nextSwapContainer, furtherRemainingInstructions] = await buildSwapExtrinsicDynamic(remainingInstructions, chainNonces, extrinsicIndex, chopsticks);
+                            let nextExtrinsicObj: ExtrinsicObject = {
+                                type: "Swap",
+                                instructionIndex: nextSwapContainer.instructionIndex,
+                                extrinsicIndex: nextSwapContainer.extrinsicIndex,
+                                swapExtrinsicContainer: nextSwapContainer
+                            }
+
+                            let nextExtrinsicResultData = await executeAndReturnExtrinsic(nextExtrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+                            if(nextExtrinsicResultData.success == false){
+                                console.log("Extrinsic failed")
+                                console.log(nextExtrinsicResultData.arbExecutionResult)
+                                printExtrinsicSetResults(allExtrinsicResultData)
+                                let lastNode = await getLastNodeFromResultData(allExtrinsicResultData)
+                                let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+                                    success: false,
+                                    extrinsicData: allExtrinsicResultData,
+                                    lastSuccessfulNode: lastNode,
+                                }
+                                return extrinsicSetResults
+                            }
+                            allExtrinsicResultData.push(nextExtrinsicResultData)
+                            nextInputValue = Number.parseFloat(nextExtrinsicResultData.lastNode.assetValue)
+
+                            remainingInstructions = furtherRemainingInstructions
+                        }
+
+                        swapInstructions = [];   
+                    }
+                    // Handle other types of instructions (e.g., TransferToHomeChain)
+                    // Add the extrinsic for the current instruction (if needed)
+                    if(nextInputValue > 0){
+                        instruction.assetNodes[0].pathValue = nextInputValue
+                    }
+                    let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(instruction, extrinsicIndex, chopsticks);
+                    let extrinsicObj: ExtrinsicObject = {
+                        type: "Transfer",
+                        instructionIndex: transferExtrinsic.instructionIndex,
+                        extrinsicIndex: transferExtrinsic.extrinsicIndex,
+                        transferExtrinsicContainer: transferExtrinsic
+                    }
+
+                    let transferExtrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+                    if(transferExtrinsicResultData.success == false){
+                        console.log("Extrinsic failed")
+                        console.log(transferExtrinsicResultData.arbExecutionResult)
+                        printExtrinsicSetResults(allExtrinsicResultData)
+                        let lastNode = await getLastNodeFromResultData(allExtrinsicResultData)
+                        let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+                            success: false,
+                            extrinsicData: allExtrinsicResultData,
+                            lastSuccessfulNode: lastNode,
+                        }
+                        return extrinsicSetResults
+                    }
+                    // If undefined, not error just skip
+                    if(!transferExtrinsicResultData){
+                        nextInputValue = 0
+                        break;
+                    }
+                    nextInputValue = Number.parseFloat(transferExtrinsicResultData.lastNode.assetValue)
+                    allExtrinsicResultData.push(transferExtrinsicResultData)
+
+                    // Max transfer is two instructions
+                    if(remainingInstructions.length > 0){
+                        // Set input transfer amount to the output of the previous transfer
+                        if(nextInputValue > 0){
+                            remainingInstructions[0].assetNodes[0].pathValue = nextInputValue
+                        }
+                        let [transferExtrinsic, other] = await buildTransferExtrinsicDynamic(remainingInstructions[0], extrinsicIndex, chopsticks);
+                        let extrinsicObj: ExtrinsicObject = await createTransferExtrinsicObject(transferExtrinsic)
+                        let transferExtrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+                        if(transferExtrinsicResultData.success == false){
+                            console.log("Extrinsic failed")
+                            console.log(transferExtrinsicResultData.arbExecutionResult)
+                            printExtrinsicSetResults(allExtrinsicResultData)
+                            let lastNode = await getLastNodeFromResultData(allExtrinsicResultData)
+                            let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+                                success: false,
+                                extrinsicData: allExtrinsicResultData,
+                                lastSuccessfulNode: lastNode,
+                            }
+                            return extrinsicSetResults
+                        }
+                        nextInputValue = Number.parseFloat(transferExtrinsicResultData.lastNode.assetValue)
+                        allExtrinsicResultData.push(transferExtrinsicResultData)
+
+                    }
+                    // extrinsicSet.push(transferExtrinsic);
+                    break;
+
+            }
+        }
+        // Handle any remaining swap instructions at the end of the instruction set
+        if (swapInstructions.length > 0 && testLoopIndex < testLoops) {
+            if( nextInputValue > 0){
+                swapInstructions[0].assetNodes[0].pathValue = nextInputValue
+            }
+            let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(swapInstructions, chainNonces, extrinsicIndex, chopsticks);
+            let extrinsicObj: ExtrinsicObject = {
+                type: "Swap",
+                instructionIndex: swapExtrinsicContainer.instructionIndex,
+                extrinsicIndex: swapExtrinsicContainer.extrinsicIndex,
+                swapExtrinsicContainer: swapExtrinsicContainer
+            }
+            let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+            if(extrinsicResultData.success == false){
+                console.log("Extrinsic failed")
+                console.log(extrinsicResultData.arbExecutionResult)
+                printExtrinsicSetResults(allExtrinsicResultData)
+                let lastNode = await getLastNodeFromResultData(allExtrinsicResultData)
+                let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+                    success: false,
+                    extrinsicData: allExtrinsicResultData,
+                    lastSuccessfulNode: lastNode,
+                }
+                return extrinsicSetResults
+            }
+            if(!extrinsicResultData){
+                nextInputValue = 0
+            } else {
+                allExtrinsicResultData.push(extrinsicResultData)
+                nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
+                while(remainingInstructions.length > 0){
+                    remainingInstructions[0].assetNodes[0].pathValue = nextInputValue
+                    let [nextSwapContainer, furtherRemainingInstructions] = await buildSwapExtrinsicDynamic(remainingInstructions, chainNonces, extrinsicIndex, chopsticks);
+                    let nextExtrinsicObj: ExtrinsicObject = {
+                        type: "Swap",
+                        instructionIndex: nextSwapContainer.instructionIndex,
+                        extrinsicIndex: nextSwapContainer.extrinsicIndex,
+                        swapExtrinsicContainer: nextSwapContainer
+                    }
+    
+                    let nextExtrinsicResultData = await executeAndReturnExtrinsic(nextExtrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+                    if(nextExtrinsicResultData.success == false){
+                        console.log("Extrinsic failed")
+                        console.log(nextExtrinsicResultData.arbExecutionResult)
+                        printExtrinsicSetResults(allExtrinsicResultData)
+                        let lastNode = await getLastNodeFromResultData(allExtrinsicResultData)
+                        let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+                            success: false,
+                            extrinsicData: allExtrinsicResultData,
+                            lastSuccessfulNode: lastNode,
+                        }
+                        return extrinsicSetResults
+                    }
+                    allExtrinsicResultData.push(nextExtrinsicResultData)
+                    nextInputValue = Number.parseFloat(nextExtrinsicResultData.lastNode.assetValue)
+    
+                    remainingInstructions = furtherRemainingInstructions
+                }
+            }
+            swapInstructions = [];   
+        }
+    } catch(e){
+        console.log(e)
+        printExtrinsicSetResults(allExtrinsicResultData)
+        let lastNode = await getLastNodeFromResultData(allExtrinsicResultData)
+        let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+            success: false,
+            extrinsicData: allExtrinsicResultData,
+            lastSuccessfulNode: lastNode,
+        }
+        return extrinsicSetResults
+
+    }
+    let lastNode = await getLastNodeFromResultData(allExtrinsicResultData)
+    let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+        success: true,
+        extrinsicData: allExtrinsicResultData,
+        lastSuccessfulNode: lastNode,
+    }
+    return extrinsicSetResults;
+}
+
+async function logResultsDynamic(extrinsicSetResults: ExtrinsicSetResultDynamic, logFilePath: string, reverse: boolean){
+    let lastNode = extrinsicSetResults.lastSuccessfulNode
+    let extrinsicSetData = extrinsicSetResults.extrinsicData
+
+    let arbResults: ArbExecutionResult[] = []
+    let swapTxStats: SwapTxStats[] = []
+    let swapTxResults: any[] = []
+    let transferTxStats: TransferTxStats[] = []
+
+
+
+    extrinsicSetData.forEach((resultData) => {
+        arbResults.push(resultData.arbExecutionResult)
+
+        if('swapTxStats' in resultData){
+            // console.log(resultData.swapTxStats)
+            // console.log(resultData.swapTxResults)
+            swapTxStats.push(resultData.swapTxStats)
+            swapTxResults.push(resultData.swapTxResults)
+        } else if ('transferTxStats' in resultData){
+            // console.log(resultData.transferTxStats)
+            transferTxStats.push(resultData.transferTxStats)
+        }
+    })
+
+    logSwapTxStats(swapTxStats, logFilePath, reverse)
+    logSwapTxResults(swapTxResults, logFilePath, reverse)
+    logTransferTxStats(transferTxStats, logFilePath, reverse)
+    logArbExecutionResults(arbResults, logFilePath,reverse)
+
+    let lastNodeString = `LAST SUCCESSFUL NODE: ${lastNode.chainId} ${lastNode.assetSymbol} ${lastNode.assetValue}`
+    let extrinsicSetString = `EXTRINSIC SET RESULTS: ${JSON.stringify(extrinsicSetData, null, 2)}`
+    let logString = lastNodeString + "\n" + extrinsicSetString
+    fs.appendFileSync(logFilePath, logString)
+
+}
+
+function printExtrinsicSetResults(extrinsicSetResults: (SingleSwapResultData | SingleTransferResultData) []){
+    extrinsicSetResults.forEach((resultData) => {
+        // console.log(JSON.stringify(resultData, null, 2))
+        console.log(resultData.success)
+        console.log(JSON.stringify(resultData.arbExecutionResult, null, 2))
+    })
+}
+
+async function getLastNodeFromResultData(allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) []){
+    let lastSuccessfulResultData = allExtrinsicResultData.reverse().find((resultData) => {
+        return resultData.success == true
+    })
+    if(!lastSuccessfulResultData){
+        throw new Error("No successful extrinsics found")
+    }
+    return lastSuccessfulResultData.lastNode
+}
+
+async function executeAndReturnExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean, executeMovr: boolean = false) {
+    // let executeMovr = false
+    try {
+        if (extrinsicObj.type == "Transfer"){
+            let transferExtrinsicResults: SingleTransferResultData = await executeSingleTransferExtrinsic(extrinsicObj, extrinsicIndex, chopsticks)
+            return transferExtrinsicResults
+        } else if (extrinsicObj.type == "Swap" && extrinsicObj.swapExtrinsicContainer.chainId != 2023){
+            let swapExtrinsicResults: SingleSwapResultData = await executeSingleSwapExtrinsic(extrinsicObj, extrinsicIndex, chopsticks);
+            return swapExtrinsicResults
+        } else if (extrinsicObj.type == "Swap" && extrinsicObj.swapExtrinsicContainer.chainId == 2023 && executeMovr == true){
+            let swapExtrinsicResults: SingleSwapResultData = await executeSingleSwapExtrinsicMovr(extrinsicObj, extrinsicIndex, chopsticks);
+            return swapExtrinsicResults
+        }
+    } catch (e) {
+        console.log(e)
+        throw new Error("Extrinsic Execution failed")
+    }
+}
+async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SingleSwapResultData>{
+    let movrTx = extrinsicObj.swapExtrinsicContainer.extrinsic
+    let chain = extrinsicObj.swapExtrinsicContainer.chain
+    let api = extrinsicObj.swapExtrinsicContainer.api
+    let chainId = extrinsicObj.swapExtrinsicContainer.chainId
+    let assetInSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolIn
+    let assetOutSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolOut
+    // let assetIn = extrinsicObj.swapExtrinsicContainer.pathInLocalId
+    // let assetOut = extrinsicObj.swapExtrinsicContainer.pathOutLocalId
+    let expectedAmountIn = extrinsicObj.swapExtrinsicContainer.assetAmountIn
+    let expectedAmountOut = extrinsicObj.swapExtrinsicContainer.expectedAmountOut
+    if(extrinsicIndex.i == 0){
+        let firstAssetNode = extrinsicObj.swapExtrinsicContainer.assetNodes[0]
+    }
+    let movrBatchSwapParams = extrinsicObj.swapExtrinsicContainer.movrBatchSwapParams
+    let liveWallet = movrBatchSwapParams.wallet
+    let batchContract = movrBatchSwapParams.batchContract
+    let tokens = movrBatchSwapParams.inputTokens
+    let dexes = movrBatchSwapParams.dexAddresses
+    let inputTokens = movrBatchSwapParams.inputTokens
+    let outputTokens = movrBatchSwapParams.outputTokens
+    let movrTxInfo = {
+        inputTokens: inputTokens,
+        outputTokens: outputTokens,
+        dexes: dexes
+    }
+
+    let batchContractAddress = await batchContract.getAddress()
+    console.log(`Wallet: ${liveWallet.address} | Batch Contract: ${batchContractAddress}`)
+    // let signer = await getSigner(true)
+
+    for(let i = 0; i < tokens.length; i++){
+        let tokenInput = movrBatchSwapParams.amount0Ins[i] > 0 ? movrBatchSwapParams.amount0Ins[i] : movrBatchSwapParams.amount1Ins[i]
+        let approval = await checkAndApproveToken(tokens[i], liveWallet, batchContractAddress, tokenInput)
+    }
+
+    let unsubscribeOne, unsubscribeTwo;
+    let balanceObservableIn$ = await watchTokenBalance(chainId, api, assetInSymbol, chain, liveWallet.address)
+    let balanceObservableOut$ = await watchTokenBalance(chainId, api, assetOutSymbol, chain, liveWallet.address)
+    let balancePromiseIn = await getBalanceChange(balanceObservableIn$, (unsub) => {
+        unsubscribeOne = unsub
+    })
+    let balancePromiseOut = await getBalanceChange(balanceObservableOut$, (unsub) => {
+        unsubscribeTwo = unsub
+    })
+
+    try{
+        // **************************************************************************************
+        let txReceipt = await movrTx()
+        let txHash = await txReceipt.wait()
+        // **************************************************************************************
+
+        let tokenInBalanceStats = await balancePromiseIn
+        let tokenOutBalanceStats = await balancePromiseOut
+        console.log(`EXPECTED TOKEN IN ${expectedAmountIn.toString()} || ACTUAL TOKEN IN ${JSON.stringify(tokenInBalanceStats.startBalanceString.toString())}`)
+        console.log(`EXPECTED TOKEN OUT ${expectedAmountOut.toString()} || ACTUAL TOKEN IN ${JSON.stringify(tokenInBalanceStats.changeInBalance.toString())}`)
+        
+        let swapStats: SwapTxStats = {
+            txHash: txHash,
+            chain: chain,
+            paraId: chainId,
+            currencyIn: assetInSymbol,
+            currencyOut: assetOutSymbol,
+            expectedAmountIn: expectedAmountIn.toString(),
+            actualAmountIn: tokenInBalanceStats.changeInBalance.toString(),
+            expectedAmountOut: expectedAmountOut.toString(),
+            actualAmountOut: tokenOutBalanceStats.changeInBalance.toString(),
+            tokenInBalanceChange: tokenInBalanceStats,
+            tokenOutBalanceChange: tokenOutBalanceStats,
+        }
+        let actualAmountIn = tokenInBalanceStats.changeInBalance.toString()
+        let actualAmountOut = tokenOutBalanceStats.changeInBalance.toString()
+        // logSwapTxResults(tx, logFilePath)
+        let arbResultString: ArbExecutionResult = {
+            assetSymbolIn: assetInSymbol,
+            assetSymbolOut: assetOutSymbol,
+            assetAmountIn: Math.abs(Number.parseFloat(actualAmountIn)),
+            assetAmountOut: Math.abs(Number.parseFloat(actualAmountOut)),
+            result: `SUCCESS: ${false} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut}| Dexes: ${JSON.stringify(dexes)}`
+        }
+        let txDetails: TxDetails = {
+            success: true,
+            txHash: txHash,
+            movrInfo: movrTxInfo
+        }
+        let swapTxResult = {
+            txString: `(${chain}) ${chainId} ${assetInSymbol} -> ${assetOutSymbol}`,
+            txDetails: txDetails
+        }
+        let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceString)
+        let pathNode: PathNodeValues = {
+            pathInLocalId: extrinsicObj.transferExtrinsicContainer.pathInLocalId,
+            pathOutLocalId: extrinsicObj.transferExtrinsicContainer.pathOutLocalId,
+            pathInSymbol: assetInSymbol,
+            pathOutSymbol: assetOutSymbol,
+            pathSwapType: extrinsicObj.transferExtrinsicContainer.pathSwapType,
+            pathValue: extrinsicObj.transferExtrinsicContainer.pathAmount,
+            pathValueNext: pathValueNext
+        
+        }
+
+        let assetRegistryObject = extrinsicObj.swapExtrinsicContainer.assetNodes[extrinsicObj.swapExtrinsicContainer.assetNodes.length - 1].assetRegistryObject;
+        let lastNodeChainId = assetRegistryObject.tokenData.chain
+        let lastNodeLocalId = assetRegistryObject.tokenData.localId
+        let lastNodeAssetSymbol = assetRegistryObject.tokenData.symbol
+        let lastNodeAssetKey = JSON.stringify(lastNodeChainId.toString() + JSON.stringify(lastNodeLocalId))
+        let lastNodeAssetValue = pathValueNext.toString()
+        let lastNode = {
+            assetKey: lastNodeAssetKey,
+            assetValue: lastNodeAssetValue,
+            chainId:lastNodeChainId,
+            assetSymbol: lastNodeAssetSymbol
+
+        }
+
+        let swapResultData: SingleSwapResultData = {
+            success: true,
+            arbExecutionResult: arbResultString,
+            resultPathNode: pathNode,
+            swapTxStats: swapStats,
+            swapTxResults: swapTxResult,
+            lastNode: lastNode,
+            extrinsicIndex: extrinsicIndex.i
+        }
+        return swapResultData
+    } catch(e){
+        unsubscribeOne()
+        unsubscribeTwo()
+        console.log("ERROR: " + e)
+        console.log("MOVR swap failed")
+        let txDetails: TxDetails = {
+            success: false,
+            movrInfo: movrTxInfo
+        }
+        let swapTxResult = {
+            txString: `(${chain}) ${chainId} ${assetInSymbol} -> ${assetOutSymbol}`,
+            txDetails: txDetails
+        }
+
+        let arbResultString: ArbExecutionResult = {
+            assetSymbolIn: assetInSymbol,
+            assetSymbolOut: assetOutSymbol,
+            assetAmountIn: Math.abs(Number.parseFloat(expectedAmountIn.toString())),
+            assetAmountOut: 0,
+            result: `SUCCESS: ${false} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn} -> ${assetOutSymbol} | Dexes: ${JSON.stringify(dexes)}`
+        }
+        let pathNode: PathNodeValues = {
+            pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
+            pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
+            pathInSymbol: assetInSymbol,
+            pathOutSymbol: assetOutSymbol,
+            pathSwapType: extrinsicObj.swapExtrinsicContainer.pathSwapType,
+            pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+            pathValueNext:0
+        }
+
+        let swapResultData: SingleSwapResultData = {
+            success: false,
+            arbExecutionResult: arbResultString,
+            resultPathNode: pathNode,
+            swapTxStats: null,
+            swapTxResults: swapTxResult,
+            lastNode: null,
+            extrinsicIndex: extrinsicIndex.i
+        }
+
+        return swapResultData
+    }
+}
+async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SingleSwapResultData>{
+    console.log("Swap extrinsic")
+    let extrinsic = extrinsicObj.swapExtrinsicContainer.extrinsic
+    let chain = extrinsicObj.swapExtrinsicContainer.chain
+    let api = extrinsicObj.swapExtrinsicContainer.api
+    let chainId = extrinsicObj.swapExtrinsicContainer.chainId
+    let assetInSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolIn
+    let assetOutSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolOut
+    let assetIn = extrinsicObj.swapExtrinsicContainer.pathInLocalId
+    let assetOut = extrinsicObj.swapExtrinsicContainer.pathOutLocalId
+    let expectedAmountIn = extrinsicObj.swapExtrinsicContainer.assetAmountIn
+    let expectedAmountOut = extrinsicObj.swapExtrinsicContainer.expectedAmountOut
+    let reverseTx: ReverseSwapExtrinsicParams = extrinsicObj.swapExtrinsicContainer.reverseTx
+
+    let signer = await getSigner(chopsticks, false)
+
+    let tokenInBalance$ = await watchTokenBalance(chainId, api, assetInSymbol, chain, signer.address)
+    let tokenOutBalance$ = await watchTokenBalance(chainId, api, assetOutSymbol, chain, signer.address)
+
+    let tokenInUnsub, tokenOutUnsub;
+    let tokenInBalancePromise = getBalanceChange(tokenInBalance$, (unsub) => {
+        tokenInUnsub = unsub
+    
+    })
+    let tokenOutBalancePromise = getBalanceChange(tokenOutBalance$, (unsub) => {
+        tokenOutUnsub = unsub   
+    })
+
+    let tokenInBalanceStats:BalanceChangeStats, tokenOutBalanceStats:BalanceChangeStats, tx, txHash;
+    try{
+                    
+        // **************************************************************************************
+        tx = await executeSwapExtrinsic(extrinsicObj.swapExtrinsicContainer, chopsticks)
+        // **************************************************************************************
+        txHash = tx.txDetails.txHash
+    } catch (e) {
+        console.log("ERROR: " + e)
+                    
+        await tokenInUnsub()
+        await tokenOutUnsub()
+        // For now just throw if an extrinsic fails, and then execute reverse tx
+        // throw new Error("Swap failed, executing reverse txs")
+        let arbString: ArbExecutionResult = {
+            assetSymbolIn: assetInSymbol,
+            assetSymbolOut: assetOutSymbol,
+            assetAmountIn: Math.abs(Number.parseFloat(expectedAmountIn.toString())),
+            assetAmountOut: 0,
+            result:`FAILURE: SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn.toNumber()}-> ${assetOutSymbol} | ERROR: ${e}`
+        }
+        
+        let txDetailsResponse = e.txDetails
+        let txDetails: TxDetails = {
+            success: false,
+            movrInfo: txDetailsResponse
+        }
+        let swapTxResult = {
+            txString: `(${chain}) ${chainId} ${assetInSymbol} -> ${assetOutSymbol}`,
+            txDetails: txDetails
+        }
+
+        let pathNode: PathNodeValues = {
+            pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
+            pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
+            pathInSymbol: assetInSymbol,
+            pathOutSymbol: assetOutSymbol,
+            pathSwapType: extrinsicObj.swapExtrinsicContainer.pathSwapType,
+            pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+            pathValueNext: 0
+        }
+
+        
+        // arbExecutionResults.push(arbString)
+        // swapTxResults.push(swapTxResult)
+        // resultPathNodes.push(pathNode)
+        let swapTxStats: SwapTxStats;
+        let lastNode: LastNode;
+        let extrinsicResultData: SingleSwapResultData = {
+            success: false,
+            arbExecutionResult: arbString,
+            resultPathNode: pathNode,
+            swapTxStats: swapTxStats,
+            swapTxResults: swapTxResult,
+            lastNode: lastNode,
+            extrinsicIndex: extrinsicIndex.i
+        }
+        return extrinsicResultData
+    }
+
+    tokenInBalanceStats = await tokenInBalancePromise
+    tokenOutBalanceStats = await tokenOutBalancePromise
+    console.log(`EXPECTED TOKEN IN ${expectedAmountIn.toString()} || EXPECTED TOKEN OUT ${expectedAmountOut.toString()}`)
+    console.log(`ACTUAL TOKEN IN ${JSON.stringify(tokenInBalanceStats.changeInBalance.toString())} || ACTUAL TOKEN OUT ${(JSON.stringify(tokenOutBalanceStats.changeInBalance.toString()))}`)
+
+    let swapStats: SwapTxStats = {
+        txHash: txHash,
+        chain: chain,
+        paraId: chainId,
+        currencyIn: assetInSymbol,
+        currencyOut: assetOutSymbol,
+        expectedAmountIn: expectedAmountIn.toString(),
+        actualAmountIn: tokenInBalanceStats.changeInBalance.toString(),
+        expectedAmountOut: expectedAmountOut.toString(),
+        actualAmountOut: tokenOutBalanceStats.changeInBalance.toString(),
+        tokenInBalanceChange: tokenInBalanceStats,
+        tokenOutBalanceChange: tokenOutBalanceStats,
+    } 
+
+    // logSwapTxResults(tx, logFilePath)
+    let assetNodes = extrinsicObj.swapExtrinsicContainer.assetNodes
+    assetNodes.forEach((node, index) => {
+        let reverseAssetNode;
+        if(index == assetNodes.length - 1){
+        reverseAssetNode = new AssetNode({
+            paraspellChain: node.paraspellChain,
+            paraspellAsset: node.paraspellAsset,
+            assetRegistryObject: node.assetRegistryObject,
+            pathValue: tokenOutBalanceStats.changeInBalance.toNumber(),
+            pathType: node.pathType
+        })
+        } else if(index > 0){
+            reverseAssetNode = new AssetNode({
+                paraspellChain: node.paraspellChain,
+                paraspellAsset: node.paraspellAsset,
+                assetRegistryObject: node.assetRegistryObject,
+                pathValue: node.pathValue,
+                pathType: node.pathType
+            })
+        }
+        // reverseNodes.push(reverseAssetNode)
+    })
+
+    let swapTxResult = {
+        txString: `(${chain}) ${chainId} ${assetInSymbol} -> ${assetOutSymbol}`,
+        txDetails: tx.txDetails
+    }
+    let actualAmountIn = tokenInBalanceStats.changeInBalance.toString()
+    let actualAmountOut = tokenOutBalanceStats.changeInBalance.toString()
+
+    let arbResultString: ArbExecutionResult = {
+        assetSymbolIn: assetInSymbol,
+        assetSymbolOut: assetOutSymbol,
+        assetAmountIn: Math.abs(Number.parseFloat(actualAmountIn)),
+        assetAmountOut: Math.abs(Number.parseFloat(actualAmountOut)),
+        result:`SUCCESS: ${tx.txDetails.success} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut} | `
+    }
+    
+    let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceString)
+
+    let pathNode: PathNodeValues = {
+        pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
+        pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
+        pathInSymbol: assetInSymbol,
+        pathOutSymbol: assetOutSymbol,
+        pathSwapType: extrinsicObj.swapExtrinsicContainer.pathSwapType,
+        pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+        pathValueNext:pathValueNext
+    }
+
+    // swapTxStats.push(swapStats)
+    // arbExecutionResults.push(arbResultString)
+    // swapTxResults.push(swapTxResult)
+    // resultPathNodes.push(pathNode)
+
+    let assetRegistryObject = extrinsicObj.swapExtrinsicContainer.assetNodes[extrinsicObj.swapExtrinsicContainer.assetNodes.length - 1].assetRegistryObject;
+    let lastNodeChainId = assetRegistryObject.tokenData.chain
+    let lastNodeLocalId = assetRegistryObject.tokenData.localId
+    let lastNodeAssetSymbol = assetRegistryObject.tokenData.symbol
+    let lastNodeAssetKey = JSON.stringify(lastNodeChainId.toString() + JSON.stringify(lastNodeLocalId))
+    let lastNodeAssetValue = pathValueNext.toString()
+    let lastNode = {
+        assetKey: lastNodeAssetKey,
+        assetValue: lastNodeAssetValue,
+        chainId:lastNodeChainId,
+        assetSymbol: lastNodeAssetSymbol
+    }
+
+    let extrinsicResultData: SingleSwapResultData = {
+        success: true,
+        arbExecutionResult: arbResultString,
+        resultPathNode: pathNode,
+        swapTxStats: swapStats,
+        swapTxResults: swapTxResult,
+        lastNode: lastNode,
+        extrinsicIndex: extrinsicIndex.i
+    }
+    return extrinsicResultData
+
+
+}
+async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean):Promise<SingleTransferResultData>{
+    let extrinsicResultData: SingleTransferResultData;
+    let arbExecutionResult: ArbExecutionResult;
+    let resultPathNode: PathNodeValues;
+    let transferTxStats: TransferTxStats;
+
+    let lastNodeAssetKey: string;
+    let lastNodeAssetValue: string;
+    let lastNode: LastNode;
+
+
+    let extrinsic = extrinsicObj.transferExtrinsicContainer.extrinsic
+    let startChain = extrinsicObj.transferExtrinsicContainer.firstNode
+    let destChain = extrinsicObj.transferExtrinsicContainer.secondNode
+    let startApi = extrinsicObj.transferExtrinsicContainer.startApi
+    let destApi = extrinsicObj.transferExtrinsicContainer.destinationApi
+    let startParaId = extrinsicObj.transferExtrinsicContainer.startChainId
+    let destParaId = extrinsicObj.transferExtrinsicContainer.destinationChainId
+    let startTransferrable = extrinsicObj.transferExtrinsicContainer.startTransferrable
+    let destTransferrable = extrinsicObj.transferExtrinsicContainer.destinationTransferrable
+    let currency = extrinsicObj.transferExtrinsicContainer.destinationTransferrable.paraspellAsset.symbol
+
+    let startSigner, destSigner;
+    if(startParaId == 2023){
+        startSigner = await getSigner(chopsticks, true)
+    } else {
+        startSigner = await getSigner(chopsticks, false)
+    }
+    if(destParaId == 2023){
+        destSigner = await getSigner(chopsticks, true)
+    } else {
+        destSigner = await getSigner(chopsticks, false)
+    }
+    let watchWithdrawAddress: string = startSigner.address.toString()
+    let watchDepositAddress: string = destSigner.address.toString()
+
+    console.log("Execute Extrinsic Set Loop: Transfer extrinsic")
+    console.log(`Execute Extrinsic Set Loop: Start Chain: ${startChain} ${startParaId}| Destination Chain: ${destChain} ${destParaId} | Currency: ${JSON.stringify(currency)} `)
+    if(testNets.includes(startChain) && testNets.includes(destChain)){
+        let startBalanceUnsub, destBalanceUnsub;
+        console.log("Execute Extrinsic Set Loop: Initiating balance adapter for START chain " + startChain)
+        let startBalanceObservable$ = await watchTokenDeposit(startParaId, startApi, 0, startTransferrable, watchWithdrawAddress) 
+        let startBalanceChangePromise = getBalanceChange(startBalanceObservable$, (unsub) =>{
+            startBalanceUnsub = unsub
+        })
+        console.log("Execute Extrinsic Set Loop: Initiating balance adapter for DESTINATION chain " + destChain)
+        let destBalanceObservable$ = await watchTokenDeposit(destParaId, destApi, 0, destTransferrable, watchDepositAddress)
+        console.log(`(${startChain} -> ${destChain}) ${JSON.stringify(extrinsicObj.transferExtrinsicContainer.assetSymbol)} ${JSON.stringify(extrinsicObj.transferExtrinsicContainer.assetIdStart)}`)
+        console.log(extrinsic.toHuman())
+        let txPromise;
+        try{
+            // **************************************************************************************
+            txPromise = await executeTransferExtrinsic(extrinsicObj.transferExtrinsicContainer, startParaId, chopsticks)
+            // **************************************************************************************
+
+        } catch(e) {
+            console.log("ERROR: " + e)
+            txPromise = e
+            await startBalanceUnsub()
+            await destBalanceUnsub()
+            // For now just throw if an extrinsic fails, and then execute reverse txs
+            // throw new Error("Transfer failed, executing reverse txs")
+            let transferAmount = extrinsicObj.transferExtrinsicContainer.pathAmount
+            arbExecutionResult = { 
+                assetSymbolIn: currency,
+                assetSymbolOut: currency,
+                assetAmountIn: transferAmount,
+                assetAmountOut: 0,
+                result: `FAILURE: TRANSFER: (${startChain} ${startParaId} ${currency} ${transferAmount}-> ${destChain}) ${destParaId} | ERROR: ${e}` 
+            }
+            
+            resultPathNode = {
+                pathInLocalId: extrinsicObj.transferExtrinsicContainer.pathInLocalId,
+                pathOutLocalId: extrinsicObj.transferExtrinsicContainer.pathOutLocalId,
+                pathInSymbol: currency,
+                pathOutSymbol: currency,
+                pathSwapType: extrinsicObj.transferExtrinsicContainer.pathSwapType,
+                pathValue: extrinsicObj.transferExtrinsicContainer.pathAmount,
+                pathValueNext: 0
+            
+            }   
+            extrinsicResultData = {
+                success: false,
+                arbExecutionResult: arbExecutionResult,
+                resultPathNode: resultPathNode,
+                transferTxStats: transferTxStats,
+                lastNode: lastNode,
+                extrinsicIndex: extrinsicIndex.i,
+            }
+            increaseIndex(extrinsicIndex)
+
+            return extrinsicResultData
+
+        }
+        
+        console.log("Execute Extrinsic Set Loop: Transfer promise created")
+        let startBalanceStats = await startBalanceChangePromise;
+        let destBalanceStats = await getBalanceChange(destBalanceObservable$, (unsub) =>{
+            destBalanceUnsub = unsub
+        })
+        let feesAndGasAmount = startBalanceStats.changeInBalance.add(destBalanceStats.changeInBalance)
+        console.log(`Execute Extrinsic Set Loop: Start Balance Change: ${JSON.stringify(startBalanceStats)} | Destination Balance Change: ${JSON.stringify(destBalanceStats)} | Fees and Gas: ${feesAndGasAmount}`)
+        transferTxStats = {
+            startChain: startChain,
+            startParaId: startParaId,
+            destChain: destChain,
+            destParaId: destParaId,
+            currency: currency,
+            startBalanceStats: startBalanceStats,
+            destBalanceStats: destBalanceStats,
+            feesAndGasAmount: feesAndGasAmount
+        }
+        let txResult = await txPromise
+        
+        let successMetric = destBalanceStats.changeInBalance.gt(new FixedPointNumber(0))
+        let transferAmount = extrinsicObj.transferExtrinsicContainer.pathAmount
+        arbExecutionResult = {
+            assetSymbolIn: currency,
+            assetSymbolOut: currency,
+            assetAmountIn: transferAmount,
+            assetAmountOut: Number.parseFloat(destBalanceStats.changeInBalanceString),
+            result:`SUCCESS: ${successMetric} - TRANSFER: (${startChain} ${startParaId} ${currency} ${transferAmount}-> ${destChain}) ${destParaId} | FEES: ${feesAndGasAmount.toString()} | START: ${startBalanceStats.changeInBalanceString} -> DEST: ${destBalanceStats.changeInBalanceString} DEST 2: ${Number.parseFloat(destBalanceStats.changeInBalanceString)} DEST 3: ${destBalanceStats.changeInBalance.toNumber()}`
+        }
+        
+        let pathValueNext = Number.parseFloat(destBalanceStats.changeInBalanceString)
+        resultPathNode= {
+            pathInLocalId: extrinsicObj.transferExtrinsicContainer.pathInLocalId,
+            pathOutLocalId: extrinsicObj.transferExtrinsicContainer.pathOutLocalId,
+            pathInSymbol: currency,
+            pathOutSymbol: currency,
+            pathValue: extrinsicObj.transferExtrinsicContainer.pathAmount,
+            pathSwapType: extrinsicObj.transferExtrinsicContainer.pathSwapType,
+            pathValueNext: pathValueNext
+        }
+        let assetRegistryObject = extrinsicObj.transferExtrinsicContainer.destinationTransferrable.assetRegistryObject
+        let lastNodeChainId = assetRegistryObject.tokenData.chain
+        let lastNodeLocalId = assetRegistryObject.tokenData.localId
+        let lastNodeAssetSymbol = assetRegistryObject.tokenData.symbol
+        lastNodeAssetKey = JSON.stringify(lastNodeChainId.toString() + JSON.stringify(lastNodeLocalId))
+        lastNodeAssetValue = pathValueNext.toString()
+        
+        lastNode = {
+            assetKey: lastNodeAssetKey,
+            assetValue: lastNodeAssetValue,
+            chainId:lastNodeChainId,
+            assetSymbol: lastNodeAssetSymbol
+        }
+        extrinsicResultData = {
+            success: true,
+            arbExecutionResult: arbExecutionResult,
+            resultPathNode: resultPathNode,
+            transferTxStats: transferTxStats,
+            lastNode: lastNode,
+            extrinsicIndex: extrinsicIndex.i,
+        }
+        increaseIndex(extrinsicIndex)
+        return extrinsicResultData
+    } else {
+        console.log("Chain not supported")
+    }
+    console.log("---------------------------------------------")
+}
 
 async function executeTransferExtrinsic(transfer: TransferExtrinsicContainer, startParaId: number, chopsticks: boolean) {
     let signer;
@@ -956,7 +1869,7 @@ async function executeTransferExtrinsic(transfer: TransferExtrinsicContainer, st
     } 
     return false
 }
-async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, chopsticks: boolean) {
+async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, chopsticks: boolean):Promise<SwapResultObject> {
     let signer = await getSigner(chopsticks, false);
     //If MOVR/EVM execute smart contract call
     if(txContainer.chainId == 2023){
@@ -1082,7 +1995,7 @@ async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, chopsti
 async function runArbTester(chopsticks: boolean){
     let latestFile = getLatestFileFromLatestDay()
     let [assetPath, reversePath] = constructRoute(latestFile)
-    let reverse
+    // let reverse
     let instructionsPromise = buildInstructionSet(assetPath)
 
 
@@ -1120,7 +2033,7 @@ async function runArbTester(chopsticks: boolean){
         if(lastNodeChainId == 0){
             console.log("Last node chain is KUSAMA. Cant find arb with that. Can just exit successfully")
         } else {
-            let fallbackArbResults: ResultDataObject[] = await runAndReturnFallbackArb(functionArgs)
+            let fallbackArbResults: ResultDataObject[] = await runAndReturnFallbackArb(functionArgs, true)
             console.log("Fallback Arb Results: ")
             console.log(JSON.stringify(fallbackArbResults, null, 2))
     
@@ -1154,13 +2067,155 @@ async function runArbTester(chopsticks: boolean){
     }
 }
 
+async function runDynamicArbTester(chopsticks: boolean){
+    let latestFile = getLatestFileFromLatestDay()
+    let [assetPath, reversePath] = constructRoute(latestFile)
+    // let reverse
+    let instructionsPromise = await buildInstructionSet(assetPath)
+    let executeMovr = false
+    let testLoops = 100
+    let totalArbResults: ArbExecutionResult[] = []
+    let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(instructionsPromise, chopsticks, executeMovr, testLoops)
+    executionResults.extrinsicData.forEach((extrinsicData) => {
+        totalArbResults.push(extrinsicData.arbExecutionResult)
+    })
+    logResultsDynamic(executionResults, latestFile, false)
+    console.log("Execution success: " + executionResults.success)
+    let lastNode = executionResults.lastSuccessfulNode
+    console.log(`Last Node: ${JSON.stringify(executionResults.lastSuccessfulNode)}`)
+    if(lastNode.chainId == 0){
+        console.log("Last node chain is KUSAMA. Cant find arb with that. Can just exit successfully")
+    } else {
+        let functionArgs = `${lastNode.assetKey} ${ksmTargetNode} ${lastNode.assetValue}`
+        console.log("Executing Arb Fallback with args: " + functionArgs)
+
+        let fallbackArbResults: ResultDataObject[] = await runAndReturnFallbackArb(functionArgs, chopsticks)
+
+        console.log("Fallback Arb Results: ")
+        console.log(JSON.stringify(fallbackArbResults, null, 2))
+
+        let assetPath: AssetNode[] = fallbackArbResults.map(result => readLogData(result))
+    
+        console.log("Asset Path: ")
+        console.log(JSON.stringify(assetPath, null, 2))
+    
+        let reverseInstructions = await buildInstructionSet(assetPath)
+    
+        let reverseExtrinsicResult = await buildAndExecuteExtrinsics(reverseInstructions, chopsticks, executeMovr, 100)
+        logResultsDynamic(reverseExtrinsicResult, latestFile, true)
+
+        console.log("ORIGIN EXTRINSICS")
+        printExtrinsicSetResults(executionResults.extrinsicData)
+        console.log("REVERSE EXTRINSICS")
+        printExtrinsicSetResults(reverseExtrinsicResult.extrinsicData)
+        console.log(`Last Node: ${JSON.stringify(executionResults.lastSuccessfulNode)}`)
+        console.log(`Last Node Reverse: ${JSON.stringify(reverseExtrinsicResult.lastSuccessfulNode)}`)
+    // let arbResults = executionResults.extrinsicData.forEach((extrinsicData) => {
+    //     console.log(extrinsicData.arbExecutionResult)
+    // })
+    }
+}
+
+async function runDynamicArbLive(chopsticks: boolean){
+
+    let latestFile = getLatestFileFromLatestDay()
+    let [assetPath, reversePath] = constructRoute(latestFile)
+    let instructions = await buildInstructionSet(assetPath)
+    let executeMovr = false
+    let testLoops = 100
+    let allExtrinsicSets: ExtrinsicSetResultDynamic[] = []
+    let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(instructions, chopsticks, executeMovr, testLoops)
+    logResultsDynamic(executionResults, latestFile, false)
+    allExtrinsicSets.push(executionResults)
+    let arbSuccess = executionResults.success
+    let lastNode = executionResults.lastSuccessfulNode
+
+    let arbLoops = 0
+    //Rerun arb until success or last node is Kusama
+    while(!arbSuccess && lastNode.chainId != 0 && arbLoops < 3){
+        let functionArgs = `${lastNode.assetKey} ${ksmTargetNode} ${lastNode.assetValue}`
+        console.log("Executing Arb Fallback with args: " + functionArgs)
+
+        let fallbackArbResults: ResultDataObject[] = await runAndReturnFallbackArb(functionArgs, chopsticks)
+        let assetPath: AssetNode[] = fallbackArbResults.map(result => readLogData(result))
+        let reverseInstructions = await buildInstructionSet(assetPath)
+        let reverseExtrinsicResult = await buildAndExecuteExtrinsics(reverseInstructions, chopsticks, executeMovr, 100)
+        logResultsDynamic(reverseExtrinsicResult, latestFile, true)
+        allExtrinsicSets.push(reverseExtrinsicResult)
+        if(reverseExtrinsicResult.success){
+            arbSuccess = true
+            lastNode = reverseExtrinsicResult.lastSuccessfulNode
+        }
+    }
+    logAllArbAttempts(allExtrinsicSets, latestFile, chopsticks)
+    let arbAmountOut = await getTotalArbResultAmount()
+    console.log(`Result for latest file ${latestFile}: ${arbSuccess}`)
+    console.log(`Total Arb Amount Out: ${arbAmountOut}`)
+}
+
+// How much profit we got for latest arb
+async function getTotalArbResultAmount(){
+    let latestFilePath = path.join(__dirname, './latestAttempt/latestAttempt.json')
+    let latestArbResults: ArbExecutionResult[] = JSON.parse(fs.readFileSync(latestFilePath, 'utf8'))
+    let assetOut = latestArbResults[latestArbResults.length - 1].assetSymbolOut
+    let arbAmountOut = 0;
+    let arbAmountIn = latestArbResults[0].assetAmountIn;
+    if(assetOut == "KSM"){
+        arbAmountOut = latestArbResults[latestArbResults.length - 1].assetAmountOut - arbAmountIn
+    }
+
+    return arbAmountOut
+    
+}
+
+async function logAllArbAttempts(allExtrinsicSets: ExtrinsicSetResultDynamic[], logFilePath: string, chopsticks: boolean){
+    let allArbExecutions: ArbExecutionResult[] = []
+    allExtrinsicSets.forEach((extrinsicSet) => {
+        extrinsicSet.extrinsicData.forEach((extrinsicData) => {
+            allArbExecutions.push(extrinsicData.arbExecutionResult)
+        })
+    })
+    allArbExecutions = allArbExecutions.reverse()
+    let logFileStrings = logFilePath.split("\\");
+    let logFileDay = logFileStrings[logFileStrings.length - 2]
+    let logFileTime = logFileStrings[logFileStrings.length - 1]
+    let logFileData = JSON.stringify(allArbExecutions, null, 2)
+    
+    let directoryPath;
+    if(!chopsticks){
+        directoryPath = path.join(__dirname, './liveSwapExecutionStats/allArbAttempts', logFileDay);
+    } else {
+        directoryPath = path.join(__dirname, './allArbAttempts', logFileDay);
+    }
+    let latestAttemptFolder = path.join(__dirname, './latestAttempt')
+
+    // Check if directory exists, create if it doesn't
+    if (!fs.existsSync(directoryPath)) {
+        fs.mkdirSync(directoryPath, { recursive: true });
+    }
+    if (!fs.existsSync(latestAttemptFolder)) {
+        fs.mkdirSync(latestAttemptFolder, { recursive: true });
+    }
+
+    // Write data to file in the directory
+    const filePath = path.join(directoryPath, logFileTime);
+    const latestAttemptFilePath = path.join(latestAttemptFolder, 'latestAttempt.json')
+
+    if(!fs.existsSync(filePath)){
+        fs.writeFileSync(filePath, logFileData);
+    } else {
+        fs.appendFileSync(filePath, logFileData);
+    }
+    fs.writeFileSync(latestAttemptFilePath, logFileData);
+}
+
 async function testArbFallback(){
     let ksmTargetNode = '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"KSM\\"}}"'
     let startNode = '"2001{\\"Native\\":\\"BNC\\"}"'
     let startNodeValue = "50"
     let functionArgs = `${startNode} ${ksmTargetNode} ${startNodeValue}`
     console.log("Executing Arb Fallback with args: " + functionArgs)
-    let fallbackArbResults: ResultDataObject[] = await runAndReturnFallbackArb(functionArgs)
+    let fallbackArbResults: ResultDataObject[] = await runAndReturnFallbackArb(functionArgs, true)
     let assetPath: AssetNode[] = fallbackArbResults.map(result => readLogData(result))
 
     console.log("Asset Path: ")
@@ -1221,12 +2276,13 @@ async function testDotWallet(){
         }
     });
 }
-    
+
 async function run() {
-    await testDotWallet()
+    // await testDotWallet()
 //     let chopsticks = true
 //     await runArbTester(chopsticks)
     // await testArbFallback()
+    await runDynamicArbLive(true)
     process.exit(0)
 }
 

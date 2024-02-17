@@ -347,13 +347,43 @@ export interface ExtrinsicSetResult {
     success: boolean,
     arbExecutionResult: ArbExecutionResult[],
     resultPathNodes?: PathNodeValues[],
-    // reverseAssetNodes: AssetNode[],
     transferTxStats: TransferTxStats[],
     swapTxStats: SwapTxStats[],
     swapTxResults: any[],
-    // reverseExtrinsics: any[],
-    // lastNodeAssetKey: string,
-    // lastNodeAssetValue: string,
+    lastNode: LastNode,
+    extrinsicIndex: number,
+}
+export interface ExtrinsicSetResultDynamic {
+    success: boolean,
+    extrinsicData: (SingleTransferResultData | SingleSwapResultData)[],
+    lastSuccessfulNode: LastNode,
+}
+
+export interface SingleExtrinsicResultData{
+    success: boolean,
+    arbExecutionResult: ArbExecutionResult,
+    resultPathNode?: PathNodeValues,
+    transferTxStats: TransferTxStats,
+    swapTxStats: SwapTxStats,
+    swapTxResults: any,
+    lastNode: LastNode,
+    extrinsicIndex: number,
+}
+export interface SingleTransferResultData {
+    success: boolean,
+    arbExecutionResult: ArbExecutionResult,
+    resultPathNode?: PathNodeValues,
+    transferTxStats: TransferTxStats,
+    lastNode: LastNode,
+    extrinsicIndex: number,
+}
+
+export interface SingleSwapResultData {
+    success: boolean,
+    arbExecutionResult: ArbExecutionResult,
+    resultPathNode?: PathNodeValues,
+    swapTxStats: SwapTxStats,
+    swapTxResults: any,
     lastNode: LastNode,
     extrinsicIndex: number,
 }
@@ -372,4 +402,6 @@ export interface ArbExecutionResult{
     result: string,
     assetSymbolIn: string,
     assetSymbolOut: string,
+    assetAmountIn: number,
+    assetAmountOut: number
 }

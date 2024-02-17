@@ -6,6 +6,8 @@
 /scripts/instructions/swapExecutionResults
 /scripts/instructions/swapExecutionStats
 /scripts/instructions/transferExecutionResults
+/scripts/instructions/allArbAttempts
+/scripts/instructions/latestAttempt
 
 
 # Logs

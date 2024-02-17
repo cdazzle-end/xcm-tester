@@ -32,7 +32,7 @@ export const testNets = [
     "Mangata", 
     "ParallelHeiko",
     "AssetHubKusama",
-    "Kinstugi",
+    "Kintsugi",
     // "CrustShadow",
     // "Altair",
     // "Calamari",
@@ -44,3 +44,4 @@ export const alithAddress = "0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac"
 export const alithPk = process.env.ALITH_PK
 export const arb_wallet = process.env.ARB_WALLET
 export const mainWalletAddress = "GXeHEVY5SSJFQqcFmANaY3mTsRpcE9EUVzDcGpowbbe41ZZ"
+export const ksmTargetNode = '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"KSM\\"}}"'

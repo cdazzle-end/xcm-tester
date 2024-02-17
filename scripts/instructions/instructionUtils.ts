@@ -50,6 +50,11 @@ export function buildSwapInstruction(assetNodes: AssetNode[], index: IndexObject
     //Path type is stored in each node of arb log results, and the path type of the next node is the type of swap between them.
     //When reverse, its the path type of this node that
     // let pathTypeIndex = reverse ? 0 : 1
+    // let chainId = assetNodes[0].getChainId()
+    // if(chainId == 2000){
+
+    // }
+
   let swapInstruction: SwapInstruction = {
     type: InstructionType.Swap,
     chain: assetNodes[0].getChainId(),
