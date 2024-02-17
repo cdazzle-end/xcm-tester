@@ -5,7 +5,7 @@ import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
 import path from 'path';
 import { firstValueFrom, combineLatest, map, Observable, race, EMPTY, timeout } from "rxjs";
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { MyAssetRegistryObject, MyAsset, ResultDataObject, ApiSet, IndexObject } from './types.ts'
+import { MyAssetRegistryObject, MyAsset, ResultDataObject, ApiSet, IndexObject, SingleSwapResultData, SingleTransferResultData } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allConnectionPromises, allConnections, observableApis, promiseApis } from './liveTest.ts';
 import { ApiPromise, ApiRx, WsProvider } from '@polkadot/api';
@@ -600,4 +600,67 @@ export function printInstruction(instruction: SwapInstruction | TransferInstruct
     } else {
         console.log(`${instruction.instructionIndex} TRANSFER ${instruction.startAssetNode.getAssetRegistrySymbol()} --- ${instruction.startNode} -> ${instruction.destinationNode}`)
     }
+}
+
+export function printExtrinsicSetResults(extrinsicSetResults: (SingleSwapResultData | SingleTransferResultData) []){
+    extrinsicSetResults.forEach((resultData) => {
+        console.log(resultData.success)
+        console.log(JSON.stringify(resultData.arbExecutionResult, null, 2))
+    })
+}
+
+export async function getLastNodeFromResultData(allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) []){
+    let lastSuccessfulResultData = allExtrinsicResultData.reverse().find((resultData) => {
+        return resultData.success == true
+    })
+    if(!lastSuccessfulResultData){
+        throw new Error("No successful extrinsics found")
+    }
+    return lastSuccessfulResultData.lastNode
+}
+
+export function getLatestFileFromLatestDay() {
+    
+    const resultsDirPath = path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/result_log_data');
+    try {
+        // Get list of directories (days)
+        const days = fs.readdirSync(resultsDirPath, { withFileTypes: true })
+                       .filter(dirent => dirent.isDirectory())
+                       .map(dirent => dirent.name)
+                       .filter((day) => day.includes("_small"))
+
+
+        console.log("Days: ", JSON.stringify(days, null, 2))
+        // Sort directories by date
+        const sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+        // Get the latest day's directory
+
+        const latestDayDir = sortedDays[sortedDays.length - 1]
+        const latestDayPath = path.join(resultsDirPath, latestDayDir);
+        console.log("Latest Day Path: ", latestDayPath)
+        // Get list of files in the latest day's directory
+        const files = fs.readdirSync(latestDayPath);
+
+        // Sort files by timestamp in filename
+        const sortedFiles = files.sort((a, b) => {
+            const timeA = a.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+            const timeB = b.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+            return new Date(`${latestDayDir}T${timeA}`).getTime() - new Date(`${latestDayDir}T${timeB}`).getTime();
+        });
+
+        // Get the latest file
+        const latestFile = sortedFiles[sortedFiles.length - 1];
+        const latestFilePath = path.join(latestDayPath, latestFile);
+
+        return latestFilePath;
+    } catch (error) {
+        console.error('Error:', error);
+        return null;
+    }
+}
+export function constructRoute(logFilePath: string) {
+    console.log("LatestFile: ", logFilePath)
+    const testResults: ResultDataObject[] = JSON.parse(fs.readFileSync(logFilePath, 'utf8'));
+    let assetPath: AssetNode[] = testResults.map(result => readLogData(result))
+    return assetPath
 }

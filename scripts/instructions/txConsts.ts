@@ -45,3 +45,4 @@ export const alithPk = process.env.ALITH_PK
 export const arb_wallet = process.env.ARB_WALLET
 export const mainWalletAddress = "GXeHEVY5SSJFQqcFmANaY3mTsRpcE9EUVzDcGpowbbe41ZZ"
 export const ksmTargetNode = '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"KSM\\"}}"'
+export const testBncNode = '"2001{\\"Native\\":\\"BNC\\"}"'
