@@ -49,7 +49,7 @@ import { EventRecord } from '@polkadot/types/interfaces/index';
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { ISubmittableResult } from '@polkadot/types/types/extrinsic';
 // import { BalanceData, getAdapter } from '@polkawallet/bridge';
-import { alithPk, localRpcs, testNets } from './txConsts.ts';
+import { alithPk, arb_wallet, localRpcs, testNets } from './txConsts.ts';
 import {EvmRpcProvider} from '@acala-network/eth-providers';
 import { Wallet } from '@acala-network/sdk/wallet/wallet.js';
 import { WalletConfigs } from '@acala-network/sdk/wallet/index.js';
@@ -568,20 +568,39 @@ export async function getBalanceChange(
 export async function getSigner(chopsticks: boolean, eth: boolean): Promise<KeyringPair>{
     let keyring;
     let key;
-    if(eth){
-        const index = 0;
-        let ethDerPath = `m/44'/60'/0'/0/${index}`;
-        keyring = new Keyring({ type: 'ethereum' });
-        return keyring.addFromUri(`${alithPk}/${ethDerPath}`);
-    } else {
-        await cryptoWaitReady()
-        keyring = new Keyring({
-            type: "sr25519",
-        });
+
     
-        // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
-        return keyring.addFromUri("//Alice");
+    if(chopsticks){
+        // Get test accounts
+        if(eth){
+            const index = 0;
+            let ethDerPath = `m/44'/60'/0'/0/${index}`;
+            keyring = new Keyring({ type: 'ethereum' });
+            return keyring.addFromUri(`${alithPk}/${ethDerPath}`);
+        } else {
+            await cryptoWaitReady()
+            keyring = new Keyring({
+                type: "sr25519",
+            });
+            return keyring.addFromUri("//Alice");
+        }
+    } else {
+        // Get live accounts
+        if(eth){
+            const index = 0;
+            let ethDerPath = `m/44'/60'/0'/0/${index}`;
+            keyring = new Keyring({ type: 'ethereum' });
+            return keyring.addFromUri(`${alithPk}/${ethDerPath}`);
+        } else {
+            await cryptoWaitReady()
+            keyring = new Keyring({ type: 'sr25519' });
+            return keyring.addFromMnemonic(arb_wallet)
+        }
+
+
     }
+
+    
     
 }
 

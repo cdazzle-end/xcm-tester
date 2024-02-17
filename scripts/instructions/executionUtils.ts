@@ -192,7 +192,6 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     let assetOut = extrinsicObj.swapExtrinsicContainer.pathOutLocalId
     let expectedAmountIn = extrinsicObj.swapExtrinsicContainer.assetAmountIn
     let expectedAmountOut = extrinsicObj.swapExtrinsicContainer.expectedAmountOut
-    let reverseTx: ReverseSwapExtrinsicParams = extrinsicObj.swapExtrinsicContainer.reverseTx
 
     let signer = await getSigner(chopsticks, false)
 
