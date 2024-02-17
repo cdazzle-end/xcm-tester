@@ -124,9 +124,9 @@ export async function updateLps(chop: boolean){
   });
   }
 
-export async function runAndReturnFallbackArb(args: string): Promise<ResultDataObject[]>{
+export async function runAndReturnFallbackArb(args: string, chopsticks: boolean): Promise<ResultDataObject[]>{
 
-  await updateLps(true)
+  await updateLps(chopsticks)
 
     try{
         let arbCompleted = await runArbFallback(args);
