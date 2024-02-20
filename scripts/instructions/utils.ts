@@ -5,7 +5,7 @@ import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
 import path from 'path';
 import { firstValueFrom, combineLatest, map, Observable, race, EMPTY, timeout } from "rxjs";
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { MyAssetRegistryObject, MyAsset, ResultDataObject, ApiSet, IndexObject, SingleSwapResultData, SingleTransferResultData } from './types.ts'
+import { MyAssetRegistryObject, MyAsset, ResultDataObject, ApiSet, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allConnectionPromises, allConnections, observableApis, promiseApis } from './liveTest.ts';
 import { ApiPromise, ApiRx, WsProvider } from '@polkadot/api';
@@ -40,19 +40,20 @@ import { getBsxSwapExtrinsic } from './../swaps/bsxSwap.ts';
 // import { getBsxSwapExtrinsic } from './../swaps/bsxSwap.ts';
 // const bsxSwap = await import('./../swaps/bsx/bsxSwap.ts');
 // const { getBsxSwapExtrinsic } = bsxSwap;
-import { getMgxSwapExtrinsic } from './../swaps/mgxSwap.ts';
-import { getHkoSwapExtrinsic } from './../swaps/hkoSwap.ts';
-import { checkAndApproveToken } from 'scripts/swaps/movr/utils/utils.ts';
-import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
-import { EventRecord } from '@polkadot/types/interfaces/index';
+// import { getMgxSwapExtrinsic } from './../swaps/mgxSwap.ts';
+// import { getHkoSwapExtrinsic } from './../swaps/hkoSwap.ts';
+// import { checkAndApproveToken } from 'scripts/swaps/movr/utils/utils.ts';
+// import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
+// import { EventRecord } from '@polkadot/types/interfaces/index';
 
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { ISubmittableResult } from '@polkadot/types/types/extrinsic';
 // import { BalanceData, getAdapter } from '@polkawallet/bridge';
-import { alithPk, arb_wallet, localRpcs, testNets } from './txConsts.ts';
+import { alithPk, arb_wallet, karRpc, live_wallet_3, localRpcs, testNets } from './txConsts.ts';
 import {EvmRpcProvider} from '@acala-network/eth-providers';
 import { Wallet } from '@acala-network/sdk/wallet/wallet.js';
 import { WalletConfigs } from '@acala-network/sdk/wallet/index.js';
+import { liveWallet3Pk } from './../swaps/movr/utils/const.ts';
 
 // import { buildTransferExtrinsic } from './extrinsicUtils.ts';
 // Get the __dirname equivalent in ES module
@@ -342,15 +343,16 @@ export function connectFirstObservable(endpoint: string, chainId: number): Obser
     );
 }
 
-export async function watchTokenDeposit(paraId: number, destChainApi: ApiPromise, destPort: number, transferrableAssetObject: TransferrableAssetObject, depositAddress: string){
+export async function watchTokenDeposit(paraId: number, chopsticks: boolean, destChainApi: ApiPromise, destPort: number, transferrableAssetObject: TransferrableAssetObject, depositAddress: string){
     // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
     let destAdapter = getAdapter(paraId)
     let currentBalance: BalanceData;
     if(paraId == 2000){
         // let evmProvider: EvmRpcProvider = new EvmRpcProvider("ws://172.26.130.75:8008")
+        let rpcEndpoint = chopsticks ? localRpcs["Karura"] : karRpc
         let walletConfigs: WalletConfigs = {
-            evmProvider: new EvmRpcProvider("ws://172.26.130.75:8008"),
-            wsProvider: new WsProvider("ws://172.26.130.75:8008")
+            evmProvider: EvmRpcProvider.from(rpcEndpoint),
+            wsProvider: new WsProvider(rpcEndpoint)
         }
         let adapterWallet = new Wallet(destChainApi, walletConfigs);
         await destAdapter.init(destChainApi, adapterWallet);
@@ -380,16 +382,16 @@ export async function watchTokenDeposit(paraId: number, destChainApi: ApiPromise
     // }
     // If chain is movr, make sure tokens have xc prefix
     if(paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
-        console.log("Adding XC from token symbol")
+        // console.log("Adding XC from token symbol")
         tokenSymbol = "xc" + tokenSymbol
     // if chain isnt movr, no prefix
     } else if(paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
-        console.log("Removing XC from token symbol")
+        // console.log("Removing XC from token symbol")
         tokenSymbol = tokenSymbol.slice(2)
     }
     const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, depositAddress);
     console.log("Watch Token Deposit: Subscribed to balance")
-    console.log(destChainApi.registry.chainTokens)
+    // console.log(destChainApi.registry.chainTokens)
     // console.log(destAdapter.getTokens())
     return new Observable<BalanceData>((subscriber) => {
         const subscription = balanceObservable.subscribe({
@@ -416,14 +418,17 @@ export async function watchTokenDeposit(paraId: number, destChainApi: ApiPromise
         };
     })
 }
-export async function watchTokenBalance(paraId: number, chainApi: ApiPromise, assetSymbol: string, node: string, accountAddress: string){
+export async function watchTokenBalance(paraId: number, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, node: string, accountAddress: string){
     // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
     let destAdapter = getAdapter(paraId)
     let currentBalance: BalanceData;
+
+    
     if(paraId == 2000){
+        let rpcEndpoint = chopsticks ? localRpcs[node] : karRpc
         let walletConfigs: WalletConfigs = {
-            evmProvider: EvmRpcProvider.from("ws://172.26.130.75:8008"),
-            wsProvider: new WsProvider("ws://172.26.130.75:8008")
+            evmProvider: EvmRpcProvider.from(rpcEndpoint),
+            wsProvider: new WsProvider(rpcEndpoint)
         }
         let adapterWallet = new Wallet(chainApi, walletConfigs);
         await destAdapter.init(chainApi, adapterWallet);
@@ -452,11 +457,9 @@ export async function watchTokenBalance(paraId: number, chainApi: ApiPromise, as
         console.log("Removing XC from token symbol")
         tokenSymbol = tokenSymbol.slice(2)
     }
-    console.log("Watch Token Balance: Account address: " + accountAddress)
-    console.log("Watch Token Balance: Token symbol: " + tokenSymbol)
     const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, accountAddress);
     console.log("Watch Token Balance: Subscribed to balance")
-    console.log(chainApi.registry.chainTokens)
+    // console.log(chainApi.registry.chainTokens)
     // console.log(destAdapter.getTokens())
     return new Observable<BalanceData>((subscriber) => {
         const subscription = balanceObservable.subscribe({
@@ -498,7 +501,7 @@ export async function getBalanceChange(
         changeInBalanceString: "0"
     }
     const balanceChangePromise = new Promise<BalanceChangeStats>((resolve, reject) => {
-        const subscription = balanceObservable$.pipe(timeout(600000)).subscribe({
+        const subscription = balanceObservable$.pipe(timeout(60000)).subscribe({
             next(balance) {
                 
                 if(currentBalance){
@@ -555,6 +558,92 @@ export async function getBalanceChange(
     });
     return balanceChangePromise
 }
+
+export async function getBalance(paraId: number, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, node: string, accountAddress: string): Promise<BalanceData>{
+
+    // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
+
+    let destAdapter = getAdapter(paraId)
+    let currentBalance: BalanceData;
+    
+    if(paraId == 2000){
+        let rpcEndpoint = chopsticks ? localRpcs[node] : karRpc
+        let walletConfigs: WalletConfigs = {
+            evmProvider: EvmRpcProvider.from(rpcEndpoint),
+            wsProvider: new WsProvider(rpcEndpoint)
+        }
+        let adapterWallet = new Wallet(chainApi, walletConfigs);
+        await destAdapter.init(chainApi, adapterWallet);
+    } else {
+        await destAdapter.init(chainApi);
+    }
+    
+    // printAndLogToFile("Subscribing to balance for destination chain " + paraId + " for asset " + transferrableAssetObject.paraspellAssetSymbol.symbol + " for address " + aliceAddress)
+    let tokenSymbol;
+    if(paraId == 0){
+        tokenSymbol = "KSM"
+    } else {
+        tokenSymbol = assetSymbol
+    }
+
+    console.log(`Watch Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
+    // if(node == "Moonriver" && tokenSymbol.toUpperCase().startsWith("XC")){
+    //     console.log("Removing XC from token symbol")
+    //     tokenSymbol = tokenSymbol.slice(2)
+    // }
+    if(paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
+        console.log("Adding XC from token symbol")
+        tokenSymbol = "xc" + tokenSymbol
+    // if chain isnt movr, no prefix
+    } else if(paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
+        console.log("Removing XC from token symbol")
+        tokenSymbol = tokenSymbol.slice(2)
+    }
+
+    const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, accountAddress);
+    console.log("Watch Token Balance: Subscribed to balance")
+    let balance = await firstValueFrom(balanceObservable)
+    console.log("Balance: " + JSON.stringify(balance.available))
+    return balance
+    // // console.log(chainApi.registry.chainTokens)
+    // // console.log(destAdapter.getTokens())
+    // return new Observable<BalanceData>((subscriber) => {
+    //     const subscription = balanceObservable.subscribe({
+    //         next(balance) {
+    //             currentBalance = balance;
+    //             subscriber.complete();
+    //         },
+    //         error(err) {
+    //             subscriber.error(new Error(err));
+    //             subscriber.complete(); // Complete the outer Observable on error
+    //         },
+    //         complete() {
+    //             subscriber.complete(); // Complete the outer Observable when the inner one completes
+    //         }
+    //     });
+    //     return () => {
+    //         subscription.unsubscribe();
+    //     };
+    // })
+    
+    // let balanceObservable = new Observable<BalanceData>(subscriber => {
+    //     balanceObservable.pipe(
+    //         first() // Take only the first emitted value and then complete
+    //     ).subscribe({
+    //         next(balance) {
+    //             subscriber.next(balance);
+    //             subscriber.complete();
+    //         },
+    //         error(err) {
+    //             subscriber.error(new Error(err));
+    //         },
+    //         complete() {
+    //             // This will naturally occur after the first value due to the `first()` operator
+    //             subscriber.complete();
+    //         }
+    //     });
+    // });
+}
 // export const getSigner = async () => {
 //     await cryptoWaitReady()
 //     const keyring = new Keyring({
@@ -576,7 +665,7 @@ export async function getSigner(chopsticks: boolean, eth: boolean): Promise<Keyr
             const index = 0;
             let ethDerPath = `m/44'/60'/0'/0/${index}`;
             keyring = new Keyring({ type: 'ethereum' });
-            return keyring.addFromUri(`${alithPk}/${ethDerPath}`);
+            return keyring.addFromUri(`${live_wallet_3}/${ethDerPath}`);
         } else {
             await cryptoWaitReady()
             keyring = new Keyring({
@@ -590,7 +679,7 @@ export async function getSigner(chopsticks: boolean, eth: boolean): Promise<Keyr
             const index = 0;
             let ethDerPath = `m/44'/60'/0'/0/${index}`;
             keyring = new Keyring({ type: 'ethereum' });
-            return keyring.addFromUri(`${alithPk}/${ethDerPath}`);
+            return keyring.addFromUri(`${live_wallet_3}/${ethDerPath}`);
         } else {
             await cryptoWaitReady()
             keyring = new Keyring({ type: 'sr25519' });
@@ -628,26 +717,65 @@ export function printExtrinsicSetResults(extrinsicSetResults: (SingleSwapResultD
     })
 }
 
-export async function getLastNodeFromResultData(allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) []){
-    let lastSuccessfulResultData = allExtrinsicResultData.reverse().find((resultData) => {
-        return resultData.success == true
-    })
-    if(!lastSuccessfulResultData){
-        throw new Error("No successful extrinsics found")
+export async function getLastSuccessfulNodeFromResultData(allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) []){
+    let lastSuccessfulResultData = allExtrinsicResultData[allExtrinsicResultData.length - 1]
+    if(!lastSuccessfulResultData.success){
+        if(allExtrinsicResultData.length > 1){
+            lastSuccessfulResultData = allExtrinsicResultData[allExtrinsicResultData.length - 2]
+            if(!lastSuccessfulResultData.success){
+                console.log("No successful extrinsics")
+            }
+        } else {
+            console.log("No successful extrinsics")
+        }
     }
     return lastSuccessfulResultData.lastNode
 }
+export async function getLastNodeFromResultData(allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) []){
+    let lastSuccessfulResultData = allExtrinsicResultData[allExtrinsicResultData.length - 1]
+    // if(!lastSuccessfulResultData.success){
+    //     console.log("No successful extrinsics")
+    // }
+    return lastSuccessfulResultData.lastNode
+}
+export async function getLastSuccessfulNodeFromAllExtrinsics(allExtrinsicResultData: ExtrinsicSetResultDynamic []){
+    let resultData: (SingleSwapResultData | SingleTransferResultData) [] = [];
+    allExtrinsicResultData.forEach((extrinsicSetResult) => {
+        extrinsicSetResult.extrinsicData.forEach((extrinsicData) => {
+            resultData.push(extrinsicData)
+        })
+    })
+    let lastSuccessfulResultData = resultData[resultData.length - 1]
+    if(!lastSuccessfulResultData.success){
+        if(resultData.length > 1){
+            lastSuccessfulResultData = resultData[resultData.length - 2]
+            if(!lastSuccessfulResultData.success){
+                console.log("No successful extrinsics")
+            }
+        } else {
+            console.log("No successful extrinsics")
+        }
+    }
 
-export function getLatestFileFromLatestDay() {
+    return lastSuccessfulResultData.lastNode
+}
+export function getLatestFileFromLatestDay(small: boolean) {
     
     const resultsDirPath = path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/result_log_data');
     try {
+        let days;
+        if(small){
         // Get list of directories (days)
-        const days = fs.readdirSync(resultsDirPath, { withFileTypes: true })
-                       .filter(dirent => dirent.isDirectory())
-                       .map(dirent => dirent.name)
-                       .filter((day) => day.includes("_small"))
-
+            days = fs.readdirSync(resultsDirPath, { withFileTypes: true })
+                .filter(dirent => dirent.isDirectory())
+                .map(dirent => dirent.name)
+                .filter((day) => day.includes("_small"))
+        } else {
+            days = fs.readdirSync(resultsDirPath, { withFileTypes: true })
+                .filter(dirent => dirent.isDirectory())
+                .map(dirent => dirent.name)
+                .filter((day) => !day.includes("_small"))
+        }
 
         console.log("Days: ", JSON.stringify(days, null, 2))
         // Sort directories by date

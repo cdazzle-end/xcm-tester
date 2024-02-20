@@ -1,0 +1,20 @@
+[
+    {
+        "node_key": "2023\"10810581592933651521121702237638664357\"",
+        "asset_name": "Karura",
+        "path_value": 12.049520528892,
+        "path_identifier": 0
+      },
+      {
+        "node_key": "2023\"MOVR\"",
+        "asset_name": "MOVR",
+        "path_value": 0.11652188787750865,
+        "path_identifier": 1
+      },
+      {
+        "node_key": "2023\"108036400430056508975016746969135344601\"",
+        "asset_name": "Robonomics Native Token",
+        "path_value": 0.400562921,
+        "path_identifier": 1
+      }
+]

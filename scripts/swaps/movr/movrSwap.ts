@@ -1,6 +1,6 @@
 import '@moonbeam-network/api-augment/moonriver'
 import { calculateSwapAmountRouterFormula, checkForSubstrateToken, getBestSwapRoute, logBatchContractResults, getContractAbi, checkApproval, getTokenContractData, logDoubleSwapResults, getContractAbiIndex, checkAndApproveToken, wrapMovr, logLiveWalletTransaction } from './utils/utils.ts';
-import { batchArtifact, batchContractAddress2, boxContractAddress, defaultRpc, dexAbis, fraxContractAddress, ignoreList, liveBatchContract, liveWallet3Pk, localRpc, movrContractAbi, movrContractAddress, solarFee, test_account_pk, usdcContractAbi, usdcContractAddress, wmovrFraxDexAddress, wmovrUsdcDexAddress, xcCsmContractAddress, xcKintContractAddress, xcKsmContractAddress, xcRmrkContractAddress, zenFee } from './utils/const.ts';
+import { batchArtifact, batchContractAddress2, boxContractAddress, defaultRpc, dexAbis, fraxContractAddress, ignoreList, liveBatchContract, liveWallet3Pk, localRpc, movrContractAbi, movrContractAddress, solarFee, test_account_pk, usdcContractAbi, usdcContractAddress, wmovrFraxDexAddress, wmovrUsdcDexAddress, xcCsmContractAddress, xcKarContractAddress, xcKintContractAddress, xcKsmContractAddress, xcRmrkContractAddress, xcXrtContractAddress, zenFee } from './utils/const.ts';
 import * as mutex from 'mutexify'
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 // import { MangataInstance, Mangata, MultiswapBuyAsset, MultiswapSellAsset } from "@mangata-finance/sdk"
@@ -22,6 +22,8 @@ import { fileURLToPath } from 'url';
 import { AssetNode } from '../../instructions/AssetNode.ts';
 import { increaseIndex } from '../../instructions/utils.ts';
 import { FixedPointNumber } from '@acala-network/sdk-core';
+import { getApiForNode } from '../../instructions/extrinsicUtils.ts';
+import { live_wallet_3 } from '../../instructions/txConsts.ts';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 console.log(__dirname)
 // Patch BigInt for JSON serialization
@@ -460,12 +462,12 @@ async function testXcTokensMoonbase(){
 
     // })
 }
-export async function getMovrSwapTx(swapInstructions: SwapInstruction[], testnet: boolean): Promise<BatchSwapParams>{
+export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsticks: boolean): Promise<BatchSwapParams>{
     let rpcProvider;
     // let testProvider = new ethers.JsonRpcProvider(localRpc)
     let wallet;
     let batchContractAddress;
-    if(testnet){
+    if(chopsticks){
         //Local testnet and test account
         rpcProvider = new ethers.JsonRpcProvider(localRpc)
         wallet = new ethers.Wallet(test_account_pk, rpcProvider)
@@ -473,7 +475,7 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], testnet
     } else {
         //Live network and live wallet
         rpcProvider = new ethers.JsonRpcProvider(defaultRpc)
-        wallet = new ethers.Wallet(liveWallet3Pk, rpcProvider)
+        wallet = new ethers.Wallet(live_wallet_3, rpcProvider)
         batchContractAddress = liveBatchContract
     }
 
@@ -503,8 +505,11 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], testnet
         const inputAmount = ethers.parseUnits(swapInstructions[i].assetInAmount.toString(), Number.parseInt(tokenPathAssetObjects[i].tokenData.decimals))
         const outputAmount = ethers.parseUnits(swapInstructions[i].assetOutTargetAmount.toString(), Number.parseInt(tokenPathAssetObjects[i+1].tokenData.decimals))
 
+        console.log("WRAP MOVR HERE:")
         // If first token is MOVR, check if we need to wrap first
-        if(i == 0 && tokenPathAddresses[i] == movrContractAddress){
+        console.log(`I is: ${i}, Token Path Address: ${tokenPathAddresses[i]}, Movr Contract Address: ${movrContractAddress}`)
+        if(i == 0 && tokenPathAddresses[i].toString().toLowerCase() == movrContractAddress.toString().toLowerCase()){
+            console.log("WRAP MOVR CHECK")
             let wmovrBalance = await movrContract.balanceOf(wallet.address)
             let nativeMovrBalance = await wallet.provider.getBalance(wallet.address)
             if(wmovrBalance < inputAmount && nativeMovrBalance < inputAmount){
@@ -513,9 +518,11 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], testnet
                 wrapMovrAmount = inputAmount;
             }
         }
+        console.log(wrapMovrAmount)
         const tokenIn = tokenPathAddresses[i]
         const tokenOut = tokenPathAddresses[i+1]
-
+        console.log("Token In: ", tokenIn)
+        console.log("Token Out: ", tokenOut)
         // Get dex offering the best price for the swap, but dont use given calculate output yet
         console.log("GETTING BEST SWAP ROUTE")
         let [dexAddress, sampleOutput] = await getBestSwapRoute(tokenIn, tokenOut, inputAmount, defaultRpc)
@@ -552,7 +559,11 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], testnet
     let data: string[] = [];
     swapParams.forEach((swapParam: any) => {
         let dexInfo = getDexInfo(swapParam.dexAddress)
-        if(swapParam.tokenIn == dexInfo.token0){
+        console.log("TOKEN IN: ", swapParam.tokenIn)
+        console.log("TOKEN OUT:", swapParam.tokenOut)
+        console.log("DEX TOKEN 0:", dexInfo.token0)
+        console.log("DEX TOKEN 1: ", dexInfo.token1)
+        if(swapParam.tokenIn.toLowerCase() == dexInfo.token0.toLowerCase()){
             amount0Ins.push(swapParam.inputAmount)
             amount1Ins.push(BigInt(0))
             amount0Outs.push(BigInt(0))
@@ -570,6 +581,10 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], testnet
         movrWrapAmounts.push(swapParam.wrapMovrAmount)
         data.push("0x")
     })
+    console.log("AMOUNT 0 INS: ", amount0Ins)
+    console.log("AMOUNT 1 INS: ", amount1Ins)
+    console.log("AMOUNT 0 OUTS: ", amount0Outs)
+    console.log("AMOUNT 1 OUTS: ", amount1Outs)
 
     // let reverseWrapMovrAmount = swapParams[0].wrapMovrAmount
     // if(tokenPathAddresses[tokenPathAddresses.length - 1] == movrContractAddress){
@@ -619,10 +634,11 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], testnet
     // let swapReceipt = await swapTx.wait()
     // logLiveWalletTransaction(swapReceipt, "Execute Swaps")
 }
-export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapInstructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, instructionIndex: number[]) {
+export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapInstructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, instructionIndex: number[], chopsticks: boolean) {
     let liveWallet = movrBatchSwapParams.wallet;
     let batchContract = movrBatchSwapParams.batchContract;
-    
+    let api = await getApiForNode("Moonriver", 2023, chopsticks)
+
     let batchContractAddress = await batchContract.getAddress()
     console.log(`Wallet: ${liveWallet.address} | Batch Contract: ${batchContractAddress}`)
     let tokens = movrBatchSwapParams.inputTokens
@@ -687,6 +703,7 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
         pathSwapType: swapType,
         pathAmount: amountIn,
         // reverseTx: reverseMovrBatchSwapParams,
+        api: api,
         movrBatchSwapParams: movrBatchSwapParams
     }
     increaseIndex(extrinsicIndex)
@@ -695,15 +712,18 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
 async function buildReverseSwapParams(swapParams: BatchSwapParams){
 
 }
-async function testXcTokensMoonriver(tokenPath: string[], inputAmountNumber: number, slippage = 50){
-    let liveProvider = new ethers.JsonRpcProvider(defaultRpc)
-    let testProvider = new ethers.JsonRpcProvider(localRpc)
+export async function testXcTokensMoonriver(tokenPath: string[], inputAmountNumber: number, slippage = 50){
+    console.log("INITIALIZING API")
+    let rpc = defaultRpc
+    let liveProvider = new ethers.JsonRpcProvider(rpc)
+    // let testProvider = new ethers.JsonRpcProvider(localRpc)
     // let testWallet = new ethers.Wallet(test_account_pk, testProvider)
     let liveWallet = new ethers.Wallet(liveWallet3Pk, liveProvider)
 
     let movrContract = new ethers.Contract(movrContractAddress, erc20Abi, liveWallet)
     let ksmContract = new ethers.Contract(xcKsmContractAddress, erc20Abi, liveWallet)
     let fraxContract = new ethers.Contract(fraxContractAddress, erc20Abi, liveWallet)
+    console.log("INITIALIZING BATCH CONTRACT")
     const batchContract = await new ethers.Contract(liveBatchContract, batchArtifact.abi, liveWallet)
 
 // -----------------------------------------------------------------------------
@@ -756,7 +776,7 @@ async function testXcTokensMoonriver(tokenPath: string[], inputAmountNumber: num
         }
 
         // Get dex offering the best price for the swap, but dont use given calculate output yet
-        let [dexAddress, sampleOutput] = await getBestSwapRoute(tokenIn, tokenOut, inputAmount, localRpc)
+        let [dexAddress, sampleOutput] = await getBestSwapRoute(tokenIn, tokenOut, inputAmount, rpc)
         if(sampleOutput == 0 || dexAddress == ""){
             throw new Error("No swap route found")
         }
@@ -1045,11 +1065,11 @@ async function run(){
     // getXcTokens()
     // testXcTokensMoonbase()
     // cleanXcTokenAddresses()
-    // let tokenPath = [xcKintContractAddress, movrContractAddress, xcCsmContractAddress ]
-    // testXcTokensMoonriver(tokenPath, 0.3, 50)
+    let tokenPath = [xcKarContractAddress, movrContractAddress, xcXrtContractAddress ]
+    testXcTokensMoonriver(tokenPath, 0.3, 50)
     // getAllAbis()
     // readDexes()
-    testBatchUnwrap()
+    // testBatchUnwrap()
 }
 // 8045943121732945468
 // 24124090793978129408

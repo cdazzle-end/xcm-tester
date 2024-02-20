@@ -99,11 +99,12 @@ export async function logSubmittableExtrinsics(extrinsicSet: ExtrinsicObject[], 
 
     // Write data to file in the directory
     const filePath = path.join(directoryPath, logFileTime);
-    if(!fs.existsSync(filePath)){
-        fs.writeFileSync(filePath, logFileData);
-    } else {
-        fs.appendFileSync(filePath, logFileData);
-    }
+    // if(!fs.existsSync(filePath)){
+    //     fs.writeFileSync(filePath, logFileData);
+    // } else {
+    //     fs.appendFileSync(filePath, logFileData);
+    // }
+    fs.writeFileSync(filePath, logFileData);
 
     console.log(`Data written to file: ${filePath}`);
 }
@@ -164,12 +165,14 @@ export function logArbExecutionResults(arbResults: any[], logFilePath: string, r
 
     // Write data to file in the directory
     const filePath = path.join(directoryPath, logFileTime);
-    if(!fs.existsSync(filePath)){
-        fs.writeFileSync(filePath, logFileData);
-    } else {
-        fs.appendFileSync(filePath, logFileData);
-    }
-
+    const latestAttemptPath = path.join(__dirname, './latestAttempt/arbExecutionResults.json')
+    // if(!fs.existsSync(filePath)){
+    //     fs.writeFileSync(filePath, logFileData);
+    // } else {
+    //     fs.appendFileSync(filePath, logFileData);
+    // }
+    fs.writeFileSync(filePath, logFileData);
+    fs.writeFileSync(latestAttemptPath, logFileData);
     console.log(`Data written to file: ${filePath}`);
 }
 export async function logSwapTxResults(txResults: any, logFilePath: string, reverse: boolean = false) {
@@ -191,11 +194,14 @@ export async function logSwapTxResults(txResults: any, logFilePath: string, reve
 
     // Write data to file in the directory
     const filePath = path.join(directoryPath, logFileTime);
-    if(!fs.existsSync(filePath)){
-        fs.writeFileSync(filePath, logFileData);
-    } else {
-        fs.appendFileSync(filePath, logFileData);
-    }
+    const latestAttemptPath = path.join(__dirname, './latestAttempt/swapExecutionStats.json')
+    // if(!fs.existsSync(filePath)){
+    //     fs.writeFileSync(filePath, logFileData);
+    // } else {
+    //     fs.appendFileSync(filePath, logFileData);
+    // }
+    fs.writeFileSync(filePath, logFileData);
+    fs.writeFileSync(latestAttemptPath, logFileData);
 
     console.log(`Data written to file: ${filePath}`);
 
@@ -222,11 +228,14 @@ export function logTransferTxStats(transferTxStats: TransferTxStats[], logFilePa
 
     // Write data to file in the directory
     const filePath = path.join(directoryPath, logFileTime);
-    if(!fs.existsSync(filePath)){
-        fs.writeFileSync(filePath, logFileData);
-    } else {
-        fs.appendFileSync(filePath, logFileData);
-    }
+    const latestAttemptPath = path.join(__dirname, './latestAttempt/transferExecutionResults.json')
+    // if(!fs.existsSync(filePath)){
+    //     fs.writeFileSync(filePath, logFileData);
+    // } else {
+    //     fs.appendFileSync(filePath, logFileData);
+    // }
+    fs.writeFileSync(latestAttemptPath, logFileData);
+    fs.writeFileSync(filePath, logFileData);
 
     console.log(`Data written to file: ${filePath}`);
 }
@@ -250,12 +259,14 @@ export function logSwapTxStats(swapTxStats: SwapTxStats[], logFilePath: string, 
 
     // Write data to file in the directory
     const filePath = path.join(directoryPath, logFileTime);
-    if(!fs.existsSync(filePath)){
-        fs.writeFileSync(filePath, logFileData);
-    } else {
-        fs.appendFileSync(filePath, logFileData);
-    }
-    
+    // if(!fs.existsSync(filePath)){
+    //     fs.writeFileSync(filePath, logFileData);
+    // } else {
+    //     fs.appendFileSync(filePath, logFileData);
+    // }
+    const latestAttemptPath = path.join(__dirname, './latestAttempt/swapExecutionStats.json')
+    fs.writeFileSync(filePath, logFileData);
+    fs.writeFileSync(latestAttemptPath, logFileData);
 
     console.log(`Data written to file: ${filePath}`);
 }
@@ -289,6 +300,47 @@ export async function logResultsDynamic(extrinsicSetResults: ExtrinsicSetResultD
     let logString = lastNodeString + "\n" + extrinsicSetString
     fs.appendFileSync(logFilePath, logString)
 }
+export async function logAllResultsDynamic(allExtrinsicSetResults: ExtrinsicSetResultDynamic[], logFilePath: string, reverse: boolean){
+    // let lastNode = extrinsicSetResults.lastSuccessfulNode
+    // let extrinsicSetData = extrinsicSetResults.extrinsicData
+
+    let arbResults: ArbExecutionResult[] = []
+    let swapTxStats: SwapTxStats[] = []
+    let swapTxResults: any[] = []
+    let transferTxStats: TransferTxStats[] = []
+
+    allExtrinsicSetResults.forEach((extrinsicSet) => {
+        extrinsicSet.extrinsicData.forEach((swapOrTransferResultData) => {
+            arbResults.push(swapOrTransferResultData.arbExecutionResult)
+            if('swapTxStats' in swapOrTransferResultData){
+                swapTxStats.push(swapOrTransferResultData.swapTxStats)
+                swapTxResults.push(swapOrTransferResultData.swapTxResults)
+            } else if ('transferTxStats' in swapOrTransferResultData){
+                transferTxStats.push(swapOrTransferResultData.transferTxStats)
+            }
+        })
+    })
+
+    // extrinsicSetData.forEach((resultData) => {
+    //     arbResults.push(resultData.arbExecutionResult)
+    //     if('swapTxStats' in resultData){
+    //         swapTxStats.push(resultData.swapTxStats)
+    //         swapTxResults.push(resultData.swapTxResults)
+    //     } else if ('transferTxStats' in resultData){
+    //         transferTxStats.push(resultData.transferTxStats)
+    //     }
+    // })
+    reverse = false;
+    logSwapTxStats(swapTxStats, logFilePath, reverse)
+    logSwapTxResults(swapTxResults, logFilePath, reverse)
+    logTransferTxStats(transferTxStats, logFilePath, reverse)
+    logArbExecutionResults(arbResults, logFilePath,reverse)
+
+    // let lastNodeString = `LAST SUCCESSFUL NODE: ${lastNode.chainId} ${lastNode.assetSymbol} ${lastNode.assetValue}`
+    // let extrinsicSetString = `EXTRINSIC SET RESULTS: ${JSON.stringify(extrinsicSetData, null, 2)}`
+    // let logString = lastNodeString + "\n" + extrinsicSetString
+    // fs.appendFileSync(logFilePath, logString)
+}
 
 export async function logAllArbAttempts(allExtrinsicSets: ExtrinsicSetResultDynamic[], logFilePath: string, chopsticks: boolean){
     let allArbExecutions: ArbExecutionResult[] = []
@@ -297,13 +349,14 @@ export async function logAllArbAttempts(allExtrinsicSets: ExtrinsicSetResultDyna
             allArbExecutions.push(extrinsicData.arbExecutionResult)
         })
     })
-    allArbExecutions = allArbExecutions.reverse()
+    // allArbExecutions = allArbExecutions.reverse()
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
     let logFileTime = logFileStrings[logFileStrings.length - 1]
     let logFileData = JSON.stringify(allArbExecutions, null, 2)
     
     let directoryPath;
+    
     if(!chopsticks){
         directoryPath = path.join(__dirname, './liveSwapExecutionStats/allArbAttempts', logFileDay);
     } else {
@@ -321,12 +374,51 @@ export async function logAllArbAttempts(allExtrinsicSets: ExtrinsicSetResultDyna
 
     // Write data to file in the directory
     const filePath = path.join(directoryPath, logFileTime);
-    const latestAttemptFilePath = path.join(latestAttemptFolder, 'latestAttempt.json')
+    const latestAttemptFilePath = path.join(latestAttemptFolder, 'allArbResults.json')
 
-    if(!fs.existsSync(filePath)){
-        fs.writeFileSync(filePath, logFileData);
-    } else {
-        fs.appendFileSync(filePath, logFileData);
-    }
+    // if(!fs.existsSync(filePath)){
+    //     fs.writeFileSync(filePath, logFileData);
+    // } else {
+    //     fs.appendFileSync(filePath, logFileData);
+    // }
+    fs.writeFileSync(filePath, logFileData);
     fs.writeFileSync(latestAttemptFilePath, logFileData);
+
+    // Log profits for live execution
+    // if(!chopsticks){
+    //     let profitFilePath = path.join(__dirname, './liveSwapExecutionStats', 'profitStats.json')
+    // }
+}
+
+export async function logProfits(arbAmountOut: number, logFilePath: string, chopsticks: boolean){
+    let logFileStrings = logFilePath.split("\\");
+    let logFileDay = logFileStrings[logFileStrings.length - 2]
+    let logFileTime = logFileStrings[logFileStrings.length - 1]
+    let logDayTime = logFileDay + logFileTime
+
+
+
+
+
+    let live = chopsticks ? 'test_' : 'live_'
+    let logEntry = live + logDayTime
+
+    let profitLogDatabase = {}
+    profitLogDatabase[logEntry] = arbAmountOut
+    console.log(logEntry)
+    console.log(arbAmountOut)
+    console.log("PROFIT LOG DATABASE")
+    console.log(profitLogDatabase)
+
+    let profitFilePath = path.join(__dirname, './liveSwapExecutionStats', 'profitStats.json')
+    profitLogDatabase = JSON.parse(fs.readFileSync(profitFilePath, 'utf8'))
+    profitLogDatabase[logEntry] = arbAmountOut
+    fs.writeFileSync(profitFilePath, JSON.stringify(profitLogDatabase, null, 2))
+    // if(!fs.existsSync(profitFilePath)){
+    //     fs.writeFileSync(profitFilePath, JSON.stringify(profitLogDatabase, null, 2))
+    // } else {
+    //     profitLogDatabase = JSON.parse(fs.readFileSync(profitFilePath, 'utf8'))
+    //     profitLogDatabase[logDayTime] = arbAmountOut
+    //     fs.writeFileSync(profitFilePath, JSON.stringify(profitLogDatabase, null, 2))
+    // }
 }

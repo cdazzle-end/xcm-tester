@@ -36,7 +36,7 @@ import { AggregateDexSwapParams, TradingPath } from '@acala-network/sdk-swap/typ
 import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
 import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
 import { increaseIndex } from './../instructions/utils.ts'
-import { AssetNode } from 'scripts/instructions/AssetNode.ts'
+import { AssetNode } from './../instructions/AssetNode.ts'
 // import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
 // const { options } = require('@acala-network/api');
 // import { Fixed18, convertToFixed18, calcSwapTargetAmount } from '@acala-network/api';

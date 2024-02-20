@@ -274,8 +274,8 @@ export async function getBncSwapExtrinsicDynamic(
 
   const tokenIn = tokens.find((item) => item.symbol.toLowerCase() === tokenInSymbol.toLowerCase());
   const tokenOut = tokens.find((item) => item.symbol.toLowerCase() === tokenOutSymbol.toLowerCase());
-  console.log('token0', tokenIn);
-  console.log('token1', tokenOut);
+  // console.log('token0', tokenIn);
+  // console.log('token1', tokenOut);
 
   const tokensMap: Record<string, typeof Token> = {};
   tokens.reduce((total: any, cur: any) => {

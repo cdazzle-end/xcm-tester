@@ -3,9 +3,12 @@ import { BN } from "@polkadot/util/bn"
 import { checkAndApproveToken } from "./../swaps/movr/utils/utils.ts"
 import { AssetNode } from "./AssetNode.ts"
 import { testNets, localRpcs } from "./txConsts.ts"
-import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, ReverseSwapExtrinsicParams, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject } from "./types.ts"
-import { watchTokenBalance, getBalanceChange, getSigner, watchTokenDeposit, increaseIndex } from "./utils.ts"
+import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, ReverseSwapExtrinsicParams, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ExtrinsicSetResultDynamic, ChainNonces } from "./types.ts"
+import { watchTokenBalance, getBalanceChange, getSigner, watchTokenDeposit, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getBalance } from "./utils.ts"
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
+import { buildSwapExtrinsicDynamic, createSwapExtrinsicObject } from "./extrinsicUtils.ts"
+import { timeout } from "rxjs/internal/operators/timeout.js"
+import { BalanceData } from "src/types.ts"
 
 
 
@@ -18,8 +21,8 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
     let chainId = extrinsicObj.swapExtrinsicContainer.chainId
     let assetInSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolIn
     let assetOutSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolOut
-    // let assetIn = extrinsicObj.swapExtrinsicContainer.pathInLocalId
-    // let assetOut = extrinsicObj.swapExtrinsicContainer.pathOutLocalId
+    let assetIn = extrinsicObj.swapExtrinsicContainer.pathInLocalId
+    let assetOut = extrinsicObj.swapExtrinsicContainer.pathOutLocalId
     let expectedAmountIn = extrinsicObj.swapExtrinsicContainer.assetAmountIn
     let expectedAmountOut = extrinsicObj.swapExtrinsicContainer.expectedAmountOut
     if(extrinsicIndex.i == 0){
@@ -48,12 +51,12 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
     }
 
     let unsubscribeOne, unsubscribeTwo;
-    let balanceObservableIn$ = await watchTokenBalance(chainId, api, assetInSymbol, chain, liveWallet.address)
-    let balanceObservableOut$ = await watchTokenBalance(chainId, api, assetOutSymbol, chain, liveWallet.address)
-    let balancePromiseIn = await getBalanceChange(balanceObservableIn$, (unsub) => {
+    let balanceObservableIn$ = await watchTokenBalance(chainId, chopsticks, api, assetInSymbol, chain, liveWallet.address)
+    let balanceObservableOut$ = await watchTokenBalance(chainId, chopsticks, api, assetOutSymbol, chain, liveWallet.address)
+    let balancePromiseIn = getBalanceChange(balanceObservableIn$, (unsub) => {
         unsubscribeOne = unsub
     })
-    let balancePromiseOut = await getBalanceChange(balanceObservableOut$, (unsub) => {
+    let balancePromiseOut = getBalanceChange(balanceObservableOut$, (unsub) => {
         unsubscribeTwo = unsub
     })
 
@@ -89,7 +92,7 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
             assetSymbolOut: assetOutSymbol,
             assetAmountIn: Math.abs(Number.parseFloat(actualAmountIn)),
             assetAmountOut: Math.abs(Number.parseFloat(actualAmountOut)),
-            result: `SUCCESS: ${false} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut}| Dexes: ${JSON.stringify(dexes)}`
+            result: `SUCCESS: ${true} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut}| Dexes: ${JSON.stringify(dexes)}`
         }
         let txDetails: TxDetails = {
             success: true,
@@ -102,12 +105,12 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
         }
         let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceString)
         let pathNode: PathNodeValues = {
-            pathInLocalId: extrinsicObj.transferExtrinsicContainer.pathInLocalId,
-            pathOutLocalId: extrinsicObj.transferExtrinsicContainer.pathOutLocalId,
+            pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
+            pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
             pathInSymbol: assetInSymbol,
             pathOutSymbol: assetOutSymbol,
-            pathSwapType: extrinsicObj.transferExtrinsicContainer.pathSwapType,
-            pathValue: extrinsicObj.transferExtrinsicContainer.pathAmount,
+            pathSwapType: extrinsicObj.swapExtrinsicContainer.pathSwapType,
+            pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
             pathValueNext: pathValueNext
         
         }
@@ -180,6 +183,25 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
         return swapResultData
     }
 }
+function trackPromise(promise) {
+    let isResolved = false;
+
+    // Create a new promise that resolves the same way the original does
+    // and updates the `isResolved` flag
+    const trackedPromise = promise.then(
+        (result) => {
+            isResolved = true;
+            return result; // Pass through the result
+        },
+        (error) => {
+            isResolved = true;
+            throw error; // Rethrow the error to be caught later
+        }
+    );
+
+    // Return both the new promise and a function to check if it's resolved
+    return { trackedPromise, isResolved: () => isResolved };
+}
 export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SingleSwapResultData>{
     console.log("Swap extrinsic")
     let extrinsic = extrinsicObj.swapExtrinsicContainer.extrinsic
@@ -194,9 +216,11 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     let expectedAmountOut = extrinsicObj.swapExtrinsicContainer.expectedAmountOut
 
     let signer = await getSigner(chopsticks, false)
+    let tokenInBalanceStart = await getBalance(chainId, chopsticks, api, assetInSymbol, chain, signer.address)
+    let tokenOutBalanceStart = await getBalance(chainId, chopsticks, api, assetOutSymbol, chain, signer.address)
 
-    let tokenInBalance$ = await watchTokenBalance(chainId, api, assetInSymbol, chain, signer.address)
-    let tokenOutBalance$ = await watchTokenBalance(chainId, api, assetOutSymbol, chain, signer.address)
+    let tokenInBalance$ = await watchTokenBalance(chainId, chopsticks, api, assetInSymbol, chain, signer.address)
+    let tokenOutBalance$ = await watchTokenBalance(chainId, chopsticks, api, assetOutSymbol, chain, signer.address)
 
     let tokenInUnsub, tokenOutUnsub;
     let tokenInBalancePromise = getBalanceChange(tokenInBalance$, (unsub) => {
@@ -206,17 +230,21 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     let tokenOutBalancePromise = getBalanceChange(tokenOutBalance$, (unsub) => {
         tokenOutUnsub = unsub   
     })
-
-    let tokenInBalanceStats:BalanceChangeStats, tokenOutBalanceStats:BalanceChangeStats, tx, txHash;
+    let outTracker = trackPromise(tokenOutBalancePromise)
+    let trackedTokenOutBalancePromise = outTracker.trackedPromise
+    let tokenOutResolved = outTracker.isResolved
+    let tokenInBalanceStats:BalanceChangeStats, tokenOutBalanceStats:BalanceChangeStats, tx: TxDetails, txHash;
     try{
                     
         // **************************************************************************************
         tx = await executeSwapExtrinsic(extrinsicObj.swapExtrinsicContainer, chopsticks)
         // **************************************************************************************
-        txHash = tx.txDetails.txHash
+        txHash = tx.txHash
     } catch (e) {
-        console.log("ERROR: " + e)
-                    
+        // console.log("ERROR: ")
+        // console.log(e)     
+        let decodedError = e.decodedError
+        console.log("DECODED ERROR: " + JSON.stringify(decodedError, null, 2))               
         await tokenInUnsub()
         await tokenOutUnsub()
         // For now just throw if an extrinsic fails, and then execute reverse tx
@@ -226,7 +254,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
             assetSymbolOut: assetOutSymbol,
             assetAmountIn: Math.abs(Number.parseFloat(expectedAmountIn.toString())),
             assetAmountOut: 0,
-            result:`FAILURE: SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn.toNumber()}-> ${assetOutSymbol} | ERROR: ${e}`
+            result:`FAILURE: SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn.toNumber()}-> ${assetOutSymbol} | ERROR: ${JSON.stringify(decodedError)}`
         }
         
         let txDetailsResponse = e.txDetails
@@ -263,8 +291,45 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         return extrinsicResultData
     }
 
+    if(!tx.success){
+        throw new Error("Swap Tx failed, but didnt throw error in catch")
+    }
+    console.log("SWAP awaiting token balance in")
     tokenInBalanceStats = await tokenInBalancePromise
-    tokenOutBalanceStats = await tokenOutBalancePromise
+
+    console.log("SWAP awaiting token balance in")
+    let tokenOutBalanceConfirmed = false;
+    // tokenOutBalanceStats = await tokenOutBalancePromise
+    while (!tokenOutBalanceConfirmed){
+        if(tokenOutResolved()){
+            console.log("TOKEN OUT BALANCE CHANGE NORMAL")
+            tokenOutBalanceStats = await trackedTokenOutBalancePromise
+            tokenOutBalanceConfirmed = true;
+        } else {
+            console.log("TOKEN OUT BALANCE NOT DETECTED. QUERYING BALANCE")
+            let tokenOutBalanceEnd: BalanceData = await getBalance(chainId, chopsticks, api, assetOutSymbol, chain, signer.address)
+            let tokenOutFn = tokenOutBalanceEnd.free
+            let balanceChangeAmount = tokenOutFn.minus(tokenOutBalanceStart.free)
+            if(balanceChangeAmount.gt(new FixedPointNumber(0))){
+                console.log("BALANCE QUERIED AND DETECTED CHANGE IN BALANCE")
+                tokenOutBalanceConfirmed = true
+                tokenOutBalanceStats = {
+                    startBalance: tokenOutBalanceStart.free,
+                    endBalance: tokenOutBalanceEnd.free,
+                    changeInBalance: balanceChangeAmount,
+                    startBalanceString: tokenOutBalanceStart.toString(),
+                    endBalanceString: tokenOutBalanceEnd.toString(),
+                    changeInBalanceString: balanceChangeAmount.toString()
+                }
+                tokenOutUnsub()
+            } else {
+                console.log("BALANCE QUERIED AND NO CHANGE IN BALANCE, waiting 10 seconds")
+                await new Promise(resolve => setTimeout(resolve, 10000))
+            
+            }
+        }
+    }
+    
     console.log(`EXPECTED TOKEN IN ${expectedAmountIn.toString()} || EXPECTED TOKEN OUT ${expectedAmountOut.toString()}`)
     console.log(`ACTUAL TOKEN IN ${JSON.stringify(tokenInBalanceStats.changeInBalance.toString())} || ACTUAL TOKEN OUT ${(JSON.stringify(tokenOutBalanceStats.changeInBalance.toString()))}`)
 
@@ -308,7 +373,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
 
     let swapTxResult = {
         txString: `(${chain}) ${chainId} ${assetInSymbol} -> ${assetOutSymbol}`,
-        txDetails: tx.txDetails
+        txDetails: tx
     }
     let actualAmountIn = tokenInBalanceStats.changeInBalance.toString()
     let actualAmountOut = tokenOutBalanceStats.changeInBalance.toString()
@@ -318,7 +383,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         assetSymbolOut: assetOutSymbol,
         assetAmountIn: Math.abs(Number.parseFloat(actualAmountIn)),
         assetAmountOut: Math.abs(Number.parseFloat(actualAmountOut)),
-        result:`SUCCESS: ${tx.txDetails.success} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut} | `
+        result:`SUCCESS: ${tx.success} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut} | `
     }
     
     let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceString)
@@ -346,16 +411,31 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         assetSymbol: lastNodeAssetSymbol
     }
 
-    let extrinsicResultData: SingleSwapResultData = {
-        success: true,
-        arbExecutionResult: arbResultString,
-        resultPathNode: pathNode,
-        swapTxStats: swapStats,
-        swapTxResults: swapTxResult,
-        lastNode: lastNode,
-        extrinsicIndex: extrinsicIndex.i
+    if(tokenOutBalanceStats.changeInBalance.gt(new FixedPointNumber(0))){
+        let extrinsicResultData: SingleSwapResultData = {
+            success: true,
+            arbExecutionResult: arbResultString,
+            resultPathNode: pathNode,
+            swapTxStats: swapStats,
+            swapTxResults: swapTxResult,
+            lastNode: lastNode,
+            extrinsicIndex: extrinsicIndex.i
+        }
+        return extrinsicResultData
+    } else {
+        let extrinsicResultData: SingleSwapResultData = {
+            success: false,
+            arbExecutionResult: arbResultString,
+            resultPathNode: pathNode,
+            swapTxStats: swapStats,
+            swapTxResults: swapTxResult,
+            lastNode: lastNode,
+            extrinsicIndex: extrinsicIndex.i
+        }
+        return extrinsicResultData
     }
-    return extrinsicResultData
+
+    
 
 
 }
@@ -380,6 +460,10 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     let startTransferrable = extrinsicObj.transferExtrinsicContainer.startTransferrable
     let destTransferrable = extrinsicObj.transferExtrinsicContainer.destinationTransferrable
     let currency = extrinsicObj.transferExtrinsicContainer.destinationTransferrable.paraspellAsset.symbol
+    if(startChain == "Kusama" || destChain == "Kusama"){
+        currency = "KSM"
+    }
+
 
     let startSigner, destSigner;
     if(startParaId == 2023){
@@ -395,28 +479,44 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     let watchWithdrawAddress: string = startSigner.address.toString()
     let watchDepositAddress: string = destSigner.address.toString()
 
+
+    // If chopsticks, only execute for chains we are running
+    let execute = true
+    if(chopsticks){
+        //If either chain is not running, skip
+        if(!testNets.includes(startChain) || !testNets.includes(destChain)){
+            execute = false
+        }
+    }
+   
+
     console.log("Execute Extrinsic Set Loop: Transfer extrinsic")
     console.log(`Execute Extrinsic Set Loop: Start Chain: ${startChain} ${startParaId}| Destination Chain: ${destChain} ${destParaId} | Currency: ${JSON.stringify(currency)} `)
-    if(testNets.includes(startChain) && testNets.includes(destChain)){
+    if(execute){
         let startBalanceUnsub, destBalanceUnsub;
         console.log("Execute Extrinsic Set Loop: Initiating balance adapter for START chain " + startChain)
-        let startBalanceObservable$ = await watchTokenDeposit(startParaId, startApi, 0, startTransferrable, watchWithdrawAddress) 
+        let startBalanceObservable$ = await watchTokenDeposit(startParaId, chopsticks, startApi, 0, startTransferrable, watchWithdrawAddress) 
         let startBalanceChangePromise = getBalanceChange(startBalanceObservable$, (unsub) =>{
             startBalanceUnsub = unsub
         })
         console.log("Execute Extrinsic Set Loop: Initiating balance adapter for DESTINATION chain " + destChain)
-        let destBalanceObservable$ = await watchTokenDeposit(destParaId, destApi, 0, destTransferrable, watchDepositAddress)
+        let destBalanceObservable$ = await watchTokenDeposit(destParaId, chopsticks, destApi, 0, destTransferrable, watchDepositAddress)
+        let destBalanceChangePromise = getBalanceChange(destBalanceObservable$, (unsub) =>{
+            destBalanceUnsub = unsub
+        })
         console.log(`(${startChain} -> ${destChain}) ${JSON.stringify(extrinsicObj.transferExtrinsicContainer.assetSymbol)} ${JSON.stringify(extrinsicObj.transferExtrinsicContainer.assetIdStart)}`)
-        console.log(extrinsic.toHuman())
-        let txPromise;
+        // console.log(extrinsic.toHuman())
+        let txDetailsPromise: Promise<TxDetails>;
         try{
             // **************************************************************************************
-            txPromise = await executeTransferExtrinsic(extrinsicObj.transferExtrinsicContainer, startParaId, chopsticks)
+            txDetailsPromise = executeTransferExtrinsic(extrinsicObj.transferExtrinsicContainer, startParaId, chopsticks)
             // **************************************************************************************
-
+            console.log("Execute Extrinsic Set Loop: Transfer promise created")
+            let txDetails = await txDetailsPromise
         } catch(e) {
-            console.log("ERROR: " + e)
-            txPromise = e
+            // console.log("ERROR: " + e)
+            // txPromise = e
+            let decodedError = e.decodedError
             await startBalanceUnsub()
             await destBalanceUnsub()
             // For now just throw if an extrinsic fails, and then execute reverse txs
@@ -427,7 +527,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
                 assetSymbolOut: currency,
                 assetAmountIn: transferAmount,
                 assetAmountOut: 0,
-                result: `FAILURE: TRANSFER: (${startChain} ${startParaId} ${currency} ${transferAmount}-> ${destChain}) ${destParaId} | ERROR: ${e}` 
+                result: `FAILURE: TRANSFER: (${startChain} ${startParaId} ${currency} ${transferAmount}-> ${destChain}) ${destParaId} | ERROR: ${JSON.stringify(decodedError)}` 
             }
             
             resultPathNode = {
@@ -449,16 +549,23 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
                 extrinsicIndex: extrinsicIndex.i,
             }
             increaseIndex(extrinsicIndex)
-
+            console.log("Returning on CATCH from failed Transfer Extrinsic")
             return extrinsicResultData
 
         }
+
         
-        console.log("Execute Extrinsic Set Loop: Transfer promise created")
+        
+        console.log("Execute swap: AWAIT startBalanceChangePromise")
         let startBalanceStats = await startBalanceChangePromise;
-        let destBalanceStats = await getBalanceChange(destBalanceObservable$, (unsub) =>{
-            destBalanceUnsub = unsub
-        })
+        console.log("Execute swap: AWAIT destBalanceChangePromise")
+        let destBalanceStats = await destBalanceChangePromise;
+        // let destBalanceStats = await getBalanceChange(destBalanceObservable$, (unsub) =>{
+        //     destBalanceUnsub = unsub
+        // })
+        console.log("AWAIT txDetailsPromise")
+        let txDetails = await txDetailsPromise
+        console.log("Tx Details Success: " + txDetails.success)
         let feesAndGasAmount = startBalanceStats.changeInBalance.add(destBalanceStats.changeInBalance)
         console.log(`Execute Extrinsic Set Loop: Start Balance Change: ${JSON.stringify(startBalanceStats)} | Destination Balance Change: ${JSON.stringify(destBalanceStats)} | Fees and Gas: ${feesAndGasAmount}`)
         transferTxStats = {
@@ -471,7 +578,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             destBalanceStats: destBalanceStats,
             feesAndGasAmount: feesAndGasAmount
         }
-        let txResult = await txPromise
+        
         
         let successMetric = destBalanceStats.changeInBalance.gt(new FixedPointNumber(0))
         let transferAmount = extrinsicObj.transferExtrinsicContainer.pathAmount
@@ -522,7 +629,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     console.log("---------------------------------------------")
 }
 
-export async function executeTransferExtrinsic(transfer: TransferExtrinsicContainer, startParaId: number, chopsticks: boolean) {
+export async function executeTransferExtrinsic(transfer: TransferExtrinsicContainer, startParaId: number, chopsticks: boolean): Promise<TxDetails> {
     let signer;
     if(startParaId ==2023){
         signer = await getSigner(chopsticks, true)
@@ -533,6 +640,8 @@ export async function executeTransferExtrinsic(transfer: TransferExtrinsicContai
     let tx = transfer.extrinsic
     // signer.
     // let txNonce = 0
+
+    // Dont need to check for local rpc, will already have been checked in calling function
     let execute;
     if(chopsticks){
         let localRpc = localRpcs[transfer.firstNode]
@@ -545,6 +654,7 @@ export async function executeTransferExtrinsic(transfer: TransferExtrinsicContai
         execute = true
     }
     
+    // Execute transfer if running live or if chopsticks and local rpc is set for the chain
     if(execute){
         // console.log("EXECUTING TRANSFER")
         console.log(`Execute Transfer: (${transfer.firstNode} -> ${transfer.secondNode}) ${JSON.stringify(transfer.assetSymbol)} ${JSON.stringify(transfer.assetIdStart)}`)
@@ -577,6 +687,7 @@ export async function executeTransferExtrinsic(transfer: TransferExtrinsicContai
                     events.forEach((eventObj) => {
                         eventLogs.push(eventObj.toHuman())
                         if(eventObj.event.method == "ExtrinsicFailed" && dispatchError){
+                            console.log("Execute Transfer: Extrinsic Failed event detected")
                             const {index, error} = dispatchError.asModule;
                             const moduleIndex = parseInt(index.toString(), 10);
                             const errorCodeHex = error.toString().substring(2, 4); // "09"
@@ -587,11 +698,14 @@ export async function executeTransferExtrinsic(transfer: TransferExtrinsicContai
                             dispatchErrorCode = dispatchError.asModule;
                             console.log("Execute Transfer: Dispatch Error: " + dispatchError.toString())
                             console.log("Execute Transfer: DECODED MODULE: " + JSON.stringify(decodedError, null, 2))
-
+                            console.log("Execute Transfer: Rejecting Transfer tx")
+                            let txDetails: TxDetails = { success: false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs };
+                            reject(txDetails);
                         }
                     })
                     const hash = status.hash;
-                    let txDetails: TxDetails = { success, hash, dispatchError: dispatchErrorCode, decodedError, included, finalized, eventLogs, blockHash, txHash, txIndex };
+                    let txDetails: TxDetails = { success: true, hash, dispatchError: dispatchErrorCode, decodedError, included, finalized, eventLogs, blockHash, txHash, txIndex };
+                    console.log("Execute Transfer: Resolving Transfer tx")
                     resolve(txDetails);
                 } else if (status.isReady) {
                     // let's not be too noisy..
@@ -601,11 +715,13 @@ export async function executeTransferExtrinsic(transfer: TransferExtrinsicContai
                     if(dispatchError.isModule){
                         const decoded = tx.registry.findMetaError(dispatchError.asModule);
                         console.log("Execute Transfer: DISPATCH ERROR DECODED: " + JSON.stringify(decoded, null, 2))
-                        const { docs, name, section } = decoded;
-                        reject(new Error(`${section}.${name}: ${docs.join(' ')}`));
+                        console.log("Execute Transfer: Rejecting Transfer tx from dispatch error")
+                        let txDetails: TxDetails = { success:false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
+                        reject(txDetails);
                     } else {
-                        reject(new Error(dispatchError.toString()));
-                    
+                        console.log("Execute Transfer: Rejecting Transfer tx from dispatch error")
+                        let txDetails: TxDetails = { success:false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
+                        reject(txDetails);
                     }
                 }
                 else {
@@ -617,29 +733,18 @@ export async function executeTransferExtrinsic(transfer: TransferExtrinsicContai
             });
         });
         console.log("Execute Transfer: tx promise created")
-        let txDetails: TxDetails = await txResult;
-        let resultObject = {
-            // txString,
-            txDetails
-        }
-        return resultObject
+        let txDetails: Promise<TxDetails> = txResult;
+        return txDetails
     } else {
         console.log("Execute Transfer: NOT EXECUTING TRANSFER")
     } 
-    return false
+    // return false
 }
-export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, chopsticks: boolean):Promise<SwapResultObject> {
+export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, chopsticks: boolean): Promise<TxDetails> {
     let signer = await getSigner(chopsticks, false);
     //If MOVR/EVM execute smart contract call
     if(txContainer.chainId == 2023){
-        let tx = txContainer.extrinsic
-        const txString = txContainer.txString
-        console.log(JSON.stringify(tx))
-        let resultObject: SwapResultObject = {
-            txString
-        }
-        
-        return resultObject
+        throw new Error("Function: executeSwapExtrinsic() should not be called with MOVR swaps")
     } else {
         if(txContainer.extrinsic){
             let tx = txContainer.extrinsic
@@ -663,7 +768,7 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
             // let txHash = await tx.signAndSend(signer, {nonce: txNonce}, (result) => {
                 
             // });
-            let txResult: any= new Promise((resolve, reject) => {
+            let txResult: Promise<TxDetails> = new Promise((resolve, reject) => {
                 let success = false;
                 let included: EventRecord[] = [];
                 let finalized: EventRecord[] = [];
@@ -682,6 +787,7 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
                     } else if (status.isBroadcast) {
                         console.log(`Execute Swap: 🚀 Transaction broadcasted.`);
                     } else if (status.isFinalized) {
+                        success = dispatchError ? false : true;
                         console.log(
                             `Execute Swap: 💯 Transaction ${tx.meta.name}(..) Finalized at blockHash ${status.asFinalized}`
                         );
@@ -690,6 +796,7 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
                         events.forEach((eventObj) => {
                             eventLogs.push(eventObj.toHuman())
                             if(eventObj.event.method == "ExtrinsicFailed" && eventObj.event.data.dispatchError){
+                                console.log("Execute Swap: Extrinsic Failed event detected")
                                 const {index, error} = dispatchError.asModule;
                                 const moduleIndex = parseInt(index, 10);
                                 const errorCodeHex = error.toString().substring(2, 4); // "09"
@@ -700,13 +807,25 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
                                 dispatchErrorCode = dispatchError.asModule;
                                 console.log("Execute Swap: Dispatch Error: " + dispatchError.toString())
                                 console.log("Execute Swap: DECODED MODULE: " + JSON.stringify(decodedError, null, 2))
-                                let txDetails: TxDetails = { success, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs };
+                                let txDetails: TxDetails = { success: false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs };
                                 // console.log("Execute Swap: txDetails Object: " + JSON.stringify(txDetails, null, 2))
+                                console.log("Rejecting SWAP Tx")
+                                reject(txDetails);
+                            }
+                            // Check for error events for failed swaps on different chains
+                            // MGX error event/ swap failure will still result in sysem.ExtrinsicSuccess
+                            if(eventObj.event.method == "SellAssetFailedDueToSlippage"){
+                                console.log("MGX Execute Swap: SellAssetFailedDueToSlippage")
+                                let txDetails: TxDetails = { success: false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
                                 reject(txDetails);
                             }
                         })
                         const hash = status.hash;
+                        if(!success){
+                            throw new Error("Dispatch Error modules found, but no error event found")
+                        }
                         let txDetails: TxDetails = { success, hash, dispatchError: dispatchErrorCode, decodedError, eventLogs, blockHash, txHash, txIndex };
+                        console.log("Execute Swap: Resolving SWAP tx")
                         resolve(txDetails);
                     } else if (status.isReady) {
                         // let's not be too noisy..
@@ -716,9 +835,11 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
                             const decoded = tx.registry.findMetaError(dispatchError.asModule);
                             console.log("Execute Swap: DISPATCH ERROR DECODED: " + JSON.stringify(decoded, null, 2))
                             const { docs, name, section } = decoded;
+                            console.log("Execute Swap: REJECTING SWAP TX from dispatchError")
                             let txDetails: TxDetails = { success:false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
                             reject(txDetails);
                         } else {
+                            ("Execute Swap: REJECTING SWAP TX from dispatchError")
                             let txDetails: TxDetails = { success:false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
                             reject(txDetails);
                         
@@ -735,14 +856,42 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
                     reject(txDetails);
                 });
             });
-            let txDetails: TxDetails = await txResult;
-            let resultObject: SwapResultObject = {
-                // txString,
-                txDetails
-            }
-            return resultObject
+
+            console.log("Sent TX. Returning SWAP Tx Promise")
+            return txResult
         }
 
     }
     
+}
+
+export async function buildAndExecuteSwapExtrinsic(instructionsToExecute: SwapInstruction[], chopsticks: boolean, executeMovr: boolean, nextInputValue: number, chainNonces: ChainNonces, extrinsicIndex: IndexObject): Promise<[(SingleSwapResultData | SingleTransferResultData), SwapInstruction[]]>{
+    if(nextInputValue > 0){
+        instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
+    }
+    let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
+    let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
+    
+    let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+    return [extrinsicResultData, remainingInstructions]
+}
+
+// Handle different extrinsic types
+export async function executeAndReturnExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean, executeMovr: boolean = false) {
+    // let executeMovr = false
+    try {
+        if (extrinsicObj.type == "Transfer"){
+            let transferExtrinsicResults: SingleTransferResultData = await executeSingleTransferExtrinsic(extrinsicObj, extrinsicIndex, chopsticks)
+            return transferExtrinsicResults
+        } else if (extrinsicObj.type == "Swap" && extrinsicObj.swapExtrinsicContainer.chainId != 2023){
+            let swapExtrinsicResults: SingleSwapResultData = await executeSingleSwapExtrinsic(extrinsicObj, extrinsicIndex, chopsticks);
+            return swapExtrinsicResults
+        } else if (extrinsicObj.type == "Swap" && extrinsicObj.swapExtrinsicContainer.chainId == 2023 && executeMovr == true){
+            let swapExtrinsicResults: SingleSwapResultData = await executeSingleSwapExtrinsicMovr(extrinsicObj, extrinsicIndex, chopsticks);
+            return swapExtrinsicResults
+        }
+    } catch (e) {
+        console.log(e)
+        throw new Error("Extrinsic Execution failed")
+    }
 }

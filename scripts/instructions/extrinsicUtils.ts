@@ -141,8 +141,7 @@ export async function buildTransferExtrinsicDynamic(instruction: TransferInstruc
 // }
 
 export async function buildTransferExtrinsicFromInstruction(instruction: TransferInstruction, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<TransferExtrinsicContainer> {
-    let startApi = await getApiForNode(instruction.startNode, chopsticks)
-    let destinationApi = await getApiForNode(instruction.destinationNode, chopsticks)
+   
 
     
     let startTransferrable = getTransferrableAssetObject(instruction.startAssetNode)
@@ -154,13 +153,17 @@ export async function buildTransferExtrinsicFromInstruction(instruction: Transfe
     let destinationParaId = getParaIdForNode(instruction.destinationNode, instruction.destinationAssetNode)
     let transferAmount = new FixedPointNumber(instruction.assetNodes[0].pathValue, Number.parseInt(assetDecimals.toString())).toChainData()
 
-    let signer = await getSigner(chopsticks, false);
-    let destinationAddress = signer.address
+    let startApi = await getApiForNode(instruction.startNode, startParaId, chopsticks)
+    let destinationApi = await getApiForNode(instruction.destinationNode, destinationParaId, chopsticks)
+
+    let signer;
+
     if(instruction.destinationNode == "Moonriver"){
-        destinationAddress = alithAddress
-
+        signer = await getSigner(chopsticks, true);
+    } else {
+        signer = await getSigner(chopsticks, false);
     }
-
+    let destinationAddress = signer.address
 
     let xcmTx: paraspell.Extrinsic;
     if(instruction.startNode == "Kusama" && instruction.destinationNode != "Kusama") {
@@ -244,10 +247,10 @@ function splitDoubleTransferInstruction(instruction: TransferToHomeThenDestInstr
     return [startInstruction, destinationInstruction]
 }
 
-async function getApiForNode(node: TNode | "Kusama", chopsticks: boolean){
-    let apiEndpoint;
+export async function getApiForNode(node: TNode | "Kusama", chainId: number, chopsticks: boolean){
+    let apiEndpoint: string[];
     if(node == "Kusama"){
-        apiEndpoint = ksmRpc
+        apiEndpoint = [ksmRpc]
         // throw new Error("Trying to transfer kusama away from home chain to kusama")
     } else{
         apiEndpoint = paraspell.getAllNodeProviders(node)
@@ -260,14 +263,35 @@ async function getApiForNode(node: TNode | "Kusama", chopsticks: boolean){
             apiEndpoint = localRpc
         }
     }
-
+    
+    let api;
     if(node == "Mangata"){
-        const MangataSDK = await import('@mangata-finance/sdk')
-        return await MangataSDK.Mangata.instance([apiEndpoint]).api()
+        try{
+            const MangataSDK = await import('@mangata-finance/sdk')
+            api = await MangataSDK.Mangata.instance([apiEndpoint[0]]).api()
+            await api.isReady
+        } catch(e){
+            console.log(`Error connecting mangata api ${apiEndpoint[0]}, trying next endpoint`)
+            const MangataSDK = await import('@mangata-finance/sdk')
+            api = await MangataSDK.Mangata.instance([apiEndpoint[1]]).api()
+            await api.isReady
+        }
     } else {
-        let provider = new WsProvider(apiEndpoint)
-        return await ApiPromise.create({ provider: provider });
+        let endpointIndex = 0;
+        let apiConnected = false;
+        while(endpointIndex < apiEndpoint.length && !apiConnected){
+            try{
+                let provider = new WsProvider(apiEndpoint[endpointIndex])
+                api = await ApiPromise.create({ provider: provider });
+                await api.isReady
+                apiConnected = true;
+            } catch (e) {
+                console.log(`Error connecting api ${apiEndpoint[endpointIndex]}, trying next endpoint`)  
+            }
+            endpointIndex++
+        }
     }
+    return api
 }
 function getAssetDecimalsForNode(node: TNode | "Kusama", transferObject: TransferrableAssetObject){
     if(node == "Kusama"){
@@ -623,8 +647,10 @@ export async function buildSwapExtrinsicDynamic(instructions: SwapInstruction[],
         // If testnet is false, will use live evm wallet
         let testnet = false
         let movrBatchSwapParams = await getMovrSwapTx(instructions, testnet)
-        let swapTxContainer = await formatMovrTx(movrBatchSwapParams, instructions, chainNonces, extrinsicIndex, instructionIndex)
+        let swapTxContainer = await formatMovrTx(movrBatchSwapParams, instructions, chainNonces, extrinsicIndex, instructionIndex, chopsticks)
         swapTxContainer.txString = descriptorString
+        console.log("MOVR SWAP PARAMS")
+        console.log(JSON.stringify(swapTxContainer.movrBatchSwapParams, null, 2))
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2090){
         console.log(`BSX ${startAsset} -> ${destAsset}`)

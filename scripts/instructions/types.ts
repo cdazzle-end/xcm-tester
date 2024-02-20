@@ -10,7 +10,7 @@ import { MultiPath, TokenAmount } from '@zenlink-dex/sdk-core';
 import { ModuleBApi } from '@zenlink-dex/sdk-api';
 import { BN } from '@polkadot/util/bundle';
 import { MangataInstance } from '@mangata-finance/sdk';
-import { BatchSwapParams } from 'scripts/swaps/movr/utils/types.ts';
+import { BatchSwapParams } from './../swaps/movr/utils/types.ts';
 // import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 
 export interface ApiSet {

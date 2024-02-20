@@ -72,6 +72,10 @@ export const xcKintContractAddress = "0xfffFFFFF83F4f317d3cbF6EC6250AeC3697b3fF2
 export const xcKintLocalId = "175400718394635817552109270754364440562"
 export const xcCsmContractAddress = "0xffFfFFFf519811215E05eFA24830Eebe9c43aCD7"
 export const xcCsmLocalId = "108457044225666871745333730479173774551"
+export const xcKarContractAddress = "0xFfFFFFfF08220AD2E6e157f26eD8bD22A336A0A5"
+export const xcKarLocalId = "10810581592933651521121702237638664357"
+export const xcXrtContractAddress = "0xFffFFffF51470Dca3dbe535bD2880a9CcDBc6Bd9"
+export const xcXrtLocalId = "108036400430056508975016746969135344601"
 export const xcTokens = [xcKsmContractAddress, xcRmrkContractAddress, xcKintContractAddress, xcCsmContractAddress]
 export const xcLocalIds = [xcKsmLocalId, xcRmrkLocalId, xcKintLocalId, xcCsmLocalId]
 

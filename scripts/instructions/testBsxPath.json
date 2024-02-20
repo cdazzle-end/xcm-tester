@@ -1,0 +1,20 @@
+[
+    {
+        "node_key": "2090\"2\"",
+        "asset_name": "Acala USD",
+        "path_value": 3.33158594775,
+        "path_identifier": 0
+      },
+      {
+        "node_key": "2090\"0\"",
+        "asset_name": "Basilisk",
+        "path_value": 18271.834361017827,
+        "path_identifier": 1
+      },
+      {
+        "node_key": "2090\"16\"",
+        "asset_name": "Robonomics",
+        "path_value": 0.425265757,
+        "path_identifier": 1
+      }
+]

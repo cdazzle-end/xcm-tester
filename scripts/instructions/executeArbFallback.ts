@@ -16,9 +16,11 @@ export async function runArbFallback(args: string){
     return new Promise((resolve, reject) => {
         let functionCall = 'search_best_path_a_to_b ' + args;
         const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
+        // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
 
+        console.log("Executing arb: " + functionCall)
         exec(command, (error, stdout, stderr) => {
-            console.log(`stdout: ${stdout}`);
+            // console.log(`stdout: ${stdout}`);
             if (error) {
                 console.error(`exec error: ${error}`);
                 reject(error); // Reject the promise on execution error, including non-zero exit codes
@@ -105,28 +107,57 @@ export async function updateLps(chop: boolean){
       // let functionCall = 'search_best_path_a_to_b ' + chop;
       const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\lps\\ && ts-node all_lp.ts ${chop}`;
 
-      exec(command, (error, stdout, stderr) => {
-          console.log(`stdout: ${stdout}`);
+      console.log("Updating Lps")
+      let child = exec(command, (error, stdout, stderr) => {
+        // stdio: 'ignore' // This ignores the output
           if (error) {
               console.error(`exec error: ${error}`);
               reject(error); // Reject the promise on execution error, including non-zero exit codes
               return;
           }
-          if (stderr) {
-              console.error(`stderr: ${stderr}`);
-              resolve(false); // You might still resolve with false if you want to treat stderr output as a soft failure
-              // Or you could reject based on specific stderr content:
-              // if (stderr.includes("Error:")) reject(new Error(stderr));
-          } else {
-              resolve(true); // Resolve with true if execution was successful without errors
-          }
+          resolve(true); // Resolve with true if execution was successful without errors
+      });
+      // let child = exec(command)
+
+      // Ignore package manager warnings
+      child.stdout.on('data', (data) => {
+        if (!data.includes('The following conflicting packages were found:')) {
+          process.stdout.write(data);
+        }
+      });
+      
+      child.stderr.on('data', (data) => {
+        if (!data.includes('The following conflicting packages were found:') && !data.includes('API/INIT')) {
+          process.stderr.write(data);
+        }
       });
   });
   }
 
 export async function runAndReturnFallbackArb(args: string, chopsticks: boolean): Promise<ResultDataObject[]>{
-
-  await updateLps(chopsticks)
+  let lpsResult;
+  try{
+    lpsResult = await updateLps(chopsticks)
+  } catch (e){
+    console.log("Error updating lps. Attempting to update again.")
+    console.log(e)
+    let updateComplete = false;
+    let updateAttempts = 0;
+    while(!updateComplete && updateAttempts < 3){
+      try{
+        lpsResult = await updateLps(chopsticks)
+        updateComplete = true;
+      } catch (e){
+        console.log("Error updating lps")
+        console.log(e)
+      }
+    }
+    if(!updateComplete){
+      throw new Error("Error updating lps")
+    }
+  }
+  console.log("Lps update complete")
+  console.log(lpsResult)
 
     try{
         let arbCompleted = await runArbFallback(args);
