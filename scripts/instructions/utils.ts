@@ -5,7 +5,7 @@ import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
 import path from 'path';
 import { firstValueFrom, combineLatest, map, Observable, race, EMPTY, timeout } from "rxjs";
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { MyAssetRegistryObject, MyAsset, ResultDataObject, ApiSet, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic } from './types.ts'
+import { MyAssetRegistryObject, MyAsset, ResultDataObject, ApiSet, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic, LastNode, ExecutionState, ArbExecutionResult } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allConnectionPromises, allConnections, observableApis, promiseApis } from './liveTest.ts';
 import { ApiPromise, ApiRx, WsProvider } from '@polkadot/api';
@@ -49,16 +49,51 @@ import { getBsxSwapExtrinsic } from './../swaps/bsxSwap.ts';
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { ISubmittableResult } from '@polkadot/types/types/extrinsic';
 // import { BalanceData, getAdapter } from '@polkawallet/bridge';
-import { alithPk, arb_wallet, karRpc, live_wallet_3, localRpcs, testNets } from './txConsts.ts';
+import { alithPk, arb_wallet, karRpc, ksmRpc, live_wallet_3, localRpcs, testNets } from './txConsts.ts';
 import {EvmRpcProvider} from '@acala-network/eth-providers';
 import { Wallet } from '@acala-network/sdk/wallet/wallet.js';
 import { WalletConfigs } from '@acala-network/sdk/wallet/index.js';
 import { liveWallet3Pk } from './../swaps/movr/utils/const.ts';
+import { globalState } from './liveTest.ts';
+import { getApiForNode } from './apiUtils.ts';
 
 // import { buildTransferExtrinsic } from './extrinsicUtils.ts';
 // Get the __dirname equivalent in ES module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
+
+export function setLastNode(node: LastNode){
+    globalState.lastNode = node
+    fs.writeFileSync(path.join(__dirname, './lastNode.json'), JSON.stringify(node, null, 2), 'utf8')
+}
+export function setLastFile(filePath: string){
+    globalState.lastFilePath = filePath;
+    fs.writeFileSync(path.join(__dirname, './lastAttemptFile.json'), JSON.stringify(filePath, null, 2), 'utf8')
+}
+export function setLastExtrinsicSet(extrinsicSet: ExtrinsicSetResultDynamic){
+    globalState.extrinsicSetResults = extrinsicSet
+    fs.writeFileSync(path.join(__dirname, './lastExtrinsicSet.json'), JSON.stringify(extrinsicSet, null, 2), 'utf8')
+}
+
+export function getLastExecutionState(){
+    let lastNode = JSON.parse(fs.readFileSync(path.join(__dirname, './lastNode.json'), 'utf8'));
+    let lastFilePath = JSON.parse(fs.readFileSync(path.join(__dirname, './lastAttemptFile.json'), 'utf8'));
+    let allExtrinsicResults: ExtrinsicSetResultDynamic = JSON.parse(fs.readFileSync(path.join(__dirname, './lastExtrinsicSet.json'), 'utf8'));
+    let lastExecutionState: ExecutionState = {
+        lastNode,
+        lastFilePath,
+        extrinsicSetResults: allExtrinsicResults
+    }
+    return lastExecutionState
+}
+
+export function getNodeFromChainId(chainId: number): TNode{
+    let node = paraspell.NODE_NAMES.find((node) => {
+        return paraspell.getParaId(node) == chainId
+    })
+    return node as TNode
+
+}
 
 
 
@@ -72,30 +107,7 @@ export function getParaspellChainName(chainId: number): TNode | "Kusama"{
     return chain as TNode
 }
 
-export function getEndpointsForChain( chainId: number ) {
-    let nodes = []
 
-    if (chainId == 0) {
-        nodes = Object.values(prodRelayKusama.providers).filter((e) =>
-            e.startsWith("wss://")
-        );
-    } 
-    else if (chainId == 1000) {
-        nodes = Object.values(
-            prodParasKusamaCommon.find((e) => e.paraId === chainId)?.providers ||
-            {}
-        ).filter((e) => e.startsWith("wss://"));
-    } 
-    else {
-        nodes = Object.values(
-            [...prodParasKusama].find(
-            (e) => e.paraId === chainId
-            )?.providers || {}
-        ).filter((e) => e.startsWith("wss://"));
-    }
-    // nodes.push("wss://karura-rpc-0.aca-api.network")
-    return nodes    
-}
 
 export const getAssetBySymbolOrId = (
     node: TNode,
@@ -154,9 +166,13 @@ export const getAssetBySymbolOrId = (
 }
 
 export function getAssetRegistryObject(chainId: number, localId: string): MyAssetRegistryObject{
+    console.log("Getting asset registry object: " + chainId + " --- " + localId)
     let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
     let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
-        return assetRegistryObject.tokenData.chain == chainId && JSON.stringify(assetRegistryObject.tokenData.localId) == localId
+        if(chainId == 0 && assetRegistryObject.tokenData.chain == 0){
+            return true
+        }
+        return assetRegistryObject.tokenData.chain == chainId && JSON.stringify(assetRegistryObject.tokenData.localId).replace(/\\|"/g, "") == localId
     })
     if(asset == undefined){
         throw new Error(`Asset not found in registry: chainId: ${chainId}, localId: ${localId}`)
@@ -193,9 +209,26 @@ export function getAssetRegistryObjectBySymbol(chainId: number, symbol: string):
 // Reads a json object from the arbitrage result log and returns the corresponding paraspell asset and amount
 export function readLogData(jsonObject: ResultDataObject){
     console.log("Reading log data: " + JSON.stringify(jsonObject))
-    let chainId = jsonObject.node_key.slice(0,4)
-    let assetLocalId = jsonObject.node_key.slice(4)
-    
+    let chainId;
+    let assetLocalId;
+    let nodeKey = jsonObject.node_key.replace(/\\|"/g, "");
+    // nodeKey = jsonObject.node_key.replace(/\\/g, "");
+    // nodeKey = jsonObject.node_key.replace(/\//g, "");
+    // console.log("NODE KEY: " + nodeKey)
+    if(nodeKey.startsWith("0")){
+        // console.log("STARTS WITH 0")
+        // chainId = jsonObject.node_key.slice(0,1)
+        chainId = "0"
+        // assetLocalId = jsonObject.node_key.slice(1)
+        assetLocalId = "KSM"
+    } else {
+        // chainId = jsonObject.node_key.slice(0,4)
+        // assetLocalId = jsonObject.node_key.slice(4)
+        chainId = nodeKey.slice(0,4)
+        assetLocalId = nodeKey.slice(4)
+    }
+    // chainId = chainId.toString().replace(/[^0-9]/g, '')
+    // console.log("READING LOG DATA: " + chainId + " --- " + assetLocalId)
     let assetRegistryObject = getAssetRegistryObject(parseInt(chainId), assetLocalId)
     let assetSymbol = assetRegistryObject.tokenData.symbol
 
@@ -249,102 +282,30 @@ export function findValueByKey(obj: any, targetKey: any): any {
     return null;
 }
 
-export async function connectFirstApi(endpointList: string[], chainId: number): Promise<ApiSet>{
-    
 
-    const apiPromisePending = connectFirstApiPromise(endpointList, chainId, allConnectionPromises);
-    let apiObservable = await firstValueFrom(race(endpointList.map((endpoint) => connectFirstObservable(endpoint, chainId))));
-    let apiPromise = await apiPromisePending;
 
-    // if(!promiseApis[chainId] || !observableApis[chainId]){
-    //     throw new Error("Failed to connect to chain")
-    // }
-    if(!apiPromise || !apiObservable){
-        throw new Error("Failed to connect to chain")
+export async function watchTokenDeposit(paraId: number, chopsticks: boolean, destChainApi: ApiPromise, transferrableAssetObject: TransferrableAssetObject, depositAddress: string){
+    let tokenSymbol: string;
+    if(paraId == 0){
+        tokenSymbol = "KSM"
+    }
+    else if(!transferrableAssetObject.paraspellAsset.symbol){
+        // throw logError(new Error("Asset symbol is null. Cant subscribe to token balance"))
+        throw Error("Asset symbol is null. Cant subscribe to token balance")
+    } else {
+        tokenSymbol = transferrableAssetObject.paraspellAsset.symbol;
     }
 
-    let apiSet: ApiSet = {
-        promise: apiPromise.winner,
-        promiseEndpoint: apiPromise.endpoint,
-        observable: apiObservable.api,
-        observableEndpoint: apiObservable.endpoint
+    console.log(`Watch Token Deposit: Source Chain Name ${transferrableAssetObject.sourceParaspellChainName} | Token Symbol ${tokenSymbol} | Deposit Address ${depositAddress} `)
+
+    // Make sure api is conencted
+    console.log(`Watch Token Deposit: API connected: ${destChainApi.isConnected}`)
+    if(!destChainApi.isConnected){
+        console.log("Watch Token Deposit: API not connected. Connecting...")
+        await destChainApi.connect()
+        console.log("Watch Token Deposit: API connected: " + destChainApi.isConnected)
     }
-    return apiSet
-}
 
-export function connectFirstApiPromise(endpointList: string[], chainId: number, allConnectionPromises: Map<string, Promise<ApiPromise>>): Promise<{winner: ApiPromise, endpoint: string} | null> {
-    if(promiseApis[chainId]){
-        return Promise.resolve(null)
-    }
-    // Map each endpoint to a Promise of ApiPromise connection
-    const apiPromises = endpointList.map(endpoint => {
-        const provider = new WsProvider(endpoint);
-        console.log("Connecting to " + provider.endpoint)
-        const isAcala = chainId === 2000
-        const option = isAcala
-        ? options({provider: provider }) : {provider: provider};
-
-        // Store the Promise in the Map
-        const promiseApi = ApiPromise.create(option).then(api => {
-            allConnectionPromises.set(endpoint, Promise.resolve(api));
-            allConnections.set(endpoint, api);
-            return { api, endpoint }; // Resolve to an object with both the api and the endpoint
-        });
-        return promiseApi
-    });
-    // Use Promise.race to return the first ApiPromise that connects
-    return Promise.race(apiPromises).then(({ api: winner, endpoint }) => {
-        if(!promiseApis[chainId]){
-            console.log("Reached connection on Api Promise: " + endpoint)
-            promiseApis[chainId] = winner
-        }
-
-        // Logic to handle the winner and disconnect others
-        allConnectionPromises.forEach((promise, endpoint) => {
-            promise.then(api => {
-                if (api !== winner) {
-                    console.log(`Disconnecting from ${endpoint}`);
-                    api.disconnect();
-                }
-            });
-        });
-        return {winner, endpoint};
-    });
-}
-
-export function connectFirstObservable(endpoint: string, chainId: number): Observable<{api: ApiRx, endpoint: string} | null>{
-    // If connection to chain already exists, give up
-    if(observableApis[chainId]){
-        return EMPTY
-    }
-    const provider = new WsProvider(endpoint);
-    console.log("Connecting to observable ---" + provider.endpoint)
-    const isAcala = chainId === 2000
-    const option = isAcala
-    ? options({provider: provider }) : {provider: provider};
-    // const promiseApi = ApiPromise.create(option);
-
-    return ApiRx.create(option).pipe(
-        map((api) => {
-            // connect success
-            if (api) {
-                if (!observableApis[chainId]) {
-                    console.log("Reached connection on observable" + provider.endpoint)
-                    observableApis[chainId] = api;
-                    return {api, endpoint};
-                } else {
-                    console.log("Observable already connected. Disconnecting from observable" + provider.endpoint)
-                    api.disconnect();
-                    return null
-                }
-            }
-            return null;
-        })
-    );
-}
-
-export async function watchTokenDeposit(paraId: number, chopsticks: boolean, destChainApi: ApiPromise, destPort: number, transferrableAssetObject: TransferrableAssetObject, depositAddress: string){
-    // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
     let destAdapter = getAdapter(paraId)
     let currentBalance: BalanceData;
     if(paraId == 2000){
@@ -360,26 +321,6 @@ export async function watchTokenDeposit(paraId: number, chopsticks: boolean, des
         await destAdapter.init(destChainApi);
     }
     
-    // printAndLogToFile("Subscribing to balance for destination chain " + paraId + " for asset " + transferrableAssetObject.paraspellAssetSymbol.symbol + " for address " + aliceAddress)
-    let tokenSymbol: string;
-    if(paraId == 0){
-        tokenSymbol = "KSM"
-    }
-    else if(!transferrableAssetObject.paraspellAsset.symbol){
-        // throw logError(new Error("Asset symbol is null. Cant subscribe to token balance"))
-        throw Error("Asset symbol is null. Cant subscribe to token balance")
-    } else {
-        tokenSymbol = transferrableAssetObject.paraspellAsset.symbol;
-    }
-    const bncAliceAddress = "gXCcrjjFX3RPyhHYgwZDmw8oe4JFpd5anko3nTY8VrmnJpe"
-
-    
-    
-    console.log(`Watch Token Deposit: Source Chain Name ${transferrableAssetObject.sourceParaspellChainName} | Token Symbol ${tokenSymbol} | Deposit Address ${depositAddress} `)
-    // if(transferrableAssetObject.sourceParaspellChainName == "Moonriver" && transferrableAssetObject.paraspellAssetSymbol.symbol.toUpperCase().startsWith("XC")){
-    //     console.log("Removing XC from token symbol")
-    //     tokenSymbol = tokenSymbol.slice(2)
-    // }
     // If chain is movr, make sure tokens have xc prefix
     if(paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
         // console.log("Adding XC from token symbol")
@@ -391,8 +332,6 @@ export async function watchTokenDeposit(paraId: number, chopsticks: boolean, des
     }
     const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, depositAddress);
     console.log("Watch Token Deposit: Subscribed to balance")
-    // console.log(destChainApi.registry.chainTokens)
-    // console.log(destAdapter.getTokens())
     return new Observable<BalanceData>((subscriber) => {
         const subscription = balanceObservable.subscribe({
             next(balance) {
@@ -420,6 +359,23 @@ export async function watchTokenDeposit(paraId: number, chopsticks: boolean, des
 }
 export async function watchTokenBalance(paraId: number, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, node: string, accountAddress: string){
     // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
+    let tokenSymbol;
+    if(paraId == 0){
+        tokenSymbol = "KSM"
+    } else {
+        tokenSymbol = assetSymbol
+    }
+
+    console.log(`Watch Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
+
+    // Make sure api is connected
+    console.log(`Watch Token Balance: API connected: ${chainApi.isConnected}`)
+    if(!chainApi.isConnected){
+        console.log("Watch Token Balance: API not connected. Connecting...")
+        await chainApi.connect()
+        console.log("Watch Token Balance: API connected: " + chainApi.isConnected)
+    }
+
     let destAdapter = getAdapter(paraId)
     let currentBalance: BalanceData;
 
@@ -437,14 +393,7 @@ export async function watchTokenBalance(paraId: number, chopsticks: boolean, cha
     }
     
     // printAndLogToFile("Subscribing to balance for destination chain " + paraId + " for asset " + transferrableAssetObject.paraspellAssetSymbol.symbol + " for address " + aliceAddress)
-    let tokenSymbol;
-    if(paraId == 0){
-        tokenSymbol = "KSM"
-    } else {
-        tokenSymbol = assetSymbol
-    }
-
-    console.log(`Watch Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
+    
     // if(node == "Moonriver" && tokenSymbol.toUpperCase().startsWith("XC")){
     //     console.log("Removing XC from token symbol")
     //     tokenSymbol = tokenSymbol.slice(2)
@@ -501,7 +450,7 @@ export async function getBalanceChange(
         changeInBalanceString: "0"
     }
     const balanceChangePromise = new Promise<BalanceChangeStats>((resolve, reject) => {
-        const subscription = balanceObservable$.pipe(timeout(60000)).subscribe({
+        const subscription = balanceObservable$.pipe(timeout(120000)).subscribe({
             next(balance) {
                 
                 if(currentBalance){
@@ -558,14 +507,92 @@ export async function getBalanceChange(
     });
     return balanceChangePromise
 }
+export async function getKsmBalancesAcrossChains(chopsticks: boolean){
+    let ksmBalances = {
+        0: 0,
+        2000: 0,
+        2001: 0,
+        2023: 0,
+        2085: 0,
+        2090: 0,
+        2110: 0
+    }
 
+    let asyncAdapters = []
+    let chainIds = [0, 2000, 2001, 2023, 2085, 2090, 2110]
+    let ksmBalancesPromise = chainIds.map(async (chainId) => {
+        let account;
+        if(chainId == 2023){
+            account = await getSigner(chopsticks, true)
+        } else {
+            account = await getSigner(chopsticks, false)
+        }
+        console.log("Account Address: " + account.address)
+        let chainNode: TNode | "Kusama" = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId)
+        let destAdapter = getAdapter(chainId)
+
+        if(chainId == 2000){
+            let rpc = chopsticks ? localRpcs["Karura"] : karRpc
+            let provider = new WsProvider(rpc)
+            let walletConfigs: WalletConfigs = {
+                evmProvider: EvmRpcProvider.from(rpc),
+                wsProvider: provider
+            }
+            let karApi = await ApiPromise.create({provider: provider})
+            let adapterWallet = new Wallet(karApi, walletConfigs);
+            await destAdapter.init(karApi, adapterWallet);
+        } else {
+            let api = await getApiForNode(chainNode, chopsticks)
+            await destAdapter.init(api);
+        }
+
+        let tokenSymbol = "KSM"
+        if(chainId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
+            console.log("Adding XC from token symbol")
+            tokenSymbol = "xc" + tokenSymbol
+        // if chain isnt movr, no prefix
+        } else if(chainId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
+            console.log("Removing XC from token symbol")
+            tokenSymbol = tokenSymbol.slice(2)
+        }
+        const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, account.address);
+        let balance = await firstValueFrom(balanceObservable)
+        ksmBalances[chainId] = balance.available.toNumber()
+        asyncAdapters.push(destAdapter)
+        return ksmBalances
+    })
+    await Promise.all(ksmBalancesPromise)
+    let adapters = await Promise.all(asyncAdapters)
+
+    // console.log("Disconnecting ksm balance adapters...")
+    // await delay(3000)
+    // for(let adapter of adapters){
+    //     await adapter.getApi().disconnect()
+    // }
+    // console.log("Disconnected ksm balance adapters")
+    // await delay(3000)
+    return ksmBalances
+
+}
+export function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 export async function getBalance(paraId: number, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, node: string, accountAddress: string): Promise<BalanceData>{
 
-    // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
+
+    console.log(`Get Token Balance for chain ${node} | Token ${assetSymbol}`)
 
     let destAdapter = getAdapter(paraId)
     let currentBalance: BalanceData;
     
+    // Make sure api is connected
+    console.log(`Get Token Balance: API connected: ${chainApi.isConnected}`)
+    if(!chainApi.isConnected){
+        console.log("Get Token Balance: API not connected. Connecting...")
+        await chainApi.connect()
+        console.log("Get Token Balance: API connected: " + chainApi.isConnected)
+    }
+
     if(paraId == 2000){
         let rpcEndpoint = chopsticks ? localRpcs[node] : karRpc
         let walletConfigs: WalletConfigs = {
@@ -578,7 +605,6 @@ export async function getBalance(paraId: number, chopsticks: boolean, chainApi: 
         await destAdapter.init(chainApi);
     }
     
-    // printAndLogToFile("Subscribing to balance for destination chain " + paraId + " for asset " + transferrableAssetObject.paraspellAssetSymbol.symbol + " for address " + aliceAddress)
     let tokenSymbol;
     if(paraId == 0){
         tokenSymbol = "KSM"
@@ -586,73 +612,23 @@ export async function getBalance(paraId: number, chopsticks: boolean, chainApi: 
         tokenSymbol = assetSymbol
     }
 
-    console.log(`Watch Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
-    // if(node == "Moonriver" && tokenSymbol.toUpperCase().startsWith("XC")){
-    //     console.log("Removing XC from token symbol")
-    //     tokenSymbol = tokenSymbol.slice(2)
-    // }
+    console.log(`Get Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
+
     if(paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
-        console.log("Adding XC from token symbol")
+        // console.log("Adding XC from token symbol")
         tokenSymbol = "xc" + tokenSymbol
     // if chain isnt movr, no prefix
     } else if(paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
-        console.log("Removing XC from token symbol")
+        // console.log("Removing XC from token symbol")
         tokenSymbol = tokenSymbol.slice(2)
     }
 
     const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, accountAddress);
-    console.log("Watch Token Balance: Subscribed to balance")
+    console.log("Get Token Balance: Subscribed to balance")
     let balance = await firstValueFrom(balanceObservable)
-    console.log("Balance: " + JSON.stringify(balance.available))
+    console.log("Balance: " + JSON.stringify(balance.available.toNumber()))
     return balance
-    // // console.log(chainApi.registry.chainTokens)
-    // // console.log(destAdapter.getTokens())
-    // return new Observable<BalanceData>((subscriber) => {
-    //     const subscription = balanceObservable.subscribe({
-    //         next(balance) {
-    //             currentBalance = balance;
-    //             subscriber.complete();
-    //         },
-    //         error(err) {
-    //             subscriber.error(new Error(err));
-    //             subscriber.complete(); // Complete the outer Observable on error
-    //         },
-    //         complete() {
-    //             subscriber.complete(); // Complete the outer Observable when the inner one completes
-    //         }
-    //     });
-    //     return () => {
-    //         subscription.unsubscribe();
-    //     };
-    // })
-    
-    // let balanceObservable = new Observable<BalanceData>(subscriber => {
-    //     balanceObservable.pipe(
-    //         first() // Take only the first emitted value and then complete
-    //     ).subscribe({
-    //         next(balance) {
-    //             subscriber.next(balance);
-    //             subscriber.complete();
-    //         },
-    //         error(err) {
-    //             subscriber.error(new Error(err));
-    //         },
-    //         complete() {
-    //             // This will naturally occur after the first value due to the `first()` operator
-    //             subscriber.complete();
-    //         }
-    //     });
-    // });
 }
-// export const getSigner = async () => {
-//     await cryptoWaitReady()
-//     const keyring = new Keyring({
-//       type: "sr25519",
-//     });
-  
-//     // Add Alice to our keyring with a hard-deived path (empty phrase, so uses dev)
-//     return keyring.addFromUri("//Alice");
-//   };
 
 export async function getSigner(chopsticks: boolean, eth: boolean): Promise<KeyringPair>{
     let keyring;
@@ -763,6 +739,9 @@ export function getLatestFileFromLatestDay(small: boolean) {
     
     const resultsDirPath = path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/result_log_data');
     try {
+        let sortedDays
+        let latestDayDir;
+        let latestDayPath
         let days;
         if(small){
         // Get list of directories (days)
@@ -770,21 +749,74 @@ export function getLatestFileFromLatestDay(small: boolean) {
                 .filter(dirent => dirent.isDirectory())
                 .map(dirent => dirent.name)
                 .filter((day) => day.includes("_small"))
+            sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+            latestDayDir = sortedDays[sortedDays.length - 1]
+            latestDayPath = path.join(resultsDirPath, latestDayDir);
         } else {
             days = fs.readdirSync(resultsDirPath, { withFileTypes: true })
                 .filter(dirent => dirent.isDirectory())
                 .map(dirent => dirent.name)
                 .filter((day) => !day.includes("_small"))
+            sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+            // Get the latest day's directory
+            console.log("Sorted days: ", JSON.stringify(days, null, 2))
+    
+            latestDayDir = sortedDays[0]
+            latestDayPath = path.join(resultsDirPath, latestDayDir);
         }
 
         console.log("Days: ", JSON.stringify(days, null, 2))
         // Sort directories by date
-        const sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-        // Get the latest day's directory
+        // const sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+        // // Get the latest day's directory
+        // console.log("Sorted days: ", JSON.stringify(days, null, 2))
 
-        const latestDayDir = sortedDays[sortedDays.length - 1]
-        const latestDayPath = path.join(resultsDirPath, latestDayDir);
+        // const latestDayDir = sortedDays[sortedDays.length - 1]
+        // const latestDayPath = path.join(resultsDirPath, latestDayDir);
         console.log("Latest Day Path: ", latestDayPath)
+        // Get list of files in the latest day's directory
+        const files = fs.readdirSync(latestDayPath);
+
+        // Sort files by timestamp in filename
+        const sortedFiles = files.sort((a, b) => {
+            const timeA = a.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+            const timeB = b.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+            return new Date(`${latestDayDir}T${timeA}`).getTime() - new Date(`${latestDayDir}T${timeB}`).getTime();
+        });
+
+        // Get the latest file
+        const latestFile = sortedFiles[sortedFiles.length - 1];
+        const latestFilePath = path.join(latestDayPath, latestFile);
+
+        return latestFilePath;
+    } catch (error) {
+        console.error('Error:', error);
+        return null;
+    }
+}
+export function getLatestTargetFile(){
+      
+    const resultsDirPath = path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/target_log_data');
+    try {
+        let sortedDays
+        let latestDayDir;
+        let latestDayPath
+        let days;
+
+        days = fs.readdirSync(resultsDirPath, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory())
+            .map(dirent => dirent.name)
+            .filter((day) => !day.includes("_small"))
+        sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+        // Get the latest day's directory
+        console.log("Sorted days: ", JSON.stringify(days, null, 2))
+
+        latestDayDir = sortedDays[0]
+        latestDayPath = path.join(resultsDirPath, latestDayDir);
+
+        console.log("Days: ", JSON.stringify(days, null, 2))
+        // Sort directories by date
+        console.log("Latest Target Day Path: ", latestDayPath)
         // Get list of files in the latest day's directory
         const files = fs.readdirSync(latestDayPath);
 
@@ -808,6 +840,25 @@ export function getLatestFileFromLatestDay(small: boolean) {
 export function constructRoute(logFilePath: string) {
     console.log("LatestFile: ", logFilePath)
     const testResults: ResultDataObject[] = JSON.parse(fs.readFileSync(logFilePath, 'utf8'));
+    console.log(JSON.stringify(testResults))
     let assetPath: AssetNode[] = testResults.map(result => readLogData(result))
     return assetPath
+}
+
+// How much profit we got for latest arb
+export async function getTotalArbResultAmount(lastSuccessfulNode: LastNode){
+    let latestFilePath = path.join(__dirname, './latestAttempt/arbExecutionResults.json')
+    let latestArbResults: ArbExecutionResult[] = JSON.parse(fs.readFileSync(latestFilePath, 'utf8'))
+    let assetOut = latestArbResults[latestArbResults.length - 1].assetSymbolOut
+    let arbAmountOut = 0;
+    let arbAmountIn = latestArbResults[0].assetAmountIn;
+    // if(assetOut == "KSM"){
+    //     arbAmountOut = latestArbResults[latestArbResults.length - 1].assetAmountOut - arbAmountIn
+    // }
+    if(lastSuccessfulNode.assetSymbol == "KSM"){
+        arbAmountOut = Number.parseFloat(lastSuccessfulNode.assetValue) - arbAmountIn
+    }
+    // getLastSuccessfulNodeFromResultData
+
+    return arbAmountOut
 }

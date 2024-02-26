@@ -1,7 +1,8 @@
-import { ExtrinsicObject, SwapInstruction, TransferInstruction, InstructionType, TransferTxStats, SwapTxStats, ArbExecutionResult, ExtrinsicSetResultDynamic } from "./types.ts";
+import { ExtrinsicObject, SwapInstruction, TransferInstruction, InstructionType, TransferTxStats, SwapTxStats, ArbExecutionResult, ExtrinsicSetResultDynamic, LastFilePath } from "./types.ts";
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { globalState } from "./liveTest.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -300,7 +301,7 @@ export async function logResultsDynamic(extrinsicSetResults: ExtrinsicSetResultD
     let logString = lastNodeString + "\n" + extrinsicSetString
     fs.appendFileSync(logFilePath, logString)
 }
-export async function logAllResultsDynamic(allExtrinsicSetResults: ExtrinsicSetResultDynamic[], logFilePath: string, reverse: boolean){
+export async function logAllResultsDynamic(logFilePath: string, reverse: boolean){
     // let lastNode = extrinsicSetResults.lastSuccessfulNode
     // let extrinsicSetData = extrinsicSetResults.extrinsicData
 
@@ -309,17 +310,28 @@ export async function logAllResultsDynamic(allExtrinsicSetResults: ExtrinsicSetR
     let swapTxResults: any[] = []
     let transferTxStats: TransferTxStats[] = []
 
-    allExtrinsicSetResults.forEach((extrinsicSet) => {
-        extrinsicSet.extrinsicData.forEach((swapOrTransferResultData) => {
-            arbResults.push(swapOrTransferResultData.arbExecutionResult)
+    let allExtrinsicsSet = globalState.extrinsicSetResults
+    allExtrinsicsSet.extrinsicData.forEach((swapOrTransferResultData) => {
+        arbResults.push(swapOrTransferResultData.arbExecutionResult)
             if('swapTxStats' in swapOrTransferResultData){
                 swapTxStats.push(swapOrTransferResultData.swapTxStats)
                 swapTxResults.push(swapOrTransferResultData.swapTxResults)
             } else if ('transferTxStats' in swapOrTransferResultData){
                 transferTxStats.push(swapOrTransferResultData.transferTxStats)
             }
-        })
     })
+
+    // allExtrinsicSetResults.forEach((extrinsicSet) => {
+    //     extrinsicSet.extrinsicData.forEach((swapOrTransferResultData) => {
+    //         arbResults.push(swapOrTransferResultData.arbExecutionResult)
+    //         if('swapTxStats' in swapOrTransferResultData){
+    //             swapTxStats.push(swapOrTransferResultData.swapTxStats)
+    //             swapTxResults.push(swapOrTransferResultData.swapTxResults)
+    //         } else if ('transferTxStats' in swapOrTransferResultData){
+    //             transferTxStats.push(swapOrTransferResultData.transferTxStats)
+    //         }
+    //     })
+    // })
 
     // extrinsicSetData.forEach((resultData) => {
     //     arbResults.push(resultData.arbExecutionResult)
@@ -335,20 +347,33 @@ export async function logAllResultsDynamic(allExtrinsicSetResults: ExtrinsicSetR
     logSwapTxResults(swapTxResults, logFilePath, reverse)
     logTransferTxStats(transferTxStats, logFilePath, reverse)
     logArbExecutionResults(arbResults, logFilePath,reverse)
+    
+    fs.writeFileSync(path.join(__dirname, './latestAttempt/allExtrinsicSetResults.json'), JSON.stringify(allExtrinsicsSet, null, 2))
 
     // let lastNodeString = `LAST SUCCESSFUL NODE: ${lastNode.chainId} ${lastNode.assetSymbol} ${lastNode.assetValue}`
     // let extrinsicSetString = `EXTRINSIC SET RESULTS: ${JSON.stringify(extrinsicSetData, null, 2)}`
     // let logString = lastNodeString + "\n" + extrinsicSetString
     // fs.appendFileSync(logFilePath, logString)
 }
-
-export async function logAllArbAttempts(allExtrinsicSets: ExtrinsicSetResultDynamic[], logFilePath: string, chopsticks: boolean){
+// log the latest file path so we can re run the arb from the last node and connect it to the previous attempt via latestFilePath
+export async function logLastFilePath(logFilePath: string){
+    let logFile: LastFilePath = {
+        filePath: logFilePath
+    }
+    fs.writeFileSync(path.join(__dirname, './lastAttemptFile.json'), JSON.stringify(logFile, null, 2))
+}
+export async function logAllArbAttempts(logFilePath: string, chopsticks: boolean){
     let allArbExecutions: ArbExecutionResult[] = []
-    allExtrinsicSets.forEach((extrinsicSet) => {
-        extrinsicSet.extrinsicData.forEach((extrinsicData) => {
-            allArbExecutions.push(extrinsicData.arbExecutionResult)
-        })
+
+    let allExtrinsicsSet = globalState.extrinsicSetResults
+    allExtrinsicsSet.extrinsicData.forEach((extrinsicData) => {
+        allArbExecutions.push(extrinsicData.arbExecutionResult)
     })
+    // allExtrinsicSets.forEach((extrinsicSet) => {
+    //     extrinsicSet.extrinsicData.forEach((extrinsicData) => {
+    //         allArbExecutions.push(extrinsicData.arbExecutionResult)
+    //     })
+    // })
     // allArbExecutions = allArbExecutions.reverse()
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
@@ -414,11 +439,5 @@ export async function logProfits(arbAmountOut: number, logFilePath: string, chop
     profitLogDatabase = JSON.parse(fs.readFileSync(profitFilePath, 'utf8'))
     profitLogDatabase[logEntry] = arbAmountOut
     fs.writeFileSync(profitFilePath, JSON.stringify(profitLogDatabase, null, 2))
-    // if(!fs.existsSync(profitFilePath)){
-    //     fs.writeFileSync(profitFilePath, JSON.stringify(profitLogDatabase, null, 2))
-    // } else {
-    //     profitLogDatabase = JSON.parse(fs.readFileSync(profitFilePath, 'utf8'))
-    //     profitLogDatabase[logDayTime] = arbAmountOut
-    //     fs.writeFileSync(profitFilePath, JSON.stringify(profitLogDatabase, null, 2))
-    // }
+
 }

@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 
 export async function runArbFallback(args: string){
     return new Promise((resolve, reject) => {
-        let functionCall = 'search_best_path_a_to_b ' + args;
+        let functionCall = 'fallback_search_a_to_b ' + args;
         const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
         // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
 
@@ -37,7 +37,28 @@ export async function runArbFallback(args: string){
         });
     });
 }
+export async function runArbTarget(args: string){
+  return new Promise((resolve, reject) => {
+    let functionCall = 'search_best_path_a_to_b ' + args;
+    const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
+    // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
 
+    console.log("Executing arb: " + functionCall)
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`exec error: ${error}`);
+            reject(error); // Reject the promise on execution error, including non-zero exit codes
+            return;
+        }
+        if (stderr) {
+            console.error(`stderr: ${stderr}`);
+            resolve(false); 
+        } else {
+            resolve(true); // Resolve with true if execution was successful without errors
+        }
+    });
+});
+}
 async function findLatestDirectory(dirPath: string): Promise<string | null> {
     try {
       const items = await readdir(dirPath, { withFileTypes: true });
@@ -176,6 +197,46 @@ export async function runAndReturnFallbackArb(args: string, chopsticks: boolean)
     }
     
     // return results;
+}
+
+export async function runAndReturnTargetArb(args: string, chopsticks: boolean): Promise<ResultDataObject[]>{
+  let lpsResult;
+  try{
+    lpsResult = await updateLps(chopsticks)
+  } catch (e){
+    console.log("Error updating lps. Attempting to update again.")
+    console.log(e)
+    let updateComplete = false;
+    let updateAttempts = 0;
+    while(!updateComplete && updateAttempts < 3){
+      try{
+        lpsResult = await updateLps(chopsticks)
+        updateComplete = true;
+      } catch (e){
+        console.log("Error updating lps")
+        console.log(e)
+      }
+    }
+    if(!updateComplete){
+      throw new Error("Error updating lps")
+    }
+  }
+
+  try{
+    let arbCompleted = await runArbTarget(args);
+    if(arbCompleted){
+        const targetLogFolder = await path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/target_log_data/');
+        const latestFile = await findLatestFileInLatestDirectory(targetLogFolder);
+        let latestFileData: ResultDataObject[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
+        return latestFileData
+    } else {
+        throw new Error("Arb Fallback failed")
+    }
+} catch (e){
+    console.log("Error running and returning fallback arb")
+    console.log(e)
+    throw new Error("Error running and returning fallback arb")
+}
 }
 async function run(){
     // console.log("Starting")

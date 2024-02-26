@@ -22,7 +22,7 @@ import { fileURLToPath } from 'url';
 import { AssetNode } from '../../instructions/AssetNode.ts';
 import { increaseIndex } from '../../instructions/utils.ts';
 import { FixedPointNumber } from '@acala-network/sdk-core';
-import { getApiForNode } from '../../instructions/extrinsicUtils.ts';
+import { getApiForNode } from '../../instructions/apiUtils.ts';
 import { live_wallet_3 } from '../../instructions/txConsts.ts';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 console.log(__dirname)
@@ -505,11 +505,11 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
         const inputAmount = ethers.parseUnits(swapInstructions[i].assetInAmount.toString(), Number.parseInt(tokenPathAssetObjects[i].tokenData.decimals))
         const outputAmount = ethers.parseUnits(swapInstructions[i].assetOutTargetAmount.toString(), Number.parseInt(tokenPathAssetObjects[i+1].tokenData.decimals))
 
-        console.log("WRAP MOVR HERE:")
+        // console.log("WRAP MOVR HERE:")
         // If first token is MOVR, check if we need to wrap first
-        console.log(`I is: ${i}, Token Path Address: ${tokenPathAddresses[i]}, Movr Contract Address: ${movrContractAddress}`)
+        // console.log(`I is: ${i}, Token Path Address: ${tokenPathAddresses[i]}, Movr Contract Address: ${movrContractAddress}`)
         if(i == 0 && tokenPathAddresses[i].toString().toLowerCase() == movrContractAddress.toString().toLowerCase()){
-            console.log("WRAP MOVR CHECK")
+            // console.log("WRAP MOVR CHECK")
             let wmovrBalance = await movrContract.balanceOf(wallet.address)
             let nativeMovrBalance = await wallet.provider.getBalance(wallet.address)
             if(wmovrBalance < inputAmount && nativeMovrBalance < inputAmount){
@@ -518,11 +518,11 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
                 wrapMovrAmount = inputAmount;
             }
         }
-        console.log(wrapMovrAmount)
+        // console.log(wrapMovrAmount)
         const tokenIn = tokenPathAddresses[i]
         const tokenOut = tokenPathAddresses[i+1]
-        console.log("Token In: ", tokenIn)
-        console.log("Token Out: ", tokenOut)
+        // console.log("Token In: ", tokenIn)
+        // console.log("Token Out: ", tokenOut)
         // Get dex offering the best price for the swap, but dont use given calculate output yet
         console.log("GETTING BEST SWAP ROUTE")
         let [dexAddress, sampleOutput] = await getBestSwapRoute(tokenIn, tokenOut, inputAmount, defaultRpc)
@@ -559,10 +559,10 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
     let data: string[] = [];
     swapParams.forEach((swapParam: any) => {
         let dexInfo = getDexInfo(swapParam.dexAddress)
-        console.log("TOKEN IN: ", swapParam.tokenIn)
-        console.log("TOKEN OUT:", swapParam.tokenOut)
-        console.log("DEX TOKEN 0:", dexInfo.token0)
-        console.log("DEX TOKEN 1: ", dexInfo.token1)
+        // console.log("TOKEN IN: ", swapParam.tokenIn)
+        // console.log("TOKEN OUT:", swapParam.tokenOut)
+        // console.log("DEX TOKEN 0:", dexInfo.token0)
+        // console.log("DEX TOKEN 1: ", dexInfo.token1)
         if(swapParam.tokenIn.toLowerCase() == dexInfo.token0.toLowerCase()){
             amount0Ins.push(swapParam.inputAmount)
             amount1Ins.push(BigInt(0))
@@ -581,10 +581,10 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
         movrWrapAmounts.push(swapParam.wrapMovrAmount)
         data.push("0x")
     })
-    console.log("AMOUNT 0 INS: ", amount0Ins)
-    console.log("AMOUNT 1 INS: ", amount1Ins)
-    console.log("AMOUNT 0 OUTS: ", amount0Outs)
-    console.log("AMOUNT 1 OUTS: ", amount1Outs)
+    // console.log("AMOUNT 0 INS: ", amount0Ins)
+    // console.log("AMOUNT 1 INS: ", amount1Ins)
+    // console.log("AMOUNT 0 OUTS: ", amount0Outs)
+    // console.log("AMOUNT 1 OUTS: ", amount1Outs)
 
     // let reverseWrapMovrAmount = swapParams[0].wrapMovrAmount
     // if(tokenPathAddresses[tokenPathAddresses.length - 1] == movrContractAddress){
@@ -637,7 +637,7 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
 export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapInstructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, instructionIndex: number[], chopsticks: boolean) {
     let liveWallet = movrBatchSwapParams.wallet;
     let batchContract = movrBatchSwapParams.batchContract;
-    let api = await getApiForNode("Moonriver", 2023, chopsticks)
+    let api = await getApiForNode("Moonriver", chopsticks)
 
     let batchContractAddress = await batchContract.getAddress()
     console.log(`Wallet: ${liveWallet.address} | Batch Contract: ${batchContractAddress}`)

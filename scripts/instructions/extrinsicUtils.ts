@@ -8,8 +8,8 @@ import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 // import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../xcm_tests/testParams.ts'
 import { BN, compactStripLength, u8aToHex } from '@polkadot/util'
-import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getEndpointsForChain, connectFirstApi, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange, getSigner, increaseIndex } from './utils.ts'
-import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, ReverseSwapExtrinsicParams, IndexObject, PathNodeValues } from './types.ts'
+import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange, getSigner, increaseIndex } from './utils.ts'
+import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, ReverseSwapExtrinsicParams, IndexObject, PathNodeValues, PreExecutionTransfer } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { prodRelayPolkadot, prodRelayKusama, createWsEndpoints, prodParasKusamaCommon, prodParasKusama } from '@polkadot/apps-config/endpoints'
 import { buildInstructions, getTransferrableAssetObject } from './instructionUtils.ts';
@@ -38,6 +38,7 @@ import { alithAddress, ksmRpc, localRpcs, testNets } from './txConsts.ts';
 import { MultiswapSellAsset } from '@mangata-finance/sdk';
 import { TokenAmount } from '@zenlink-dex/sdk-core';
 import { BatchSwapParams } from './../swaps/movr/utils/types.ts';
+import { getApiForNode } from './apiUtils.ts';
 
 
 
@@ -68,6 +69,7 @@ export async function buildTransferExtrinsicReworked(instruction: TransferInstru
 export async function buildTransferExtrinsicDynamic(instruction: TransferInstruction, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<[TransferExtrinsicContainer, TransferInstruction[]]> {
     let transferExtrinsic: TransferExtrinsicContainer;
     let remainingInstructions: TransferInstruction[] = [];
+    // console.log("**************************************")
     switch(instruction.type){
         case InstructionType.TransferToHomeChain:
             transferExtrinsic = await buildTransferExtrinsicFromInstruction(instruction, extrinsicIndex, chopsticks);
@@ -82,6 +84,7 @@ export async function buildTransferExtrinsicDynamic(instruction: TransferInstruc
             remainingInstructions.push(transferTwo)
             break;
     }
+    // console.log("**************************************")
     return [transferExtrinsic, remainingInstructions]
 }
 
@@ -153,8 +156,10 @@ export async function buildTransferExtrinsicFromInstruction(instruction: Transfe
     let destinationParaId = getParaIdForNode(instruction.destinationNode, instruction.destinationAssetNode)
     let transferAmount = new FixedPointNumber(instruction.assetNodes[0].pathValue, Number.parseInt(assetDecimals.toString())).toChainData()
 
-    let startApi = await getApiForNode(instruction.startNode, startParaId, chopsticks)
-    let destinationApi = await getApiForNode(instruction.destinationNode, destinationParaId, chopsticks)
+    let startApi = await getApiForNode(instruction.startNode, chopsticks)
+    let destinationApi = await getApiForNode(instruction.destinationNode, chopsticks)
+
+    // console.log(`Transfer: ${instruction.startNode} -> ${instruction.destinationNode}  (${currencyInput} ${transferAmount.toString()}`)
 
     let signer;
 
@@ -247,52 +252,7 @@ function splitDoubleTransferInstruction(instruction: TransferToHomeThenDestInstr
     return [startInstruction, destinationInstruction]
 }
 
-export async function getApiForNode(node: TNode | "Kusama", chainId: number, chopsticks: boolean){
-    let apiEndpoint: string[];
-    if(node == "Kusama"){
-        apiEndpoint = [ksmRpc]
-        // throw new Error("Trying to transfer kusama away from home chain to kusama")
-    } else{
-        apiEndpoint = paraspell.getAllNodeProviders(node)
-    }
-    
-    // -- But initialize test endpoints until real
-    if(chopsticks){
-        let localRpc = localRpcs[node]
-        if(localRpc){
-            apiEndpoint = localRpc
-        }
-    }
-    
-    let api;
-    if(node == "Mangata"){
-        try{
-            const MangataSDK = await import('@mangata-finance/sdk')
-            api = await MangataSDK.Mangata.instance([apiEndpoint[0]]).api()
-            await api.isReady
-        } catch(e){
-            console.log(`Error connecting mangata api ${apiEndpoint[0]}, trying next endpoint`)
-            const MangataSDK = await import('@mangata-finance/sdk')
-            api = await MangataSDK.Mangata.instance([apiEndpoint[1]]).api()
-            await api.isReady
-        }
-    } else {
-        let endpointIndex = 0;
-        let apiConnected = false;
-        while(endpointIndex < apiEndpoint.length && !apiConnected){
-            try{
-                let provider = new WsProvider(apiEndpoint[endpointIndex])
-                api = await ApiPromise.create({ provider: provider });
-                await api.isReady
-                apiConnected = true;
-            } catch (e) {
-                console.log(`Error connecting api ${apiEndpoint[endpointIndex]}, trying next endpoint`)  
-            }
-            endpointIndex++
-        }
-    }
-    return api
-}
+
 function getAssetDecimalsForNode(node: TNode | "Kusama", transferObject: TransferrableAssetObject){
     if(node == "Kusama"){
         return 12
@@ -547,7 +507,11 @@ export async function buildSwapExtrinsic(instructions: SwapInstruction[], chainN
                 {value: wrapMovrAmount}
             );
         };
-        let assetNodes = instructions[0].assetNodes
+        let assetNodes: AssetNode[] = [instructions[0].assetNodes[0]]
+        instructions.forEach((swapInstruction) => {
+            assetNodes.push(swapInstruction.assetNodes[1])
+        })
+        // let assetNodes = instructions[0].assetNodes
         let swapTxContainer: SwapExtrinsicContainer = {
             chainId: 2023,
             chain: "Moonriver",
@@ -629,19 +593,26 @@ export async function buildSwapExtrinsicDynamic(instructions: SwapInstruction[],
         let startAssetDynamic = swapAssetNodes[0].getAssetRegistrySymbol()
         let destAssetDynamic = swapAssetNodes[swapAssetNodes.length - 1].getAssetRegistrySymbol()
         const descriptorString = `KAR ${startAssetDynamic} -> ${destAssetDynamic}`
+        console.log("**************************************")
         console.log(descriptorString)
+        console.log("**************************************")
         swapTxContainer.txString = descriptorString
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2001){
-        console.log(`BNC ${startAsset} -> ${destAsset}`)
+        // console.log(`BNC ${startAsset} -> ${destAsset}`)
         const descriptorString = `BNC ${startAsset} -> ${destAsset}`
+        console.log("**************************************")
+        console.log(descriptorString)
+        console.log("**************************************")
         let [swapTxContainer, remainingInstructions] = await getBncSwapExtrinsicDynamic(instructions, chopsticks, chainNonces[2001], extrinsicIndex, instructionIndex, pathNodeValues)
         swapTxContainer.txString = descriptorString
         chainNonces[2001]++
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2023){
-        console.log(`MOV ${startAsset} -> ${destAsset}`)
         const descriptorString = `MOV ${startAsset} -> ${destAsset}`
+        console.log("**************************************")
+        console.log(descriptorString)
+        console.log("**************************************")
         let remainingInstructions: SwapInstruction[] = []
 
         // If testnet is false, will use live evm wallet
@@ -649,27 +620,33 @@ export async function buildSwapExtrinsicDynamic(instructions: SwapInstruction[],
         let movrBatchSwapParams = await getMovrSwapTx(instructions, testnet)
         let swapTxContainer = await formatMovrTx(movrBatchSwapParams, instructions, chainNonces, extrinsicIndex, instructionIndex, chopsticks)
         swapTxContainer.txString = descriptorString
-        console.log("MOVR SWAP PARAMS")
-        console.log(JSON.stringify(swapTxContainer.movrBatchSwapParams, null, 2))
+        // console.log("MOVR SWAP PARAMS")
+        // console.log(JSON.stringify(swapTxContainer.movrBatchSwapParams, null, 2))
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2090){
-        console.log(`BSX ${startAsset} -> ${destAsset}`)
         const descriptorString = `BSX ${startAsset} -> ${destAsset}`
+        console.log("**************************************")
+        console.log(descriptorString)
+        console.log("**************************************")
         let [swapTxContainer, remainingInstructions] = await getBsxSwapExtrinsicDynamic(startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2090], extrinsicIndex, instructionIndex, pathNodeValues)
         swapTxContainer.txString = descriptorString
         chainNonces[2090]++
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2110){
-        console.log(`MGX ${startAsset} -> ${destAsset}`)
         const descriptorString = `MGX ${startAsset} -> ${destAsset}`
+        console.log("**************************************")
+        console.log(descriptorString)
+        console.log("**************************************")
         let swapTxContainer = await getMgxSwapExtrinsic(startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2110], extrinsicIndex,instructionIndex, pathNodeValues)
         swapTxContainer.txString = descriptorString
         chainNonces[2110]++
         let remainingInstructions: SwapInstruction[] = []
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2085){
-        console.log(`HKO ${startAsset} -> ${destAsset}`)
         const descriptorString = `HKO ${startAsset} -> ${destAsset}`
+        console.log("**************************************")
+        console.log(descriptorString)
+        console.log("**************************************")
         let swapTxContainer = await getHkoSwapExtrinsic(startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2085], extrinsicIndex, instructionIndex, pathNodeValues)
         swapTxContainer.txString = descriptorString
         chainNonces[2085]++
@@ -771,4 +748,58 @@ export async function createSwapExtrinsicObject(swapContainer: SwapExtrinsicCont
         swapExtrinsicContainer: swapContainer
     }
     return extrinsicObj
+}
+// export interface TransferTx = {
+//     fromChain: TNode,
+//     toChain: TNode,
+//     amount: FixedPointNumber,
+//     address: string
+
+// }
+
+export async function buildTransferToKsm(fromChainId: number, amount: FixedPointNumber, chopsticks: boolean){
+    if(fromChainId == 0){
+        throw new Error("Trying to transfer kusama away from home chain to kusama")
+    }
+    let fromNode = getParaspellChainName(fromChainId) as TNode
+    let fromApi = await getApiForNode(fromNode, false)
+    let fromAccount = fromNode == "Moonriver" ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false);
+    let ksmAccount = await getSigner(chopsticks, false)
+
+    let transferTx = paraspell.Builder(fromApi).from(fromNode).amount(amount.toChainData()).address(ksmAccount.address).build()
+    let transfer: PreExecutionTransfer = {
+        fromChainId: fromChainId,
+        fromChainNode: fromNode,
+        fromChainAccount: fromAccount,
+        toChainNode: "Kusama",
+        toChainAccount: ksmAccount,
+        toChainId: 0,
+        transferAmount: amount,
+        extrinsic: transferTx
+    }
+    return transfer
+}
+
+export async function buildTransferKsmToChain(toChainId: number, amount: FixedPointNumber, chopsticks: boolean){
+    if(toChainId == 0){
+        throw new Error("Trying to transfer kusama to non kusama chain")
+    }
+
+    let toNode: TNode = getParaspellChainName(toChainId) as TNode
+    let toApi = await getApiForNode(toNode, false)
+    let toAccount = toNode == "Moonriver" ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false);
+    let fromAccount = await getSigner(chopsticks, false)
+
+    let transferTx = paraspell.Builder(toApi).to(toNode).amount(amount.toChainData()).address(toAccount.address).build()
+    let transfer: PreExecutionTransfer = {
+        fromChainId: 0,
+        fromChainNode: "Kusama",
+        fromChainAccount: fromAccount,
+        toChainNode: toNode,
+        toChainAccount: toAccount,
+        toChainId: toChainId,
+        transferAmount: amount,
+        extrinsic: transferTx
+    }
+    return transfer
 }

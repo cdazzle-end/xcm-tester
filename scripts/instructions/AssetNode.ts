@@ -34,6 +34,7 @@ export class AssetNode implements AssetNodeData{
         this.pathType = data.pathType;
 
         let assetDecimals = this.assetRegistryObject.tokenData.decimals
+        // console.log("PATH VALUE ", this.pathValue)
         this.pathValueFixed = new FixedPointNumber(this.pathValue, Number.parseInt(assetDecimals))
     }
 

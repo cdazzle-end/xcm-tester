@@ -9,6 +9,10 @@
 /scripts/instructions/allArbAttempts
 /scripts/instructions/latestAttempt
 /scripts/instructions/liveSwapExecutionStats/
+/scripts/instructions/lastAttemptFile.json
+/scripts/instructions/lastExtrinsicSet.json
+/scripts/instructions/lastNode.json
+/scripts/instructions/preTransferNodes.json
 
 
 # Logs

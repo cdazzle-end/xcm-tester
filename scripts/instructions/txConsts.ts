@@ -51,3 +51,12 @@ export const testBncNode = '"2001{\\"Native\\":\\"BNC\\"}"'
 export const testZlkNode = '"2001{\\"Native\\":\\"ZLK\\"}"'
 export const karRpc = "wss://karura-rpc-0.aca-api.network"
 export const movrRpc = "wss://rpc.moonriver.moonbeam.network"
+export const kusamaNodeKeys = [
+    '2000{"NativeAssetId":{"Token":"KSM"}}',
+    '2001{"Token":"KSM"}',
+    '2023"42259045809535163221576417993425387648"',
+    '2085"100"',
+    '2007"340282366920938463463374607431768211455"',
+    '2110"4"',
+    '2090"1"'
+]

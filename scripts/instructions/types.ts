@@ -177,6 +177,12 @@ export interface ChainNonces{
     2110: number,
     2085: number
 }
+export interface ExecutionState{
+    lastNode: LastNode,
+    lastFilePath: string,
+    extrinsicSetResults: ExtrinsicSetResultDynamic,
+    // apiMap: Map<TNode, ApiPromise>,
+}
 export interface ExtrinsicObject{
     type: "Swap" | "Transfer",
     instructionIndex?: number[],
@@ -224,10 +230,6 @@ export interface SwapExtrinsicContainer{
     chainId: number,
     chain: TNode,
     assetNodes: AssetNode[],
-    // paraspellAssetIn: ParaspellAsset,
-    // paraspellAssetOut: ParaspellAsset,
-    // assetRegistryObjectIn: MyAssetRegistryObject,
-    // assetRegistryObjectOut: MyAssetRegistryObject,
     extrinsic: SubmittableExtrinsic<"promise", ISubmittableResult> | SubmittableExtrinsic<"rxjs", ISubmittableResult> | any,
     extrinsicIndex: number,
     instructionIndex: number[],
@@ -394,6 +396,9 @@ export interface LastNode{
     chainId: number,
     assetSymbol: string,
 }
+export interface LastFilePath{
+    filePath: string,
+}
 export interface IndexObject {
     i: number
 
@@ -403,5 +408,17 @@ export interface ArbExecutionResult{
     assetSymbolIn: string,
     assetSymbolOut: string,
     assetAmountIn: number,
-    assetAmountOut: number
+    assetAmountOut: number,
+    blockHash: string,
 }
+export interface PreExecutionTransfer {
+    fromChainId: number,
+    fromChainNode: TNode | "Kusama",
+    fromChainAccount: any,
+    toChainId: number,
+    toChainNode: TNode | "Kusama",
+    toChainAccount: any,
+    extrinsic: paraspell.Extrinsic,
+    transferAmount: FixedPointNumber
+}
+
