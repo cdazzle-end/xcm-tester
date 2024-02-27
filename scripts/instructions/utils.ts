@@ -5,50 +5,21 @@ import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
 import path from 'path';
 import { firstValueFrom, combineLatest, map, Observable, race, EMPTY, timeout } from "rxjs";
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { MyAssetRegistryObject, MyAsset, ResultDataObject, ApiSet, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic, LastNode, ExecutionState, ArbExecutionResult } from './types.ts'
+import { MyAssetRegistryObject, MyAsset, ResultDataObject, ApiSet, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic, LastNode, ExecutionState, ArbExecutionResult, TransactionState, TransferProperties, SwapProperties } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allConnectionPromises, allConnections, observableApis, promiseApis } from './liveTest.ts';
 import { ApiPromise, ApiRx, WsProvider } from '@polkadot/api';
 import { options } from '@acala-network/api/dist/index.js';
 import { prodParasKusama, prodParasKusamaCommon, prodRelayKusama } from '@polkadot/apps-config/endpoints';
 import { fileURLToPath } from 'url';
-// import fs from 'fs'
-// import { Observable, timeout } from 'rxjs'
-// import { options } from "@acala-network/api";
-// import * as paraspell from '@paraspell/sdk'
+
 import { Keyring } from '@polkadot/api'
 import {KeyringPair} from '@polkadot/keyring/types'
-// import { TNode, getAssetsObject, getNode, getNodeEndpointOption, getAllNodeProviders, getTNode } from '@paraspell/sdk'
-// import path from 'path';
-// import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../xcm_tests/testParams.ts'
-import { BN, compactStripLength, u8aToHex } from '@polkadot/util'
 // import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getEndpointsForChain, connectFirstApi, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange } from './utils.ts'
 import {AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer } from './types.ts'
-// import { AssetNode } from './AssetNode.ts'
-// import { prodRelayPolkadot, prodRelayKusama, createWsEndpoints, prodParasKusamaCommon, prodParasKusama } from '@polkadot/apps-config/endpoints'
-import { buildInstructions, getTransferrableAssetObject } from './instructionUtils.ts';
-// import { fileURLToPath } from 'url';
-import { getKarSwapExtrinsicBestPath } from './../swaps/karSwap.ts';
-import { getMovrSwapTx } from './../swaps/movr/movrSwap.ts';
-// import { getBncSwapExtrinsic } from './../swaps/bnc/bncSwap.ts';
-import { getBncSwapExtrinsic } from './../swaps/bncSwap.ts';
-import { getBsxSwapExtrinsic } from './../swaps/bsxSwap.ts';
-// const bncSwap = await import('./../swaps/bnc/bncSwap.ts');
-// const { getBncSwapExtrinsic } = bncSwap;
-// import bnc from './../swaps/bnc/bncSwap.ts';
-// import { getBsxSwapExtrinsic } from './../swaps/bsxSwap.ts';
-// const bsxSwap = await import('./../swaps/bsx/bsxSwap.ts');
-// const { getBsxSwapExtrinsic } = bsxSwap;
-// import { getMgxSwapExtrinsic } from './../swaps/mgxSwap.ts';
-// import { getHkoSwapExtrinsic } from './../swaps/hkoSwap.ts';
-// import { checkAndApproveToken } from 'scripts/swaps/movr/utils/utils.ts';
-// import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
-// import { EventRecord } from '@polkadot/types/interfaces/index';
 
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { ISubmittableResult } from '@polkadot/types/types/extrinsic';
-// import { BalanceData, getAdapter } from '@polkawallet/bridge';
 import { alithPk, arb_wallet, karRpc, ksmRpc, live_wallet_3, localRpcs, testNets } from './txConsts.ts';
 import {EvmRpcProvider} from '@acala-network/eth-providers';
 import { Wallet } from '@acala-network/sdk/wallet/wallet.js';
@@ -74,15 +45,27 @@ export function setLastExtrinsicSet(extrinsicSet: ExtrinsicSetResultDynamic){
     globalState.extrinsicSetResults = extrinsicSet
     fs.writeFileSync(path.join(__dirname, './lastExtrinsicSet.json'), JSON.stringify(extrinsicSet, null, 2), 'utf8')
 }
+export function setTransactionState(transactionState: TransactionState){
+    globalState.transactionState = transactionState;
+    fs.writeFileSync(path.join(__dirname, './lastTransactionState.json'), JSON.stringify(transactionState, null, 2), 'utf8')
+}
+export function setTransctionProperties(properties: TransferProperties | SwapProperties){
+    globalState.transactionProperties = properties;
+    fs.writeFileSync(path.join(__dirname, './lastTransactionProperties.json'), JSON.stringify(properties, null, 2), 'utf8')
+}
 
 export function getLastExecutionState(){
     let lastNode = JSON.parse(fs.readFileSync(path.join(__dirname, './lastNode.json'), 'utf8'));
     let lastFilePath = JSON.parse(fs.readFileSync(path.join(__dirname, './lastAttemptFile.json'), 'utf8'));
     let allExtrinsicResults: ExtrinsicSetResultDynamic = JSON.parse(fs.readFileSync(path.join(__dirname, './lastExtrinsicSet.json'), 'utf8'));
+    let transactionState: TransactionState = JSON.parse(fs.readFileSync(path.join(__dirname, './lastTransactionState.json'), 'utf8'))
+    let transactionProperties: TransferProperties | SwapProperties = JSON.parse(fs.readFileSync(path.join(__dirname, './lastTransactionProperties.json'), 'utf8'))
     let lastExecutionState: ExecutionState = {
         lastNode,
         lastFilePath,
-        extrinsicSetResults: allExtrinsicResults
+        extrinsicSetResults: allExtrinsicResults,
+        transactionState: transactionState,
+        transactionProperties: transactionProperties
     }
     return lastExecutionState
 }
@@ -855,7 +838,7 @@ export async function getTotalArbResultAmount(lastSuccessfulNode: LastNode){
     // if(assetOut == "KSM"){
     //     arbAmountOut = latestArbResults[latestArbResults.length - 1].assetAmountOut - arbAmountIn
     // }
-    if(lastSuccessfulNode.assetSymbol == "KSM"){
+    if(lastSuccessfulNode.assetSymbol == "KSM" || lastSuccessfulNode.assetSymbol.toUpperCase() == "XCKSM"){
         arbAmountOut = Number.parseFloat(lastSuccessfulNode.assetValue) - arbAmountIn
     }
     // getLastSuccessfulNodeFromResultData

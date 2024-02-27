@@ -11,6 +11,8 @@ import { ModuleBApi } from '@zenlink-dex/sdk-api';
 import { BN } from '@polkadot/util/bundle';
 import { MangataInstance } from '@mangata-finance/sdk';
 import { BatchSwapParams } from './../swaps/movr/utils/types.ts';
+import { BalanceData, getAdapter } from '@polkawallet/bridge';
+// import { BalanceData } from '@polkawallet/bridge';
 // import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 
 export interface ApiSet {
@@ -181,7 +183,53 @@ export interface ExecutionState{
     lastNode: LastNode,
     lastFilePath: string,
     extrinsicSetResults: ExtrinsicSetResultDynamic,
-    // apiMap: Map<TNode, ApiPromise>,
+    transactionState: TransactionState,
+    transactionProperties: SwapProperties | TransferProperties,
+
+}
+export enum TransactionState {
+    PreSubmission = "PreSubmission",
+    Broadcasted = "Broadcasted",
+    Finalized = "Finalized"
+}
+export interface SwapProperties{
+    type: 'Swap',
+    chopsticks: boolean,
+    node: TNode | 'Kusama',
+    paraId: number,
+    address: string,
+    assetInSymbol: string,
+    assetInStartBalance: BalanceData,
+    assetInStartBalanceString: string,
+    assetInDecimals: string,
+    assetOutSymbol: string,
+    assetOutStartBalance: BalanceData,
+    assetOutStartBalanceString: string,
+    assetOutDecimals: string,
+    inputAmount: number,
+    destAssetKey: string
+    
+
+}
+export interface TransferProperties{
+    type: 'Transfer',
+    chopsticks: boolean,
+    startNode: TNode | 'Kusama',
+    startParaId: number,
+    startAssetSymbol: string,
+    startAddress: string,
+    startNodeStartBalance: BalanceData,
+    startNodeStartBalanceString: string,
+    destNode: TNode | 'Kusama',
+    destParaId: number,
+    destAssetSymbol: string,
+    destAddress: string,
+    destNodeStartBalance: BalanceData,
+    destNodeStartBalanceString: string,
+    inputAmount: number,
+    assetDecimals: string,
+    destAssetKey: string,
+
 }
 export interface ExtrinsicObject{
     type: "Swap" | "Transfer",
@@ -238,8 +286,8 @@ export interface SwapExtrinsicContainer{
     assetAmountIn: FixedPointNumber,
     assetSymbolIn: string,
     
-    pathInLocalId: string,
-    pathOutLocalId: string,
+    // pathInLocalId: string,
+    // pathOutLocalId: string,
     pathSwapType: number,
     pathAmount: number,
 
@@ -251,13 +299,13 @@ export interface SwapExtrinsicContainer{
     movrBatchSwapParams?: BatchSwapParams
 }
 export interface PathNodeValues {
-    pathInLocalId: string,
-    pathInSymbol: string,
-    pathOutSymbol: string,
-    pathOutLocalId: string,
-    pathSwapType: number,
-    pathValue: number,
-    pathValueNext?: number,
+    // pathInLocalId: string,
+    // pathInSymbol: string,
+    // pathOutSymbol: string,
+    // pathOutLocalId: string,
+    // pathSwapType: number,
+    // pathValue: number,
+    // pathValueNext?: number,
 
 }
 

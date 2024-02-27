@@ -25,21 +25,21 @@ const mgxRpc = "wss://kusama-rpc.mangata.online"
 
 
 export async function getMgxSwapExtrinsic(
+  swapType: number,
   assetInSymbol: string,
   assetOutSymbol: string, 
   amountIn: number, 
-  assetOutAmount, 
+  expectedAmountOut: number, 
   swapInstructions: SwapInstruction[], 
   chopsticks: boolean = false,
   txIndex: number, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
-  pathNodeValues: PathNodeValues,
   priceDeviationPercent: number = 2
   ) {
   // Connect to the mainet (also testnet, mainnet)
   console.log("Getting mgx swap extrinsic")
-  console.log(`assetInSymbol: ${assetInSymbol} assetOutSymbol: ${assetOutSymbol} amountIn: ${amountIn} assetOutAmount: ${assetOutAmount}`)
+  console.log(`assetInSymbol: ${assetInSymbol} assetOutSymbol: ${assetOutSymbol} amountIn: ${amountIn} assetOutAmount: ${expectedAmountOut}`)
   let rpc = chopsticks ? wsLocalChain : mgxRpc
   const mangata: MangataInstance = Mangata.instance([rpc]);
   // const provider = new WsProvider(wsLocalChain);
@@ -82,7 +82,7 @@ export async function getMgxSwapExtrinsic(
     let endTokenDecimals = tokenPath[tokenPath.length - 1].decimals
 
     let inputFixedPoint = new FixedPointNumber(amountIn, startTokenDecimals).toChainData()
-    let expectedOutFixedPoint = new FixedPointNumber(assetOutAmount, endTokenDecimals)
+    let expectedOutFixedPoint = new FixedPointNumber(expectedAmountOut, endTokenDecimals)
 
     let priceDeviation = expectedOutFixedPoint.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
     let expectedOutMinusDeviation = expectedOutFixedPoint.sub(priceDeviation)
@@ -136,9 +136,7 @@ export async function getMgxSwapExtrinsic(
     assetSymbolOut: assetOutSymbol,
     assetAmountIn: new FixedPointNumber(amountIn, startTokenDecimals),
     expectedAmountOut: expectedOutFixedPoint,
-    pathInLocalId: pathNodeValues.pathInLocalId,
-    pathOutLocalId: pathNodeValues.pathOutLocalId,
-    pathSwapType: pathNodeValues.pathSwapType,
+    pathSwapType: swapType,
     pathAmount: amountIn,
     reverseTx: reverseTxParams,
     api: await mangata.api()

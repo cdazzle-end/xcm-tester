@@ -2,13 +2,13 @@ import fs from 'fs'
 import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange, getSigner, watchTokenBalance, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRoute, getLastSuccessfulNodeFromAllExtrinsics, getBalance, setLastFile, getLastExecutionState, getKsmBalancesAcrossChains, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFile, setLastExtrinsicSet } from './utils.ts'
-import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, ReverseSwapExtrinsicParams, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer } from './types.ts'
+import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange, getSigner, watchTokenBalance, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRoute, getLastSuccessfulNodeFromAllExtrinsics, getBalance, setLastFile, getLastExecutionState, getKsmBalancesAcrossChains, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFile, setLastExtrinsicSet, setLastNode } from './utils.ts'
+import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, ReverseSwapExtrinsicParams, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { buildInstructions, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
 import { arb_wallet, ksmRpc, ksmTargetNode, kusamaNodeKeys, live_wallet_3, localRpcs, mainWalletAddress, mainWalletEthAddress, testBncNode, testNets, testZlkNode } from './txConsts.ts';
-import { buildSwapExtrinsic, buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, buildTransferExtrinsicReworked, buildTransferKsmToChain, buildTransferToKsm, createSwapExtrinsicObject, createTransferExtrinsicObject } from './extrinsicUtils.ts';
+import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, buildTransferExtrinsicReworked, buildTransferKsmToChain, buildTransferToKsm, createSwapExtrinsicObject, createTransferExtrinsicObject } from './extrinsicUtils.ts';
 import { EventRecord } from "@polkadot/types/interfaces"
 import { fileURLToPath } from 'url';
 // import { BalanceChangeStatue } from 'src/types.ts';
@@ -16,15 +16,16 @@ import { logSwapTxStats, logSwapTxResults, logTransferTxStats, logArbExecutionRe
 import { runAndReturnFallbackArb, runAndReturnTargetArb, runArbFallback } from './executeArbFallback.ts';
 import { Mangata, MangataInstance } from '@mangata-finance/sdk';
 import { reverse } from 'dns';
-import { buildAndExecuteSwapExtrinsic, executeAndReturnExtrinsic, executeSingleSwapExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleTransferExtrinsic, executeTransferTx } from './executionUtils.ts';
+import { buildAndExecuteSwapExtrinsic, confirmLastTransactionSuccess, executeAndReturnExtrinsic, executeSingleSwapExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleTransferExtrinsic, executeTransferTx } from './executionUtils.ts';
 // import { liveWallet3Pk } from 'scripts/swaps/movr/utils/const.ts';
 import { TNode } from '@paraspell/sdk';
 import { BN } from '@polkadot/util/bn/bn';
 import { FixedPointNumber } from '@acala-network/sdk-core';
 import { movrContractAddress, xcKarContractAddress, xcXrtContractAddress } from './../swaps/movr/utils/const.ts';
 import { formatMovrTx, getMovrSwapTx, testXcTokensMoonriver } from './../swaps/movr/movrSwap.ts';
-import { getBsxSwapExtrinsic, testBsxSwap } from './../swaps/bsxSwap.ts';
+// import { getBsxSwapExtrinsic, testBsxSwap } from './../swaps/bsxSwap.ts';
 import '@galacticcouncil/api-augment/basilisk';
+import { getApiForNode } from './apiUtils.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,6 +46,8 @@ export let globalState: ExecutionState = {
     lastNode: null,
     lastFilePath: null,
     extrinsicSetResults: null,
+    transactionState: null,
+    transactionProperties: null
     // apiMap: apiMap
 }
 
@@ -548,6 +551,15 @@ async function runFromLastNode(chopsticks: boolean, executeMovr: boolean){
     let lastNode: LastNode = globalState.lastNode
     let logFilePath: string = globalState.lastFilePath
     let lastExtrinsicSet: ExtrinsicSetResultDynamic = globalState.extrinsicSetResults
+    let lastTransactionState: TransactionState = globalState.transactionState
+    let lastTransactionProperties: TransferProperties | SwapProperties = globalState.transactionProperties
+
+    // If last transaction has been submitted but not finalized, we need to query the balances to see if it completed successfully or not
+    if(lastTransactionState == TransactionState.Broadcasted){
+        let transactionSuccess = await confirmLastTransactionSuccess(lastTransactionProperties)
+        globalState.transactionState = TransactionState.PreSubmission
+    }
+
     lastExtrinsicSet.extrinsicData.forEach((extrinsicData) => {
         console.log(JSON.stringify(extrinsicData.arbExecutionResult, null, 2))
     })
@@ -564,11 +576,17 @@ async function runFromLastNode(chopsticks: boolean, executeMovr: boolean){
 
     let arbLoops = 0
     let arbSuccess = false
-    // execute arb, even if starting on kusama node
-    // let chainId = 1;
+
     //Rerun arb until success or last node is Kusama
     while(!arbSuccess && lastNode.chainId != 0 && arbLoops < 3){
         arbLoops += 1
+
+        if(lastTransactionState == TransactionState.Broadcasted){
+            let transactionSuccess = await confirmLastTransactionSuccess(lastTransactionProperties)
+            globalState.transactionState = TransactionState.PreSubmission
+            lastNode = globalState.lastNode
+        }
+
         let functionArgs = `${lastNode.assetKey} ${ksmTargetNode} ${lastNode.assetValue}`
         console.log("Executing Arb Fallback with args: " + functionArgs)
 
@@ -582,40 +600,25 @@ async function runFromLastNode(chopsticks: boolean, executeMovr: boolean){
         let assetPath: AssetNode[] = arbResults.map(result => readLogData(result))
         let instructions = await buildInstructionSet(assetPath)
         let extrinsicSetResults = await buildAndExecuteExtrinsics(instructions, chopsticks, executeMovr, 100)
-        // reverseExtrinsicResult.extrinsicData = reverseExtrinsicResult.extrinsicData.reverse()
-        // logResultsDynamic(reverseExtrinsicResult, latestFile, true)
-        // let allExtrinsicSets: ExtrinsicSetResultDynamic[] = []
-        // allExtrinsicSets.push(extrinsicSetResults)
+
         logAllResultsDynamic(logFilePath, true)
         logAllArbAttempts(logFilePath, chopsticks)
         if(extrinsicSetResults.success){
             arbSuccess = true
         }
-        // lastNode = await getLastSuccessfulNodeFromAllExtrinsics(allExtrinsicSets)
+
         lastNode = globalState.lastNode
         if(!lastNode){
             console.log("Last node undefined. ERROR: some extrinsics have executed successfully")
             throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
         }
-        // chainId = lastNode.chainId
     }
 
-    // logAllResultsDynamic(allExtrinsicSets, logFilePath, true)
-    // logAllArbAttempts(allExtrinsicSets, logFilePath, chopsticks)
     let arbAmountOut = await getTotalArbResultAmount(lastNode)
     await logProfits(arbAmountOut, logFilePath, chopsticks )
 }
 
 async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, inputAmount: number){
-        // let small = true
-        // let latestFile = getLatestFileFromLatestDay(small)
-        
-        // let assetPath = constructRoute(latestFile)
-        // let instructions = await buildInstructionSet(assetPath)
-        // let instructionsAbreviated = await getFirstKsmNode(instructions, chopsticks)
-        // let firstInstruction = instructionsAbreviated[0]
-        // let startChain = firstInstruction.assetNodes[0].getChainId()
-        // let startValue = firstInstruction.assetNodes[0].pathValue
         
         let arbArgs = `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}`
         let targetArbResults
@@ -632,10 +635,6 @@ async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, in
         let firstInstruction = instructionsAbreviated[0]
         let startChain = firstInstruction.assetNodes[0].getChainId()
         let startValue = firstInstruction.assetNodes[0].pathValue
-
-
-        // let targetExtrinsicResult = await buildAndExecuteExtrinsics(targetArbInstructions, chopsticks, executeMovr, 100)
-       
 
         // console.log("Start Value: ", startValue)
         let ksmBalancesSuccess = false;
@@ -657,10 +656,6 @@ async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, in
             console.log("Failed to query KSM balances. Exiting")
             return;
         }
-        // ksmBalances = await getKsmBalancesAcrossChains(chopsticks)
-        // console.log(ksmBalances)
-        // console.log("Start Chain: ", startChain)
-        // console.log(`Balance on start chain: ${ksmBalances[startChain]} | Input value: ${startValue}`)
     
         let executionInstructions = instructionsAbreviated
         if(ksmBalances[startChain] > startValue){
@@ -693,6 +688,11 @@ async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, in
         //Rerun arb until success or last node is Kusama
         while(!arbSuccess && lastNode.chainId != 0 && arbLoops < 3){
             arbLoops += 1
+            if(globalState.transactionState == TransactionState.Broadcasted){
+                let transactionSuccess = await confirmLastTransactionSuccess(globalState.transactionProperties)
+                lastNode = globalState.lastNode
+                globalState.transactionState = TransactionState.PreSubmission
+            }
             let functionArgs = `${lastNode.assetKey} ${ksmTargetNode} ${lastNode.assetValue}`
             console.log("Executing Arb Fallback with args: " + functionArgs)
     
@@ -706,9 +706,7 @@ async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, in
             let assetPath: AssetNode[] = fallbackArbResults.map(result => readLogData(result))
             let reverseInstructions = await buildInstructionSet(assetPath)
             let reverseExtrinsicResult = await buildAndExecuteExtrinsics(reverseInstructions, chopsticks, executeMovr, 100)
-            // reverseExtrinsicResult.extrinsicData = reverseExtrinsicResult.extrinsicData.reverse()
-            // logResultsDynamic(reverseExtrinsicResult, latestFile, true)
-    
+
             allExtrinsicSets.push(reverseExtrinsicResult)
             logAllResultsDynamic(latestFile, true)
             logAllArbAttempts(latestFile, chopsticks)
@@ -722,9 +720,7 @@ async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, in
                 throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
             }
         }
-        // lastNode.assetValue
         let arbAmountOut = await getTotalArbResultAmount(lastNode)
-        // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData()
         logAllResultsDynamic(latestFile, true)
         logAllArbAttempts(latestFile, chopsticks)
         await logProfits(arbAmountOut, latestFile, chopsticks )
@@ -800,10 +796,8 @@ async function run() {
     let chopsticks = false
     let executeMovr = true
     let small = true
-    // await runDynamicArbLive(chopsticks, executeMovr, small)
     // await runFromLastNode(chopsticks, executeMovr)
     await runDynamicArbTarget(chopsticks, executeMovr, 0.5)
-    // await testLastExtrinsicSet()
     process.exit(0)
 }
 

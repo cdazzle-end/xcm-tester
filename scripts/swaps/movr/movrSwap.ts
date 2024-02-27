@@ -539,12 +539,6 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
             wrapMovrAmount: wrapMovrAmount
         }
         swapParams.push(swapParam)
-
-        // check and approve returns receipt or false
-        // const approvedReceipt = await checkAndApproveToken(tokenIn, liveWallet, liveBatchContract, inputAmount)
-        // if(approvedReceipt){
-        //     logLiveWalletTransaction(approvedReceipt, "Approve Token")
-        // }
     }
 
     let dexAddresses: string[] = [];
@@ -581,36 +575,7 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
         movrWrapAmounts.push(swapParam.wrapMovrAmount)
         data.push("0x")
     })
-    // console.log("AMOUNT 0 INS: ", amount0Ins)
-    // console.log("AMOUNT 1 INS: ", amount1Ins)
-    // console.log("AMOUNT 0 OUTS: ", amount0Outs)
-    // console.log("AMOUNT 1 OUTS: ", amount1Outs)
 
-    // let reverseWrapMovrAmount = swapParams[0].wrapMovrAmount
-    // if(tokenPathAddresses[tokenPathAddresses.length - 1] == movrContractAddress){
-    //     reverseWrapMovrAmount = swapParams[swapParams.length - 1].calculatedAmountOut;
-    //     // console.log(`Approving batch contract to spend ${unwrapAmount} wmovr`)
-    //     // await checkAndApproveToken(movrContractAddress, liveWallet, liveBatchContract, unwrapAmount)
-    // }
-
-
-    // let reverseSwapParams: BatchSwapParams = {
-    //     chainId: 2023,
-    //     batchContract: batchContract,
-    //     dexAddresses: dexAddresses.reverse(),
-    //     wallet: liveWallet,
-    //     abiIndexes: abiIndexes.reverse(),
-    //     inputTokens: outputTokens.reverse(),
-    //     outputTokens: inputTokens.reverse(),
-    //     amount0Ins: amount0Outs.reverse(),
-    //     amount1Ins: amount1Outs.reverse(),
-    //     amount0Outs: amount0Ins.reverse(),
-    //     amount1Outs: amount1Ins.reverse(),
-
-    //     // dont think reverse will ever hasve movr wrap
-    //     movrWrapAmounts: [reverseWrapMovrAmount],
-    //     data: data,
-    // }
 
     let batchSwapParams: BatchSwapParams = {
         chainId: 2023,
@@ -645,10 +610,15 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
 
     // //WHEN we execute the tx, we need to approve batch contract to spend tokens first
     for(let i = 0; i < tokens.length; i++){
+        console.log("Token number ", i)
+        console.log("Token: ", tokens[i])
         let tokenInput = movrBatchSwapParams.amount0Ins[i] > 0 ? movrBatchSwapParams.amount0Ins[i] : movrBatchSwapParams.amount1Ins[i]
         let approval = await checkAndApproveToken(tokens[i], liveWallet, batchContractAddress, tokenInput)
     }
     let wrapMovrAmount = movrBatchSwapParams.movrWrapAmounts[0]
+
+    let tokenOutput = movrBatchSwapParams.outputTokens[movrBatchSwapParams.outputTokens.length - 1]
+    
 
     let assetInNode = swapInstructions[0].assetNodes[0]
     let assetOutNode = swapInstructions[swapInstructions.length - 1].assetNodes[1]
@@ -684,6 +654,13 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
     let amountIn = swapInstructions[0].assetNodes[0].pathValue;
     let swapType = swapInstructions[0].pathType
 
+    // If movr out, make sure approve to unwrap
+    if(destAsset == "MOVR"){
+        console.log("APPROVING UNWRAP MOVR AMOUNT")
+        let unwrapMovrAmount = movrBatchSwapParams.amount0Outs[movrBatchSwapParams.amount0Outs.length - 1] > 0 ? movrBatchSwapParams.amount0Outs[movrBatchSwapParams.amount0Outs.length - 1] : movrBatchSwapParams.amount1Outs[movrBatchSwapParams.amount1Outs.length - 1]
+        let approval = await checkAndApproveToken(movrContractAddress, liveWallet, batchContractAddress, unwrapMovrAmount)
+    }
+
     let assetNodes = swapInstructions[0].assetNodes
     let swapTxContainer: SwapExtrinsicContainer = {
         chainId: 2023,
@@ -698,8 +675,8 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
         assetSymbolOut: destAsset,
         assetAmountIn: inputFixedPoint,
         expectedAmountOut: outputFixedPoint,
-        pathInLocalId: pathStartLocalId,
-        pathOutLocalId: pathDestLocalId,
+        // pathInLocalId: pathStartLocalId,
+        // pathOutLocalId: pathDestLocalId,
         pathSwapType: swapType,
         pathAmount: amountIn,
         // reverseTx: reverseMovrBatchSwapParams,

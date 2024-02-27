@@ -114,118 +114,118 @@ async function testErrorCodes(){
     // console.log(`Error: ${name} Section: ${section} Docs: ${docs}`)
     // console.log("Error Index Array: " + u8aToHex(errorIndexArray))
 }
-export async function getKarSwapExtrinsicBestPath(
-    swapType: number, 
-    startAsset: any, 
-    destAsset: any, 
-    amountIn: number, 
-    expectedAmountOut: number, 
-    swapInstructions: SwapInstruction[], 
-    chopsticks: boolean = false, 
-    txIndex: number, 
-    extrinsicIndex: IndexObject, 
-    instructionIndex: number[], 
-    pathNodeValues: PathNodeValues,
-    priceDeviationPercent: number = 2
-    ): Promise<SwapExtrinsicContainer[]>{
-    let rpc = chopsticks ? wsLocalChain : karRpc
-    const provider = new WsProvider(rpc);
-    const api = new ApiPromise(options({ provider }));
-    await api.isReady;
+// export async function getKarSwapExtrinsicBestPath(
+//     swapType: number, 
+//     startAsset: any, 
+//     destAsset: any, 
+//     amountIn: number, 
+//     expectedAmountOut: number, 
+//     swapInstructions: SwapInstruction[], 
+//     chopsticks: boolean = false, 
+//     txIndex: number, 
+//     extrinsicIndex: IndexObject, 
+//     instructionIndex: number[], 
+//     pathNodeValues: PathNodeValues,
+//     priceDeviationPercent: number = 2
+//     ): Promise<SwapExtrinsicContainer[]>{
+//     let rpc = chopsticks ? wsLocalChain : karRpc
+//     const provider = new WsProvider(rpc);
+//     const api = new ApiPromise(options({ provider }));
+//     await api.isReady;
 
-    // console.log(`SWAP INSTRUCTION ${JSON.stringify(swapInstructions, null, 2)}`)
+//     // console.log(`SWAP INSTRUCTION ${JSON.stringify(swapInstructions, null, 2)}`)
 
-    const signer = await getSigner(chopsticks, false);
+//     const signer = await getSigner(chopsticks, false);
   
-    let accountNonce = await api.query.system.account(signer.address)
-    let nonce = accountNonce.nonce.toNumber()
-    nonce += txIndex
+//     let accountNonce = await api.query.system.account(signer.address)
+//     let nonce = accountNonce.nonce.toNumber()
+//     nonce += txIndex
 
-    const wallet = new Wallet(api)
-    await wallet.isReady
+//     const wallet = new Wallet(api)
+//     await wallet.isReady
     
-    // This is what we return for data needed to construct reverse tx
-    // let assetNodes: AssetNode[] = [swapInstructions[0].assetNodes[0]]
+//     // This is what we return for data needed to construct reverse tx
+//     // let assetNodes: AssetNode[] = [swapInstructions[0].assetNodes[0]]
 
-    const startToken = wallet.getToken(startAsset);
-    const destToken = wallet.getToken(destAsset);
+//     const startToken = wallet.getToken(startAsset);
+//     const destToken = wallet.getToken(destAsset);
 
-    let [tokenPaths, extrinsicNodes] = buildTokenPaths(startAsset, swapInstructions)
-    // let extrinsicNodesIndex = 0;
-    let swapTxsPromise = tokenPaths.map(async (tokenPath, index) => {
-        // console.log("EXTRINSIC NODE INDEX: " + extrinsicNodesIndex)
-        // console.log("MAP FUNCTION INDEX: " + index)
-        let path = tokenPath.map((token)=> {
-            return wallet.getToken(token).toChainData()
-        })
-        const supplyAmount = new FixedPointNumber(amountIn, startToken.decimals);
-        const expectedOutAmountFixed = new FixedPointNumber(expectedAmountOut, destToken.decimals);
+//     let [tokenPaths, extrinsicNodes] = buildTokenPaths(startAsset, swapInstructions)
+//     // let extrinsicNodesIndex = 0;
+//     let swapTxsPromise = tokenPaths.map(async (tokenPath, index) => {
+//         // console.log("EXTRINSIC NODE INDEX: " + extrinsicNodesIndex)
+//         // console.log("MAP FUNCTION INDEX: " + index)
+//         let path = tokenPath.map((token)=> {
+//             return wallet.getToken(token).toChainData()
+//         })
+//         const supplyAmount = new FixedPointNumber(amountIn, startToken.decimals);
+//         const expectedOutAmountFixed = new FixedPointNumber(expectedAmountOut, destToken.decimals);
     
-        const priceDeviation = expectedOutAmountFixed.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100));
-        let expectedAmountOutWithDeviation = expectedOutAmountFixed.sub(priceDeviation);
+//         const priceDeviation = expectedOutAmountFixed.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100));
+//         let expectedAmountOutWithDeviation = expectedOutAmountFixed.sub(priceDeviation);
         
-        let swapTx: SubmittableExtrinsic<"promise", ISubmittableResult> | SubmittableExtrinsic<"rxjs", ISubmittableResult>;
-        if(swapType == 1){
-            // Dex swap
-            swapTx = await api.tx.dex
-                .swapWithExactSupply(
-                    path,
-                    supplyAmount.toChainData(),
-                    expectedAmountOutWithDeviation.toChainData()
-                )
-        } else {
-            let stablePools = await api.query.stableAsset.pools.entries()
-            const matchingStablePool = findObjectWithEntry(stablePools, path[0])
-            if(!matchingStablePool){
-                throw new Error("No matching stable pool found for asset: " + JSON.stringify(path[0], null, 2))
-            }
+//         let swapTx: SubmittableExtrinsic<"promise", ISubmittableResult> | SubmittableExtrinsic<"rxjs", ISubmittableResult>;
+//         if(swapType == 1){
+//             // Dex swap
+//             swapTx = await api.tx.dex
+//                 .swapWithExactSupply(
+//                     path,
+//                     supplyAmount.toChainData(),
+//                     expectedAmountOutWithDeviation.toChainData()
+//                 )
+//         } else {
+//             let stablePools = await api.query.stableAsset.pools.entries()
+//             const matchingStablePool = findObjectWithEntry(stablePools, path[0])
+//             if(!matchingStablePool){
+//                 throw new Error("No matching stable pool found for asset: " + JSON.stringify(path[0], null, 2))
+//             }
 
-            const poolData = matchingStablePool[1].toJSON()
-            const poolAssets = poolData["assets"]
-            const stablePoolIndex = poolData["poolAsset"]["stableAssetPoolToken"]
-            const startAssetIndex = getAssetIndex(poolAssets, path[0])
-            const endAssetIndex = getAssetIndex(poolAssets, path[1])
-            const assetLength = poolAssets.length
-            swapTx = await api.tx.stableAsset
-                .swap(
-                    stablePoolIndex,
-                    startAssetIndex, 
-                    endAssetIndex, 
-                    supplyAmount.toChainData(), 
-                    expectedAmountOutWithDeviation.toChainData(), 
-                    assetLength
-                )
-        }
-        let assetNodes = extrinsicNodes[index]
-        let swapTxContainer: SwapExtrinsicContainer = {
-            chainId: 2000,
-            chain: "Karura",
-            assetNodes: assetNodes,
-            extrinsic: swapTx,
-            extrinsicIndex: extrinsicIndex.i,
-            instructionIndex: instructionIndex,
-            nonce: nonce,
-            assetAmountIn: supplyAmount,
-            expectedAmountOut: expectedOutAmountFixed,
-            assetSymbolIn: startAsset,
-            assetSymbolOut: destAsset,
-            pathInLocalId: pathNodeValues.pathInLocalId,
-            pathOutLocalId: pathNodeValues.pathOutLocalId,
-            pathSwapType: swapType,
-            pathAmount: amountIn,
-            api: api,
-            // reverseTx: reverseTx
-        }
+//             const poolData = matchingStablePool[1].toJSON()
+//             const poolAssets = poolData["assets"]
+//             const stablePoolIndex = poolData["poolAsset"]["stableAssetPoolToken"]
+//             const startAssetIndex = getAssetIndex(poolAssets, path[0])
+//             const endAssetIndex = getAssetIndex(poolAssets, path[1])
+//             const assetLength = poolAssets.length
+//             swapTx = await api.tx.stableAsset
+//                 .swap(
+//                     stablePoolIndex,
+//                     startAssetIndex, 
+//                     endAssetIndex, 
+//                     supplyAmount.toChainData(), 
+//                     expectedAmountOutWithDeviation.toChainData(), 
+//                     assetLength
+//                 )
+//         }
+//         let assetNodes = extrinsicNodes[index]
+//         let swapTxContainer: SwapExtrinsicContainer = {
+//             chainId: 2000,
+//             chain: "Karura",
+//             assetNodes: assetNodes,
+//             extrinsic: swapTx,
+//             extrinsicIndex: extrinsicIndex.i,
+//             instructionIndex: instructionIndex,
+//             nonce: nonce,
+//             assetAmountIn: supplyAmount,
+//             expectedAmountOut: expectedOutAmountFixed,
+//             assetSymbolIn: startAsset,
+//             assetSymbolOut: destAsset,
+//             pathInLocalId: pathNodeValues.pathInLocalId,
+//             pathOutLocalId: pathNodeValues.pathOutLocalId,
+//             pathSwapType: swapType,
+//             pathAmount: amountIn,
+//             api: api,
+//             // reverseTx: reverseTx
+//         }
 
-        // extrinsicNodesIndex += 1;
-        increaseIndex(extrinsicIndex)
-        return swapTxContainer
-    })
+//         // extrinsicNodesIndex += 1;
+//         increaseIndex(extrinsicIndex)
+//         return swapTxContainer
+//     })
 
-    let swapTxContainers = await Promise.all(swapTxsPromise)
+//     let swapTxContainers = await Promise.all(swapTxsPromise)
     
-    return swapTxContainers
-}
+//     return swapTxContainers
+// }
 function buildTokenPaths(startAsset: string, swapInstructions: any[]): [string[][], AssetNode[][]] {
     let tokenPaths: string[][] = [];
     let tokenPath: string[] = [startAsset];
@@ -268,7 +268,7 @@ export async function getKarSwapExtrinsicDynamic(
     txIndex: number, 
     extrinsicIndex: IndexObject, 
     instructionIndex: number[], 
-    pathNodeValues: PathNodeValues,
+    // pathNodeValues: PathNodeValues,
     priceDeviationPercent: number = 2
 ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
     let rpc = chopsticks ? wsLocalChain : karRpc
@@ -388,10 +388,10 @@ export async function getKarSwapExtrinsicDynamic(
             nonce: nonce,
             assetAmountIn: supplyAmount,
             expectedAmountOut: expectedOutAmountFixed,
-            assetSymbolIn: startAsset,
-            assetSymbolOut: destAsset,
-            pathInLocalId: pathNodeValues.pathInLocalId,
-            pathOutLocalId: pathNodeValues.pathOutLocalId,
+            assetSymbolIn: startAssetDynamic,
+            assetSymbolOut: destAssetDynamic,
+            // pathInLocalId: pathNodeValues.pathInLocalId,
+            // pathOutLocalId: pathNodeValues.pathOutLocalId,
             pathSwapType: swapType,
             pathAmount: amountIn,
             api: api,

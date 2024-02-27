@@ -33,205 +33,205 @@ const bncRpc = "wss://bifrost-parachain.api.onfinality.io/public-ws"
 //   dexType: 'moduleB',
 //   wss: ['wss://bifrost-parachain.api.onfinality.io/public-ws']
 // };
-export async function getBncSwapExtrinsic(
-    startAssetSymbol: string, 
-    endAssetSymbol: string, 
-    amountIn: number, 
-    expectedAmountOut: number, 
-    swapInstructions: SwapInstruction[], 
-    chopsticks: boolean = true, 
-    txIndex: number, 
-    extrinsicIndex: IndexObject, 
-    instructionIndex: number[], 
-    pathNodeValues: PathNodeValues,
-    priceDeviationPercent: number = 2
-    ): Promise<SwapExtrinsicContainer> {
-    const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-list/main/tokens/bifrost-kusama.json');
-    const tokensMeta = response.data.tokens;
-    await cryptoWaitReady();
+// export async function getBncSwapExtrinsic(
+//     startAssetSymbol: string, 
+//     endAssetSymbol: string, 
+//     amountIn: number, 
+//     expectedAmountOut: number, 
+//     swapInstructions: SwapInstruction[], 
+//     chopsticks: boolean = true, 
+//     txIndex: number, 
+//     extrinsicIndex: IndexObject, 
+//     instructionIndex: number[], 
+//     pathNodeValues: PathNodeValues,
+//     priceDeviationPercent: number = 2
+//     ): Promise<SwapExtrinsicContainer> {
+//     const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-list/main/tokens/bifrost-kusama.json');
+//     const tokensMeta = response.data.tokens;
+//     await cryptoWaitReady();
 
-    let rpc = chopsticks ? wsLocalChain : bncRpc
-    // prepare wallet
-    const keyring = new Keyring({ type: 'sr25519', ss58Format: 6 });
-    const PHRASE = 'YOUR SEEDS';
-    const accountPair = keyring.addFromUri("//Alice");
-
-
-    let assetNodes = [swapInstructions[0].assetNodes[0]]
-    swapInstructions.forEach((instruction) => {
-      assetNodes.push(instruction.assetNodes[1])
-    })
-
-    console.log(`account address ${accountPair.address}`);
-
-    // generate Tokens
-    const tokens = tokensMeta.map((item: any) => {
-      return new Token(item);
-    });
-
-    let tokenInSymbol, tokenOutSymbol;
-    if(startAssetSymbol.toLowerCase() == 'aseed' || startAssetSymbol.toLowerCase() == 'kusd' ){
-      tokenInSymbol = 'aUSD'
-    } else{
-      tokenInSymbol = startAssetSymbol
-    }
-    if(endAssetSymbol.toLowerCase() == 'aseed' || endAssetSymbol.toLowerCase() == 'kusd' ){
-      tokenOutSymbol = 'aUSD'
-    } else{
-      tokenOutSymbol = endAssetSymbol
-    }
-
-    const tokenIn = tokens.find((item) => item.symbol.toLowerCase() === tokenInSymbol.toLowerCase());
-    const tokenOut = tokens.find((item) => item.symbol.toLowerCase() === tokenOutSymbol.toLowerCase());
-    console.log('token0', tokenIn);
-    console.log('token1', tokenOut);
-
-    const tokensMap: Record<string, typeof Token> = {};
-    tokens.reduce((total: any, cur: any) => {
-      total[cur.assetId] = cur;
-      return total;
-    }, tokensMap);
-
-    // generate the dex api
-    const provider = new WsProvider(rpc);
-    const dexApi = new ModuleBApi(
-      provider,
-      BifrostConfig
-    );
+//     let rpc = chopsticks ? wsLocalChain : bncRpc
+//     // prepare wallet
+//     const keyring = new Keyring({ type: 'sr25519', ss58Format: 6 });
+//     const PHRASE = 'YOUR SEEDS';
+//     const accountPair = keyring.addFromUri("//Alice");
 
 
+//     let assetNodes = [swapInstructions[0].assetNodes[0]]
+//     swapInstructions.forEach((instruction) => {
+//       assetNodes.push(instruction.assetNodes[1])
+//     })
 
-    await provider.isReady;
-    await dexApi.initApi(); // init the api;
+//     console.log(`account address ${accountPair.address}`);
 
-    let accountNonce = await dexApi.api.query.system.account(accountPair.address)
-    // let accountNonce = await api.query.system.account(signer.address)
-    let nonce = accountNonce.nonce.toNumber()
-    nonce += txIndex
-    // console.log("BNC Nonce: " + nonce)
+//     // generate Tokens
+//     const tokens = tokensMeta.map((item: any) => {
+//       return new Token(item);
+//     });
 
-    const account = accountPair.address;
-    const standardPairs = await firstValueFrom(dexApi.standardPairOfTokens(tokens));
-    const standardPools: any = await firstValueFrom(dexApi.standardPoolOfPairs(standardPairs));
-    const stablePairs = await firstValueFrom(dexApi.stablePairOf());
-    const stablePools = await firstValueFrom(dexApi.stablePoolOfPairs(stablePairs));
+//     let tokenInSymbol, tokenOutSymbol;
+//     if(startAssetSymbol.toLowerCase() == 'aseed' || startAssetSymbol.toLowerCase() == 'kusd' ){
+//       tokenInSymbol = 'aUSD'
+//     } else{
+//       tokenInSymbol = startAssetSymbol
+//     }
+//     if(endAssetSymbol.toLowerCase() == 'aseed' || endAssetSymbol.toLowerCase() == 'kusd' ){
+//       tokenOutSymbol = 'aUSD'
+//     } else{
+//       tokenOutSymbol = endAssetSymbol
+//     }
 
-    let tokenInAmountFN = new FixedPointNumber(amountIn, tokenIn.decimals);
-    const tokenInAmount = new TokenAmount(tokenIn, tokenInAmountFN.toChainData());
-    const tokenOutAmountFn = new FixedPointNumber(expectedAmountOut, tokenOut.decimals);
+//     const tokenIn = tokens.find((item) => item.symbol.toLowerCase() === tokenInSymbol.toLowerCase());
+//     const tokenOut = tokens.find((item) => item.symbol.toLowerCase() === tokenOutSymbol.toLowerCase());
+//     console.log('token0', tokenIn);
+//     console.log('token1', tokenOut);
+
+//     const tokensMap: Record<string, typeof Token> = {};
+//     tokens.reduce((total: any, cur: any) => {
+//       total[cur.assetId] = cur;
+//       return total;
+//     }, tokensMap);
+
+//     // generate the dex api
+//     const provider = new WsProvider(rpc);
+//     const dexApi = new ModuleBApi(
+//       provider,
+//       BifrostConfig
+//     );
+
+
+
+//     await provider.isReady;
+//     await dexApi.initApi(); // init the api;
+
+//     let accountNonce = await dexApi.api.query.system.account(accountPair.address)
+//     // let accountNonce = await api.query.system.account(signer.address)
+//     let nonce = accountNonce.nonce.toNumber()
+//     nonce += txIndex
+//     // console.log("BNC Nonce: " + nonce)
+
+//     const account = accountPair.address;
+//     const standardPairs = await firstValueFrom(dexApi.standardPairOfTokens(tokens));
+//     const standardPools: any = await firstValueFrom(dexApi.standardPoolOfPairs(standardPairs));
+//     const stablePairs = await firstValueFrom(dexApi.stablePairOf());
+//     const stablePools = await firstValueFrom(dexApi.stablePoolOfPairs(stablePairs));
+
+//     let tokenInAmountFN = new FixedPointNumber(amountIn, tokenIn.decimals);
+//     const tokenInAmount = new TokenAmount(tokenIn, tokenInAmountFN.toChainData());
+//     const tokenOutAmountFn = new FixedPointNumber(expectedAmountOut, tokenOut.decimals);
     
-    let reversePriceDev = tokenInAmountFN.mul(new FixedPointNumber(5)).div(new FixedPointNumber(100))
-    let reverseExpectedAmountOut = tokenInAmountFN.sub(reversePriceDev)
-    let reverseOut = new TokenAmount(tokenIn, reverseExpectedAmountOut.toChainData());
+//     let reversePriceDev = tokenInAmountFN.mul(new FixedPointNumber(5)).div(new FixedPointNumber(100))
+//     let reverseExpectedAmountOut = tokenInAmountFN.sub(reversePriceDev)
+//     let reverseOut = new TokenAmount(tokenIn, reverseExpectedAmountOut.toChainData());
     
 
-    // use smart router to get the best trade;
-    const result = SmartRouterV2.swapExactTokensForTokens(
-      tokenInAmount,
-      tokenOut,
-      standardPools,
-      stablePools
-    );
+//     // use smart router to get the best trade;
+//     const result = SmartRouterV2.swapExactTokensForTokens(
+//       tokenInAmount,
+//       tokenOut,
+//       standardPools,
+//       stablePools
+//     );
   
-    const trade = result.trade;
-    // trade.minimumAmountOut(new Percent(5, 100));
-    if (!trade) {
-      console.log('There is no match for this trade');
-      return;
-    }
+//     const trade = result.trade;
+//     // trade.minimumAmountOut(new Percent(5, 100));
+//     if (!trade) {
+//       console.log('There is no match for this trade');
+//       return;
+//     }
     
-    // Allow for 2% price deviation from expected value,should probably be tighter
-    let slipAmount = tokenOutAmountFn.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-    let amountOutFnMinusSlip = tokenOutAmountFn.sub(slipAmount)
+//     // Allow for 2% price deviation from expected value,should probably be tighter
+//     let slipAmount = tokenOutAmountFn.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
+//     let amountOutFnMinusSlip = tokenOutAmountFn.sub(slipAmount)
 
-    console.log(`Token out amount: ${tokenOutAmountFn.toChainData()} Minus slip: ${amountOutFnMinusSlip.toChainData()}`)
-    console.log(`Slip amount: ${slipAmount.toChainData()}`)
+//     console.log(`Token out amount: ${tokenOutAmountFn.toChainData()} Minus slip: ${amountOutFnMinusSlip.toChainData()}`)
+//     console.log(`Slip amount: ${slipAmount.toChainData()}`)
 
-    const tokenOutAmount = new TokenAmount(tokenOut, amountOutFnMinusSlip.toChainData());
-    if (!dexApi.api) return;
+//     const tokenOutAmount = new TokenAmount(tokenOut, amountOutFnMinusSlip.toChainData());
+//     if (!dexApi.api) return;
   
-    const blockNumber = await dexApi.api.query.system.number();
+//     const blockNumber = await dexApi.api.query.system.number();
   
-    const deadline = Number(blockNumber.toString()) + 40; // deadline is block height
+//     const deadline = Number(blockNumber.toString()) + 40; // deadline is block height
   
-    // console.log('deadline', deadline);
+//     // console.log('deadline', deadline);
   
-    // get the extrinsics of this swap
-    const extrinsics = dexApi.swapExactTokensForTokens(
-      trade.route.routePath, // path
-      trade.inputAmount, // input token and amount
-      tokenOutAmount, // min amount out
-      account, // recipient
-      deadline // deadline
-    ); 
+//     // get the extrinsics of this swap
+//     const extrinsics = dexApi.swapExactTokensForTokens(
+//       trade.route.routePath, // path
+//       trade.inputAmount, // input token and amount
+//       tokenOutAmount, // min amount out
+//       account, // recipient
+//       deadline // deadline
+//     ); 
 
-    let reverseInAmount = tokenOutAmount
-    let reverseTokenOut = tokenIn;
-    const reverseResult = SmartRouterV2.swapExactTokensForTokens(
-      reverseInAmount,
-      reverseTokenOut,
-      standardPools,
-      stablePools
-    );
-    const reverseTrade = reverseResult.trade;
-    if(!reverseTrade){
-      throw new Error("Cant construct reverse trade BNC")
-    }
-    let reversePath = reverseTrade.route.routePath
-    let reverseExtrinsic: ReverseSwapExtrinsicParams = {
-      chainId: 2001,
-      chain: "BifrostKusama",
-      path: trade.route.routePath.reverse(),
-      supply: reverseInAmount,
-      supplyFn: amountOutFnMinusSlip,
-      target: reverseOut,
-      targetFn: reverseExpectedAmountOut,
-      recipient: account,
-      deadline: deadline,
-      call: "swapExactTokensForTokens",
-      moduleBApi: dexApi,
-      supplyAssetId: startAssetSymbol,
-      targetAssetId: endAssetSymbol
-    }
+//     let reverseInAmount = tokenOutAmount
+//     let reverseTokenOut = tokenIn;
+//     const reverseResult = SmartRouterV2.swapExactTokensForTokens(
+//       reverseInAmount,
+//       reverseTokenOut,
+//       standardPools,
+//       stablePools
+//     );
+//     const reverseTrade = reverseResult.trade;
+//     if(!reverseTrade){
+//       throw new Error("Cant construct reverse trade BNC")
+//     }
+//     let reversePath = reverseTrade.route.routePath
+//     let reverseExtrinsic: ReverseSwapExtrinsicParams = {
+//       chainId: 2001,
+//       chain: "BifrostKusama",
+//       path: trade.route.routePath.reverse(),
+//       supply: reverseInAmount,
+//       supplyFn: amountOutFnMinusSlip,
+//       target: reverseOut,
+//       targetFn: reverseExpectedAmountOut,
+//       recipient: account,
+//       deadline: deadline,
+//       call: "swapExactTokensForTokens",
+//       moduleBApi: dexApi,
+//       supplyAssetId: startAssetSymbol,
+//       targetAssetId: endAssetSymbol
+//     }
   
-    if (!extrinsics) return;
-    // console.log(JSON.stringify(extrinsics, null, 2));
-    // let assetNodes 
-    let swapTxContainer: SwapExtrinsicContainer = {
-      chainId: 2001,
-      chain: "BifrostKusama",
-      assetNodes: assetNodes,
-      extrinsic: extrinsics,
-      extrinsicIndex: extrinsicIndex.i,
-      instructionIndex: instructionIndex,
-      nonce: nonce,
-      assetAmountIn: tokenInAmountFN,
-      assetSymbolIn: startAssetSymbol,
-      // pathInLocalId: tokenIn.assetId,
-      assetSymbolOut: endAssetSymbol,
-      // pathOutLocalId: tokenOut.assetId,
-      pathInLocalId: pathNodeValues.pathInLocalId,
-      pathOutLocalId: pathNodeValues.pathOutLocalId,
-      pathSwapType: pathNodeValues.pathSwapType,
-      pathAmount: amountIn,
-      expectedAmountOut: tokenOutAmountFn,
-      api: dexApi.api,
-      reverseTx: reverseExtrinsic
-    }
+//     if (!extrinsics) return;
+//     // console.log(JSON.stringify(extrinsics, null, 2));
+//     // let assetNodes 
+//     let swapTxContainer: SwapExtrinsicContainer = {
+//       chainId: 2001,
+//       chain: "BifrostKusama",
+//       assetNodes: assetNodes,
+//       extrinsic: extrinsics,
+//       extrinsicIndex: extrinsicIndex.i,
+//       instructionIndex: instructionIndex,
+//       nonce: nonce,
+//       assetAmountIn: tokenInAmountFN,
+//       assetSymbolIn: startAssetSymbol,
+//       // pathInLocalId: tokenIn.assetId,
+//       assetSymbolOut: endAssetSymbol,
+//       // pathOutLocalId: tokenOut.assetId,
+//       pathInLocalId: pathNodeValues.pathInLocalId,
+//       pathOutLocalId: pathNodeValues.pathOutLocalId,
+//       pathSwapType: pathNodeValues.pathSwapType,
+//       pathAmount: amountIn,
+//       expectedAmountOut: tokenOutAmountFn,
+//       api: dexApi.api,
+//       reverseTx: reverseExtrinsic
+//     }
 
-    increaseIndex(extrinsicIndex)
+//     increaseIndex(extrinsicIndex)
 
-    return swapTxContainer
+//     return swapTxContainer
 
-}
+// }
 
 export async function getBncSwapExtrinsicDynamic( 
+  swapType: number,
   swapInstructions: SwapInstruction[], 
   chopsticks: boolean = true, 
   txIndex: number, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[], 
-  pathNodeValues: PathNodeValues,
   priceDeviationPercent: number = 2
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]> {
   const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-list/main/tokens/bifrost-kusama.json');
@@ -383,9 +383,9 @@ export async function getBncSwapExtrinsicDynamic(
     // pathInLocalId: tokenIn.assetId,
     assetSymbolOut: destAsset,
     // pathOutLocalId: tokenOut.assetId,
-    pathInLocalId: pathNodeValues.pathInLocalId,
-    pathOutLocalId: pathNodeValues.pathOutLocalId,
-    pathSwapType: pathNodeValues.pathSwapType,
+    // pathInLocalId: pathNodeValues.pathInLocalId,
+    // pathOutLocalId: pathNodeValues.pathOutLocalId,
+    pathSwapType: swapType,
     pathAmount: amountIn,
     expectedAmountOut: tokenOutAmountFn,
     api: dexApi.api,

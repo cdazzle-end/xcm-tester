@@ -40,275 +40,276 @@ const wsLocalChain = "ws://172.26.130.75:8010"
 
 
 // Swap sdk doesn't allow us to specifiy a min amount out, but we can use it to contruct the swap TX then just modify the minAmount out parameter
-export async function getBsxSwapExtrinsic(
-  startAssetSymbol: string, 
-  destAssetSymbol: string, 
-  assetInAmount: number, 
-  assetOutAmount: number, 
-  swapInstructions: any[], 
-  chopsticks: boolean = false, 
-  txIndex: number = 0, 
-  extrinsicIndex: IndexObject, 
-  instructionIndex: number[],
-  pathNodeValues: PathNodeValues,
-  priceDeviationPercent: number = 2
-  ) {
-  // console.log("GETTING BSX SWAP EXTRINSIC")
-  // console.log(`startAssetSymbol: ${startAssetSymbol} destAssetSymbol: ${destAssetSymbol} assetInAmount: ${assetInAmount} assetOutAmount: ${assetOutAmount}`)
-  let rpc = chopsticks ? wsLocalChain : niceEndpoint
-    const provider = new WsProvider(rpc);
-    const api = new ApiPromise({ provider });
-    await api.isReady;
-    const poolService = new PoolService(api);
-    const router = new TradeRouter(poolService);
-    let signer = await getSigner(chopsticks, false)
-    let accountNonce = await api.query.system.account(signer.address)
-    let nonce = accountNonce.nonce.toNumber()
-    nonce += txIndex
+// export async function getBsxSwapExtrinsic(
+//   startAssetSymbol: string, 
+//   destAssetSymbol: string, 
+//   assetInAmount: number, 
+//   assetOutAmount: number, 
+//   swapInstructions: any[], 
+//   chopsticks: boolean = false, 
+//   txIndex: number = 0, 
+//   extrinsicIndex: IndexObject, 
+//   instructionIndex: number[],
+//   pathNodeValues: PathNodeValues,
+//   priceDeviationPercent: number = 2
+//   ) {
+//   // console.log("GETTING BSX SWAP EXTRINSIC")
+//   // console.log(`startAssetSymbol: ${startAssetSymbol} destAssetSymbol: ${destAssetSymbol} assetInAmount: ${assetInAmount} assetOutAmount: ${assetOutAmount}`)
+//   let rpc = chopsticks ? wsLocalChain : niceEndpoint
+//     const provider = new WsProvider(rpc);
+//     const api = new ApiPromise({ provider });
+//     await api.isReady;
+//     const poolService = new PoolService(api);
+//     const router = new TradeRouter(poolService);
+//     let signer = await getSigner(chopsticks, false)
+//     let accountNonce = await api.query.system.account(signer.address)
+//     let nonce = accountNonce.nonce.toNumber()
+//     nonce += txIndex
 
-    let assetNodes = [swapInstructions[0].assetNodes[0]]
-    swapInstructions.forEach((instruction) => {
-      assetNodes.push(instruction.assetNodes[1])
-    })
+//     let assetNodes = [swapInstructions[0].assetNodes[0]]
+//     swapInstructions.forEach((instruction) => {
+//       assetNodes.push(instruction.assetNodes[1])
+//     })
 
-    let allAssets: Asset[] = await router.getAllAssets()
+//     let allAssets: Asset[] = await router.getAllAssets()
 
-    let assetPathSymbols = [startAssetSymbol]
-    swapInstructions.forEach((instruction) => {
-      assetPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
-    })
+//     let assetPathSymbols = [startAssetSymbol]
+//     swapInstructions.forEach((instruction) => {
+//       assetPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
+//     })
 
-    // Need to split paths so that there is no duplicate symbol in a single route
-    let assetPaths = splitAssetPaths(assetPathSymbols)
-    let routerSwapExtrinsicsPromise = assetPaths.map(async(assetPathSymbols) => {
-      let path: Asset[] = assetPathSymbols.map((symbol) => {
-        const assetInPath =  allAssets.find((asset) => asset.symbol === symbol)
-        // console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
-        return assetInPath
-      })
-      let tradeRoute = path.map((asset) => asset.id)
-      const assetIn = path[0]
-      const assetOut = path[path.length - 1]
+//     // Need to split paths so that there is no duplicate symbol in a single route
+//     let assetPaths = splitAssetPaths(assetPathSymbols)
+//     let routerSwapExtrinsicsPromise = assetPaths.map(async(assetPathSymbols) => {
+//       let path: Asset[] = assetPathSymbols.map((symbol) => {
+//         const assetInPath =  allAssets.find((asset) => asset.symbol === symbol)
+//         // console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
+//         return assetInPath
+//       })
+//       let tradeRoute = path.map((asset) => asset.id)
+//       const assetIn = path[0]
+//       const assetOut = path[path.length - 1]
 
-      const reverseIn = path[path.length - 1]
-      const reverseOut = path[0]
+//       const reverseIn = path[path.length - 1]
+//       const reverseOut = path[0]
 
-      let number = new BigNumber(ZERO)
-      let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), assetIn.decimals)
-      let fnOutputAmount = new FixedPointNumber(assetOutAmount.toString(), assetOut.decimals)
+//       let number = new BigNumber(ZERO)
+//       let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), assetIn.decimals)
+//       let fnOutputAmount = new FixedPointNumber(assetOutAmount.toString(), assetOut.decimals)
 
       
   
-      //2% acceptable price deviation 2 / 100
-      let priceDeviation = fnOutputAmount.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-      let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation)
+//       //2% acceptable price deviation 2 / 100
+//       let priceDeviation = fnOutputAmount.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
+//       let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation)
 
-      const reverseSupply = expectedOutMinusDeviation
+//       const reverseSupply = expectedOutMinusDeviation
 
-      let reversePriceDev = fnInputAmount.mul(new FixedPointNumber(5)).div(new FixedPointNumber(100));
-      const reverseTarget = fnInputAmount.sub(reversePriceDev)
+//       let reversePriceDev = fnInputAmount.mul(new FixedPointNumber(5)).div(new FixedPointNumber(100));
+//       const reverseTarget = fnInputAmount.sub(reversePriceDev)
   
-      let bestBuy = await router.getBestSell(assetIn.id, assetOut.id, assetInAmount.toString())
-      let swapZero = bestBuy.toTx(number)
-      let tx: SubmittableExtrinsic = swapZero.get()
+//       let bestBuy = await router.getBestSell(assetIn.id, assetOut.id, assetInAmount.toString())
+//       let swapZero = bestBuy.toTx(number)
+//       let tx: SubmittableExtrinsic = swapZero.get()
       
-      const route = tx.toHuman()["method"]["args"]["route"]
+//       const route = tx.toHuman()["method"]["args"]["route"]
   
-      // console.log(` FN INput amount: ${fnInputAmount.toChainData()}`)
-      const txFormatted = await api.tx.router
-        .sell(
-          assetIn.id, 
-          assetOut.id, 
-          fnInputAmount.toChainData(), 
-          expectedOutMinusDeviation.toChainData(), 
-          route
-          )
+//       // console.log(` FN INput amount: ${fnInputAmount.toChainData()}`)
+//       const txFormatted = await api.tx.router
+//         .sell(
+//           assetIn.id, 
+//           assetOut.id, 
+//           fnInputAmount.toChainData(), 
+//           expectedOutMinusDeviation.toChainData(), 
+//           route
+//           )
 
-      let reverseTxParams: ReverseSwapExtrinsicParams = {
-        chainId: 2090,
-        chain: "Basilisk",
-        supplyAssetId: reverseIn.id,
-        targetAssetId: reverseOut.id,
-        supplySymbol: destAssetSymbol,
-        targetSymbol: startAssetSymbol,
-        supply: reverseSupply,
-        target: reverseTarget,
-        module: "router",
-        call: "sell",
-        path: route,
-        // api: api
-      }
+//       let reverseTxParams: ReverseSwapExtrinsicParams = {
+//         chainId: 2090,
+//         chain: "Basilisk",
+//         supplyAssetId: reverseIn.id,
+//         targetAssetId: reverseOut.id,
+//         supplySymbol: destAssetSymbol,
+//         targetSymbol: startAssetSymbol,
+//         supply: reverseSupply,
+//         target: reverseTarget,
+//         module: "router",
+//         call: "sell",
+//         path: route,
+//         // api: api
+//       }
 
-      let pathInId = assetIn.id
-      let pathOutId = assetOut.id
-      let pathAmount = fnInputAmount.toNumber()
-      let pathSwapType = pathNodeValues.pathSwapType
-      // await api.disconnect()
-      let swapTxContainer: SwapExtrinsicContainer = {
-        chainId: 2090,
-        chain: "Basilisk",
-        assetNodes: assetNodes,
-        extrinsic: txFormatted,
-        extrinsicIndex: extrinsicIndex.i,
-        instructionIndex: instructionIndex,
-        nonce: nonce,
-        assetSymbolIn: startAssetSymbol,
-        assetSymbolOut: destAssetSymbol,
-        assetAmountIn: fnInputAmount,
-        expectedAmountOut: fnOutputAmount,
-        pathInLocalId: pathInId,
-        pathOutLocalId: pathOutId,
-        pathSwapType: pathSwapType,
-        pathAmount: pathAmount,
-        api: api,
-        reverseTx: reverseTxParams
-      }
-      increaseIndex(extrinsicIndex)
-      return swapTxContainer
-    })
+//       let pathInId = assetIn.id
+//       let pathOutId = assetOut.id
+//       let pathAmount = fnInputAmount.toNumber()
+//       let pathSwapType = pathNodeValues.pathSwapType
+//       // await api.disconnect()
+//       let swapTxContainer: SwapExtrinsicContainer = {
+//         chainId: 2090,
+//         chain: "Basilisk",
+//         assetNodes: assetNodes,
+//         extrinsic: txFormatted,
+//         extrinsicIndex: extrinsicIndex.i,
+//         instructionIndex: instructionIndex,
+//         nonce: nonce,
+//         assetSymbolIn: startAssetSymbol,
+//         assetSymbolOut: destAssetSymbol,
+//         assetAmountIn: fnInputAmount,
+//         expectedAmountOut: fnOutputAmount,
+//         pathInLocalId: pathInId,
+//         pathOutLocalId: pathOutId,
+//         pathSwapType: pathSwapType,
+//         pathAmount: pathAmount,
+//         api: api,
+//         reverseTx: reverseTxParams
+//       }
+//       increaseIndex(extrinsicIndex)
+//       return swapTxContainer
+//     })
 
-    let routerSwapExtrinsics = await Promise.all(routerSwapExtrinsicsPromise)
-    return routerSwapExtrinsics
-    // // assetPathSymbols.forEach((symbol) => console.log(`${symbol} ->`))
-    // let assetPath = assetPathSymbols.map((symbol) => {
-    //   const assetInPath =  allAssets.find((asset) => asset.symbol === symbol)
-    //   console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
-    //   return assetInPath
-    // })
-    // let tradeRoute = assetPath.map((asset) => asset.id)
-    // const assetIn = assetPath[0]
-    // const assetOut = assetPath[assetPath.length - 1]
-    // // console.log(`ASSET IN ${JSON.stringify(assetIn, null, 2)}`)
-    // // console.log(`ASSET OUT ${JSON.stringify(assetOut, null, 2)}`)
-    // // if(!assetIn || !assetOut){
-    // //   throw new Error("Cant find BSX asset from symbol")
-    // // }
-    // let number = new BigNumber(ZERO)
-    // let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), assetIn.decimals)
-    // let fnOutputAmount = new FixedPointNumber(assetOutAmount.toString(), assetOut.decimals)
+//     let routerSwapExtrinsics = await Promise.all(routerSwapExtrinsicsPromise)
+//     return routerSwapExtrinsics
+//     // // assetPathSymbols.forEach((symbol) => console.log(`${symbol} ->`))
+//     // let assetPath = assetPathSymbols.map((symbol) => {
+//     //   const assetInPath =  allAssets.find((asset) => asset.symbol === symbol)
+//     //   console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
+//     //   return assetInPath
+//     // })
+//     // let tradeRoute = assetPath.map((asset) => asset.id)
+//     // const assetIn = assetPath[0]
+//     // const assetOut = assetPath[assetPath.length - 1]
+//     // // console.log(`ASSET IN ${JSON.stringify(assetIn, null, 2)}`)
+//     // // console.log(`ASSET OUT ${JSON.stringify(assetOut, null, 2)}`)
+//     // // if(!assetIn || !assetOut){
+//     // //   throw new Error("Cant find BSX asset from symbol")
+//     // // }
+//     // let number = new BigNumber(ZERO)
+//     // let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), assetIn.decimals)
+//     // let fnOutputAmount = new FixedPointNumber(assetOutAmount.toString(), assetOut.decimals)
 
-    // //2% acceptable price deviation 2 / 100
-    // let priceDeviation = fnOutputAmount.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-    // let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation)
+//     // //2% acceptable price deviation 2 / 100
+//     // let priceDeviation = fnOutputAmount.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
+//     // let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation)
 
-    // let bestBuy = await router.getBestSell(assetIn.id, assetOut.id, assetInAmount.toString())
-    // let swapZero = bestBuy.toTx(number)
-    // let key = await getSigner()
-    // let tx: SubmittableExtrinsic = swapZero.get()
+//     // let bestBuy = await router.getBestSell(assetIn.id, assetOut.id, assetInAmount.toString())
+//     // let swapZero = bestBuy.toTx(number)
+//     // let key = await getSigner()
+//     // let tx: SubmittableExtrinsic = swapZero.get()
     
-    // const route = tx.toHuman()["method"]["args"]["route"]
+//     // const route = tx.toHuman()["method"]["args"]["route"]
 
-    // console.log(` FN INput amount: ${fnInputAmount.toChainData()}`)
-    // const txFormatted = await api.tx.router.sell(assetIn.id, assetOut.id, fnInputAmount.toChainData(), expectedOutMinusDeviation.toChainData(), route)
-    // // await api.disconnect()
-    // let swapTxContainer: SwapExtrinsicContainer = {
-    //   chainId: 2090,
-    //   chain: "Basilisk",
-    //   extrinsic: txFormatted,
-    //   nonce: nonce,
-    //   assetSymbolIn: startAssetSymbol,
-    //   assetSymbolOut: destAssetSymbol,
-    //   assetAmountIn: fnInputAmount,
-    //   expectedAmountOut: fnOutputAmount,
-    //   api: api
-    // }
-    // return swapTxContainer
-}
+//     // console.log(` FN INput amount: ${fnInputAmount.toChainData()}`)
+//     // const txFormatted = await api.tx.router.sell(assetIn.id, assetOut.id, fnInputAmount.toChainData(), expectedOutMinusDeviation.toChainData(), route)
+//     // // await api.disconnect()
+//     // let swapTxContainer: SwapExtrinsicContainer = {
+//     //   chainId: 2090,
+//     //   chain: "Basilisk",
+//     //   extrinsic: txFormatted,
+//     //   nonce: nonce,
+//     //   assetSymbolIn: startAssetSymbol,
+//     //   assetSymbolOut: destAssetSymbol,
+//     //   assetAmountIn: fnInputAmount,
+//     //   expectedAmountOut: fnOutputAmount,
+//     //   api: api
+//     // }
+//     // return swapTxContainer
+// }
 
-export async function testBsxSwap(swapInstructions: SwapInstruction[], chopsticks: boolean, priceDeviationPercent: number = 2){
-  // let rpc = chopsticks ? wsLocalChain : niceEndpoint
-  let nice = [niceEndpoint]
-  let endpoints = getAllNodeProviders("Basilisk");
-  endpoints.forEach((endpoint) => {
-    nice.push(endpoint)
-  })
-  let apiSuccess = false;
-  let txFormatted
-  let index = 0;
-  while(!apiSuccess){
-    let rpc = nice[index]
-    console.log(`Trying endpoint ${rpc}`)
-    index++
-    try{
-      const provider = new WsProvider(rpc);
-      const api = new ApiPromise({ provider });
-      await api.isReady;
-      const poolService = new PoolService(api);
-      const router = new TradeRouter(poolService);
-      let signer = await getSigner(chopsticks, false)
-      let accountNonce = await api.query.system.account(signer.address)
-      let assetInAmount = swapInstructions[0].assetInAmount
-      let assetOutAmount = swapInstructions[swapInstructions.length - 1].assetOutTargetAmount
+// export async function testBsxSwap(swapInstructions: SwapInstruction[], chopsticks: boolean, priceDeviationPercent: number = 2){
+//   // let rpc = chopsticks ? wsLocalChain : niceEndpoint
+//   let nice = [niceEndpoint]
+//   let endpoints = getAllNodeProviders("Basilisk");
+//   endpoints.forEach((endpoint) => {
+//     nice.push(endpoint)
+//   })
+//   let apiSuccess = false;
+//   let txFormatted
+//   let index = 0;
+//   while(!apiSuccess){
+//     let rpc = nice[index]
+//     console.log(`Trying endpoint ${rpc}`)
+//     index++
+//     try{
+//       const provider = new WsProvider(rpc);
+//       const api = new ApiPromise({ provider });
+//       await api.isReady;
+//       const poolService = new PoolService(api);
+//       const router = new TradeRouter(poolService);
+//       let signer = await getSigner(chopsticks, false)
+//       let accountNonce = await api.query.system.account(signer.address)
+//       let assetInAmount = swapInstructions[0].assetInAmount
+//       let assetOutAmount = swapInstructions[swapInstructions.length - 1].assetOutTargetAmount
 
-      console.log("GETTING ALL ASSETS")
-      let allAssets: Asset[] = await router.getAllAssets()
+//       console.log("GETTING ALL ASSETS")
+//       let allAssets: Asset[] = await router.getAllAssets()
 
-      console.log("All Assets")
-      console.log(JSON.stringify(allAssets, null, 2))
+//       console.log("All Assets")
+//       console.log(JSON.stringify(allAssets, null, 2))
 
-      let startSymbol = swapInstructions[0].assetNodes[0].getAssetRegistrySymbol()
+//       let startSymbol = swapInstructions[0].assetNodes[0].getAssetRegistrySymbol()
 
-        let assetPathSymbols = [startSymbol]
-        swapInstructions.forEach((instruction) => {
-          assetPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
-        })
+//         let assetPathSymbols = [startSymbol]
+//         swapInstructions.forEach((instruction) => {
+//           assetPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
+//         })
 
-        let pathsAndInstructions = splitPathAndInstructions(assetPathSymbols, swapInstructions)
-        let assetPathToExecute = pathsAndInstructions.assetPath
-        let instructionsToExecute = pathsAndInstructions.instructionsToExecute
-        let remainingInstructions = pathsAndInstructions.remainingInstructions
-        let assetNodes = [swapInstructions[0].assetNodes[0]]
-        instructionsToExecute.forEach((instruction) => {
-          assetNodes.push(instruction.assetNodes[1])
-        })
+//         let pathsAndInstructions = splitPathAndInstructions(assetPathSymbols, swapInstructions)
+//         let assetPathToExecute = pathsAndInstructions.assetPath
+//         let instructionsToExecute = pathsAndInstructions.instructionsToExecute
+//         let remainingInstructions = pathsAndInstructions.remainingInstructions
+//         let assetNodes = [swapInstructions[0].assetNodes[0]]
+//         instructionsToExecute.forEach((instruction) => {
+//           assetNodes.push(instruction.assetNodes[1])
+//         })
 
-        let path: Asset[] = assetPathToExecute.map((symbol) => {
-          const assetInPath =  allAssets.find((asset) => asset.symbol === symbol)
-          // console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
-          return assetInPath
-        })
-        // let tradeRoute = path.map((asset) => asset.id)
-        const assetIn = path[0]
-        const assetOut = path[path.length - 1]
+//         let path: Asset[] = assetPathToExecute.map((symbol) => {
+//           const assetInPath =  allAssets.find((asset) => asset.symbol === symbol)
+//           // console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
+//           return assetInPath
+//         })
+//         // let tradeRoute = path.map((asset) => asset.id)
+//         const assetIn = path[0]
+//         const assetOut = path[path.length - 1]
 
-        let number = new BigNumber(ZERO)
-        let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), assetIn.decimals)
-        let fnOutputAmount = new FixedPointNumber(assetOutAmount.toString(), assetOut.decimals)
+//         let number = new BigNumber(ZERO)
+//         let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), assetIn.decimals)
+//         let fnOutputAmount = new FixedPointNumber(assetOutAmount.toString(), assetOut.decimals)
 
-        //2% acceptable price deviation 2 / 100
-        let priceDeviation = fnOutputAmount.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-        let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation)
+//         //2% acceptable price deviation 2 / 100
+//         let priceDeviation = fnOutputAmount.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
+//         let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation)
 
-        let bestBuy = await router.getBestSell(assetIn.id, assetOut.id, assetInAmount.toString())
-        let swapZero = bestBuy.toTx(number)
-        let tx: SubmittableExtrinsic = swapZero.get()
+//         let bestBuy = await router.getBestSell(assetIn.id, assetOut.id, assetInAmount.toString())
+//         let swapZero = bestBuy.toTx(number)
+//         let tx: SubmittableExtrinsic = swapZero.get()
         
-        const route = tx.toHuman()["method"]["args"]["route"]
+//         const route = tx.toHuman()["method"]["args"]["route"]
 
-        txFormatted = await api.tx.router
-        .sell(
-          assetIn.id, 
-          assetOut.id, 
-          fnInputAmount.toChainData(), 
-          expectedOutMinusDeviation.toChainData(), 
-          route
-          )
+//         txFormatted = await api.tx.router
+//         .sell(
+//           assetIn.id, 
+//           assetOut.id, 
+//           fnInputAmount.toChainData(), 
+//           expectedOutMinusDeviation.toChainData(), 
+//           route
+//           )
 
-        // let swapReceipt = await txFormatted.signAndSend(signer)
-          apiSuccess = true
+//         // let swapReceipt = await txFormatted.signAndSend(signer)
+//           apiSuccess = true
 
 
-    } catch(e){
-      console.log("Error getting BSX swap")
-      console.log(e)
-      console.log("Trying next endpoint")
-    }
+//     } catch(e){
+//       console.log("Error getting BSX swap")
+//       console.log(e)
+//       console.log("Trying next endpoint")
+//     }
     
-  }
-  return txFormatted
-}
+//   }
+//   return txFormatted
+// }
 
 export async function getBsxSwapExtrinsicDynamic(
+  swapType: number,
   startAssetSymbol: string, 
   destAssetSymbol: string, 
   assetInAmount: number, 
@@ -318,7 +319,6 @@ export async function getBsxSwapExtrinsicDynamic(
   txIndex: number = 0, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
-  pathNodeValues: PathNodeValues,
   priceDeviationPercent: number = 2
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
     // console.log(`BSX (${startAssetSymbol}) -> (${destAssetSymbol}) assetInAmount: ${assetInAmount} assetOutAmount: ${assetOutAmount}`)
@@ -352,6 +352,11 @@ export async function getBsxSwapExtrinsicDynamic(
       assetNodes.push(instruction.assetNodes[1])
     })
 
+    
+
+    let destAssetSymbolDynamic = assetNodes[assetNodes.length - 1].getAssetRegistrySymbol()
+    let expectedOutDynamic = instructionsToExecute[instructionsToExecute.length - 1].assetNodes[1].pathValue
+
     let path: Asset[] = assetPathToExecute.map((symbol) => {
       const assetInPath =  allAssets.find((asset) => asset.symbol === symbol)
       // console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
@@ -363,7 +368,7 @@ export async function getBsxSwapExtrinsicDynamic(
 
     let number = new BigNumber(ZERO)
     let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), assetIn.decimals)
-    let fnOutputAmount = new FixedPointNumber(assetOutAmount.toString(), assetOut.decimals)
+    let fnOutputAmount = new FixedPointNumber(expectedOutDynamic.toString(), assetOut.decimals)
 
     //2% acceptable price deviation 2 / 100
     let priceDeviation = fnOutputAmount.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
@@ -388,7 +393,7 @@ export async function getBsxSwapExtrinsicDynamic(
     let pathInId = assetIn.id
     let pathOutId = assetOut.id
     let pathAmount = fnInputAmount.toNumber()
-    let pathSwapType = pathNodeValues.pathSwapType
+    let pathSwapType = swapType
     let swapTxContainer: SwapExtrinsicContainer = {
       chainId: 2090,
       chain: "Basilisk",
@@ -398,11 +403,9 @@ export async function getBsxSwapExtrinsicDynamic(
       instructionIndex: instructionIndex,
       nonce: nonce,
       assetSymbolIn: startAssetSymbol,
-      assetSymbolOut: destAssetSymbol,
+      assetSymbolOut: destAssetSymbolDynamic,
       assetAmountIn: fnInputAmount,
       expectedAmountOut: fnOutputAmount,
-      pathInLocalId: pathInId,
-      pathOutLocalId: pathOutId,
       pathSwapType: pathSwapType,
       pathAmount: pathAmount,
       api: api,

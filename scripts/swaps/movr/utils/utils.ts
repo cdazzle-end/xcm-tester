@@ -483,7 +483,7 @@ export async function checkApproval(tokenContract: ethers.Contract, walletAddres
 export async function checkAndApproveToken(tokenContractAddress: string, wallet: ethers.Wallet, spender: string, inputAmount: bigint){
     const tokenContract = new ethers.Contract(tokenContractAddress, erc20Abi, wallet)
     const allowance = await tokenContract.allowance(wallet.address, spender);
-    console.log(`ALLOWANCE CHECK 1: Batch contract address: ${spender} -- Wallet address: ${wallet.address} -- Allowance: ${allowance}`)
+    console.log(`ALLOWANCE CHECK 1: Batch contract address: ${spender} -- Wallet address: ${wallet.address} -- Token Contract ${tokenContractAddress}-- Allowance: ${allowance} -- Input Amount: ${inputAmount}`)
     if (allowance < inputAmount) {
         console.log(`Approving ${spender} to spend ${inputAmount} tokens for the user ${wallet.address}.`);
         // console.log(`The spender address ${spender} is NOT approved to spend tokens for the user ${wallet.address}. Approving...`);
@@ -491,6 +491,7 @@ export async function checkAndApproveToken(tokenContractAddress: string, wallet:
         let approvalReceipt = await approveTx.wait()
         return approvalReceipt
     } else {
+        console.log(`The spender address ${spender} is approved to spend tokens for the user ${wallet.address}.`);
         // console.log(`The spender address ${spender} is approved to spend tokens for the user ${wallet.address}.`);
         return false
     }

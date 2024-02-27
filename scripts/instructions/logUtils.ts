@@ -3,10 +3,32 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { globalState } from "./liveTest.ts";
+declare const fetch: any;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export async function queryUsdPriceKucoin(assetSymbol: string){
+    let baseUrl = "https://api.kucoin.com";
+    const orderBook = "/api/v1/market/orderbook/level2_20";
+    let url = `https://api.kucoin.com/api/v1/market/orderbook/level1?symbol=${assetSymbol}-USDT`
+
+    let requestParameter = "?symbol=" + assetSymbol + "-USDT";
+    let uri = baseUrl + orderBook + requestParameter;
+    const response = await fetch(uri);
+    let answer = await response.json();
+    // let bids = answer.data.bids;
+    let asks = answer.data.asks;
+    let askPrice = asks[0][0];
+    console.log(askPrice)
+
+    // let testKsmAmount = 0.017263821728000006
+    // let arbAmountOutUsd = testKsmAmount * askPrice
+    // let arbAmountOutUsdString = `$ ${arbAmountOutUsd.toFixed(2)}`
+    // console.log(arbAmountOutUsdString)
+
+    return Number.parseFloat(askPrice)
+}
 
 export async function logSubmittableExtrinsics(extrinsicSet: ExtrinsicObject[], logFilePath: string, reverse: boolean = false) {
     let logFileStrings = logFilePath.split("\\");
@@ -421,23 +443,31 @@ export async function logProfits(arbAmountOut: number, logFilePath: string, chop
     let logFileTime = logFileStrings[logFileStrings.length - 1]
     let logDayTime = logFileDay + logFileTime
 
-
-
-
-
     let live = chopsticks ? 'test_' : 'live_'
     let logEntry = live + logDayTime
 
-    let profitLogDatabase = {}
-    profitLogDatabase[logEntry] = arbAmountOut
-    console.log(logEntry)
-    console.log(arbAmountOut)
+    let ksmPrice = await queryUsdPriceKucoin("KSM")
+    let arbAmountOutUsd = arbAmountOut * ksmPrice
+    let arbAmountOutUsdString = `${arbAmountOutUsd.toFixed(2)}`
+
+    // let profitLogDatabase = {}
+    let result = `${arbAmountOut}|$${arbAmountOutUsdString}`
+    // profitLogDatabase[logEntry] = result
+    // console.log(logEntry)
+    // console.log(arbAmountOut)
     console.log("PROFIT LOG DATABASE")
-    console.log(profitLogDatabase)
+    console.log(`${logEntry}: ${result}`)
 
     let profitFilePath = path.join(__dirname, './liveSwapExecutionStats', 'profitStats.json')
-    profitLogDatabase = JSON.parse(fs.readFileSync(profitFilePath, 'utf8'))
-    profitLogDatabase[logEntry] = arbAmountOut
+    let profitLogDatabase = JSON.parse(fs.readFileSync(profitFilePath, 'utf8'))
+    profitLogDatabase[logEntry] = result
     fs.writeFileSync(profitFilePath, JSON.stringify(profitLogDatabase, null, 2))
 
 }
+
+async function run(){
+    // await queryUsdPriceKucoin("KSM")
+
+}
+
+// run()

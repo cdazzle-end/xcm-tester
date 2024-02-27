@@ -94,9 +94,15 @@ import { apiMap } from "./liveTest.ts";
 export async function getApiForNode(node: TNode | "Kusama", chopsticks: boolean){
     let map = apiMap
 
+    console.log("**********************************************")
+    console.log("Checking for existing api for node: ", node)
     if(map.has(node)){
+        console.log("Returning existing api for node: ", node)
         return map.get(node)
     }
+
+    console.log("No existing api for node: ", node)
+    console.log("**********************************************")
 
     let apiEndpoint: string[];
     console.log("Get api for node: ", node)

@@ -12,6 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function getHkoSwapExtrinsic(
+  swapType: number,
   startAssetSymbol: string, 
   destAssetSymbol: string, 
   assetInAmount: number, 
@@ -21,7 +22,6 @@ export async function getHkoSwapExtrinsic(
   txIndex: number, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
-  pathNodeValues: PathNodeValues,
   priceDeviationPercent: number = 2
   ) {
   let rpc = chopsticks ? wsLocalChain : hkoWs  
@@ -53,10 +53,6 @@ export async function getHkoSwapExtrinsic(
       let priceDeviation = assetOutAmountFn.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
       let expectedOutMinusDeviation = assetOutAmountFn.sub(priceDeviation)
 
-    //   const tokenPath = [100, 0, 102]
-      // const [route, amount] = await api.rpc.router.getBestRoute(assetInAmountFn, assetInLocalId, assetOutLocalId, false);
-      // console.log(`Route: ${JSON.stringify(route, null, 2)}`)
-      // console.log(`Amount: ${JSON.stringify(amount, null, 2)}`)
       let tokenPathSymbols = [startAssetSymbol]
       swapInstructions.forEach((instruction) => {
         tokenPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
@@ -95,10 +91,8 @@ export async function getHkoSwapExtrinsic(
         chainId: 2085,
         chain: "ParallelHeiko",
         assetNodes: assetNodes,
-        pathInLocalId: pathNodeValues.pathInLocalId,
-        pathOutLocalId: pathNodeValues.pathOutLocalId,
-        pathAmount: pathNodeValues.pathValue,
-        pathSwapType: pathNodeValues.pathSwapType,
+        pathAmount: assetInAmount,
+        pathSwapType: swapType,
         extrinsic: swapTx,
         extrinsicIndex: extrinsicIndex.i,
         instructionIndex: instructionIndex,

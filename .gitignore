@@ -13,7 +13,10 @@
 /scripts/instructions/lastExtrinsicSet.json
 /scripts/instructions/lastNode.json
 /scripts/instructions/preTransferNodes.json
-
+/scripts/instructions/balanceData.json
+/scripts/instructions/lastTransactionProperties.json
+/scripts/instructions/lastTransactionState.json
+/scripts/instructions/testFn.ts
 
 # Logs
 logs
