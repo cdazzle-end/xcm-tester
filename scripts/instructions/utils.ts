@@ -54,18 +54,48 @@ export function setTransctionProperties(properties: TransferProperties | SwapPro
     fs.writeFileSync(path.join(__dirname, './lastTransactionProperties.json'), JSON.stringify(properties, null, 2), 'utf8')
 }
 
+export function setExecutionSuccess(success: boolean){
+    if(success){
+        globalState.executionSuccess = true
+        globalState.executionAttempts = 0
+    } else {
+        globalState.executionAttempts += 1
+    }
+    let executionSuccess: ExecutionSuccess = {success, executionAttempts: globalState.executionAttempts}
+    fs.writeFileSync(path.join(__dirname, './lastExecutionSuccess.json'), JSON.stringify(executionSuccess, null, 2), 'utf8')
+}
+
+export function resetExecutionState(){
+    globalState.lastNode = null
+    globalState.lastFilePath = null
+    globalState.extrinsicSetResults = null
+    globalState.transactionState = null
+    globalState.transactionProperties = null
+    globalState.executionSuccess = false
+    globalState.executionAttempts = 0
+
+}
+
+interface ExecutionSuccess {
+    success: boolean,
+    executionAttempts: number
+}
+
 export function getLastExecutionState(){
     let lastNode = JSON.parse(fs.readFileSync(path.join(__dirname, './lastNode.json'), 'utf8'));
     let lastFilePath = JSON.parse(fs.readFileSync(path.join(__dirname, './lastAttemptFile.json'), 'utf8'));
     let allExtrinsicResults: ExtrinsicSetResultDynamic = JSON.parse(fs.readFileSync(path.join(__dirname, './lastExtrinsicSet.json'), 'utf8'));
     let transactionState: TransactionState = JSON.parse(fs.readFileSync(path.join(__dirname, './lastTransactionState.json'), 'utf8'))
     let transactionProperties: TransferProperties | SwapProperties = JSON.parse(fs.readFileSync(path.join(__dirname, './lastTransactionProperties.json'), 'utf8'))
+    let lastExecution: ExecutionSuccess = JSON.parse(fs.readFileSync(path.join(__dirname, './lastExecutionSuccess.json'), 'utf8'))
     let lastExecutionState: ExecutionState = {
         lastNode,
         lastFilePath,
         extrinsicSetResults: allExtrinsicResults,
         transactionState: transactionState,
-        transactionProperties: transactionProperties
+        transactionProperties: transactionProperties,
+        executionSuccess: lastExecution.success,
+        executionAttempts: lastExecution.executionAttempts
     }
     return lastExecutionState
 }
@@ -170,6 +200,14 @@ export function getAssetRegistryObjectBySymbol(chainId: number, symbol: string):
     if(asset){
         return asset
     }
+
+    if(symbol.toUpperCase() == "XCKSM" && chainId == 2023){
+        asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
+            return assetRegistryObject.tokenData.chain == chainId && JSON.stringify(assetRegistryObject.tokenData.symbol).toUpperCase() == "XCKSM"
+        })
+    }
+    if(asset) return asset
+
     // Try again but account for xc
     if(symbol.toLowerCase().startsWith("xc")){
         let symbolNoPrefix = symbol.slice(2)
@@ -777,6 +815,100 @@ export function getLatestFileFromLatestDay(small: boolean) {
         return null;
     }
 }
+
+export function getLatestAsyncFiles(): [number, string][]{
+    const resultsDirPath = path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/default_log_data/');
+    let inputAmounts = [0.1, 0.5, 1]
+
+    let logFilePaths: [number, string][] = inputAmounts.map((inputAmount) => {
+        // let inputDir = path.join(resultsDirPath, inputAmount.toString())
+        try{
+            let sortedDays
+            let latestDayDir;
+            let latestDayPath
+            let days;
+    
+            days = fs.readdirSync(resultsDirPath, { withFileTypes: true })
+                .filter(dirent => dirent.isDirectory())
+                .map(dirent => dirent.name)
+                .filter((day) => !day.includes("_small"))
+            sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+            // Get the latest day's directory
+            console.log("Sorted days: ", JSON.stringify(sortedDays, null, 2))
+    
+            latestDayDir = sortedDays[0]
+            latestDayPath = path.join(resultsDirPath, latestDayDir);
+            let inputDir = path.join(latestDayPath, inputAmount.toString())
+    
+            console.log("Days: ", JSON.stringify(days, null, 2))
+            // Sort directories by date
+            console.log("Latest Target Day Path: ", latestDayPath)
+            // Get list of files in the latest day's directory
+            console.log("Input Dir: ", inputDir)
+            const files = fs.readdirSync(inputDir);
+    
+            // Sort files by timestamp in filename
+            const sortedFiles = files.sort((a, b) => {
+                const timeA = a.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+                const timeB = b.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+                return new Date(`${latestDayDir}T${timeA}`).getTime() - new Date(`${latestDayDir}T${timeB}`).getTime();
+            });
+    
+            // Get the latest file
+            const latestFile = sortedFiles[sortedFiles.length - 1];
+            const latestFilePath = path.join(inputDir, latestFile);
+            console.log("Latest file path: ", latestFilePath)
+            return [inputAmount, latestFilePath];
+
+        } catch (error) {
+            console.error('Error:', error);
+            return null;
+        }
+
+    })
+
+    return logFilePaths
+    // try {
+    //     let sortedDays
+    //     let latestDayDir;
+    //     let latestDayPath
+    //     let days;
+
+    //     days = fs.readdirSync(resultsDirPath, { withFileTypes: true })
+    //         .filter(dirent => dirent.isDirectory())
+    //         .map(dirent => dirent.name)
+    //         .filter((day) => !day.includes("_small"))
+    //     sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+    //     // Get the latest day's directory
+    //     console.log("Sorted days: ", JSON.stringify(days, null, 2))
+
+    //     latestDayDir = sortedDays[0]
+    //     latestDayPath = path.join(resultsDirPath, latestDayDir);
+
+    //     console.log("Days: ", JSON.stringify(days, null, 2))
+    //     // Sort directories by date
+    //     console.log("Latest Target Day Path: ", latestDayPath)
+    //     // Get list of files in the latest day's directory
+    //     const files = fs.readdirSync(latestDayPath);
+
+    //     // Sort files by timestamp in filename
+    //     const sortedFiles = files.sort((a, b) => {
+    //         const timeA = a.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+    //         const timeB = b.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+    //         return new Date(`${latestDayDir}T${timeA}`).getTime() - new Date(`${latestDayDir}T${timeB}`).getTime();
+    //     });
+
+    //     // Get the latest file
+    //     const latestFile = sortedFiles[sortedFiles.length - 1];
+    //     const latestFilePath = path.join(latestDayPath, latestFile);
+
+    //     return latestFilePath;
+    // } catch (error) {
+    //     console.error('Error:', error);
+    //     return null;
+    // }
+}
+
 export function getLatestTargetFile(){
       
     const resultsDirPath = path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/target_log_data');

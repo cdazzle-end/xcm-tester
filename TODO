@@ -1,0 +1,4 @@
+allocating KSM at the start from moonriver causes error
+Need to dynamically allocate KSM to kusama, from multiple chains until reach sufficient amount
+
+Currently removed sql/mongo logging from powershell script. Need to update them and re implement

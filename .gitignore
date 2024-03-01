@@ -17,6 +17,9 @@
 /scripts/instructions/lastTransactionProperties.json
 /scripts/instructions/lastTransactionState.json
 /scripts/instructions/testFn.ts
+scripts/instructions/lastExecutionAttempts.json
+scripts/instructions/lastExecutionSuccess.json
+
 
 # Logs
 logs

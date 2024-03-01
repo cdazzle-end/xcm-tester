@@ -6,6 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { ResultDataObject } from './types';
 import * as lp from './../../../test2/arb-dot-2/lps/all_lp.js'
+import { ksmTargetNode } from './txConsts.js';
 // import pkg from './../../../test2/arb-dot-2/lps/all_lp.ts';
 // const { updateLpsChop } = pkg;
 const __filename = fileURLToPath(import.meta.url);
@@ -238,30 +239,30 @@ export async function runAndReturnTargetArb(args: string, chopsticks: boolean): 
     throw new Error("Error running and returning fallback arb")
 }
 }
+
+
+async function testArbFinder(){
+  let arbArgs = `${ksmTargetNode} ${ksmTargetNode} 1.0`
+  try{
+    let arbCompleted = await runArbTarget(arbArgs);
+    if(arbCompleted){
+        const targetLogFolder = await path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/target_log_data/');
+        const latestFile = await findLatestFileInLatestDirectory(targetLogFolder);
+        let latestFileData: ResultDataObject[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
+        return latestFileData
+    } else {
+        throw new Error("Arb Fallback failed")
+    }
+} catch (e){
+    console.log("Error running and returning fallback arb")
+    console.log(e)
+    throw new Error("Error running and returning fallback arb")
+}
+}
 async function run(){
-    // console.log("Starting")
-    // let results = await runArbFallback('search_best_path_a_to_b "2001{\\"Native\\":\\"BNC\\"}" "2000{\\"NativeAssetId\\":{\\"Token\\":\\"KSM\\"}}" 1');
-    // console.log("Done")
-    // console.log(JSON.stringify(results, null, 2))
+ await testArbFinder()
 
-    // const fallbackLogFolder = await path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/fallback_log_data/');
-    // const latestFile = await findLatestFileInLatestDirectory(fallbackLogFolder);
-    // console.log(latestFile)
-    // let latestFileData = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
-    // console.log(JSON.stringify(latestFileData, null, 2))
-
-    // let startNode = '"2001{\\"Native\\":\\"BNC\\"}"'
-    // let ksmTargetNode = '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"KSM\\"}}"'
-    // let startNodeValue = "50"
-    // // await runArbFallback('search_best_path_a_to_b "2001{\\"Native\\":\\"BNC\\"}" "2000{\\"NativeAssetId\\":{\\"Token\\":\\"KSM\\"}}" 1');
-    // // let functionArgs = `${lastNodeAssetKey} ${ksmTargetNode} ${lastNodeAssetValue}`
-    // let functionArgs = `${startNode} ${ksmTargetNode} ${startNodeValue}`
-    // console.log("Executing Arb Fallback with args: " + functionArgs)
-    // let fallbackArbResults = await runAndReturnFallbackArb(functionArgs)
-    // console.log("Fallback Arb Results: ")
-    // console.log(JSON.stringify(fallbackArbResults, null, 2))
-
-    await updateLps(true)
+    // await updateLps(true)
 }
 // run()
 // runArbFallback('search_best_path_a_to_b "2001{\\"Native\\":\\"BNC\\"}" "2000{\\"NativeAssetId\\":{\\"Token\\":\\"KSM\\"}}" 1');

@@ -185,7 +185,8 @@ export interface ExecutionState{
     extrinsicSetResults: ExtrinsicSetResultDynamic,
     transactionState: TransactionState,
     transactionProperties: SwapProperties | TransferProperties,
-
+    executionSuccess: boolean,
+    executionAttempts: number
 }
 export enum TransactionState {
     PreSubmission = "PreSubmission",
@@ -470,3 +471,9 @@ export interface PreExecutionTransfer {
     transferAmount: FixedPointNumber
 }
 
+export interface AsyncFileData{
+    inputAmount: number,
+    estimatedOutput: number,
+    latestFileData: ResultDataObject[]
+
+}

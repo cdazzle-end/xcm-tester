@@ -2,8 +2,8 @@ import fs from 'fs'
 import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange, getSigner, watchTokenBalance, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRoute, getLastSuccessfulNodeFromAllExtrinsics, getBalance, setLastFile, getLastExecutionState, getKsmBalancesAcrossChains, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFile, setLastExtrinsicSet, setLastNode } from './utils.ts'
-import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, ReverseSwapExtrinsicParams, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties } from './types.ts'
+import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange, getSigner, watchTokenBalance, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRoute, getLastSuccessfulNodeFromAllExtrinsics, getBalance, setLastFile, getLastExecutionState, getKsmBalancesAcrossChains, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFile, setLastExtrinsicSet, setLastNode, getLatestAsyncFiles, setExecutionSuccess, resetExecutionState } from './utils.ts'
+import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, ReverseSwapExtrinsicParams, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { buildInstructions, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
@@ -47,8 +47,9 @@ export let globalState: ExecutionState = {
     lastFilePath: null,
     extrinsicSetResults: null,
     transactionState: null,
-    transactionProperties: null
-    // apiMap: apiMap
+    transactionProperties: null,
+    executionAttempts: 0,
+    executionSuccess: true
 }
 
 // Build instructions from arb result log
@@ -349,7 +350,7 @@ async function createTransferPathNode(assetKey: string, pathValue: number){
 
 async function getPreTransferPath(startChainId: number, inputAmount: number, chopsticks: boolean, ksmBalances: any): Promise<AssetNode[]>{
     // let ksmBalances = await getKsmBalancesAcrossChains(chopsticks)
-    let [firstChainWithSufficientFunds, balance] = Object.entries(ksmBalances).find(([chainId, balance]) => {
+    let [firstChainWithSufficientFunds, returnBalance] = Object.entries(ksmBalances).find(([chainId, balance]) => {
         console.log(`Comparing chain: ${balance} with balance: ${inputAmount}`)
         let chainBalance = balance as number
         return Number.parseInt(chainId) != Number.parseInt(startChainId.toString()) && chainBalance > inputAmount
@@ -360,9 +361,20 @@ async function getPreTransferPath(startChainId: number, inputAmount: number, cho
     if(Number.parseInt(firstChainWithSufficientFunds) != 0) {
         // let toKsmTransfer = await buildTransferToKsm(firstChainWithSufficientFunds, inputAmountFixed, chopsticks)
         // let ksmToChainTransfer = await buildTransferKsmToChain(startChainId, inputAmountFixed, chopsticks)
-        let firstAssetObject = getAssetRegistryObjectBySymbol(Number.parseInt(firstChainWithSufficientFunds), "KSM")
+        let firstAssetObject 
+        if(Number.parseInt(firstChainWithSufficientFunds) == 2023){
+            firstAssetObject = getAssetRegistryObjectBySymbol(Number.parseInt(firstChainWithSufficientFunds), "XCKSM")
+        } else {
+            firstAssetObject = getAssetRegistryObjectBySymbol(Number.parseInt(firstChainWithSufficientFunds), "KSM")
+        }
+        
         let secondAssetObject = getAssetRegistryObjectBySymbol(0, "KSM")
-        let thirdAssetObject = getAssetRegistryObjectBySymbol(startChainId, "KSM")
+        let thirdAssetObject
+        if(startChainId == 2023){
+            thirdAssetObject = getAssetRegistryObjectBySymbol(startChainId, "XCKSM")
+        } else {
+            thirdAssetObject = getAssetRegistryObjectBySymbol(startChainId, "KSM")
+        }
 
         let firstAssetKey = JSON.stringify(firstAssetObject.tokenData.chain) + JSON.stringify(firstAssetObject.tokenData.localId)
         let secondAssetKey = JSON.stringify(secondAssetObject.tokenData.chain) + JSON.stringify(secondAssetObject.tokenData.localId)
@@ -379,7 +391,12 @@ async function getPreTransferPath(startChainId: number, inputAmount: number, cho
     } else {
         // let ksmToChainTransfer = await buildTransferKsmToChain(startChainId, inputAmountFixed, chopsticks)
         let secondAssetObject = getAssetRegistryObjectBySymbol(0, "KSM")
-        let thirdAssetObject = getAssetRegistryObjectBySymbol(startChainId, "KSM")
+        let thirdAssetObject
+        if(startChainId == 2023){
+            thirdAssetObject = getAssetRegistryObjectBySymbol(startChainId, "XCKSM")
+        } else {
+            thirdAssetObject = getAssetRegistryObjectBySymbol(startChainId, "KSM")
+        }
         let secondAssetKey = JSON.stringify(secondAssetObject.tokenData.chain.toString() + JSON.stringify(secondAssetObject.tokenData.localId))
         let thirdAssetKey = JSON.stringify(thirdAssetObject.tokenData.chain.toString() + JSON.stringify(thirdAssetObject.tokenData.localId))
         let keys = [secondAssetKey, thirdAssetKey]
@@ -547,6 +564,7 @@ async function testLastExtrinsicSet(){
 }
 
 async function runFromLastNode(chopsticks: boolean, executeMovr: boolean){
+    setExecutionSuccess(false)
     globalState = getLastExecutionState()
     let lastNode: LastNode = globalState.lastNode
     let logFilePath: string = globalState.lastFilePath
@@ -613,13 +631,22 @@ async function runFromLastNode(chopsticks: boolean, executeMovr: boolean){
             throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
         }
     }
-
+    if(arbSuccess){
+        setExecutionSuccess(true)
+    }
     let arbAmountOut = await getTotalArbResultAmount(lastNode)
     await logProfits(arbAmountOut, logFilePath, chopsticks )
 }
 
+
+async function getArbAmountOut(){
+
+}
+
 async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, inputAmount: number){
-        
+        resetExecutionState()
+        setExecutionSuccess(false)    
+
         let arbArgs = `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}`
         let targetArbResults
         try{
@@ -631,6 +658,13 @@ async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, in
         let latestFile = getLatestTargetFile()
         let assetPath: AssetNode[] = targetArbResults.map(result => readLogData(result))
         let targetArbInstructions = await buildInstructionSet(assetPath)
+
+        console.log("FIRST INSTRUCTION SET *********************************")
+        targetArbInstructions.forEach((instruction) => {
+            console.log(`Instruction: ${instruction.type} | ${instruction.assetNodes[0].getAssetRegistrySymbol()} | ${instruction.assetNodes[1].getAssetRegistrySymbol()}`)
+        })
+        console.log("********************************************************")
+
         let instructionsAbreviated = await getFirstKsmNode(targetArbInstructions, chopsticks)
         let firstInstruction = instructionsAbreviated[0]
         let startChain = firstInstruction.assetNodes[0].getChainId()
@@ -666,6 +700,12 @@ async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, in
             let executionPath = prePath.concat(assetPath)
             executionInstructions = await buildInstructionSet(executionPath)
         }
+
+        console.log("SECOND INSTRUCTION SET *********************************")
+        executionInstructions.forEach((instruction) => {
+            console.log(`Instruction: ${instruction.type} | ${instruction.assetNodes[0].getAssetRegistrySymbol()} | ${instruction.assetNodes[1].getAssetRegistrySymbol()}`)
+        })
+        console.log("********************************************************")
     
         let testLoops = 100
         let allExtrinsicSets: ExtrinsicSetResultDynamic[] = []
@@ -720,6 +760,10 @@ async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, in
                 throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
             }
         }
+        if(arbSuccess){
+            setExecutionSuccess(true)
+        }
+
         let arbAmountOut = await getTotalArbResultAmount(lastNode)
         logAllResultsDynamic(latestFile, true)
         logAllArbAttempts(latestFile, chopsticks)
@@ -792,12 +836,82 @@ async function runDynamicArbTarget(chopsticks: boolean, executeMovr: boolean, in
 //     // let arbSuccess = executionResults.success
 //     // let lastNode = globalState.lastNode
 // }
+
+async function getLatest(){
+    let latestFile = await getLatestAsyncFiles()
+
+    let estimatedResults = latestFile.map(async ([inputAmount, filePath]) => {
+        let latestFileData: ResultDataObject[] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+        let estimatedOutput = latestFileData[latestFileData.length - 1].path_value - inputAmount
+        console.log(`Estimated output for input amount ${inputAmount}: ${estimatedOutput}`)
+        let asyncFileData: AsyncFileData = {
+            inputAmount: inputAmount,
+            estimatedOutput: estimatedOutput,
+            latestFileData: latestFileData
+        }
+        return asyncFileData
+    })
+
+    let results = await Promise.all(estimatedResults)
+
+    let mediumResult = results.find(asyncFileData => {
+        return asyncFileData.inputAmount == 0.5   
+    })
+    if(mediumResult.estimatedOutput > 0.03){
+        console.log("Returning medium result. Estimated output: ", mediumResult.estimatedOutput)
+        return mediumResult
+    }
+    let smallResult = results.find(asyncFileData => {
+        return asyncFileData.inputAmount == 0.1
+    })
+    if(smallResult.estimatedOutput > 0.005){
+        console.log("Returning small result. Estimated output: ", smallResult.estimatedOutput)
+        return smallResult
+    }
+    // throw new Error("No suitable result found")
+}
+
+// Check latest outputs, if above threshold, run arb with specified input
+async function checkAndRunLatest(chopsticks: boolean, executeMovr: boolean){
+    globalState = getLastExecutionState()
+    let latest = await getLatest()
+    if(globalState.executionSuccess){
+        console.log("Last execution was successful. Start new arb")
+        if(!latest){
+            console.log("No suitable result found")
+            return;
+        } else {
+            console.log("Running arb with input amount: ", latest.inputAmount)
+            await runDynamicArbTarget(chopsticks, executeMovr, latest.inputAmount)
+        }
+    } else {
+        console.log("Last execution was not successful. Check total attempts")
+        if(globalState.executionAttempts < 4){
+            console.log("Less than 4 attempts. Rerun last arb")
+            await runFromLastNode(chopsticks, executeMovr)
+        } else {
+            console.log("More than 4 attempts. Start new arb")
+            if(!latest){
+                console.log("No suitable result found")
+                return;
+            } else {
+                console.log("Running arb with input amount: ", latest.inputAmount)
+                await runDynamicArbTarget(chopsticks, executeMovr, latest.inputAmount)
+            }
+        }
+    }
+
+}
 async function run() {
     let chopsticks = false
     let executeMovr = true
     let small = true
+    // await getLatest()
+    await checkAndRunLatest(chopsticks, executeMovr)
     // await runFromLastNode(chopsticks, executeMovr)
-    await runDynamicArbTarget(chopsticks, executeMovr, 0.5)
+    // await runDynamicArbTarget(chopsticks, executeMovr, 0.5)
+    // await getLatest()
     process.exit(0)
 }
 

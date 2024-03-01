@@ -661,7 +661,11 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
         let approval = await checkAndApproveToken(movrContractAddress, liveWallet, batchContractAddress, unwrapMovrAmount)
     }
 
-    let assetNodes = swapInstructions[0].assetNodes
+    let firstAssetNode = swapInstructions[0].assetNodes[0]
+    let assetNodes = [firstAssetNode]
+    swapInstructions.forEach((swapInstruction: SwapInstruction) => {
+        assetNodes.push(swapInstruction.assetNodes[1])
+    })
     let swapTxContainer: SwapExtrinsicContainer = {
         chainId: 2023,
         chain: "Moonriver",
