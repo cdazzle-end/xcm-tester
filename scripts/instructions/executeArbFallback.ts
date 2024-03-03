@@ -4,18 +4,18 @@ import { readdir, stat } from 'fs/promises';
 import path, { join } from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { ResultDataObject } from './types';
+import { Relay, ResultDataObject } from './types';
 import * as lp from './../../../test2/arb-dot-2/lps/all_lp.js'
-import { ksmTargetNode } from './txConsts.js';
+import { dotTargetNode, ksmTargetNode } from './txConsts.js';
 // import pkg from './../../../test2/arb-dot-2/lps/all_lp.ts';
 // const { updateLpsChop } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-export async function runArbFallback(args: string){
+export async function runArbFallback(args: string, relay: Relay){
     return new Promise((resolve, reject) => {
-        let functionCall = 'fallback_search_a_to_b ' + args;
+        let functionCall = relay === "kusama" ? 'fallback_search_a_to_b_kusama ' + args : 'fallback_search_a_to_b_polkadot ' + args;
         const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
         // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
 
@@ -38,9 +38,9 @@ export async function runArbFallback(args: string){
         });
     });
 }
-export async function runArbTarget(args: string){
+export async function runArbTarget(args: string, relay: Relay){
   return new Promise((resolve, reject) => {
-    let functionCall = 'search_best_path_a_to_b ' + args;
+    let functionCall = `search_best_path_a_to_b_${relay} ` + args;
     const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
     // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
 
@@ -124,10 +124,13 @@ async function findLatestDirectory(dirPath: string): Promise<string | null> {
     }
   }
 
-export async function updateLps(chop: boolean){
+export async function updateLps(chop: boolean, relay: Relay){
+
+    // let relayParameter = relay === "Kusama" ? 'kusama' : 'polkadot'
+
     return new Promise((resolve, reject) => {
       // let functionCall = 'search_best_path_a_to_b ' + chop;
-      const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\lps\\ && ts-node all_lp.ts ${chop}`;
+      const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\polkadot_assets\\lps\\ && ts-node all_lps.ts ${relay} ${chop}`;
 
       console.log("Updating Lps")
       let child = exec(command, (error, stdout, stderr) => {
@@ -156,10 +159,10 @@ export async function updateLps(chop: boolean){
   });
   }
 
-export async function runAndReturnFallbackArb(args: string, chopsticks: boolean): Promise<ResultDataObject[]>{
+export async function runAndReturnFallbackArb(args: string, chopsticks: boolean, relay: Relay): Promise<ResultDataObject[]>{
   let lpsResult;
   try{
-    lpsResult = await updateLps(chopsticks)
+    lpsResult = await updateLps(chopsticks, relay)
   } catch (e){
     console.log("Error updating lps. Attempting to update again.")
     console.log(e)
@@ -167,7 +170,7 @@ export async function runAndReturnFallbackArb(args: string, chopsticks: boolean)
     let updateAttempts = 0;
     while(!updateComplete && updateAttempts < 3){
       try{
-        lpsResult = await updateLps(chopsticks)
+        lpsResult = await updateLps(chopsticks, relay)
         updateComplete = true;
       } catch (e){
         console.log("Error updating lps")
@@ -182,9 +185,9 @@ export async function runAndReturnFallbackArb(args: string, chopsticks: boolean)
   console.log(lpsResult)
 
     try{
-        let arbCompleted = await runArbFallback(args);
+        let arbCompleted = await runArbFallback(args, relay);
         if(arbCompleted){
-            const fallbackLogFolder = await path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/fallback_log_data/');
+            const fallbackLogFolder = await path.join(__dirname, `/../../../test2/arb-dot-2/arb_handler/fallback_log_data/${relay}/`);
             const latestFile = await findLatestFileInLatestDirectory(fallbackLogFolder);
             let latestFileData: ResultDataObject[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
             return latestFileData
@@ -200,10 +203,12 @@ export async function runAndReturnFallbackArb(args: string, chopsticks: boolean)
     // return results;
 }
 
-export async function runAndReturnTargetArb(args: string, chopsticks: boolean): Promise<ResultDataObject[]>{
+
+
+export async function runAndReturnTargetArb(args: string, chopsticks: boolean, relay: Relay): Promise<ResultDataObject[]>{
   let lpsResult;
   try{
-    lpsResult = await updateLps(chopsticks)
+    lpsResult = await updateLps(chopsticks, relay)
   } catch (e){
     console.log("Error updating lps. Attempting to update again.")
     console.log(e)
@@ -211,7 +216,7 @@ export async function runAndReturnTargetArb(args: string, chopsticks: boolean): 
     let updateAttempts = 0;
     while(!updateComplete && updateAttempts < 3){
       try{
-        lpsResult = await updateLps(chopsticks)
+        lpsResult = await updateLps(chopsticks, relay)
         updateComplete = true;
       } catch (e){
         console.log("Error updating lps")
@@ -224,9 +229,9 @@ export async function runAndReturnTargetArb(args: string, chopsticks: boolean): 
   }
 
   try{
-    let arbCompleted = await runArbTarget(args);
+    let arbCompleted = await runArbTarget(args, relay);
     if(arbCompleted){
-        const targetLogFolder = await path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/target_log_data/');
+        const targetLogFolder = await path.join(__dirname, `/../../../test2/arb-dot-2/arb_handler/target_log_data/${relay}/`);
         const latestFile = await findLatestFileInLatestDirectory(targetLogFolder);
         let latestFileData: ResultDataObject[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
         return latestFileData
@@ -241,10 +246,11 @@ export async function runAndReturnTargetArb(args: string, chopsticks: boolean): 
 }
 
 
-async function testArbFinder(){
-  let arbArgs = `${ksmTargetNode} ${ksmTargetNode} 1.0`
+async function testArbFinder(relay: Relay){
+  let arbArgs = relay === "kusama" ? `${ksmTargetNode} ${ksmTargetNode} 1.0` : `${dotTargetNode} ${dotTargetNode} 1.0` 
+  // let arbArgs = `${ksmTargetNode} ${ksmTargetNode} 1.0`
   try{
-    let arbCompleted = await runArbTarget(arbArgs);
+    let arbCompleted = await runArbTarget(arbArgs, relay);
     if(arbCompleted){
         const targetLogFolder = await path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/target_log_data/');
         const latestFile = await findLatestFileInLatestDirectory(targetLogFolder);
@@ -260,7 +266,7 @@ async function testArbFinder(){
 }
 }
 async function run(){
- await testArbFinder()
+//  await testArbFinder()
 
     // await updateLps(true)
 }

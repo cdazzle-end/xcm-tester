@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export interface AssetNodeData {
     paraspellAsset: { symbol?: string; assetId?: string } | null,
-    paraspellChain: TNode | "Kusama",
+    paraspellChain: TNode | "Kusama" | "Polkadot",
     assetRegistryObject: MyAssetRegistryObject,
     pathValue: number,
     pathType: number,
@@ -19,7 +19,7 @@ export interface AssetNodeData {
 
 export class AssetNode implements AssetNodeData{
     paraspellAsset: { symbol?: string; assetId?: string } | null;
-    paraspellChain: TNode | "Kusama";
+    paraspellChain: TNode | "Kusama" | "Polkadot";
     assetRegistryObject: MyAssetRegistryObject;
     pathValue: number;
     pathValueFixed: FixedPointNumber

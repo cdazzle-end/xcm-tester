@@ -3,7 +3,7 @@ import { BN } from "@polkadot/util/bn"
 import { checkAndApproveToken } from "./../swaps/movr/utils/utils.ts"
 import { AssetNode } from "./AssetNode.ts"
 import { testNets, localRpcs } from "./txConsts.ts"
-import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, ReverseSwapExtrinsicParams, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ExtrinsicSetResultDynamic, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties } from "./types.ts"
+import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, ReverseSwapExtrinsicParams, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ExtrinsicSetResultDynamic, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay } from "./types.ts"
 import { watchTokenBalance, getBalanceChange, getSigner, watchTokenDeposit, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getBalance, setLastNode, setTransactionState, setTransctionProperties } from "./utils.ts"
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { buildSwapExtrinsicDynamic, createSwapExtrinsicObject } from "./extrinsicUtils.ts"
@@ -539,6 +539,8 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
 
 
 }
+
+// Some transactions dont track, like allocate, with asyncronoouus execution would be a mess
 export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean):Promise<SingleTransferResultData>{
     let extrinsicResultData: SingleTransferResultData;
     let arbExecutionResult: ArbExecutionResult;
@@ -1073,11 +1075,11 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
     
 }
 
-export async function buildAndExecuteSwapExtrinsic(instructionsToExecute: SwapInstruction[], chopsticks: boolean, executeMovr: boolean, nextInputValue: number, chainNonces: ChainNonces, extrinsicIndex: IndexObject): Promise<[(SingleSwapResultData | SingleTransferResultData), SwapInstruction[]]>{
+export async function buildAndExecuteSwapExtrinsic(relay: Relay ,instructionsToExecute: SwapInstruction[], chopsticks: boolean, executeMovr: boolean, nextInputValue: number, chainNonces: ChainNonces, extrinsicIndex: IndexObject): Promise<[(SingleSwapResultData | SingleTransferResultData), SwapInstruction[]]>{
     if(nextInputValue > 0){
         instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
     }
-    let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
+    let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
     let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
     
     let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)

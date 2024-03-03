@@ -58,6 +58,13 @@ export interface AssetNodeData {
     getChainId(): number
 
 }
+
+export interface JsonPathNode {
+    node_key: string,
+    asset_name: string,
+    path_value: number,
+    path_identifier: number
+}
 export type TxDetails = {
     success: boolean;
     dispatchError?: DispatchError | undefined;
@@ -105,8 +112,8 @@ export interface BasicTransferInstructionInterface {
     fromChainId: number,
     toChainId: number,
 
-    startNode: TNode | "Kusama";
-    destinationNode: TNode | "Kusama";
+    startNode: TNode | "Kusama" | "Polkadot";
+    destinationNode: TNode | "Kusama" | "Polkadot";
 
     startNodeLocalId: string;
     destinationNodeLocalId: string;
@@ -126,7 +133,7 @@ export interface TransferAwayFromHomeChainInstruction extends BasicTransferInstr
 export interface TransferToHomeThenDestInstruction extends BasicTransferInstructionInterface {
     type: InstructionType.TransferToHomeThenDestination;
     secondInstructionIndex: number,
-    middleNode: TNode | "Kusama";
+    middleNode: TNode | "Kusama" | "Polkadot";
     middleAssetNode: AssetNode;
     middleNodeLocalId: string;  
 }
@@ -136,17 +143,17 @@ export interface ParaspellAsset {
 }
 
 export interface TransferrableAssetObject {
-    sourceParaspellChainName: TNode | "Kusama";
+    sourceParaspellChainName: TNode | "Kusama" | "Polkadot";
     assetRegistryObject: MyAssetRegistryObject;
     paraspellAsset: ParaspellAsset;
     originChainParaId: number;
-    originParaspellChainName: TNode | "Kusama";
+    originParaspellChainName: TNode | "Kusama" | "Polkadot";
 }
 
 export interface TransferParams {
     type: string;
     from: TNode;
-    to?: TNode | "Kusama";
+    to?: TNode | "Kusama" | "Polkadot";
     currency?: string;
     amount?: any;
     address?: string;
@@ -179,7 +186,12 @@ export interface ChainNonces{
     2110: number,
     2085: number
 }
+// export interface ChainNonces{
+//     [string]: number,
+// }
 export interface ExecutionState{
+    tracking: boolean, // If true, we are currently tracking the execution of a set of extrinsics
+    relay: Relay,
     lastNode: LastNode,
     lastFilePath: string,
     extrinsicSetResults: ExtrinsicSetResultDynamic,
@@ -188,6 +200,9 @@ export interface ExecutionState{
     executionSuccess: boolean,
     executionAttempts: number
 }
+
+export type Relay = "kusama" | "polkadot"
+
 export enum TransactionState {
     PreSubmission = "PreSubmission",
     Broadcasted = "Broadcasted",
@@ -196,7 +211,7 @@ export enum TransactionState {
 export interface SwapProperties{
     type: 'Swap',
     chopsticks: boolean,
-    node: TNode | 'Kusama',
+    node: TNode | 'Kusama' | 'Polkadot',
     paraId: number,
     address: string,
     assetInSymbol: string,
@@ -215,13 +230,13 @@ export interface SwapProperties{
 export interface TransferProperties{
     type: 'Transfer',
     chopsticks: boolean,
-    startNode: TNode | 'Kusama',
+    startNode: TNode | 'Kusama' | 'Polkadot',
     startParaId: number,
     startAssetSymbol: string,
     startAddress: string,
     startNodeStartBalance: BalanceData,
     startNodeStartBalanceString: string,
-    destNode: TNode | 'Kusama',
+    destNode: TNode | 'Kusama' | 'Polkadot',
     destParaId: number,
     destAssetSymbol: string,
     destAddress: string,
@@ -241,8 +256,8 @@ export interface ExtrinsicObject{
     swapExtrinsicContainer?: SwapExtrinsicContainer
 }
 export interface TransferExtrinsicContainer{
-    firstNode: TNode | "Kusama",
-    secondNode: TNode | "Kusama",
+    firstNode: TNode | "Kusama" | "Polkadot",
+    secondNode: TNode | "Kusama" | "Polkadot",
     assetSymbol: string,
     assetIdStart: string,
     assetIdEnd: string,
@@ -462,10 +477,10 @@ export interface ArbExecutionResult{
 }
 export interface PreExecutionTransfer {
     fromChainId: number,
-    fromChainNode: TNode | "Kusama",
+    fromChainNode: TNode | "Kusama" | "Polkadot",
     fromChainAccount: any,
     toChainId: number,
-    toChainNode: TNode | "Kusama",
+    toChainNode: TNode | "Kusama" | "Polkadot",
     toChainAccount: any,
     extrinsic: paraspell.Extrinsic,
     transferAmount: FixedPointNumber
@@ -477,3 +492,4 @@ export interface AsyncFileData{
     latestFileData: ResultDataObject[]
 
 }
+

@@ -10,7 +10,7 @@ import { TNode } from "@paraspell/sdk";
 import { ksmRpc, localRpcs } from "./txConsts.ts";
 import { apiMap } from "./liveTest.ts";
 
-// export async function getApiForNode(node: TNode | "Kusama", chopsticks: boolean){
+// export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsticks: boolean){
 //     let apiEndpoint: string[];
 //     console.log("Get api for node: ", node)
 //     if(node == "Kusama"){
@@ -91,7 +91,7 @@ import { apiMap } from "./liveTest.ts";
 // }
 
 // Keep a map of all connections. If a connection to a chain already exists, return it
-export async function getApiForNode(node: TNode | "Kusama", chopsticks: boolean){
+export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsticks: boolean){
     let map = apiMap
 
     console.log("**********************************************")
@@ -109,6 +109,8 @@ export async function getApiForNode(node: TNode | "Kusama", chopsticks: boolean)
     if(node == "Kusama"){
         apiEndpoint = [ksmRpc]
         // throw new Error("Trying to transfer kusama away from home chain to kusama")
+    } else if (node == "Polkadot") {
+
     } else{
         apiEndpoint = paraspell.getAllNodeProviders(node)
     }

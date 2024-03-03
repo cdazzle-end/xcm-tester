@@ -623,3 +623,68 @@ async function testFallback(){
     let fallbackArbResults = await runAndReturnFallbackArb(functionArgs, true)
 
 }
+
+// async function testKsmBalances(){
+//     let ksmBalances = await getKsmBalancesAcrossChains()
+//     console.log(ksmBalances)
+// }
+// async function testPreTransfers(chopsticks: boolean, executeMovr: boolean){
+//     await getPreTransferPath(2000, 0.12, true)
+//     let preTransferFile = path.join(__dirname, './preTransferNodes.json') 
+//     let assetPath = constructRoute(preTransferFile)
+//     let instructions = await buildInstructionSet(assetPath)
+//     // let executeMovr = false
+//     let testLoops = 100
+//     let allExtrinsicSets: ExtrinsicSetResultDynamic[] = []
+//     let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(instructions, chopsticks, executeMovr, testLoops)
+//     // executionResults.extrinsicData = executionResults.extrinsicData.reverse()
+// }
+// async function testAllocateAndExecute(chopsticks: boolean, executeMovr: boolean){
+//     let small = false
+//     let latestFile = getLatestFileFromLatestDay(small)
+//     console.log("Latest File: ", latestFile)
+//     let assetPath = constructRoute(latestFile)
+    
+//     let instructions = await buildInstructionSet(assetPath)
+//     let instructionsAbreviated = await getFirstKsmNode(instructions, chopsticks)
+//     let firstInstruction = instructionsAbreviated[0]
+//     let startChain = firstInstruction.assetNodes[0].getChainId()
+//     let startValue = firstInstruction.assetNodes[0].pathValue
+//     console.log("Start Chain: ", startChain)
+//     console.log("Start Value: ", startValue)
+//     let ksmBalances = await getKsmBalancesAcrossChains(chopsticks)
+//     console.log(ksmBalances)
+
+//     let executionInstructions = instructionsAbreviated
+//     if(ksmBalances[startChain] > startValue){
+//         console.log("StartNode has sufficient start balance")
+//     } else {
+//         console.log("StartNode has insufficient start balance. Need to allocate")
+//         let prePath = await getPreTransferPath(startChain, startValue, chopsticks, ksmBalances)
+//         let executionPath = prePath.concat(assetPath)
+//         executionInstructions = await buildInstructionSet(executionPath)
+//     }
+
+//     executionInstructions.forEach((instruction) => {
+//         console.log(instruction.type)
+//         instruction.assetNodes.forEach((node) => {
+//             console.log(`${node.getAssetRegistrySymbol()} ${node.getChainId()}`)
+//         })
+//     })
+
+//     // let preTransfers = await getPreTransferPath(2000, 0.05, chopsticks)
+//     // // let executeMovr = false
+//     let testLoops = 100
+//     let allExtrinsicSets: ExtrinsicSetResultDynamic[] = []
+//     let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(executionInstructions, chopsticks, executeMovr, testLoops)
+//     // executionResults.extrinsicData = executionResults.extrinsicData.reverse()
+//     // // logResultsDynamic(executionResults, latestFile, false)
+    
+//     allExtrinsicSets.push(executionResults)
+//     // logLastFilePath(latestFile)
+//     setLastFile(latestFile)
+//     logAllResultsDynamic(allExtrinsicSets, latestFile, true)
+//     logAllArbAttempts(allExtrinsicSets, latestFile, chopsticks)
+//     // let arbSuccess = executionResults.success
+//     // let lastNode = globalState.lastNode
+// }
