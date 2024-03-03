@@ -363,6 +363,10 @@ export async function getKarSwapExtrinsicDynamic(
                 )
             // Other stables can be calculated normally
             } else {
+                console.log(`KAR Stable Swap: ${startAssetDynamic} to ${destAssetDynamic}: ${supplyAmount.toNumber()} to ${expectedAmountOutWithDeviation.toNumber()}`)
+                console.log("Reducing expected by 5%")
+                expectedAmountOutWithDeviation = expectedAmountOutWithDeviation.times(new FixedPointNumber(0.95))
+                console.log(`KAR Stable Swap: ${startAssetDynamic} to ${destAssetDynamic}: ${supplyAmount.toNumber()} to ${expectedAmountOutWithDeviation.toNumber()}`)
                 swapTx = await api.tx.stableAsset
                     .swap(
                         stablePoolIndex,
