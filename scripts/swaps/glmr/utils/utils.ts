@@ -8,8 +8,11 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { ethers } from 'ethers';
 import { privateKeyToAccount } from 'viem/accounts';
-import { dexAbis, localRpc, movrContractAddress, routerFees } from './const.ts';
+import { dexAbis, localRpc, wGlmrContractAddress, routerFees, dexAbiMap, maxTickData, minTickData, q96, wsProvider, xcTokenAbi, glmrLpsPath } from './const.ts';
 import { erc20Abi } from 'viem';
+import bn, { BigNumber } from 'bignumber.js'
+import { GlobalState, MyLp, Slot0, V3CalculationResult } from './types.ts';
+import { TickMath } from '@uniswap/v3-sdk';
 // import { dexAbis, localRpc, routerFees } from './const';
 // const acquireMutex2 = require('mutexify')();
 // 
@@ -32,15 +35,15 @@ const doubleSwapResults = path.resolve(currentDir, '../batchResults/double_swap_
 const doubleSwapTxReceiptsPath = path.resolve(currentDir, '../batchResults/double_swap_receipts.json');
 const doubleSwapErrorsPath = path.resolve(currentDir, '../batchResults/double_swap_errors.json');
 
-export async function wrapMovr(wallet: ethers.Wallet, inputAmount: bigint){
-    let movrContractPath = path.join('./../movrContract.json')
-    let movrContractAbi = JSON.parse(fs.readFileSync(movrContractPath, 'utf8'));
-    console.log("Wrapping MOVR")
+export async function wrapGlmr(wallet: ethers.Wallet, inputAmount: bigint){
+    let glmrAbiPath = path.join('./abi/glmrContractAbi.json')
+    let glmrAbi = JSON.parse(fs.readFileSync(glmrAbiPath, 'utf8'));
+    console.log("Wrapping GLMR")
 
-    const movrToken = new ethers.Contract(movrContractAddress, movrContractAbi, wallet);
-    const currentMovrBalance = await movrToken.balanceOf(wallet.address)
+    const glmrToken = new ethers.Contract(wGlmrContractAddress, glmrAbi, wallet);
+    const currentGlmrBalance = await glmrToken.balanceOf(wallet.address)
     const depositTransaction = {
-        to: movrContractAddress, // The address of the WMOVR contract
+        to: wGlmrContractAddress, // The address of the WMOVR contract
         value: inputAmount // The amount of MOVR to deposit
     };
     let tx = await wallet.sendTransaction(depositTransaction);
@@ -383,7 +386,7 @@ export async function getBestSwapRoute(tokenInContract: string, tokenOutContract
             tokenOutReserves = reserves0;
         }
         // console.log(`Calculate swap parameters Best route: ${tokenInReserves}, ${tokenOutReserves}, ${amount}`)
-        const outputAmount = calculateSwapAmountRouterFormula(amount, tokenInReserves, tokenOutReserves, 100, routerFees[dexData.abiIndex])
+        const outputAmount = calculateSwapAmountRouterFormula(amount, tokenInReserves, tokenOutReserves, 100, Number.parseFloat(routerFees[dexData.abiIndex].toString()))
         // console.log(`Output amount: ${outputAmount}`)
         return [dexAddress, outputAmount]
     }))
@@ -449,8 +452,9 @@ export function getContractAbi(contractAddress: string){
     return dexAbis[getContractAbiIndex(contractAddress)]
 }
 export async function getTokenContractData(tokenContractAddress: string, walletAddress?: string){
+    console.log("GetTokenContractData")
     const provider = new ethers.JsonRpcProvider(localRpc);
-    const tokenAbi = tokenContractAddress === movrContractAddress ? JSON.parse(fs.readFileSync('./abi/movrContractAbi.json', 'utf8')) : JSON.parse(fs.readFileSync('./abi/usdcContractAbi.json', 'utf8'));
+    const tokenAbi = tokenContractAddress === wGlmrContractAddress ? JSON.parse(fs.readFileSync('./abi/glmrContractAbi.json', 'utf8')) : JSON.parse(fs.readFileSync('./abi/usdcContractAbi.json', 'utf8'));
     const tokenContract = new ethers.Contract(tokenContractAddress, tokenAbi, provider)
     const tokenSymbol = await tokenContract.symbol()
     const tokenDecimals = await tokenContract.decimals()
@@ -472,10 +476,10 @@ export async function getTokenContractData(tokenContractAddress: string, walletA
 export async function checkApproval(tokenContract: ethers.Contract, walletAddress: string, spenderAddress: string) {
     const allowance = await tokenContract.allowance(walletAddress, spenderAddress);
     if (allowance) {
-        // console.log(`The spender address ${spenderAddress} is approved to spend tokens for the user ${walletAddress}.`);
+        console.log(`The spender address ${spenderAddress} is approved to spend tokens for the user ${walletAddress}.`);
         return true
     } else {
-        // console.log(`The spender address ${spenderAddress} is NOT approved to spend tokens for the user ${walletAddress}.`);
+        console.log(`The spender address ${spenderAddress} is NOT approved to spend tokens for the user ${walletAddress}.`);
         return false
     }
 }
@@ -483,7 +487,7 @@ export async function checkApproval(tokenContract: ethers.Contract, walletAddres
 export async function checkAndApproveToken(tokenContractAddress: string, wallet: ethers.Wallet, spender: string, inputAmount: bigint){
     const tokenContract = new ethers.Contract(tokenContractAddress, erc20Abi, wallet)
     const allowance = await tokenContract.allowance(wallet.address, spender);
-    console.log(`ALLOWANCE CHECK 1: Batch contract address: ${spender} -- Wallet address: ${wallet.address} -- Token Contract ${tokenContractAddress}-- Allowance: ${allowance} -- Input Amount: ${inputAmount}`)
+    // console.log(`ALLOWANCE CHECK 1: Batch contract address: ${spender} -- Wallet address: ${wallet.address} -- Token Contract ${tokenContractAddress}-- Allowance: ${allowance} -- Input Amount: ${inputAmount}`)
     if (allowance < inputAmount) {
         console.log(`Approving ${spender} to spend ${inputAmount} tokens for the user ${wallet.address}.`);
         // console.log(`The spender address ${spender} is NOT approved to spend tokens for the user ${wallet.address}. Approving...`);
@@ -496,4 +500,435 @@ export async function checkAndApproveToken(tokenContractAddress: string, wallet:
         return false
     }
 
+}
+
+export async function approveMax(tokenContractAddress: string, wallet: ethers.Wallet, spender: string){
+    let max = ethers.MaxUint256
+    const tokenContract = new ethers.Contract(tokenContractAddress, erc20Abi, wallet)
+    const allowance = await tokenContract.allowance(wallet.address, spender);
+    // console.log(`ALLOWANCE CHECK 1: Batch contract address: ${spender} -- Wallet address: ${wallet.address} -- Token Contract ${tokenContractAddress}-- Allowance: ${allowance} -- Input Amount: ${inputAmount}`)
+    if (allowance < max) {
+        console.log(`Approving ${spender} to spend ${max} tokens for the user ${wallet.address}.`);
+        // console.log(`The spender address ${spender} is NOT approved to spend tokens for the user ${wallet.address}. Approving...`);
+        const approveTx = await tokenContract.approve(spender, max)
+        let approvalReceipt = await approveTx.wait()
+        return approvalReceipt
+    } else {
+        console.log(`The spender address ${spender} is approved to spend tokens for the user ${wallet.address}.`);
+        // console.log(`The spender address ${spender} is approved to spend tokens for the user ${wallet.address}.`);
+        return false
+    }
+}
+
+export async function calculateAlgebraSwap(tokenIn: string, tokenOut: string, amountIn: number, contractAddress: string){
+    const pool = await new ethers.Contract(contractAddress, dexAbiMap['algebra'], wsProvider);
+    let token0 = await pool.token0();
+    let token1 = await pool.token1();
+    let token0Contract = await new ethers.Contract(token0, xcTokenAbi, wsProvider);
+    let token1Contract = await new ethers.Contract(token1, xcTokenAbi, wsProvider);
+    let token0Symbol = await token0Contract.symbol();
+    let token1Symbol = await token1Contract.symbol();
+    let token0Decimals = await token0Contract.decimals();
+    let token1Decimals = await token1Contract.decimals();
+    let activeLiquidity = await pool.liquidity();
+    let tickSpacing = await pool.tickSpacing();
+
+    let poolInfo: GlobalState = await pool.globalState();
+    // let currentTick =new bn(poolInfo.tick)
+    // let activeLiquidityBn = new bn(activeLiquidity)
+    let tickSpacingBn = new bn(tickSpacing)
+
+    
+
+    // Get pool data from glmr_lps.json
+    let poolData: MyLp[] = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'))
+    let contractData = poolData.find((lp: MyLp) => lp.contractAddress.toLowerCase() == contractAddress.toLowerCase())
+
+    // Get CURRENT TICK | ACTIVE LIQUIDITY | FEE RATE | UPPER/LOWER TICKS from pool data
+    let currentTick = new bn(contractData.currentTick)
+    let activeLiquidityBn = new bn(contractData.activeLiquidity)
+    let poolFeeRate = new bn(contractData.feeRate).div(new bn(1).times(new bn(10).pow(6)))
+    let lowerTicks = contractData.lowerTicks
+    let upperTicks = contractData.upperTicks
+
+    let inputTokenDecimals, outputTokenDecimals, inputTokenSymbol, outputTokenSymbol, inputTokenIndex
+    if(token0 == tokenIn){
+        inputTokenDecimals = token0Decimals
+        inputTokenSymbol = token0Symbol
+        outputTokenDecimals = token1Decimals
+        outputTokenSymbol = token1Symbol
+        inputTokenIndex = 0
+    } else {
+        inputTokenDecimals = token1Decimals
+        inputTokenSymbol = token1Symbol
+        outputTokenDecimals = token0Decimals
+        outputTokenSymbol = token0Symbol
+        inputTokenIndex = 1
+    }
+
+    // Set RETURN VALUES
+    let totalTokenOut = new bn(0)
+    let totalTokenIn = new bn(0)
+
+    // Set PRICE RANGE LIQUIDITY
+    let priceRangeLiquidity = activeLiquidityBn
+
+    // Set INPUT AMOUNT
+    let tokenInAmountRemaining = new bn(amountIn).times(new bn(10).pow(new bn(inputTokenDecimals)))
+    tokenInAmountRemaining = tokenInAmountRemaining.times(new bn(1).minus(poolFeeRate))
+
+    // Set index for initialized ticks upper/lower to 0
+    let tickRangeIndex = 0
+    let finalTargetPrice;
+    while(tokenInAmountRemaining.gt(0)){
+        console.log("******************************************************************")
+        console.log(`Token In Amount Remaining: ${tokenInAmountRemaining}`)
+        console.log(`${priceRangeLiquidity} Active Liquidity`)
+
+        // Get CURRENT TICK BOUNDARIES
+        let tickLower = lowerTicks[tickRangeIndex]
+        let tickUpper = upperTicks[tickRangeIndex]
+        tickRangeIndex++
+
+        // Check LAST TICK
+        tickLower = !tickLower ? minTickData : tickLower
+        tickUpper = !tickUpper ? maxTickData : tickUpper
+
+        // Get TICK PRICES LOWER | CURRENT | UPPER
+        let currentSqrtPriceX96 = new bn(TickMath.getSqrtRatioAtTick(currentTick.toNumber()).toString())
+        let sqrtPriceUpperX96 = new bn(TickMath.getSqrtRatioAtTick(tickUpper.tick).toString())
+        let sqrtPriceLowerX96 = new bn(TickMath.getSqrtRatioAtTick(tickLower.tick).toString())
+        let currentSqrtPrice = currentSqrtPriceX96.div(q96)
+
+        console.log(`Fee Rate: ${poolFeeRate}`)
+        console.log(`Lower: ${tickLower.tick} | Current Tick: ${currentTick} | Upper: ${tickUpper.tick}`)
+        
+        if(inputTokenIndex == 0){
+            // Swapping 0 -> 1
+            console.log("Swapping 0 -> 1")
+            console.log(`Lower Tick: ${tickLower.tick}`)
+
+
+            // Get TARGET PRICE from PRICE CHANGE
+            let changeInPriceRecipricol = tokenInAmountRemaining.div(priceRangeLiquidity)
+            let changeInPrice = new bn(1).div(currentSqrtPrice).plus(changeInPriceRecipricol)
+            let targetSqrtPrice = changeInPrice.pow(-1)
+            let targetSqrtPriceX96 = targetSqrtPrice.times(q96)
+            finalTargetPrice = targetSqrtPrice
+            console.log(`Recipricol: ${changeInPriceRecipricol} | Price Chagne: ${changeInPrice} | Target Sqrt Price: ${targetSqrtPriceX96} | Lower Sqrt Price: ${sqrtPriceLowerX96} | Current Sqrt Price: ${currentSqrtPriceX96}`)
+            console.log(`Target Sqrt P: ${targetSqrtPriceX96} --- Lower Sqrt Price: ${sqrtPriceLowerX96} --- Current Sqrt Price: ${currentSqrtPriceX96}`)
+
+            // Check if TARGET PRICE exceeds TICK BOUNDRY
+            let priceExceedsRange = targetSqrtPriceX96.lt(sqrtPriceLowerX96.toString())
+            console.log("Target Price is less than range: ", priceExceedsRange)
+            if(priceExceedsRange){
+                
+                // Calculate AMOUNT IN | AMOUNT OUT
+                let amountToken0In = calculateAmount0(priceRangeLiquidity, sqrtPriceLowerX96.div(q96), currentSqrtPrice)
+                let amountToken1Out = calculateAmount1(priceRangeLiquidity, sqrtPriceLowerX96.div(q96), currentSqrtPrice)
+
+                // Accumulate TOKENS IN/OUT
+                tokenInAmountRemaining = tokenInAmountRemaining.minus(amountToken0In)
+                totalTokenIn = totalTokenIn.plus(amountToken0In)
+                totalTokenOut = totalTokenOut.plus(amountToken1Out)
+
+                // Get DELTA LIQUIDITY
+                let deltaLiquidity = new bn(tickLower.liquidityDelta)
+                console.log(`Active Liquidity: ${priceRangeLiquidity} | Delta Tick Liquidity: ${deltaLiquidity}`)
+
+                // ****** When crossing a lower tick range, subtract. Look at glmr_lp registry and examine delta liquidity.
+
+                // Apply DELTA LIQUIDITY to ACTIVE LIQUIDITY
+                priceRangeLiquidity = priceRangeLiquidity.minus(deltaLiquidity)
+
+                // Set CURRENT TICK to LOWER TICK
+                currentTick = new bn(tickLower.tick)
+
+                // Check ACTIVE LIQUIDITY
+                if(priceRangeLiquidity.eq(0)){
+                    console.log("Price range liquidity is 0")  // Should EDIT this so that it returns when no more initialized ticks AND liquidity = 0
+                    break
+                }
+
+            } else {
+                let amountToken0In = calculateAmount0(priceRangeLiquidity, targetSqrtPrice, currentSqrtPrice)
+                let amountToken1Out = calculateAmount1(priceRangeLiquidity, targetSqrtPrice, currentSqrtPrice)
+                finalTargetPrice = targetSqrtPrice
+                tokenInAmountRemaining = new bn(0)
+                totalTokenIn = totalTokenIn.plus(amountToken0In)
+                totalTokenOut = totalTokenOut.plus(amountToken1Out)  
+            }
+        } else {
+            console.log("Swapping 1 -> 0")
+            console.log(`Higher Tick: ${tickLower.tick}`)
+
+            // Get TARGET PRICE from PRICE CHANGE
+            let changeInSqrtP = tokenInAmountRemaining.div(priceRangeLiquidity)
+            let targetSqrtPriceX96 = currentSqrtPrice.plus(changeInSqrtP).times(q96)
+            finalTargetPrice = targetSqrtPriceX96.div(q96)
+            // Check TARGET exceeds TICK BOUNDRY
+            let priceExceedsRange = targetSqrtPriceX96.gt(sqrtPriceUpperX96.toString())
+            if(priceExceedsRange){
+                // Calculate AMOUNT IN | AMOUNT OUT
+                let amountToken1In = calculateAmount1(priceRangeLiquidity, sqrtPriceUpperX96.div(q96), currentSqrtPrice)
+                let amountToken0Out = calculateAmount0(priceRangeLiquidity, sqrtPriceUpperX96.div(q96), currentSqrtPrice)
+                
+                // Accumulate TOKENS IN/OUT
+                tokenInAmountRemaining = tokenInAmountRemaining.minus(amountToken1In)
+                totalTokenOut = totalTokenOut.plus(amountToken0Out)
+                totalTokenIn = totalTokenIn.plus(amountToken1In)
+
+                // Get DELTA LIQUIDITY
+                let totalDelta = new bn(tickUpper.liquidityDelta)
+                console.log(`Active Liquidity: ${priceRangeLiquidity} | Delta Tick Liquidity: ${totalDelta}`)
+                
+                // ****** When crossing a upper tick range, add. Look at glmr_lp registry and examine delta liquidity.
+
+                // Apply DELTA LIQUIDITY to ACTIVE LIQUIDITY
+                priceRangeLiquidity = priceRangeLiquidity.plus(totalDelta)
+                
+                // Set CURRENT TICK to UPPER TICK
+                currentTick = new bn(tickUpper.tick)
+
+                // Check ACTIVE LIQUIDITY
+                if(priceRangeLiquidity.eq(0)){
+                    console.log("Price range liquidity is 0")
+                    break
+                }
+            } else {
+                let amountDotIn = calculateAmount1(priceRangeLiquidity, targetSqrtPriceX96.div(q96), currentSqrtPrice)
+                let amountGlmrOut = calculateAmount0(priceRangeLiquidity, targetSqrtPriceX96.div(q96), currentSqrtPrice)
+                finalTargetPrice = targetSqrtPriceX96.div(q96)
+                tokenInAmountRemaining = new bn(0)
+                totalTokenOut = totalTokenOut.plus(amountGlmrOut)
+                totalTokenIn = totalTokenIn.plus(amountDotIn)
+            }
+        }
+    }
+    let tokenInFormatted = totalTokenIn.div(new bn(10).pow(inputTokenDecimals))
+    let tokenOutFormatted = totalTokenOut.div(new bn(10).pow(outputTokenDecimals))
+    console.log(`${inputTokenSymbol} in: ${tokenInFormatted} | Total ${outputTokenSymbol} Out: ${tokenOutFormatted}`)
+
+    let calculationResult: V3CalculationResult = {
+        inputAmount: totalTokenIn.integerValue(),
+        outputAmount: totalTokenOut.integerValue(),
+        targetPrice: finalTargetPrice.times(q96).integerValue(),
+    }
+    return calculationResult
+
+}
+
+export async function calculateUni3Swap(tokenIn: string, tokenOut: string, amountIn: number, contractAddress: string){
+    console.log("getUni3Swap")
+    let provider = localRpc
+    wsProvider
+    let rpcProvider = new ethers.JsonRpcProvider(localRpc)
+    const pool = await new ethers.Contract(contractAddress, dexAbiMap['uni3'], rpcProvider);
+    let token0 = await pool.token0();
+    let token1 = await pool.token1();
+    let token0Contract = await new ethers.Contract(token0, xcTokenAbi, wsProvider);
+    let token1Contract = await new ethers.Contract(token1, xcTokenAbi, wsProvider);
+    let token0Symbol = await token0Contract.symbol();
+    let token1Symbol = await token1Contract.symbol();
+    let token0Decimals = await token0Contract.decimals();
+    let token1Decimals = await token1Contract.decimals();
+    let activeLiquidity = new bn(await pool.liquidity());
+    let tickSpacing = new bn(await pool.tickSpacing());
+    // let feeRate = new bn(await pool.fee()).div(1e6)
+    let feeRate = new bn(await pool.fee())
+    // let feeRate = new bn(fee.div(1e6))
+
+
+    // let [tickLower, tickUpper] = 
+    // let poolInfo: GlobalState = await pool.globalState();
+    let poolInfo: Slot0 = await pool.slot0()
+    let currentTick =new bn(poolInfo.tick)
+    let poolData: MyLp[] = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'))
+    // console.log(`Searching for contract: ${contractAddress}`)
+    let contractData = poolData.find((lp: MyLp) => lp.contractAddress.toLowerCase() == contractAddress.toLowerCase())
+
+    let lowerTicks = contractData.lowerTicks
+    let upperTicks = contractData.upperTicks
+
+    // console.log(`Upper ticks: ${JSON.stringify(upperTicks, null, 2)} ) - Lower ticks: ${JSON.stringify(lowerTicks, null, 2)}`)
+    let sqrtPriceX96 = new bn(poolInfo.sqrtPriceX96)
+
+    let inputTokenDecimals, outputTokenDecimals, inputTokenSymbol, outputTokenSymbol, inputTokenIndex
+    if(token0 == tokenIn){
+        inputTokenDecimals = token0Decimals
+        inputTokenSymbol = token0Symbol
+        outputTokenDecimals = token1Decimals
+        outputTokenSymbol = token1Symbol
+        inputTokenIndex = 0
+    } else {
+        inputTokenDecimals = token1Decimals
+        inputTokenSymbol = token1Symbol
+        outputTokenDecimals = token0Decimals
+        outputTokenSymbol = token0Symbol
+        inputTokenIndex = 1
+    }
+    // console.log(`Input Token: ${inputTokenIndex} ${inputTokenSymbol} - Output Token: ${outputTokenSymbol}`)
+    let tickLower = lowerTicks[0]
+    let tickUpper = upperTicks[0]
+    // let [tickLower, tickUpper] = await getUpperLowerInitializedTicks(currentTick, tickSpacing, pool)
+    // console.log(`Lower tick: ${tickLower.tick} - Current Tick:  ${currentTick} -Upper tick: ${tickUpper.tick}`)
+    let sqrtPriceLowerX96 = TickMath.getSqrtRatioAtTick(tickLower.tick)
+    let sqrtPriceUpperX96 = TickMath.getSqrtRatioAtTick(tickUpper.tick)
+    // console.log(`Lower sqrt: ${sqrtPriceLowerX96} - Current sqrt: ${sqrtPriceX96} -Upper sqrt: ${sqrtPriceUpperX96}`)
+
+    let totalTokenOut = new bn(0)
+    let totalTokenIn = new bn(0)
+    let priceRangeLiquidity = activeLiquidity
+    let currentSqrtPriceX96 = new bn(sqrtPriceX96)
+
+    // console.log(amountIn)
+    // console.log(inputTokenDecimals)
+    let tokenInAmountRemaining = new bn(amountIn).times(new bn(10).pow(new bn(inputTokenDecimals)))
+    // console.log(tokenInAmountRemaining)
+    // console.log(feeRate)
+    let feeRatio = feeRate.div(1e6)
+    tokenInAmountRemaining = tokenInAmountRemaining.times(new bn(1).minus(feeRatio))
+    // console.log(tokenInAmountRemaining)
+
+    let finalTargetPrice;
+    let tickRangeIndex = 0
+    while(tokenInAmountRemaining.gt(0)){
+        // console.log("******************************************************************")
+        // console.log(`Token In Amount Remaining: ${tokenInAmountRemaining}`)
+        let currentSqrtPrice = currentSqrtPriceX96.div(q96)
+        
+        if(inputTokenIndex == 0){
+            // Swapping 0 -> 1
+            let changeInPriceRecipricol = tokenInAmountRemaining.div(priceRangeLiquidity)
+            let changeInPrice = new bn(1).div(currentSqrtPrice).plus(changeInPriceRecipricol)
+            let targetSqrtPrice = changeInPrice.pow(-1)
+            let targetSqrtPriceX96 = targetSqrtPrice.times(q96)
+            // console.log(`Target Sqrt P: ${targetSqrtPriceX96} --- Lower Sqrt Price: ${sqrtPriceLowerX96}`)
+            
+
+            // console.log(`Target Sqrt P: ${targetSqrtPriceX96} --- Lower Sqrt Price: ${sqrtPriceLowerX96}`)
+            let priceExceedsRange = targetSqrtPriceX96.lt(sqrtPriceLowerX96.toString())
+            finalTargetPrice = new bn(sqrtPriceLowerX96.toString())
+            // console.log("Target Price is less than range: ", priceExceedsRange)
+            if(priceExceedsRange){
+                let sqrtPriceLowerX96Bn = new bn(sqrtPriceLowerX96.toString())
+                let amountToken0In = calculateAmount0(priceRangeLiquidity, sqrtPriceLowerX96Bn.div(q96), currentSqrtPrice)
+                let amountToken1Out = calculateAmount1(priceRangeLiquidity, sqrtPriceLowerX96Bn.div(q96), currentSqrtPrice)
+
+                
+                tokenInAmountRemaining = tokenInAmountRemaining.minus(amountToken0In)
+                totalTokenIn = totalTokenIn.plus(amountToken0In)
+                totalTokenOut = totalTokenOut.plus(amountToken1Out)
+
+                // console.log(`Amount of token in: ${amountToken0In}`)
+                // console.log(`Amount of token out: ${amountToken1Out}`)
+
+                // console.log(`Queryong tick: ${tickLower.tick}`)
+                // let lowerTickData = await pool.ticks(tickLower)
+
+                let totalLiquidity = new bn(tickLower.liquidityDelta)
+                priceRangeLiquidity = priceRangeLiquidity.plus(totalLiquidity)
+
+                currentSqrtPriceX96 = new bn(sqrtPriceLowerX96Bn)
+                tickRangeIndex++
+                tickLower = lowerTicks[tickRangeIndex]
+                // tickLower = await getNextLowerInitializedTick(tickLower, tickSpacing, pool)
+                // tickLower = new bn(tickLower.minus(tickSpacing))
+                sqrtPriceLowerX96 = TickMath.getSqrtRatioAtTick(tickLower.tick)
+                
+            } else {
+                let amountToken0In = calculateAmount0(priceRangeLiquidity, targetSqrtPrice, currentSqrtPrice)
+                let amountToken1Out = calculateAmount1(priceRangeLiquidity, targetSqrtPrice, currentSqrtPrice)
+                
+                // console.log(`Amount of token out: ${amountToken1Out}`)
+
+                // finalTargetPrice = targetSqrtPriceX96
+                tokenInAmountRemaining = new bn(0)
+                totalTokenIn = totalTokenIn.plus(amountToken0In)
+                totalTokenOut = totalTokenOut.plus(amountToken1Out)  
+            }
+        } else {
+            // Swapping 1 -> 0
+            let changeInSqrtP = tokenInAmountRemaining.div(priceRangeLiquidity)
+
+            let targetSqrtPriceX96 = currentSqrtPrice.plus(changeInSqrtP).times(q96)
+            finalTargetPrice = new bn(sqrtPriceUpperX96.toString())
+            if(targetSqrtPriceX96.gt(sqrtPriceUpperX96.toString())){
+                let sqrtPriceUpperX96Bn = new bn(sqrtPriceUpperX96.toString())
+                let amountToken1In = calculateAmount1(priceRangeLiquidity, sqrtPriceUpperX96Bn.div(q96), currentSqrtPrice)
+                let amountToken0Out = calculateAmount0(priceRangeLiquidity, sqrtPriceUpperX96Bn.div(q96), currentSqrtPrice)
+
+                // console.log(`Amount of token out: ${amountToken0Out}`)
+                
+                
+                tokenInAmountRemaining = tokenInAmountRemaining.minus(amountToken1In)
+                totalTokenOut = totalTokenOut.plus(amountToken0Out)
+                totalTokenIn = totalTokenIn.plus(amountToken1In)
+
+                // let upperTickData = await pool.ticks(tickUpper.toNumber())
+                let totalLiquidity = new bn(tickUpper.liquidityDelta)
+                priceRangeLiquidity = priceRangeLiquidity.plus(totalLiquidity)
+                currentSqrtPriceX96 = new bn(sqrtPriceUpperX96Bn)
+
+                tickRangeIndex++
+                tickUpper = upperTicks[tickRangeIndex]
+                // tickUpper = await getNextUpperInitializedTick(tickUpper, tickSpacing, pool)
+                // tickUpper = new bn(tickUpper.plus(tickSpacing))
+                sqrtPriceUpperX96 = TickMath.getSqrtRatioAtTick(tickUpper.tick)
+            } else {
+                let amountToken1In = calculateAmount1(priceRangeLiquidity, targetSqrtPriceX96.div(q96), currentSqrtPrice)
+                let amountToken0Out = calculateAmount0(priceRangeLiquidity, targetSqrtPriceX96.div(q96), currentSqrtPrice)
+
+                // console.log(`Amount of token out: ${amountToken0Out}`)
+
+                // finalTargetPrice = targetSqrtPriceX96
+                tokenInAmountRemaining = new bn(0)
+                totalTokenOut = totalTokenOut.plus(amountToken0Out)
+                totalTokenIn = totalTokenIn.plus(amountToken1In)
+            }
+        }
+    }
+
+    let calculationResult: V3CalculationResult = {
+        inputAmount: totalTokenIn.integerValue(),
+        outputAmount: totalTokenOut.integerValue(),
+        targetPrice: finalTargetPrice.integerValue(),
+    }
+    let tokenInFormatted = totalTokenIn.div(new bn(10).pow(inputTokenDecimals))
+    let tokenOutFormatted = totalTokenOut.div(new bn(10).pow(outputTokenDecimals))
+    console.log(`${inputTokenSymbol} in: ${tokenInFormatted} | Total ${outputTokenSymbol} Out: ${tokenOutFormatted}`)     
+    
+    return calculationResult
+}
+
+function calculateAmount0(liq: BigNumber, pa: BigNumber, pb: BigNumber){
+    if(pa > pb){
+        [pa, pb] = [pb, pa]
+    }
+    let amount = liq.times(pb.minus(pa).div(pb).div(pa))
+    return amount
+}
+
+function calculateAmount1(liq: BigNumber, pa: BigNumber, pb: BigNumber){
+    if(pa > pb){
+        [pa, pb] = [pb, pa]
+    }
+    let amount = liq.times(pb.minus(pa))
+    return amount
+}
+
+export function getPoolFeeRate(poolAddress: string): number {
+    let poolData: MyLp[] = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'))
+    let contractData = poolData.find((lp: MyLp) => lp.contractAddress.toLowerCase() == poolAddress.toLowerCase())
+    return Number.parseInt(contractData.feeRate)
+}
+
+export function getGlmrPoolData(poolAddress: string): MyLp {
+    let poolData: MyLp[] = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'))
+    // console.log(JSON.stringify(poolData, null, 2))
+    let contractData = poolData.find((lp: MyLp) => {
+        // console.log(`Database contract address: ${lp.contractAddress.toLowerCase()} --- Input contract address: ${poolAddress}`)
+        return lp.contractAddress.toLowerCase() == poolAddress.toLowerCase()
+    })
+    return contractData
 }

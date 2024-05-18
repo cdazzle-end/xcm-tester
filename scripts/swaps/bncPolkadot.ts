@@ -174,6 +174,7 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   if (!extrinsics) return;
 
   let swapTxContainer: SwapExtrinsicContainer = {
+    relay: 'polkadot',
     chainId: 2030,
     chain: "BifrostPolkadot",
     assetNodes: assetNodes,
@@ -188,7 +189,7 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
     // pathOutLocalId: tokenOut.assetId,
     // pathInLocalId: pathNodeValues.pathInLocalId,
     // pathOutLocalId: pathNodeValues.pathOutLocalId,
-    pathSwapType: swapType,
+    pathType: swapType,
     pathAmount: amountIn,
     expectedAmountOut: tokenOutAmountFn,
     api: dexApi.api,

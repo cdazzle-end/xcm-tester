@@ -19,6 +19,14 @@
 /scripts/instructions/testFn.ts
 scripts/instructions/lastExecutionAttempts.json
 scripts/instructions/lastExecutionSuccess.json
+scripts/instructions/logResults/
+scripts/instructions/glmrTestRoute.json
+scripts/instructions/glmrTestRouteNotes.txt
+scripts/instructions/glmrTest.ts
+scripts/instructions/testAcaPath.json
+scripts/instructions/executionState/
+TODO
+/scripts/swaps/
 
 
 # Logs

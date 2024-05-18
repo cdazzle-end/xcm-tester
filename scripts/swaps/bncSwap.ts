@@ -371,6 +371,7 @@ export async function getBncSwapExtrinsicDynamic(
   if (!extrinsics) return;
 
   let swapTxContainer: SwapExtrinsicContainer = {
+    relay: 'kusama',
     chainId: 2001,
     chain: "BifrostKusama",
     assetNodes: assetNodes,
@@ -385,7 +386,7 @@ export async function getBncSwapExtrinsicDynamic(
     // pathOutLocalId: tokenOut.assetId,
     // pathInLocalId: pathNodeValues.pathInLocalId,
     // pathOutLocalId: pathNodeValues.pathOutLocalId,
-    pathSwapType: swapType,
+    pathType: swapType,
     pathAmount: amountIn,
     expectedAmountOut: tokenOutAmountFn,
     api: dexApi.api,

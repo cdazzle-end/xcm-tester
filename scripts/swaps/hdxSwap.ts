@@ -7,8 +7,9 @@ import '@galacticcouncil/api-augment/hydradx';
 import '@galacticcouncil/api-augment/basilisk';
 
 import { SubmittableExtrinsic } from '@polkadot/api/promise/types';
-import { ZERO, INFINITY, ONE, TradeRouter, PoolService, Router, BigNumber, Asset } from '@galacticcouncil/sdk';
-import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from "./../instructions/types.ts";
+// import { ZERO, INFINITY, ONE, TradeRouter, PoolService, Router, BigNumber, Asset } from '@galacticcouncil/sdk';
+import { ZERO, INFINITY, ONE, TradeRouter, PoolService, Router, BigNumber, Asset } from 'hydra-sdk';
+import { IndexObject, PathData, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from "./../instructions/types.ts";
 import { increaseIndex } from './../instructions/utils.ts';
 import { getSigner } from './../instructions/utils.ts';
 import { getAllNodeProviders } from "@paraspell/sdk";
@@ -25,40 +26,53 @@ const wsLocalChain = localRpcs["HydraDX"]
 
 export async function getHdxSwapExtrinsicDynamic(
   swapType: number,
+  swapData: PathData,
   startAssetSymbol: string, 
   destAssetSymbol: string, 
   assetInAmount: number, 
   assetOutAmount: number, 
-  swapInstructions: any[], 
+  swapInstructions: SwapInstruction[], 
   chopsticks: boolean = true, 
   txIndex: number = 0, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
   priceDeviationPercent: number = 2
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
-    // console.log(`BSX (${startAssetSymbol}) -> (${destAssetSymbol}) assetInAmount: ${assetInAmount} assetOutAmount: ${assetOutAmount}`)
+    console.log(`BSX (${startAssetSymbol}) -> (${destAssetSymbol}) assetInAmount: ${assetInAmount} assetOutAmount: ${assetOutAmount}`)
     let endpoints = getAllNodeProviders("HydraDX");
-    let rpc = chopsticks ? wsLocalChain : endpoints[0]
-
+    let rpc = chopsticks ? wsLocalChain : endpoints[1]
+    // console.log("RPC: ", rpc)
     const provider = new WsProvider(rpc);
     const api = new ApiPromise({ provider });
     await api.isReady;
+    // console.log("Connected to api")
     const poolService = new PoolService(api);
     const router = new TradeRouter(poolService);
+    let pools = await router.getPools()
+    // console.log("Got pools")
+    // console.log(`Pools: ${pools}`)
+    // console.log("Connected to router api")
     let signer = await getSigner(chopsticks, false)
     let accountNonce = await api.query.system.account(signer.address)
     let nonce = accountNonce.nonce.toNumber()
     nonce += txIndex
 
-
+    let startAssetId = swapInstructions[0].assetInLocalId
     let allAssets: Asset[] = await router.getAllAssets()
-
+    // console.log("ALL HYDRA Assets from query")
+    // console.log(JSON.stringify(allAssets))
     let assetPathSymbols = [startAssetSymbol]
+    let assetPathIds = [startAssetId]
+    // swapInstructions.forEach((instruction) => {
+    //   assetPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
+    // })
+    // CHANGING to ID's
     swapInstructions.forEach((instruction) => {
-      assetPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
+      assetPathIds.push(instruction.assetNodes[1].getAssetLocalId())
     })
 
-    let pathsAndInstructions = splitPathAndInstructions(assetPathSymbols, swapInstructions)
+    // let pathsAndInstructions = splitPathAndInstructions(assetPathSymbols, swapInstructions)
+    let pathsAndInstructions = splitPathAndInstructions(assetPathIds, swapInstructions)
     let assetPathToExecute = pathsAndInstructions.assetPath
     let instructionsToExecute = pathsAndInstructions.instructionsToExecute
     let remainingInstructions = pathsAndInstructions.remainingInstructions
@@ -72,12 +86,11 @@ export async function getHdxSwapExtrinsicDynamic(
     let destAssetSymbolDynamic = assetNodes[assetNodes.length - 1].getAssetRegistrySymbol()
     let expectedOutDynamic = instructionsToExecute[instructionsToExecute.length - 1].assetNodes[1].pathValue
 
-    let path: Asset[] = assetPathToExecute.map((symbol) => {
-      const assetInPath =  allAssets.find((asset) => asset.symbol === symbol)
+    let path: Asset[] = assetPathToExecute.map((assetId) => {
+      const assetInPath =  allAssets.find((asset) => asset.id == assetId)
       // console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
       return assetInPath
     })
-    // let tradeRoute = path.map((asset) => asset.id)
     const assetIn = path[0]
     const assetOut = path[path.length - 1]
 
@@ -90,6 +103,7 @@ export async function getHdxSwapExtrinsicDynamic(
     let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation)
 
     let bestBuy = await router.getBestSell(assetIn.id, assetOut.id, assetInAmount.toString())
+    // console.log("Created best buy")
     let swapZero = bestBuy.toTx(number)
     let tx: SubmittableExtrinsic = swapZero.get()
     
@@ -110,6 +124,7 @@ export async function getHdxSwapExtrinsicDynamic(
     let pathAmount = fnInputAmount.toNumber()
     let pathSwapType = swapType
     let swapTxContainer: SwapExtrinsicContainer = {
+      relay: 'polkadot',
       chainId: 2034,
       chain: "HydraDX",
       assetNodes: assetNodes,
@@ -121,7 +136,7 @@ export async function getHdxSwapExtrinsicDynamic(
       assetSymbolOut: destAssetSymbolDynamic,
       assetAmountIn: fnInputAmount,
       expectedAmountOut: fnOutputAmount,
-      pathSwapType: pathSwapType,
+      pathType: pathSwapType,
       pathAmount: pathAmount,
       api: api,
     }

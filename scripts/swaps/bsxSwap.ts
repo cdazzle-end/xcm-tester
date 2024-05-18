@@ -395,6 +395,7 @@ export async function getBsxSwapExtrinsicDynamic(
     let pathAmount = fnInputAmount.toNumber()
     let pathSwapType = swapType
     let swapTxContainer: SwapExtrinsicContainer = {
+      relay: 'kusama',
       chainId: 2090,
       chain: "Basilisk",
       assetNodes: assetNodes,
@@ -406,7 +407,7 @@ export async function getBsxSwapExtrinsicDynamic(
       assetSymbolOut: destAssetSymbolDynamic,
       assetAmountIn: fnInputAmount,
       expectedAmountOut: fnOutputAmount,
-      pathSwapType: pathSwapType,
+      pathType: pathSwapType,
       pathAmount: pathAmount,
       api: api,
     }

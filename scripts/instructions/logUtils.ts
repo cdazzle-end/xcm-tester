@@ -1,8 +1,8 @@
-import { ExtrinsicObject, SwapInstruction, TransferInstruction, InstructionType, TransferTxStats, SwapTxStats, ArbExecutionResult, ExtrinsicSetResultDynamic, LastFilePath } from "./types.ts";
+import { ExtrinsicObject, SwapInstruction, TransferInstruction, InstructionType, TransferTxStats, SwapTxStats, ArbExecutionResult, ExtrinsicSetResultDynamic, LastFilePath, Relay } from "./types.ts";
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { globalState } from "./liveTest.ts";
+// import { globalState } from "./liveTest.ts";
 declare const fetch: any;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -170,7 +170,7 @@ export async function logInstructions(instructions: (SwapInstruction | TransferI
 
     console.log(`Data written to file: ${filePath}`);
 }
-export function logArbExecutionResults(arbResults: any[], logFilePath: string, reverse: boolean){
+export function logArbExecutionResults(relay: Relay, arbResults: any[], logFilePath: string, reverse: boolean){
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
     let logFileTime = logFileStrings[logFileStrings.length - 1]
@@ -179,7 +179,7 @@ export function logArbExecutionResults(arbResults: any[], logFilePath: string, r
     if(reverse){
         directoryPath = path.join(__dirname, './reverse/arbExecutionResults/', logFileDay);
     } else {
-        directoryPath = path.join(__dirname, './arbExecutionResults/', logFileDay);
+        directoryPath = path.join(__dirname, `./logResults/${relay}/arbExecutionResults/`, logFileDay);
     }
 
     if (!fs.existsSync(directoryPath)) {
@@ -188,17 +188,34 @@ export function logArbExecutionResults(arbResults: any[], logFilePath: string, r
 
     // Write data to file in the directory
     const filePath = path.join(directoryPath, logFileTime);
-    const latestAttemptPath = path.join(__dirname, './latestAttempt/arbExecutionResults.json')
-    // if(!fs.existsSync(filePath)){
-    //     fs.writeFileSync(filePath, logFileData);
-    // } else {
-    //     fs.appendFileSync(filePath, logFileData);
-    // }
-    fs.writeFileSync(filePath, logFileData);
-    fs.writeFileSync(latestAttemptPath, logFileData);
+    
+    if(!fs.existsSync(filePath)){
+        fs.writeFileSync(filePath, logFileData);
+    } else {
+        // fs.appendFileSync(filePath, logFileData);
+        fs.writeFileSync(filePath, logFileData);
+    }
+
+    const latestAttemptFolderPath = path.join(__dirname, `./logResults/latestAttempt/${relay}/`)
+    if (!fs.existsSync(latestAttemptFolderPath)) {
+        fs.mkdirSync(latestAttemptFolderPath, { recursive: true });
+    }
+    const latestFilePath = path.join(latestAttemptFolderPath, 'arbExecutionResults.json');
+
+    // arbExecutionResults.json
+    if(!fs.existsSync(latestFilePath)){
+        console.log("Creating latest attempt file")
+        fs.writeFileSync(latestFilePath, logFileData);
+    } 
+    else {
+        console.log("Appending to latest attempt file")
+        fs.writeFileSync(latestFilePath, logFileData);
+        // fs.appendFileSync(latestFilePath, logFileData);
+    }
     console.log(`Data written to file: ${filePath}`);
+    console.log(`Data written to file: ${latestFilePath}`);
 }
-export async function logSwapTxResults(txResults: any, logFilePath: string, reverse: boolean = false) {
+export async function logSwapTxResults(relay: Relay, txResults: any, logFilePath: string, reverse: boolean = false) {
     // let logData = JSON.parse(fs.readFileSync(logFilePath, 'utf8'));
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
@@ -208,7 +225,7 @@ export async function logSwapTxResults(txResults: any, logFilePath: string, reve
     if(reverse){
         directoryPath = path.join(__dirname, './reverse/swapExecutionResults/', logFileDay);
     } else {
-        directoryPath = path.join(__dirname, './swapExecutionResults/', logFileDay);
+        directoryPath = path.join(__dirname, `./logResults/${relay}/swapExecutionResults/`, logFileDay);
     }
     // Check if directory exists, create if it doesn't
     if (!fs.existsSync(directoryPath)) {
@@ -217,14 +234,19 @@ export async function logSwapTxResults(txResults: any, logFilePath: string, reve
 
     // Write data to file in the directory
     const filePath = path.join(directoryPath, logFileTime);
-    const latestAttemptPath = path.join(__dirname, './latestAttempt/swapExecutionStats.json')
+    // const latestAttemptPath = path.join(__dirname, `./latestAttempt/${relay}/swapExecutionStats.json`)
+    const latestAttemptPath = path.join(__dirname, `./logResults/latestAttempt/${relay}/`)
+    if(!fs.existsSync(latestAttemptPath)){
+        fs.mkdirSync(latestAttemptPath, { recursive: true });
+    }
+    const latestAttemptPathFile = path.join(latestAttemptPath, 'swapExecutionStats.json')
     // if(!fs.existsSync(filePath)){
     //     fs.writeFileSync(filePath, logFileData);
     // } else {
     //     fs.appendFileSync(filePath, logFileData);
     // }
     fs.writeFileSync(filePath, logFileData);
-    fs.writeFileSync(latestAttemptPath, logFileData);
+    fs.writeFileSync(latestAttemptPathFile, logFileData);
 
     console.log(`Data written to file: ${filePath}`);
 
@@ -234,7 +256,7 @@ export async function logSwapTxResults(txResults: any, logFilePath: string, reve
     // let logDataString = JSON.stringify(logData, null, 2)
     // fs.writeFileSync(logFilePath, logDataString)
 }
-export function logTransferTxStats(transferTxStats: TransferTxStats[], logFilePath: string, reverse: boolean = false){
+export function logTransferTxStats(relay: Relay, transferTxStats: TransferTxStats[], logFilePath: string, reverse: boolean = false){
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
     let logFileTime = logFileStrings[logFileStrings.length - 1]
@@ -243,7 +265,7 @@ export function logTransferTxStats(transferTxStats: TransferTxStats[], logFilePa
     if(reverse){
         directoryPath = path.join(__dirname, './reverse/transferExecutionResults/', logFileDay);
     } else {
-        directoryPath = path.join(__dirname, './transferExecutionResults/', logFileDay);
+        directoryPath = path.join(__dirname, `./logResults/${relay}/transferExecutionResults/`, logFileDay);
     }
     if (!fs.existsSync(directoryPath)) {
         fs.mkdirSync(directoryPath, { recursive: true });
@@ -251,18 +273,23 @@ export function logTransferTxStats(transferTxStats: TransferTxStats[], logFilePa
 
     // Write data to file in the directory
     const filePath = path.join(directoryPath, logFileTime);
-    const latestAttemptPath = path.join(__dirname, './latestAttempt/transferExecutionResults.json')
+    // const latestAttemptPath = path.join(__dirname, `./latestAttempt/${relay}/transferExecutionResults.json`)
+    const latestAttemptPath = path.join(__dirname, `./logResults/latestAttempt/${relay}/`)
+    if(!fs.existsSync(latestAttemptPath)){
+        fs.mkdirSync(latestAttemptPath, { recursive: true });
+    }
+    const latestAttemptPathFile = path.join(latestAttemptPath, 'transferExecutionResults.json')
     // if(!fs.existsSync(filePath)){
     //     fs.writeFileSync(filePath, logFileData);
     // } else {
     //     fs.appendFileSync(filePath, logFileData);
     // }
-    fs.writeFileSync(latestAttemptPath, logFileData);
+    fs.writeFileSync(latestAttemptPathFile, logFileData);
     fs.writeFileSync(filePath, logFileData);
 
     console.log(`Data written to file: ${filePath}`);
 }
-export function logSwapTxStats(swapTxStats: SwapTxStats[], logFilePath: string, reverse: boolean = false){
+export function logSwapTxStats(relay: Relay, swapTxStats: SwapTxStats[], logFilePath: string, reverse: boolean = false){
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
     let logFileTime = logFileStrings[logFileStrings.length - 1]
@@ -272,7 +299,7 @@ export function logSwapTxStats(swapTxStats: SwapTxStats[], logFilePath: string, 
     if(reverse){
         directoryPath = path.join(__dirname, './reverse/swapExecutionStats/', logFileDay);
     } else {
-        directoryPath = path.join(__dirname, './swapExecutionStats/', logFileDay);
+        directoryPath = path.join(__dirname, `./logResults/${relay}/swapExecutionStats/`, logFileDay);
     }
 
     // Check if directory exists, create if it doesn't
@@ -287,14 +314,18 @@ export function logSwapTxStats(swapTxStats: SwapTxStats[], logFilePath: string, 
     // } else {
     //     fs.appendFileSync(filePath, logFileData);
     // }
-    const latestAttemptPath = path.join(__dirname, './latestAttempt/swapExecutionStats.json')
+    const latestAttemptPath = path.join(__dirname, `./logResults/latestAttempt/${relay}/`)
+    if(!fs.existsSync(latestAttemptPath)){
+        fs.mkdirSync(latestAttemptPath, { recursive: true });
+    }
+    const latestAttemptPathFile = path.join(latestAttemptPath, 'swapExecutionStats.json')
     fs.writeFileSync(filePath, logFileData);
-    fs.writeFileSync(latestAttemptPath, logFileData);
+    fs.writeFileSync(latestAttemptPathFile, logFileData);
 
     console.log(`Data written to file: ${filePath}`);
 }
 
-export async function logResultsDynamic(extrinsicSetResults: ExtrinsicSetResultDynamic, logFilePath: string, reverse: boolean){
+export async function logResultsDynamic(relay: Relay, extrinsicSetResults: ExtrinsicSetResultDynamic, logFilePath: string, reverse: boolean){
     let lastNode = extrinsicSetResults.lastSuccessfulNode
     let extrinsicSetData = extrinsicSetResults.extrinsicData
 
@@ -313,17 +344,17 @@ export async function logResultsDynamic(extrinsicSetResults: ExtrinsicSetResultD
         }
     })
 
-    logSwapTxStats(swapTxStats, logFilePath, reverse)
-    logSwapTxResults(swapTxResults, logFilePath, reverse)
-    logTransferTxStats(transferTxStats, logFilePath, reverse)
-    logArbExecutionResults(arbResults, logFilePath,reverse)
+    logSwapTxStats(relay, swapTxStats, logFilePath, reverse)
+    logSwapTxResults(relay, swapTxResults, logFilePath, reverse)
+    logTransferTxStats(relay, transferTxStats, logFilePath, reverse)
+    logArbExecutionResults(relay, arbResults, logFilePath,reverse)
 
     let lastNodeString = `LAST SUCCESSFUL NODE: ${lastNode.chainId} ${lastNode.assetSymbol} ${lastNode.assetValue}`
     let extrinsicSetString = `EXTRINSIC SET RESULTS: ${JSON.stringify(extrinsicSetData, null, 2)}`
     let logString = lastNodeString + "\n" + extrinsicSetString
     fs.appendFileSync(logFilePath, logString)
 }
-export async function logAllResultsDynamic(logFilePath: string, reverse: boolean){
+export async function logAllResultsDynamic(relay: Relay, logFilePath: string, reverse: boolean){
     // let lastNode = extrinsicSetResults.lastSuccessfulNode
     // let extrinsicSetData = extrinsicSetResults.extrinsicData
 
@@ -332,6 +363,7 @@ export async function logAllResultsDynamic(logFilePath: string, reverse: boolean
     let swapTxResults: any[] = []
     let transferTxStats: TransferTxStats[] = []
 
+    const { globalState } = await import("./liveTest.ts");
     let allExtrinsicsSet = globalState.extrinsicSetResults
     allExtrinsicsSet.extrinsicData.forEach((swapOrTransferResultData) => {
         arbResults.push(swapOrTransferResultData.arbExecutionResult)
@@ -342,35 +374,17 @@ export async function logAllResultsDynamic(logFilePath: string, reverse: boolean
                 transferTxStats.push(swapOrTransferResultData.transferTxStats)
             }
     })
-
-    // allExtrinsicSetResults.forEach((extrinsicSet) => {
-    //     extrinsicSet.extrinsicData.forEach((swapOrTransferResultData) => {
-    //         arbResults.push(swapOrTransferResultData.arbExecutionResult)
-    //         if('swapTxStats' in swapOrTransferResultData){
-    //             swapTxStats.push(swapOrTransferResultData.swapTxStats)
-    //             swapTxResults.push(swapOrTransferResultData.swapTxResults)
-    //         } else if ('transferTxStats' in swapOrTransferResultData){
-    //             transferTxStats.push(swapOrTransferResultData.transferTxStats)
-    //         }
-    //     })
-    // })
-
-    // extrinsicSetData.forEach((resultData) => {
-    //     arbResults.push(resultData.arbExecutionResult)
-    //     if('swapTxStats' in resultData){
-    //         swapTxStats.push(resultData.swapTxStats)
-    //         swapTxResults.push(resultData.swapTxResults)
-    //     } else if ('transferTxStats' in resultData){
-    //         transferTxStats.push(resultData.transferTxStats)
-    //     }
-    // })
     reverse = false;
-    logSwapTxStats(swapTxStats, logFilePath, reverse)
-    logSwapTxResults(swapTxResults, logFilePath, reverse)
-    logTransferTxStats(transferTxStats, logFilePath, reverse)
-    logArbExecutionResults(arbResults, logFilePath,reverse)
-    
-    fs.writeFileSync(path.join(__dirname, './latestAttempt/allExtrinsicSetResults.json'), JSON.stringify(allExtrinsicsSet, null, 2))
+    logSwapTxStats(relay, swapTxStats, logFilePath, reverse)
+    logSwapTxResults(relay, swapTxResults, logFilePath, reverse)
+    logTransferTxStats(relay, transferTxStats, logFilePath, reverse)
+    logArbExecutionResults(relay, arbResults, logFilePath,reverse)
+    let latestAllExtrinsicsPath = path.join(__dirname, `./logResults/latestAttempt/${relay}/`)
+    if(!fs.existsSync(latestAllExtrinsicsPath)){
+        fs.mkdirSync(latestAllExtrinsicsPath, { recursive: true });
+    }
+    latestAllExtrinsicsPath = path.join(latestAllExtrinsicsPath, 'allExtrinsicSetResults.json')
+    fs.writeFileSync(latestAllExtrinsicsPath, JSON.stringify(allExtrinsicsSet, null, 2))
 
     // let lastNodeString = `LAST SUCCESSFUL NODE: ${lastNode.chainId} ${lastNode.assetSymbol} ${lastNode.assetValue}`
     // let extrinsicSetString = `EXTRINSIC SET RESULTS: ${JSON.stringify(extrinsicSetData, null, 2)}`
@@ -384,9 +398,10 @@ export async function logLastFilePath(logFilePath: string){
     }
     fs.writeFileSync(path.join(__dirname, './lastAttemptFile.json'), JSON.stringify(logFile, null, 2))
 }
-export async function logAllArbAttempts(logFilePath: string, chopsticks: boolean){
+export async function logAllArbAttempts(relay: Relay, logFilePath: string, chopsticks: boolean){
     let allArbExecutions: ArbExecutionResult[] = []
 
+    const { globalState } = await import("./liveTest.ts");
     let allExtrinsicsSet = globalState.extrinsicSetResults
     allExtrinsicsSet.extrinsicData.forEach((extrinsicData) => {
         allArbExecutions.push(extrinsicData.arbExecutionResult)
@@ -405,11 +420,11 @@ export async function logAllArbAttempts(logFilePath: string, chopsticks: boolean
     let directoryPath;
     
     if(!chopsticks){
-        directoryPath = path.join(__dirname, './liveSwapExecutionStats/allArbAttempts', logFileDay);
+        directoryPath = path.join(__dirname, `./logResults/${relay}/liveSwapExecutionStats/allArbAttempts`, logFileDay);
     } else {
-        directoryPath = path.join(__dirname, './allArbAttempts', logFileDay);
+        directoryPath = path.join(__dirname, `./logResults/chopsticks/${relay}/allArbAttempts`, logFileDay);
     }
-    let latestAttemptFolder = path.join(__dirname, './latestAttempt')
+    let latestAttemptFolder = path.join(__dirname, `./logResults/latestAttempt/${relay}/`)
 
     // Check if directory exists, create if it doesn't
     if (!fs.existsSync(directoryPath)) {
@@ -437,7 +452,7 @@ export async function logAllArbAttempts(logFilePath: string, chopsticks: boolean
     // }
 }
 
-export async function logProfits(arbAmountOut: number, logFilePath: string, chopsticks: boolean){
+export async function logProfits(relay: Relay, arbAmountOut: number, logFilePath: string, chopsticks: boolean){
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
     let logFileTime = logFileStrings[logFileStrings.length - 1]
@@ -445,9 +460,9 @@ export async function logProfits(arbAmountOut: number, logFilePath: string, chop
 
     let live = chopsticks ? 'test_' : 'live_'
     let logEntry = live + logDayTime
-
-    let ksmPrice = await queryUsdPriceKucoin("KSM")
-    let arbAmountOutUsd = arbAmountOut * ksmPrice
+    let tokenSymbol = relay == 'kusama' ? 'KSM' : 'DOT'
+    let tokenPrice = await queryUsdPriceKucoin(tokenSymbol)
+    let arbAmountOutUsd = arbAmountOut * tokenPrice
     let arbAmountOutUsdString = `${arbAmountOutUsd.toFixed(2)}`
 
     // let profitLogDatabase = {}

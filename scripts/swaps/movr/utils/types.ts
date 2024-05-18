@@ -70,7 +70,7 @@ export interface BatchSwapParams{
     amount1Ins: bigint[];
     amount0Outs: bigint[];
     amount1Outs: bigint[];
-    movrWrapAmounts: bigint[];
+    wrapAmounts: bigint[];
     data: string[];
     reverseSwapParams?: BatchSwapParams;
 }

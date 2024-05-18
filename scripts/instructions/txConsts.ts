@@ -1,3 +1,4 @@
+import { TNode } from '@paraspell/sdk';
 import * as dotenv from 'dotenv'
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -34,6 +35,7 @@ export const localRpcs = {
     "Zeitgeist": "ws://172.26.130.75:9009",
     "BifrostPolkadot": "ws://172.26.130.75:9010",
     "Parallel": "ws://172.26.130.75:9011",
+    "Unique": "ws://172.26.130.75:9012",
     // "BifrostPolkadot": "ws://172.26.130.75:9010",
     // "BifrostPolkadot": "ws://172.26.130.75:9010",
     // "BifrostPolkadot": "ws://172.26.130.75:9010",
@@ -52,9 +54,21 @@ export const testNets = [
     // "Altair",
     // "Calamari",
     // "InvArchTinker"
+    "Polkadot",
+    "Acala",
+    "Moonbeam",
+    "Phala",
+    "HydraDX",
+    "Interlay",
+    "Astar",
+    "Polkadex",
+    "AssetHubPolkadot",
+    "Parallel",
+    "Unique"
 ]
 
 export const ksmRpc = "wss://kusama-rpc.dwellir.com"
+export const dotRpc = "wss://polkadot-rpc.dwellir.com"
 export const alithAddress = "0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac"
 export const alithPk = process.env.ALITH_PK
 export const arb_wallet_kusama = process.env.ARB_WALLET
@@ -66,6 +80,7 @@ export const dotTargetNode = '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"DOT\\"}}
 export const testBncNode = '"2001{\\"Native\\":\\"BNC\\"}"'
 export const testZlkNode = '"2001{\\"Native\\":\\"ZLK\\"}"'
 export const karRpc = "wss://karura-rpc-0.aca-api.network"
+export const acaRpc = "wss://acala-rpc-0.aca-api.network"
 export const movrRpc = "wss://rpc.moonriver.moonbeam.network"
 export const kusamaNodeKeys = [
     '2000{"NativeAssetId":{"Token":"KSM"}}',

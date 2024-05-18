@@ -1,0 +1,4678 @@
+[
+  {
+    "tokenData": {
+      "network": "polkadot",
+      "chain": 0,
+      "localId": "DOT",
+      "name": "DOT",
+      "symbol": "DOT",
+      "decimals": "10",
+      "minimalBalance": "100000000"
+    },
+    "hasLocation": true,
+    "tokenLocation": "here"
+  },
+  {
+      "tokenData": {
+        "network": "polkadot",
+        "chain": 1000,
+        "localId": "1337",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": "6",
+        "deposit": "6,693,999,660",
+        "isFrozen": false
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X3": [
+          {
+            "Parachain": "1000"
+          },
+          {
+            "PalletInstance": "50"
+          },
+          {
+            "GeneralIndex": "1337"
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "chain": 2004,
+        "localId": "0x931715FEE2d06333043d11F658C8CE934aC61D0c",
+        "name": "USD Coin (Wormhole)",
+        "symbol": "USDC",
+        "decimals": "6",
+        "deposit": "0",
+        "isFrozen": false,
+        "contractAddress": "0x931715FEE2d06333043d11F658C8CE934aC61D0c"
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "chain": 2004,
+        "localId": "0xab3f0245B83feB11d15AAffeFD7AD465a59817eD",
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "decimals": "18",
+        "deposit": "0",
+        "isFrozen": false,
+        "contractAddress": "0xab3f0245B83feB11d15AAffeFD7AD465a59817eD"
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0x5a4d6acdc4e3e5ab15717f407afe957f7a242578"
+        },
+        "name": "Wrapped Ether (Portal)",
+        "symbol": "WETH",
+        "decimals": "18",
+        "minimalBalance": "8500000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        },
+        "name": "aUSD SEED",
+        "symbol": "aSEED",
+        "decimals": "12",
+        "minimalBalance": "100000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2000"
+          },
+          {
+            "GeneralKey": {
+              "length": "2",
+              "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "name": "Acala",
+        "symbol": "ACA",
+        "decimals": "12",
+        "minimalBalance": "100000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2000"
+          },
+          {
+            "GeneralKey": {
+              "length": "2",
+              "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "10"
+        },
+        "name": "Unique Network",
+        "symbol": "UNQ",
+        "decimals": "18",
+        "minimalBalance": "1250000000000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X1": {
+          "Parachain": "2037"
+        }
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "14"
+        },
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": "6",
+        "minimalBalance": "10000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X3": [
+          {
+            "Parachain": "1000"
+          },
+          {
+            "PalletInstance": "50"
+          },
+          {
+            "GeneralIndex": "1337"
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "StableAssetId": "0"
+        },
+        "name": "Taiga DOT",
+        "symbol": "tDOT",
+        "decimals": "10",
+        "minimalBalance": "100000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2000"
+          },
+          {
+            "GeneralKey": {
+              "length": "2",
+              "data": "0x0085000000000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "8"
+        },
+        "name": "Equilibrium USD",
+        "symbol": "EQD",
+        "decimals": "9",
+        "minimalBalance": "1000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2011"
+          },
+          {
+            "GeneralKey": {
+              "length": "3",
+              "data": "0x6571640000000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "NativeAssetId": {
+            "Token": "TAP"
+          }
+        },
+        "name": "Tapio",
+        "symbol": "TAP",
+        "decimals": "12",
+        "minimalBalance": "1000000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2000"
+          },
+          {
+            "GeneralKey": {
+              "length": "3",
+              "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "NativeAssetId": {
+            "LiquidCrowdloan": "13"
+          }
+        },
+        "name": "Liquid Crowdloan DOT",
+        "symbol": "LcDOT",
+        "decimals": "10",
+        "minimalBalance": "100000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2000"
+          },
+          {
+            "GeneralKey": {
+              "length": "5",
+              "data": "0x040d000000000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "4"
+        },
+        "name": "Interlay",
+        "symbol": "INTR",
+        "decimals": "10",
+        "minimalBalance": "1000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2032"
+          },
+          {
+            "GeneralKey": {
+              "length": "2",
+              "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0xa72206fdf839c785b3073870013f2fd57ba10b63"
+        },
+        "name": "Crust Network (Portal from Ethereum)",
+        "symbol": "CRUet",
+        "decimals": "18",
+        "minimalBalance": "12000000000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "6"
+        },
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "decimals": "18",
+        "minimalBalance": "500000000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X3": [
+          {
+            "Parachain": "1000"
+          },
+          {
+            "PalletInstance": "50"
+          },
+          {
+            "GeneralIndex": "100"
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0x07df96d1341a7d16ba1ad431e2c847d978bc2bce"
+        },
+        "name": "USD Coin (Portal from Ethereum)",
+        "symbol": "USDCet",
+        "decimals": "6",
+        "minimalBalance": "10000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "2"
+        },
+        "name": "Astar Native Token",
+        "symbol": "ASTR",
+        "decimals": "18",
+        "minimalBalance": "100000000000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X1": {
+          "Parachain": "2006"
+        }
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0x892ddd9387dbdecedaef878bd7acf8603109227f"
+        },
+        "name": "Taiga",
+        "symbol": "TAI",
+        "decimals": "12",
+        "minimalBalance": "10000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "9"
+        },
+        "name": "Phala Token",
+        "symbol": "PHA",
+        "decimals": "12",
+        "minimalBalance": "100000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X1": {
+          "Parachain": "2035"
+        }
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "1"
+        },
+        "name": "Parallel",
+        "symbol": "PARA",
+        "decimals": "12",
+        "minimalBalance": "100000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2012"
+          },
+          {
+            "GeneralKey": {
+              "length": "4",
+              "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0xf4c723e61709d90f89939c1852f516e373d418a8"
+        },
+        "name": "ApeCoin (Portal)",
+        "symbol": "APE",
+        "decimals": "18",
+        "minimalBalance": "3000000000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "0"
+        },
+        "name": "Moonbeam",
+        "symbol": "GLMR",
+        "decimals": "18",
+        "minimalBalance": "100000000000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2004"
+          },
+          {
+            "PalletInstance": "10"
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "5"
+        },
+        "name": "Wrapped Bitcoin",
+        "symbol": "WBTC",
+        "decimals": "8",
+        "minimalBalance": "3000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X3": [
+          {
+            "Parachain": "1000"
+          },
+          {
+            "PalletInstance": "50"
+          },
+          {
+            "GeneralIndex": "21"
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0xd1729649ee6d5e3740ee2f9254c4226aabd0dc5b"
+        },
+        "name": "Lido DAO (Portal)",
+        "symbol": "LDO",
+        "decimals": "18",
+        "minimalBalance": "4500000000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "NativeAssetId": {
+            "Token": "LDOT"
+          }
+        },
+        "name": "Liquid DOT",
+        "symbol": "LDOT",
+        "decimals": "10",
+        "minimalBalance": "500000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2000"
+          },
+          {
+            "GeneralKey": {
+              "length": "2",
+              "data": "0x0003000000000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0x54a37a01cd75b616d63e0ab665bffdb0143c52ae"
+        },
+        "name": "DAI Stablecoin (Portal)",
+        "symbol": "DAI",
+        "decimals": "18",
+        "minimalBalance": "10000000000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "13"
+        },
+        "name": "PINK",
+        "symbol": "PINK",
+        "decimals": "10",
+        "minimalBalance": "1000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X3": [
+          {
+            "Parachain": "1000"
+          },
+          {
+            "PalletInstance": "50"
+          },
+          {
+            "GeneralIndex": "23"
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0xaf6997a70feb868df863d5380c3ab93da4297edc"
+        },
+        "name": "Shiba Inu (Portal)",
+        "symbol": "SHIB",
+        "decimals": "18",
+        "minimalBalance": "1266000000000000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0x604cae74cdc395a8824557d422fccf8db6809a2f"
+        },
+        "name": "Chainlink (Portal)",
+        "symbol": "LINK",
+        "decimals": "18",
+        "minimalBalance": "1700000000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "11"
+        },
+        "name": "Crust Parachain Native Token",
+        "symbol": "CRU",
+        "decimals": "12",
+        "minimalBalance": "10000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X1": {
+          "Parachain": "2008"
+        }
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "12"
+        },
+        "name": "Tether USD",
+        "symbol": "USDT",
+        "decimals": "6",
+        "minimalBalance": "10000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X3": [
+          {
+            "Parachain": "1000"
+          },
+          {
+            "PalletInstance": "50"
+          },
+          {
+            "GeneralIndex": "1984"
+          }
+        ]
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0xd53e4ba478cca5080c47435769ff82f41e5e4cd0"
+        },
+        "name": "Arbitrum (Portal)",
+        "symbol": "ARB",
+        "decimals": "18",
+        "minimalBalance": "9000000000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0x5a4d6acdc4e3e5ab15717f407afe957f7a242578"
+        },
+        "name": "Wrapped Ether (Portal)",
+        "symbol": "WETH",
+        "decimals": "18",
+        "minimalBalance": "8500000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0x7d52316b1132c26626670fbf52aa7f5ce6f9b388"
+        },
+        "name": "Binance USD (Portal from BSC)",
+        "symbol": "BUSDbs",
+        "decimals": "18",
+        "minimalBalance": "10000000000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0x19eba3efa7d0e02956678c5f3c63c46beda2d7d8"
+        },
+        "name": "MATIC (Portal from Polygon)",
+        "symbol": "MATICpo",
+        "decimals": "18",
+        "minimalBalance": "12500000000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "NativeAssetId": {
+            "Token": "DOT"
+          }
+        },
+        "name": "Polkadot",
+        "symbol": "DOT",
+        "decimals": "10",
+        "minimalBalance": "100000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": "here"
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "7"
+        },
+        "name": "Equilibrium",
+        "symbol": "EQ",
+        "decimals": "9",
+        "minimalBalance": "1000000000",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X1": {
+          "Parachain": "2011"
+        }
+      }
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0x13fe490489204abde3265bfd81179e6ddd2020c3"
+        },
+        "name": "Uniswap (Portal)",
+        "symbol": "UNI",
+        "decimals": "18",
+        "minimalBalance": "2000000000000000",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "Erc20": "0xc80084af223c8b598536178d9361dc55bfda6818"
+        },
+        "name": "Wrapped Bitcoin (Portal)",
+        "symbol": "WBTC",
+        "decimals": "8",
+        "minimalBalance": "60",
+        "chain": 2000
+      },
+      "hasLocation": false
+    },
+    {
+      "tokenData": {
+        "network": "polkadot",
+        "localId": {
+          "ForeignAssetId": "3"
+        },
+        "name": "interBTC",
+        "symbol": "IBTC",
+        "decimals": "8",
+        "minimalBalance": "100",
+        "chain": 2000
+      },
+      "hasLocation": true,
+      "tokenLocation": {
+        "X2": [
+          {
+            "Parachain": "2032"
+          },
+          {
+            "GeneralKey": {
+              "length": "2",
+              "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+            }
+          }
+        ]
+      }
+    },
+    {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,363",
+              "16",
+              "23"
+            ]
+          },
+          "name": "vsBOND-DOT-3363-16-23",
+          "symbol": "vsBOND-DOT-3363-16-23",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,000",
+              "6",
+              "13"
+            ]
+          },
+          "name": "vsBOND-DOT-2000-6-13",
+          "symbol": "vsBOND-DOT-2000-6-13",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,008",
+              "10",
+              "17"
+            ]
+          },
+          "name": "vsBOND-DOT-2008-10-17",
+          "symbol": "vsBOND-DOT-2008-10-17",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "6"
+          },
+          "name": "interBTC",
+          "symbol": "IBTC",
+          "decimals": "8",
+          "minimalBalance": "100"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "8"
+          },
+          "name": "Manta Network",
+          "symbol": "MANTA",
+          "decimals": "18",
+          "minimalBalance": "10000000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2104"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,340",
+              "14",
+              "21"
+            ]
+          },
+          "name": "vsBOND-DOT-3340-14-21",
+          "symbol": "vsBOND-DOT-3340-14-21",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,021",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2021-7-14",
+          "symbol": "vsBOND-DOT-2021-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "7"
+          },
+          "name": "Interlay",
+          "symbol": "INTR",
+          "decimals": "10",
+          "minimalBalance": "10000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,051",
+              "10",
+              "17"
+            ]
+          },
+          "name": "vsBOND-DOT-2051-10-17",
+          "symbol": "vsBOND-DOT-2051-10-17",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "BLP": "5"
+          },
+          "name": "Bifrost Stable Pool Token 5",
+          "symbol": "BLP5",
+          "decimals": "18",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,340",
+              "12",
+              "19"
+            ]
+          },
+          "name": "vsBOND-DOT-3340-12-19",
+          "symbol": "vsBOND-DOT-3340-12-19",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,034",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2034-7-14",
+          "symbol": "vsBOND-DOT-2034-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "2"
+          },
+          "name": "Tether USD",
+          "symbol": "USDT",
+          "decimals": "6",
+          "minimalBalance": "1000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,359",
+              "16",
+              "23"
+            ]
+          },
+          "name": "vsBOND-DOT-3359-16-23",
+          "symbol": "vsBOND-DOT-3359-16-23",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "5"
+          },
+          "name": "USD Coin",
+          "symbol": "USDC",
+          "decimals": "6",
+          "minimalBalance": "1000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1337"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,027",
+              "8",
+              "15"
+            ]
+          },
+          "name": "vsBOND-DOT-2027-8-15",
+          "symbol": "vsBOND-DOT-2027-8-15",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "0"
+          },
+          "name": "Polkadot DOT",
+          "symbol": "DOT",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": "here"
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,003",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2003-7-14",
+          "symbol": "vsBOND-DOT-2003-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,008",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2008-7-14",
+          "symbol": "vsBOND-DOT-2008-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,036",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2036-7-14",
+          "symbol": "vsBOND-DOT-2036-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "BLP": "0"
+          },
+          "name": "Bifrost Stable Pool Token 0",
+          "symbol": "BLP0",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,338",
+              "13",
+              "20"
+            ]
+          },
+          "name": "vsBOND-DOT-3338-13-20",
+          "symbol": "vsBOND-DOT-3338-13-20",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,039",
+              "9",
+              "16"
+            ]
+          },
+          "name": "vsBOND-DOT-2039-9-16",
+          "symbol": "vsBOND-DOT-2039-9-16",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "1"
+          },
+          "name": "Moonbeam Native Token",
+          "symbol": "GLMR",
+          "decimals": "18",
+          "minimalBalance": "1000000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,025",
+              "15",
+              "22"
+            ]
+          },
+          "name": "vsBOND-DOT-2025-15-22",
+          "symbol": "vsBOND-DOT-2025-15-22",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,356",
+              "16",
+              "23"
+            ]
+          },
+          "name": "vsBOND-DOT-3356-16-23",
+          "symbol": "vsBOND-DOT-3356-16-23",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,013",
+              "6",
+              "13"
+            ]
+          },
+          "name": "vsBOND-DOT-2013-6-13",
+          "symbol": "vsBOND-DOT-2013-6-13",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,004",
+              "6",
+              "13"
+            ]
+          },
+          "name": "vsBOND-DOT-2004-6-13",
+          "symbol": "vsBOND-DOT-2004-6-13",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VToken2": "1"
+          },
+          "name": "Voucher GLMR",
+          "symbol": "vGLMR",
+          "decimals": "18",
+          "minimalBalance": "1000000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0901000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,015",
+              "6",
+              "13"
+            ]
+          },
+          "name": "vsBOND-DOT-2015-6-13",
+          "symbol": "vsBOND-DOT-2015-6-13",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,340",
+              "13",
+              "20"
+            ]
+          },
+          "name": "vsBOND-DOT-3340-13-20",
+          "symbol": "vsBOND-DOT-3340-13-20",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,035",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2035-7-14",
+          "symbol": "vsBOND-DOT-2035-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,027",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2027-7-14",
+          "symbol": "vsBOND-DOT-2027-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "BLP": "1"
+          },
+          "name": "Bifrost Stable Pool Token 1",
+          "symbol": "BLP1",
+          "decimals": "18",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VToken2": "4"
+          },
+          "name": "Voucher FIL",
+          "symbol": "vFIL",
+          "decimals": "18",
+          "minimalBalance": "1000000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0904000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,006",
+              "6",
+              "13"
+            ]
+          },
+          "name": "vsBOND-DOT-2006-6-13",
+          "symbol": "vsBOND-DOT-2006-6-13",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "9"
+          },
+          "name": "bncs-20 inscription token BNCS",
+          "symbol": "BNCS",
+          "decimals": "12",
+          "minimalBalance": "10000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0809000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,018",
+              "6",
+              "13"
+            ]
+          },
+          "name": "vsBOND-DOT-2018-6-13",
+          "symbol": "vsBOND-DOT-2018-6-13",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,032",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2032-7-14",
+          "symbol": "vsBOND-DOT-2032-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "10"
+          },
+          "name": "PINK",
+          "symbol": "PINK",
+          "decimals": "10",
+          "minimalBalance": "100000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "23"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,354",
+              "15",
+              "22"
+            ]
+          },
+          "name": "vsBOND-DOT-3354-15-22",
+          "symbol": "vsBOND-DOT-3354-15-22",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,013",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2013-7-14",
+          "symbol": "vsBOND-DOT-2013-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "4"
+          },
+          "name": "Filecoin Network Token",
+          "symbol": "FIL",
+          "decimals": "18",
+          "minimalBalance": "1000000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0804000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,043",
+              "8",
+              "15"
+            ]
+          },
+          "name": "vsBOND-DOT-2043-8-15",
+          "symbol": "vsBOND-DOT-2043-8-15",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,037",
+              "8",
+              "15"
+            ]
+          },
+          "name": "vsBOND-DOT-2037-8-15",
+          "symbol": "vsBOND-DOT-2037-8-15",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VToken2": "8"
+          },
+          "name": "Voucher MANTA",
+          "symbol": "vMANTA",
+          "decimals": "18",
+          "minimalBalance": "10000000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0908000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,345",
+              "14",
+              "21"
+            ]
+          },
+          "name": "vsBOND-DOT-3345-14-21",
+          "symbol": "vsBOND-DOT-3345-14-21",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,341",
+              "14",
+              "21"
+            ]
+          },
+          "name": "vsBOND-DOT-3341-14-21",
+          "symbol": "vsBOND-DOT-3341-14-21",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VToken2": "3"
+          },
+          "name": "Voucher ASTR",
+          "symbol": "vASTR",
+          "decimals": "18",
+          "minimalBalance": "10000000000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0903000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,013",
+              "8",
+              "15"
+            ]
+          },
+          "name": "vsBOND-DOT-2013-8-15",
+          "symbol": "vsBOND-DOT-2013-8-15",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,021",
+              "6",
+              "13"
+            ]
+          },
+          "name": "vsBOND-DOT-2021-6-13",
+          "symbol": "vsBOND-DOT-2021-6-13",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,019",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2019-7-14",
+          "symbol": "vsBOND-DOT-2019-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,090",
+              "10",
+              "17"
+            ]
+          },
+          "name": "vsBOND-DOT-2090-10-17",
+          "symbol": "vsBOND-DOT-2090-10-17",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,366",
+              "16",
+              "23"
+            ]
+          },
+          "name": "vsBOND-DOT-3366-16-23",
+          "symbol": "vsBOND-DOT-3366-16-23",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,338",
+              "12",
+              "19"
+            ]
+          },
+          "name": "vsBOND-DOT-3338-12-19",
+          "symbol": "vsBOND-DOT-3338-12-19",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Native": "BNC"
+          },
+          "name": "Bifrost Native Token",
+          "symbol": "BNC",
+          "decimals": "12",
+          "minimalBalance": "10000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VToken2": "0"
+          },
+          "name": "Voucher DOT",
+          "symbol": "vDOT",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0900000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "3,356",
+              "15",
+              "22"
+            ]
+          },
+          "name": "vsBOND-DOT-3356-15-22",
+          "symbol": "vsBOND-DOT-3356-15-22",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,011",
+              "16",
+              "23"
+            ]
+          },
+          "name": "vsBOND-DOT-2011-16-23",
+          "symbol": "vsBOND-DOT-2011-16-23",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,025",
+              "14",
+              "21"
+            ]
+          },
+          "name": "vsBOND-DOT-2025-14-21",
+          "symbol": "vsBOND-DOT-2025-14-21",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,030",
+              "8",
+              "15"
+            ]
+          },
+          "name": "vsBOND-DOT-2030-8-15",
+          "symbol": "vsBOND-DOT-2030-8-15",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,040",
+              "8",
+              "15"
+            ]
+          },
+          "name": "vsBOND-DOT-2040-8-15",
+          "symbol": "vsBOND-DOT-2040-8-15",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "Token2": "3"
+          },
+          "name": "Astar",
+          "symbol": "ASTR",
+          "decimals": "18",
+          "minimalBalance": "10000000000000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2006"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSToken2": "0"
+          },
+          "name": "Voucher Slot DOT",
+          "symbol": "vsDOT",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0403000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,026",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2026-7-14",
+          "symbol": "vsBOND-DOT-2026-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "BLP": "4"
+          },
+          "name": "Bifrost Stable Pool Token 4",
+          "symbol": "BLP4",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "VSBond2": [
+              "0",
+              "2,031",
+              "7",
+              "14"
+            ]
+          },
+          "name": "vsBOND-DOT-2031-7-14",
+          "symbol": "vsBOND-DOT-2031-7-14",
+          "decimals": "10",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "BLP": "2"
+          },
+          "name": "Bifrost Stable Pool Token 2",
+          "symbol": "BLP2",
+          "decimals": "18",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2030,
+          "localId": {
+            "BLP": "3"
+          },
+          "name": "Bifrost Stable Pool Token 3",
+          "symbol": "BLP3",
+          "decimals": "18",
+          "minimalBalance": "1000000"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "GLMR",
+          "name": "GLMR",
+          "symbol": "GLMR",
+          "decimals": "18",
+          "contractAddress": "0xAcc15dC74880C9944775448304B263D191c6077F"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "78407957940239408223554844611219482002",
+          "name": "Moonriver",
+          "symbol": "xcibcMOVR",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF3afcd2cad6174387df17180a0362e592"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2019"
+            },
+            {
+              "PalletInstance": "59"
+            },
+            {
+              "GeneralIndex": "79228162514264337593543950359"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "150874409661081770150564009349448205842",
+          "name": "Zeitgeist",
+          "symbol": "xcZTG",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF71815ab6142e0e20c7259126c6b40612"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2092"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "90225766094594282577230355136633846906",
+          "name": "Polkadex",
+          "symbol": "xcPDEX",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF43e0d9b84010b1b67ba501bc81e33c7a"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2040"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "144012926827374458669278577633504620722",
+          "name": "Bifrost Filecoin Native Token",
+          "symbol": "xcFIL",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF6c57e17d210df507c82807149ffd70b2"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0804000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "125699734534028342599692732320197985871",
+          "name": "Darwinia Parachain Token",
+          "symbol": "xcRING",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF5e90e365edca87fb4c8306df1e91464f"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2046"
+            },
+            {
+              "PalletInstance": "5"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "91372035960551235635465443179559840483",
+          "name": "Centrifuge",
+          "symbol": "xcCFG",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF44bd9d2ffee20b25d1cf9e78edb6eae3"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2031"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "187224307232923873519830480073807488153",
+          "name": "Equilibrium Dollar",
+          "symbol": "xcEQD",
+          "decimals": "9",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF8cda1707baf23834d211b08726b1e499"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2011"
+            },
+            {
+              "GeneralKey": {
+                "length": "3",
+                "data": "0x6571640000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "69606720909260275826784788104880799692",
+          "name": "HydraDX",
+          "symbol": "xcHDX",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF345dc44ddae98df024eb494321e73fcc"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "133307414193833606001516599592873928539",
+          "name": "Celestia",
+          "symbol": "xcibcTIA",
+          "decimals": "6",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF644a12f6f01b754987d175f5a780a75b"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2019"
+            },
+            {
+              "PalletInstance": "59"
+            },
+            {
+              "GeneralIndex": "79228162514264337593543950355"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "190590555344745888270686124937537713878",
+          "name": "Equilibrium Token",
+          "symbol": "xcEQ",
+          "decimals": "9",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF8f6267e040d8a0638c576dfba4f0f6d6"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2011"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "141196559012917796508928734717797136690",
+          "name": "Inter Stable Token",
+          "symbol": "xcibcIST",
+          "decimals": "6",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF6a3977d5b65d1044fd744b14d9cef932"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2019"
+            },
+            {
+              "PalletInstance": "59"
+            },
+            {
+              "GeneralIndex": "79228162514264337593543950361"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "29085784439601774464560083082574142143",
+          "name": "Bifrost Voucher DOT",
+          "symbol": "xcvDOT",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF15e1b7e3df971dd813bc394deb899abf"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0900000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "225719522181998468294117309041779353812",
+          "name": "Acala Liquid DOT",
+          "symbol": "xcLDOT",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFFa9cfffa9834235fe53f4733f1b8b28d4"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0003000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "224077081838586484055667086558292981199",
+          "name": "Astar",
+          "symbol": "xcASTR",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFFa893ad19e540e172c10d78d4d479b5cf"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2006"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "199907282886248358976504623107230837230",
+          "name": "Agoric",
+          "symbol": "xcibcBLD",
+          "decimals": "6",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF9664be0234ea4dc64558f695c4f2a9ee"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2019"
+            },
+            {
+              "PalletInstance": "59"
+            },
+            {
+              "GeneralIndex": "79228162514264337593543950354"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "166377000701797186346254371275954761085",
+          "name": "USD Coin",
+          "symbol": "xcUSDC",
+          "decimals": "6",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF7d2b0b761af01ca8e25242976ac0ad7d"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1337"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "142155548796783636521833385094843759961",
+          "name": "bncs-20 inscription token BNCS",
+          "symbol": "xcBNCS",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF6af229ae7f0f4e0188157e189a487d59"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0809000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "89994634370519791027168048838578580624",
+          "name": "Subsocial",
+          "symbol": "xcSUB",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF43b4560bc0c451a3386e082bff50ac90"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2101"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "138280378441551394289980644963240827219",
+          "name": "Cosmos Hub",
+          "symbol": "xcibcATOM",
+          "decimals": "6",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF6807d5082ff2f6f86bde409245e2d953"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2019"
+            },
+            {
+              "PalletInstance": "59"
+            },
+            {
+              "GeneralIndex": "79228162514264337593543950343"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "228510780171552721666262089780561563481",
+          "name": "Picasso",
+          "symbol": "xcibcPICA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFFabe9934e61db3b11be4251e6e869cf59"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2019"
+            },
+            {
+              "PalletInstance": "59"
+            },
+            {
+              "GeneralIndex": "79228162514264337593543950337"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "204507659831918931608354793288110796652",
+          "name": "Bifrost Voucher GLMR",
+          "symbol": "xcvGLMR",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF99dabe1a8de0ea22baa6fd48fde96f6c"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0901000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "289989900872525819559124583375550296953",
+          "name": "Bifrost Voucher MANTA",
+          "symbol": "xcvMANTA",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFFda2a05fb50e7ae99275f4341aed43379"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0908000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "110021739665376159354538090254163045594",
+          "name": "Acala Dollar",
+          "symbol": "xcaUSD",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF52c56a9257bb97f4b2b6f7b2d624ecda"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "311091173110107856861649819128533077277",
+          "name": "Tether USD",
+          "symbol": "xcUSDT",
+          "decimals": "6",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFFea09fb06d082fd1275cd48b191cbcd1d"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "64174511183114006009298114091987195453",
+          "name": "PINK",
+          "symbol": "xcPINK",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF30478fafbe935e466da114e14fb3563d"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "23"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "309163521958167876851250718453738106865",
+          "name": "Nodle",
+          "symbol": "xcNODL",
+          "decimals": "11",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFFe896ba7cb118b9fa571c6dc0a99deff1"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2026"
+            },
+            {
+              "PalletInstance": "2"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "120637696315203257380661607956669368914",
+          "name": "interBTC",
+          "symbol": "xcIBTC",
+          "decimals": "8",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF5ac1f9a51a93f5c527385edf7fe98a52"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "166446646689194205559791995948102903873",
+          "name": "Manta",
+          "symbol": "xcMANTA",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF7d3875460d4509eb8d0362c611b4e841"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2104"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "101170542313601871197860408087030232491",
+          "name": "Interlay",
+          "symbol": "xcINTR",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF4c1cbcd97597339702436d4f18a375ab"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "165823357460190568952172802245839421906",
+          "name": "BNC",
+          "symbol": "xcBNC",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF7cc06abdf7201b350a1265c62c8601d2"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "32615670524745285411807346420584982855",
+          "name": "PARA",
+          "symbol": "xcPARA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF18898cb5fe1e88e668152b4f4052a947"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "42259045809535163221576417993425387648",
+          "name": "xcDOT",
+          "symbol": "xcDOT",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF1fcacbd218edc0eba20fc2308c778080"
+        },
+        "hasLocation": true,
+        "tokenLocation": "here"
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "45647473099451451833602657905356404688",
+          "name": "Pendulum",
+          "symbol": "xcPEN",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF2257622f345e1acde0d4f46d7d1d77d0"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2094"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "224821240862170613278369189818311486111",
+          "name": "Acala",
+          "symbol": "xcACA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFFa922fef94566104a6e5a35a4fcddaa9f"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "272547899416482196831721420898811311297",
+          "name": "Bifrost Voucher FIL",
+          "symbol": "xcvFIL",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFFcd0ad0ea6576b7b285295c85e94cf4c1"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0904000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "114018676402354620972806895487280206446",
+          "name": "Bifrost Voucher ASTR",
+          "symbol": "xcvASTR",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF55c732c47639231a4c4373245763d26e"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0903000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "238111524681612888331172110363070489924",
+          "name": "OriginTrail Parachain Token",
+          "symbol": "xcOTP",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFFb3229c8e7657eabea704d5e75246e544"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2043"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "132685552157663328694213725410064821485",
+          "name": "Phala Token",
+          "symbol": "xcPHA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false,
+          "contractAddress": "0xFFFFFFFF63d24ecc8eb8a7b5d0803e900f7b6ced"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2035"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "MOVR",
+          "name": "MOVR",
+          "symbol": "MOVR",
+          "decimals": "18",
+          "contractAddress": "0x98878B06940aE243284CA214f92Bb71a2b032B8A"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2023"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2004,
+          "localId": "ZLK",
+          "name": "ZLK",
+          "symbol": "ZLK",
+          "decimals": "18",
+          "contractAddress": "0x0f47ba9d9Bde3442b42175e51d6A367928A1173B"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2001"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0207000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "28",
+          "name": "KILT",
+          "symbol": "KILT",
+          "decimals": "15"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2086"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "7",
+          "name": "USD Coin (Acala Wormhole)",
+          "symbol": "USDC",
+          "decimals": "6"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "21",
+                "data": "0x0207df96d1341a7d16ba1ad431e2c847d978bc2bce0000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "20",
+          "name": "Ethereum (Moonbeam Wormhole)",
+          "symbol": "WETH",
+          "decimals": "18"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "110"
+            },
+            {
+              "AccountKey20": {
+                "network": null,
+                "key": "0xab3f0245b83feb11d15aaffefd7ad465a59817ed"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "13",
+          "name": "Centrifuge",
+          "symbol": "CFG",
+          "decimals": "18"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2031"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "26",
+          "name": "Nodle",
+          "symbol": "NODL",
+          "decimals": "11"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2026"
+            },
+            {
+              "PalletInstance": "2"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "5",
+          "name": "Polkadot",
+          "symbol": "DOT",
+          "decimals": "10"
+        },
+        "hasLocation": true,
+        "tokenLocation": "here"
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "100",
+          "name": "4-Pool",
+          "symbol": "4-Pool",
+          "decimals": "18"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "8",
+          "name": "Phala",
+          "symbol": "PHA",
+          "decimals": "12"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2035"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "1",
+          "name": "Lerna",
+          "symbol": "LRNA",
+          "decimals": "12"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "101",
+          "name": "2-Pool",
+          "symbol": "2-Pool",
+          "decimals": "18"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "19",
+          "name": "Bitcoin (Moonbeam Wormhole)",
+          "symbol": "WBTC",
+          "decimals": "8"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "110"
+            },
+            {
+              "AccountKey20": {
+                "network": null,
+                "key": "0xe57ebd2d67b462e9926e04a8e33f01cd0d64346d"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "9",
+          "name": "Astar",
+          "symbol": "ASTR",
+          "decimals": "18"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2006"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "16",
+          "name": "Glimmer",
+          "symbol": "GLMR",
+          "decimals": "18"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "14",
+          "name": "Bifrost Native Coin",
+          "symbol": "BNC",
+          "decimals": "12"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "21",
+          "name": "USD Coin (Moonbeam Wormhole)",
+          "symbol": "USDC",
+          "decimals": "6"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "110"
+            },
+            {
+              "AccountKey20": {
+                "network": null,
+                "key": "0x931715fee2d06333043d11f658c8ce934ac61d0c"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "15",
+          "name": "Bifrost Voucher DOT",
+          "symbol": "vDOT",
+          "decimals": "10"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0900000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "24",
+          "name": "Subsocial",
+          "symbol": "SUB",
+          "decimals": "10"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2101"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "22",
+          "name": "USDC (Polkadot Asset Hub)",
+          "symbol": "USDC",
+          "decimals": "6"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1337"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "2",
+          "name": "DAI (Acala Wormhole)",
+          "symbol": "DAI",
+          "decimals": "18"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "21",
+                "data": "0x0254a37a01cd75b616d63e0ab665bffdb0143c52ae0000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "10",
+          "name": "USDT (Polkadot Asset Hub)",
+          "symbol": "USDT",
+          "decimals": "6"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "27",
+          "name": "Crust",
+          "symbol": "CRU",
+          "decimals": "12"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2008"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "0",
+          "name": "HydraDX",
+          "symbol": "HDX",
+          "decimals": "12"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "6",
+          "name": "ApeCoin (Acala Wormhole)",
+          "symbol": "APE",
+          "decimals": "18"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "21",
+                "data": "0x02f4c723e61709d90f89939c1852f516e373d418a80000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "102",
+          "name": "2-Pool-Stbl",
+          "symbol": "2-Pool",
+          "decimals": "18"
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "11",
+          "name": "interBTC",
+          "symbol": "iBTC",
+          "decimals": "8"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "3",
+          "name": "Bitcoin (Acala Wormhole)",
+          "symbol": "WBTC",
+          "decimals": "8"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "21",
+                "data": "0x02c80084af223c8b598536178d9361dc55bfda68180000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "17",
+          "name": "Interlay",
+          "symbol": "INTR",
+          "decimals": "10"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "18",
+          "name": "DAI (Moonbeam Wormhole)",
+          "symbol": "DAI",
+          "decimals": "18"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "110"
+            },
+            {
+              "AccountKey20": {
+                "network": null,
+                "key": "0x06e605775296e851ff43b4daa541bb0984e9d6fd"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "23",
+          "name": "USDT (Moonbeam Wormhole)",
+          "symbol": "USDT",
+          "decimals": "6"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "110"
+            },
+            {
+              "AccountKey20": {
+                "network": null,
+                "key": "0xc30e9ca94cf52f3bf5692aacf81353a27052c46f"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "4",
+          "name": "Ethereum (Acala Wormhole)",
+          "symbol": "WETH",
+          "decimals": "18"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "21",
+                "data": "0x025a4d6acdc4e3e5ab15717f407afe957f7a2425780000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "25",
+          "name": "Unique network",
+          "symbol": "UNQ",
+          "decimals": "18"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2037"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2034,
+          "localId": "12",
+          "name": "Zeitgeist",
+          "symbol": "ZTG",
+          "decimals": "10"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2092"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6002",
+          "name": "LP-DOT/PARA",
+          "symbol": "LP-DOT/PARA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6007",
+          "name": "LP-DOT/cDOT-8/15",
+          "symbol": "LP-DOT/cDOT-8/15",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "110",
+          "name": "LDOT",
+          "symbol": "LDOT",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0003000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "1001",
+          "name": "sDOT",
+          "symbol": "sDOT",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x73444f5400000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "120",
+          "name": "INTR",
+          "symbol": "INTR",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "108",
+          "name": "ACA",
+          "symbol": "ACA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "200070014",
+          "name": "cDOT-7/14",
+          "symbol": "cDOT-7/14",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "PalletInstance": "6"
+            },
+            {
+              "GeneralIndex": "200070014"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6009",
+          "name": "LP-PHA/PARA",
+          "symbol": "LP-PHA/PARA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "101",
+          "name": "DOT",
+          "symbol": "DOT",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": "here"
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6005",
+          "name": "LP-DOT/cDOT-7/14",
+          "symbol": "LP-DOT/cDOT-7/14",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "200080015",
+          "name": "cDOT-8/15",
+          "symbol": "cDOT-8/15",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "PalletInstance": "6"
+            },
+            {
+              "GeneralIndex": "200080015"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "122",
+          "name": "IBTC",
+          "symbol": "IBTC",
+          "decimals": "8",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6016",
+          "name": "LP-INTR/PARA",
+          "symbol": "LP-INTR/PARA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6004",
+          "name": "LP-DOT/cDOT-6/13",
+          "symbol": "LP-DOT/cDOT-6/13",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "200110018",
+          "name": "cDOT-11/18",
+          "symbol": "cDOT-11/18",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6013",
+          "name": "LP-PARA/cDOT-8/15",
+          "symbol": "LP-PARA/cDOT-8/15",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "104",
+          "name": "AUSD",
+          "symbol": "AUSD",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6003",
+          "name": "LP-DOT/sDOT",
+          "symbol": "LP-DOT/sDOT",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6017",
+          "name": "LP-IBTC/PARA",
+          "symbol": "LP-IBTC/PARA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "102",
+          "name": "USDT",
+          "symbol": "USDT",
+          "decimals": "6",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "106",
+          "name": "lcDOT",
+          "symbol": "lcDOT",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "5",
+                "data": "0x040d000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "114",
+          "name": "GLMR",
+          "symbol": "GLMR",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6008",
+          "name": "LP-GLMR/PARA",
+          "symbol": "LP-GLMR/PARA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "130",
+          "name": "CLV",
+          "symbol": "CLV",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2002"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "4294957296",
+          "name": "DOT_U",
+          "symbol": "DOT_U",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "112",
+          "name": "ASTR",
+          "symbol": "ASTR",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "200100017",
+          "name": "cDOT-10/17",
+          "symbol": "cDOT-10/17",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "PalletInstance": "6"
+            },
+            {
+              "GeneralIndex": "200100017"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6011",
+          "name": "LP-lcDOT/PARA",
+          "symbol": "LP-lcDOT/PARA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6012",
+          "name": "LP-PARA/cDOT-7/14",
+          "symbol": "LP-PARA/cDOT-7/14",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6010",
+          "name": "LP-USDT/PARA",
+          "symbol": "LP-USDT/PARA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "200060013",
+          "name": "cDOT-6/13",
+          "symbol": "cDOT-6/13",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "PalletInstance": "6"
+            },
+            {
+              "GeneralIndex": "200060013"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "115",
+          "name": "PHA",
+          "symbol": "PHA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2035"
+          }
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "200090016",
+          "name": "cDOT-9/16",
+          "symbol": "cDOT-9/16",
+          "decimals": "10",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "PalletInstance": "6"
+            },
+            {
+              "GeneralIndex": "200090016"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6014",
+          "name": "LP-ACA/PARA",
+          "symbol": "LP-ACA/PARA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6006",
+          "name": "LP-PARA/cDOT-6/13",
+          "symbol": "LP-PARA/cDOT-6/13",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "6015",
+          "name": "LP-LDOT/PARA",
+          "symbol": "LP-LDOT/PARA",
+          "decimals": "12",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": false
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2012,
+          "localId": "1",
+          "deposit": "0",
+          "name": "PARA",
+          "symbol": "PARA",
+          "decimals": "12",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2032,
+          "localId": {
+            "Token": "INTR"
+          },
+          "name": "INTR",
+          "symbol": "INTR",
+          "decimals": "12"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2032,
+          "localId": {
+            "Token": "IBTC"
+          },
+          "name": "IBTC",
+          "symbol": "IBTC",
+          "decimals": "8"
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 1000,
+          "localId": "1984",
+          "name": "Tether USD",
+          "symbol": "USDt",
+          "decimals": "6",
+          "deposit": "6,693,999,660",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        }
+      },
+      {
+        "tokenData": {
+          "network": "polkadot",
+          "chain": 2037,
+          "localId": "UNQ",
+          "name": "UNQ",
+          "symbol": "UNQ",
+          "decimals": "18",
+          "deposit": "0",
+          "isFrozen": false
+        },
+        "hasLocation": true,
+        "tokenLocation": {
+          "X1": {
+            "Parachain": "2037"
+          }
+        }
+      }
+
+
+
+
+
+  ]

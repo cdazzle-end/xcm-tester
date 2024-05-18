@@ -4,9 +4,11 @@ import * as dotenv from "dotenv";
 // dotenv.config()
 import path from 'path';
 import { fileURLToPath } from 'url';
+import bn, { BigNumber } from 'bignumber.js'
+import { ethers } from 'ethers';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
-console.log(__dirname)
+// console.log(__dirname)
 
 export const ignoreList = [
     // "0x06C08321a530360Ec1B3cC36CFe8b4ee419ce928",
@@ -38,6 +40,7 @@ export const wsLocalChain = "ws://172.26.130.75:9009"
 export const defaultWebsocket = "wss://moonbeam.public.blastapi.io"
 export const defaultRpc = "https://moonbeam.public.blastapi.io"
 export const localRpc = "http://127.0.0.1:8545/"
+// export const localRpc = "http://127.0.0.1:2020202020/"
 
 // export const rpcUrl = wsLocalChain
 export const account = privateKeyToAccount(`0x${noPrefixPrivateKey}`);
@@ -76,6 +79,9 @@ export const fraxContractAddress = "0x322E86852e492a7Ee17f28a78c663da38FB33bfb"
 
 //XC TOKENS
 export const wGlmrContractAddress = "0xAcc15dC74880C9944775448304B263D191c6077F"
+export const wEthContractAddress = "0xab3f0245B83feB11d15AAffeFD7AD465a59817eD"
+export const usdcContractAddress = "0x931715FEE2d06333043d11F658C8CE934aC61D0c"
+
 export const xcDotContractAddress = "0xFfFFfFff1FcaCBd218EDc0EbA20Fc2308C778080"
 export const xcAcaContractAddress = "0xffffFFffa922Fef94566104a6e5A35a4fCDDAA9f"
 export const rmrkContractAddress = "0x524d524B4c9366be706D3A90dcf70076ca037aE3"
@@ -116,15 +122,15 @@ export const dexAbis = [
     JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/algebraDex.json'), 'utf8')),
     JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/beamDex.json'), 'utf8')),
     JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/beamV3Dex.json'), 'utf8')),
-    JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/zenlinkDexAbi.json'), 'utf8')),
+    // JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/zenlinkDexAbi.json'), 'utf8')),
     JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/uniswapDexV2Abi.json'), 'utf8')),
     JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/stellaDexAbi.json'), 'utf8')),
 ]
-// export const routerAbis = [
-//     JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/solarRouterAbi.json'), 'utf8')),
-//     JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/zenRouterAbi.json'), 'utf8')),
-//     JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/huckleberryRouterAbi.json'), 'utf8')),
-// ]
+export const routerAbis = [
+    // JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/solarRouterAbi.json'), 'utf8')),
+    // JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/zenRouterAbi.json'), 'utf8')),
+    // JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/huckleberryRouterAbi.json'), 'utf8')),
+]
 // export const solarRouterAddress = "0xAA30eF758139ae4a7f798112902Bf6d65612045f"
 // export const zenlinkRouterAddress = "0x2f84b9713a96FB356683de7B44dd2d37658b189d"
 // export const huckleberryRouterAddress = "0x2d4e873f9Ab279da9f1bb2c532d4F06f67755b77"
@@ -140,9 +146,9 @@ export const dexAbis = [
 export const solarFee = BigInt(25) // 0.25%
 // // export const zenFee = BigInt(30) // 0.3%
 // export const solarFee = 25 // 0.25%
-// export const zenFee = 30 // 0.3%
+export const zenFee = 30 // 0.3%
 // // export const routerFees: bigint[] = [solarFee, zenFee]
-// export const routerFees = [solarFee, zenFee]
+export const routerFees = [solarFee, zenFee]
 
 // export const testDataContractAddress = "0xcc2a7cef44caa59847699104629e034ea7d89f6a"
 // export const testTxData = "0x42643f97000000000000000000000000e3f5a90f9cb311505cd691a46596599aa1a0ad7d00000000000000000000000098878b06940ae243284ca214f92bb71a2b032b8a000000000000000000000000cc2a7cef44caa59847699104629e034ea7d89f6a000000000000000000000000000000000000000000000000000000000000090600000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a4022c0d9f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000976ea74026e726554db657fa54763abd0c3a0aa90000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -151,18 +157,136 @@ export const simpleAbis = [
 
 ]
 
-let uniV3SwapSimpleAbi = [
-    // "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline)",
-    "function swap(address recipient, bool zeroForOne, int256 amountSpecified, uint160 sqrtPriceLimitX96, bytes data)",
-    "function token0() view returns (address)",
-    "function token1() view returns (address)",
-    "function "
+// let uniV3SwapSimpleAbi = [
+//     // "function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline)",
+//     "function swap(address recipient, bool zeroForOne, int256 amountSpecified, uint160 sqrtPriceLimitX96, bytes data)",
+//     "function token0() view returns (address)",
+//     "function token1() view returns (address)",
+//     "function "
     
-    recipient (address)
-    zeroForOne (bool)
-    amountSpecified (int256)
-    sqrtPriceLimitX96 (uint160)
-    data (bytes)
+//     recipient (address)
+//     zeroForOne (bool)
+//     amountSpecified (int256)
+//     sqrtPriceLimitX96 (uint160)
+//     data (bytes)
 
 
+// ]
+
+export const multicall1 = "0x83e3b61886770de2F64AAcaD2724ED4f08F7f36B"
+export const multicall2 = "0x6477204E12A7236b9619385ea453F370aD897bb2"
+export const multicall3 = "0xcA11bde05977b3631167028862bE2a173976CA11"
+export const multicallAbi1 = fs.readFileSync(path.join(__dirname, '../abi/multicall1.json'), 'utf8')
+
+export const multicallAbi2 = fs.readFileSync(path.join(__dirname, '../abi/multicall2.json'), 'utf8')
+
+export const multicallAbi3 = fs.readFileSync(path.join(__dirname, '../abi/multicall3.json'), 'utf8')
+
+import { MyLp, TickData } from './types.ts';
+export const rpc1 = 'wss://moonbeam.public.blastapi.io';
+export const rpc2 = 'wss://moonbeam-rpc.dwellir.com';
+// const rpc3 = 'wss://moonriver.api.onfinality.io/public-ws';
+export const rpc4 = 'wss://moonbeam.unitedbloc.com'
+export const testZenContract = "0x94F9EB420174B8d7396A87c27073f74137B40Fe2"
+export const testUni3Contract = "0x3Ecb97daE88c33717CE92596a593b41556a2ebc0"
+
+export const wsProvider = new ethers.WebSocketProvider(rpc2);
+export const httpEndpoint1 = "https://moonbeam.public.blastapi.io"
+export const httpEndpoint2 = "https://1rpc.io/glmr"
+export const httpEndpoint3 = "https://moonbeam-rpc.dwellir.com"
+export const httpEndpoint4 = "https://moonbeam-mainnet.gateway.pokt.network/v1/lb/629a2b5650ec8c0039bb30f0"
+export const httpEndpoint5 = "https://moonbeam.unitedbloc.com"
+
+export const glmrDotPool = "0xB13B281503F6eC8A837Ae1a21e86a9caE368fCc5"
+
+
+export const httpProvider = new ethers.JsonRpcProvider(httpEndpoint4)
+export const live_wallet_3 = process.env.LIVE_WALLET_3_PK
+
+export const dexContractAbi = [
+    "function name() view returns (string)",
+    "function symbol() view returns (string)",
+    "function getReserves() view returns (uint, uint, uint)",
+    "function token0() view returns (address)",
+    "function token1() view returns (address)"
 ]
+
+//getReserves returns 2 uint instead of 3
+export const altDexContractAbi = [
+    "function name() view returns (string)",
+    "function symbol() view returns (string)",
+    "function getReserves() view returns (uint, uint)",
+    "function token0() view returns (address)",
+    "function token1() view returns (address)"
+]
+
+export const tokenContractAbi = [
+    "function name() view returns (string)",
+    "function symbol() view returns (string)",
+    "function decimals() view returns (uint8)",
+    "event Transfer(address indexed src, address indexed dst, uint val)"
+]
+
+// export const dexAbis = [
+    
+//     JSON.parse(fs.readFileSync(path.join(__dirname, './glmr_abis/solarDexAbi.json'), 'utf8')),
+//     JSON.parse(fs.readFileSync(path.join(__dirname, './glmr_abis/uniswapDexV3.json'), 'utf8')),
+//     JSON.parse(fs.readFileSync(path.join(__dirname, './glmr_abis/algebraDex.json'), 'utf8')),
+//     JSON.parse(fs.readFileSync(path.join(__dirname, './glmr_abis/beamDex.json'), 'utf8')),
+//     JSON.parse(fs.readFileSync(path.join(__dirname, './glmr_abis/beamV3Dex.json'), 'utf8')),
+//     JSON.parse(fs.readFileSync(path.join(__dirname, './glmr_abis/stellaDexAbi.json'), 'utf8')),
+//     JSON.parse(fs.readFileSync(path.join(__dirname, './glmr_abis/zenlinkDexAbi.json'), 'utf8')),
+//     JSON.parse(fs.readFileSync(path.join(__dirname, './glmr_abis/zenlinkDex2Abi.json'), 'utf8')),
+// ]
+
+export let dexAbiMap = {
+    "solar": JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/solarDexAbi.json'), 'utf8')),
+    "uni3": JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/uniswapDexV3.json'), 'utf8')),
+    "algebra": JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/algebraDex.json'), 'utf8')),
+    "beam": JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/beamDex.json'), 'utf8')),
+    "beam3": JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/beamV3Dex.json'), 'utf8')),
+    "stella": JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/stellaDexAbi.json'), 'utf8')),
+    "zenlink": JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/zenlinkDexAbi.json'), 'utf8')),
+    "zenlink2": JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/zenlinkDex2Abi.json'), 'utf8')),
+    "manager": JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/swapManager.json'), 'utf8'))
+}
+
+export let xcTokenAbi = JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/xcTokenAbi.json'), 'utf8'))
+// export const wGlmrContractAddress = "0xAcc15dC74880C9944775448304B263D191c6077F"
+// export const xcDotContractAddress = "0xFfFFfFff1FcaCBd218EDc0EbA20Fc2308C778080"
+// export const xcAcaContractAddress = "0xffffFFffa922Fef94566104a6e5A35a4fCDDAA9f"
+// export const rmrkContractAddress = "0x524d524B4c9366be706D3A90dcf70076ca037aE3"
+// export const xcUsdcContractAddress = "0xFFfffffF7D2B0B761Af01Ca8e25242976ac0aD7D"
+// export const wormUsdcContractAddress = "0x931715FEE2d06333043d11F658C8CE934aC61D0c"
+// export const glintContractAddress = "0xcd3B51D98478D53F4515A306bE565c6EebeF1D58" //beam
+// export const glmrSTDotContractAddress = "0xbc7E02c4178a7dF7d3E564323a5c359dc96C4db4"
+export const q96 = new bn(2).pow(96)
+
+export const minTick = -887272
+export const maxTick = 887272
+
+export const minTickData: TickData = {
+        tick: minTick,
+        liquidityTotal: "0",
+        liquidityDelta: "0",
+        intialized: false
+    }
+export const maxTickData: TickData = {
+        tick: maxTick,
+        liquidityTotal: "0",
+        liquidityDelta: "0",
+        intialized: false
+    }
+
+export const glmrLpsPath = path.join(__dirname, '../../../../../polkadot_assets/lps/lp_registry/glmr_lps.json')
+
+export const swapManagerContractLocal = "0x09635F643e140090A9A8Dcd712eD6285858ceBef"
+export const swapManagerContractLive = "0x4826533B4897376654Bb4d4AD88B7faFD0C98528"
+
+
+export const uniFactoryContract = "0x28f1158795A3585CaAA3cD6469CD65382b89BB70"
+export const uniPoolInitHash = "0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54"
+export const algebraFactoryContract = "0xabE1655110112D0E45EF91e94f8d757e4ddBA59C"
+export const algebraPoolInitHash = "0x424896f6cdc5182412012e0779626543e1dc4b12e1c45ee5718ae92f10ad97f2"
+export const algebroPoolInitHashOther = "0x6ec6c9c8091d160c0aa74b2b14ba9c1717e95093bd3ac085cee99a49aab294a4"
+export const algebraPoolDeployer = "0x965A857955d868fd98482E9439b1aF297623fb94"

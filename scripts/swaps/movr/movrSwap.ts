@@ -25,7 +25,7 @@ import { FixedPointNumber } from '@acala-network/sdk-core';
 import { getApiForNode } from '../../instructions/apiUtils.ts';
 import { live_wallet_3 } from '../../instructions/txConsts.ts';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-console.log(__dirname)
+// console.log(__dirname)
 // Patch BigInt for JSON serialization
 declare global {
     interface BigInt {
@@ -589,7 +589,7 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
         amount1Ins: amount1Ins,
         amount0Outs: amount0Outs,
         amount1Outs: amount1Outs,
-        movrWrapAmounts: movrWrapAmounts,
+        wrapAmounts: movrWrapAmounts,
         data: data,
         // reverseSwapParams: reverseSwapParams,
     }
@@ -615,7 +615,7 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
         let tokenInput = movrBatchSwapParams.amount0Ins[i] > 0 ? movrBatchSwapParams.amount0Ins[i] : movrBatchSwapParams.amount1Ins[i]
         let approval = await checkAndApproveToken(tokens[i], liveWallet, batchContractAddress, tokenInput)
     }
-    let wrapMovrAmount = movrBatchSwapParams.movrWrapAmounts[0]
+    let wrapMovrAmount = movrBatchSwapParams.wrapAmounts[0]
 
     let tokenOutput = movrBatchSwapParams.outputTokens[movrBatchSwapParams.outputTokens.length - 1]
     
@@ -641,7 +641,7 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
             movrBatchSwapParams.amount1Ins, 
             movrBatchSwapParams.amount0Outs, 
             movrBatchSwapParams.amount1Outs, 
-            movrBatchSwapParams.movrWrapAmounts, 
+            movrBatchSwapParams.wrapAmounts, 
             movrBatchSwapParams.data, 
             {value: wrapMovrAmount}
         );
@@ -667,6 +667,7 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
         assetNodes.push(swapInstruction.assetNodes[1])
     })
     let swapTxContainer: SwapExtrinsicContainer = {
+        relay: 'kusama',
         chainId: 2023,
         chain: "Moonriver",
         assetNodes: assetNodes,
@@ -681,7 +682,7 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
         expectedAmountOut: outputFixedPoint,
         // pathInLocalId: pathStartLocalId,
         // pathOutLocalId: pathDestLocalId,
-        pathSwapType: swapType,
+        pathType: swapType,
         pathAmount: amountIn,
         // reverseTx: reverseMovrBatchSwapParams,
         api: api,

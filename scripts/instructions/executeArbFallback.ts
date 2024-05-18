@@ -5,7 +5,7 @@ import path, { join } from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { Relay, ResultDataObject } from './types';
-import * as lp from './../../../test2/arb-dot-2/lps/all_lp.js'
+// import * as lp from './../../../test2/arb-dot-2/lps/all_lp.js'
 import { dotTargetNode, ksmTargetNode } from './txConsts.js';
 // import pkg from './../../../test2/arb-dot-2/lps/all_lp.ts';
 // const { updateLpsChop } = pkg;

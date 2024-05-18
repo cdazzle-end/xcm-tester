@@ -12,6 +12,7 @@ import { BN } from '@polkadot/util/bundle';
 import { MangataInstance } from '@mangata-finance/sdk';
 import { BatchSwapParams } from './../swaps/movr/utils/types.ts';
 import { BalanceData, getAdapter } from '@polkawallet/bridge';
+import { ManagerSwapParams } from 'scripts/swaps/glmr/utils/types.ts';
 // import { BalanceData } from '@polkawallet/bridge';
 // import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 
@@ -48,6 +49,7 @@ export interface ResultDataObject {
     asset_name: string,
     path_value: number,
     path_identifier: number,
+    path_data: any
 }
 
 export interface AssetNodeData {
@@ -63,7 +65,8 @@ export interface JsonPathNode {
     node_key: string,
     asset_name: string,
     path_value: number,
-    path_identifier: number
+    path_identifier: number,
+    path_data: any
 }
 export type TxDetails = {
     success: boolean;
@@ -89,11 +92,17 @@ export enum InstructionType {
     TransferToHomeThenDestination
 }
 
+export interface PathData{
+    dexType: string, // 0 solar 1 zenlink 2 uni 3 algebra
+    lpId: string // pool address
+
+}
 export interface SwapInstruction {
     type: InstructionType.Swap;
     chain: number,
     instructionIndex: number,
-    pathType: number,
+    pathType: number, // 0 xcm | 1 dexV2 | 2 stable swap | 3 dexV3 | 4 omniswap
+    pathData: PathData,
     assetInLocalId: string,
     assetInAmount: number,
     assetInAmountFixed: FixedPointNumber,
@@ -210,15 +219,18 @@ export enum TransactionState {
 }
 export interface SwapProperties{
     type: 'Swap',
+    relay: Relay,
     chopsticks: boolean,
     node: TNode | 'Kusama' | 'Polkadot',
     paraId: number,
     address: string,
     assetInSymbol: string,
+    assetInLocalId: string,
     assetInStartBalance: BalanceData,
     assetInStartBalanceString: string,
     assetInDecimals: string,
     assetOutSymbol: string,
+    assetOutLocalId: string,
     assetOutStartBalance: BalanceData,
     assetOutStartBalanceString: string,
     assetOutDecimals: string,
@@ -230,15 +242,18 @@ export interface SwapProperties{
 export interface TransferProperties{
     type: 'Transfer',
     chopsticks: boolean,
+    relay: Relay,
     startNode: TNode | 'Kusama' | 'Polkadot',
     startParaId: number,
     startAssetSymbol: string,
+    startAssetLocalId: string,
     startAddress: string,
     startNodeStartBalance: BalanceData,
     startNodeStartBalanceString: string,
     destNode: TNode | 'Kusama' | 'Polkadot',
     destParaId: number,
     destAssetSymbol: string,
+    destAssetLocalId: string,
     destAddress: string,
     destNodeStartBalance: BalanceData,
     destNodeStartBalanceString: string,
@@ -256,6 +271,7 @@ export interface ExtrinsicObject{
     swapExtrinsicContainer?: SwapExtrinsicContainer
 }
 export interface TransferExtrinsicContainer{
+    relay: Relay,
     firstNode: TNode | "Kusama" | "Polkadot",
     secondNode: TNode | "Kusama" | "Polkadot",
     assetSymbol: string,
@@ -291,6 +307,7 @@ export interface SwapTxStats {
 
 }
 export interface SwapExtrinsicContainer{
+    relay: Relay,
     chainId: number,
     chain: TNode,
     assetNodes: AssetNode[],
@@ -304,7 +321,7 @@ export interface SwapExtrinsicContainer{
     
     // pathInLocalId: string,
     // pathOutLocalId: string,
-    pathSwapType: number,
+    pathType: number,
     pathAmount: number,
 
     assetSymbolOut: string,
@@ -312,7 +329,8 @@ export interface SwapExtrinsicContainer{
     expectedAmountOut: FixedPointNumber,
     api?: ApiPromise,
     reverseTx?: any,
-    movrBatchSwapParams?: BatchSwapParams
+    movrBatchSwapParams?: BatchSwapParams,
+    glmrSwapParams?: ManagerSwapParams[]
 }
 export interface PathNodeValues {
     // pathInLocalId: string,
@@ -493,3 +511,7 @@ export interface AsyncFileData{
 
 }
 
+export interface ExecutionSuccess {
+    success: boolean,
+    executionAttempts: number
+}

@@ -383,6 +383,7 @@ export async function getKarSwapExtrinsicDynamic(
     }
     // let assetNodes = extrinsicNodes[index]
         let swapTxContainer: SwapExtrinsicContainer = {
+            relay: 'kusama',
             chainId: 2000,
             chain: "Karura",
             assetNodes: extrinsicNodes,
@@ -396,7 +397,7 @@ export async function getKarSwapExtrinsicDynamic(
             assetSymbolOut: destAssetDynamic,
             // pathInLocalId: pathNodeValues.pathInLocalId,
             // pathOutLocalId: pathNodeValues.pathOutLocalId,
-            pathSwapType: swapType,
+            pathType: swapType,
             pathAmount: amountIn,
             api: api,
             // reverseTx: reverseTx

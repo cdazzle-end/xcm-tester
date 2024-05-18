@@ -1,6 +1,6 @@
 import { TNode } from "@paraspell/sdk";
-import { MyAssetRegistryObject } from "./types.ts";
-import { findValueByKey } from "./utils.ts";
+import { MyAssetRegistryObject, PathData } from "./types.ts";
+// import { findValueByKey } from "./utils.ts";
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url';
@@ -9,12 +9,30 @@ import { FixedPointNumber } from "@acala-network/sdk-core";
 // Get the __dirname equivalent in ES module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function findValueByKey(obj: any, targetKey: any): any {
+    if (typeof obj !== 'object' || obj === null) {
+        return null;
+    }
+    for (let key in obj) {
+        if (key === targetKey) {
+            return obj[key];
+        }
+
+        let foundValue: any = findValueByKey(obj[key], targetKey);
+        if (foundValue !== null) {
+            return foundValue;
+        }
+    }
+    return null;
+}
+
 export interface AssetNodeData {
     paraspellAsset: { symbol?: string; assetId?: string } | null,
     paraspellChain: TNode | "Kusama" | "Polkadot",
     assetRegistryObject: MyAssetRegistryObject,
     pathValue: number,
     pathType: number,
+    pathData: PathData
 }
 
 export class AssetNode implements AssetNodeData{
@@ -24,6 +42,7 @@ export class AssetNode implements AssetNodeData{
     pathValue: number;
     pathValueFixed: FixedPointNumber
     pathType: number;
+    pathData: PathData;
     
 
     constructor(data: AssetNodeData) {
@@ -32,6 +51,7 @@ export class AssetNode implements AssetNodeData{
         this.assetRegistryObject = data.assetRegistryObject;
         this.pathValue = data.pathValue;
         this.pathType = data.pathType;
+        this.pathData = data.pathData;
 
         let assetDecimals = this.assetRegistryObject.tokenData.decimals
         // console.log("PATH VALUE ", this.pathValue)
@@ -76,7 +96,9 @@ export class AssetNode implements AssetNodeData{
     getAssetOriginRegistryObject(): MyAssetRegistryObject {
         // console.log("Searching for asset origin registry object for asset: " + JSON.stringify(this, null, 2))
         let originChainId = this.getAssetOriginChainId()
-        let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
+        let relay = this.assetRegistryObject.tokenData.network;
+        let assetRegistry: MyAssetRegistryObject[] = relay === 'kusama' ? JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8')) : JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssetsPolkadot.json'), 'utf8'));
+        // let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
         let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
             if(assetRegistryObject.tokenData.chain == originChainId && assetRegistryObject.hasLocation == true){
                 // console.log("Running deep equal check for asset: " + JSON.stringify(assetRegistryObject))

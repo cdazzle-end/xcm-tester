@@ -1,135 +1,54 @@
 import fs from 'fs'
 import * as paraspell from '@paraspell/sdk'
-import { BalanceData, getAdapter } from '@polkawallet/bridge';
 import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
 import path from 'path';
-import { firstValueFrom, combineLatest, map, Observable, race, EMPTY, timeout } from "rxjs";
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { MyAssetRegistryObject, MyAsset, ResultDataObject, ApiSet, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic, LastNode, ExecutionState, ArbExecutionResult, TransactionState, TransferProperties, SwapProperties, Relay, JsonPathNode } from './types.ts'
+import { MyAssetRegistryObject, ResultDataObject, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic, LastNode, ArbExecutionResult, Relay, JsonPathNode, PathData } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
-import { allConnectionPromises, allConnections, observableApis, promiseApis } from './liveTest.ts';
-import { ApiPromise, ApiRx, WsProvider } from '@polkadot/api';
-import { options } from '@acala-network/api/dist/index.js';
-import { prodParasKusama, prodParasKusamaCommon, prodRelayKusama } from '@polkadot/apps-config/endpoints';
 import { fileURLToPath } from 'url';
-
 import { Keyring } from '@polkadot/api'
 import {KeyringPair} from '@polkadot/keyring/types'
-// import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getEndpointsForChain, connectFirstApi, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange } from './utils.ts'
-import {AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer } from './types.ts'
-
-import { FixedPointNumber, Token } from "@acala-network/sdk-core";
-import { ISubmittableResult } from '@polkadot/types/types/extrinsic';
-import { alithPk, arb_wallet_kusama, karRpc, ksmRpc, live_wallet_3, localRpcs, testNets } from './txConsts.ts';
-import {EvmRpcProvider} from '@acala-network/eth-providers';
-import { Wallet } from '@acala-network/sdk/wallet/wallet.js';
-import { WalletConfigs } from '@acala-network/sdk/wallet/index.js';
-import { liveWallet3Pk } from './../swaps/movr/utils/const.ts';
-import { globalState } from './liveTest.ts';
-import { getApiForNode } from './apiUtils.ts';
+import { InstructionType, SwapInstruction, TransferInstruction } from './types.ts'
+import { arb_wallet_kusama, dotTargetNode, ksmTargetNode, live_wallet_3 } from './txConsts.ts';
+import { runAndReturnTargetArb } from './executeArbFallback.ts';
 
 // import { buildTransferExtrinsic } from './extrinsicUtils.ts';
 // Get the __dirname equivalent in ES module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
 
-export function setLastNode(node: LastNode){
-    if(globalState.tracking == true){
-        globalState.lastNode = node
-        fs.writeFileSync(path.join(__dirname, './lastNode.json'), JSON.stringify(node, null, 2), 'utf8')
-    }
 
-}
-export function setLastFile(filePath: string){
-    if(globalState.tracking == true){
-        globalState.lastFilePath = filePath;
-        fs.writeFileSync(path.join(__dirname, './lastAttemptFile.json'), JSON.stringify(filePath, null, 2), 'utf8')
-    }
 
-}
-export function setLastExtrinsicSet(extrinsicSet: ExtrinsicSetResultDynamic){
-    if(globalState.tracking == true){
-        globalState.extrinsicSetResults = extrinsicSet
-        fs.writeFileSync(path.join(__dirname, './lastExtrinsicSet.json'), JSON.stringify(extrinsicSet, null, 2), 'utf8')
-    }
 
-}
-export function setTransactionState(transactionState: TransactionState){
-    if(globalState.tracking == true){
-        globalState.transactionState = transactionState;
-        fs.writeFileSync(path.join(__dirname, './lastTransactionState.json'), JSON.stringify(transactionState, null, 2), 'utf8')
-    }
-}
-export function setTransctionProperties(properties: TransferProperties | SwapProperties){
-    if(globalState.tracking == true){
-        globalState.transactionProperties = properties;
-        fs.writeFileSync(path.join(__dirname, './lastTransactionProperties.json'), JSON.stringify(properties, null, 2), 'utf8')
-    }
 
-}
 
-export function setExecutionSuccess(success: boolean){
-    if(globalState.tracking == true){
-        if(success){
-            globalState.executionSuccess = true
-            globalState.executionAttempts = 0
-        } else {
-            globalState.executionAttempts += 1
+
+// TRUNCATE execution path. Skips to the first swap
+export async function getFirstSwapNodeFromAssetNodes(nodes: AssetNode[], chopsticks: boolean){ 
+    let instructionIndex = 0;   
+    let firstKsmNodeIndex = -1
+    for(let i = 0; i < nodes.length; i++){
+        if(nodes[i].pathType !== 0){
+            firstKsmNodeIndex = i - 1
+            break;
         }
-        let executionSuccess: ExecutionSuccess = {success, executionAttempts: globalState.executionAttempts}
-        fs.writeFileSync(path.join(__dirname, './lastExecutionSuccess.json'), JSON.stringify(executionSuccess, null, 2), 'utf8')
     }
-
-}
-export function setExecutionRelay(relay: Relay){
-    if(globalState.tracking == true){
-        globalState.relay = relay
-        fs.writeFileSync(path.join(__dirname, './lastExecutionRelay.json'), JSON.stringify(relay, null, 2), 'utf8')
+    if(firstKsmNodeIndex == -1){
+        throw new Error("No swap instructions found")
     }
+    let truncatedAssetNodes = nodes.slice(firstKsmNodeIndex)
+    return truncatedAssetNodes
 }
 
-export function resetExecutionState(){
-    globalState.relay = null,
-    globalState.lastNode = null
-    globalState.lastFilePath = null
-    globalState.extrinsicSetResults = null
-    globalState.transactionState = null
-    globalState.transactionProperties = null
-    globalState.executionSuccess = false
-    globalState.executionAttempts = 0
 
-}
 
-interface ExecutionSuccess {
-    success: boolean,
-    executionAttempts: number
-}
-
-export function getLastExecutionState(){
-    let lastNode = JSON.parse(fs.readFileSync(path.join(__dirname, './lastNode.json'), 'utf8'));
-    let lastFilePath = JSON.parse(fs.readFileSync(path.join(__dirname, './lastAttemptFile.json'), 'utf8'));
-    let allExtrinsicResults: ExtrinsicSetResultDynamic = JSON.parse(fs.readFileSync(path.join(__dirname, './lastExtrinsicSet.json'), 'utf8'));
-    let transactionState: TransactionState = JSON.parse(fs.readFileSync(path.join(__dirname, './lastTransactionState.json'), 'utf8'))
-    let transactionProperties: TransferProperties | SwapProperties = JSON.parse(fs.readFileSync(path.join(__dirname, './lastTransactionProperties.json'), 'utf8'))
-    let lastExecution: ExecutionSuccess = JSON.parse(fs.readFileSync(path.join(__dirname, './lastExecutionSuccess.json'), 'utf8'))
-    let lastExecutionRelay: Relay = JSON.parse(fs.readFileSync(path.join(__dirname, './lastExecutionRelay.json'), 'utf8'))
-    let lastExecutionState: ExecutionState = {
-        tracking: true,
-        relay: lastExecutionRelay,
-        lastNode,
-        lastFilePath,
-        extrinsicSetResults: allExtrinsicResults,
-        transactionState: transactionState,
-        transactionProperties: transactionProperties,
-        executionSuccess: lastExecution.success,
-        executionAttempts: lastExecution.executionAttempts
-    }
-    return lastExecutionState
-}
-
-export function getNodeFromChainId(chainId: number): TNode{
+export function getNodeFromChainId(chainId: number, relay: Relay): TNode{
+    // if(chainId == 0){
+    //     return relay === 'kusama' ? 'Kusama' : 'Polkadot'
+    // }
+    let relaySymbol = relay === 'kusama' ? 'KSM' : 'DOT'
     let node = paraspell.NODE_NAMES.find((node) => {
-        return paraspell.getParaId(node) == chainId
+        return paraspell.getParaId(node) == chainId && paraspell.getRelayChainSymbol(node) == relaySymbol
     })
     return node as TNode
 
@@ -152,80 +71,120 @@ export function getParaspellChainName(relay: Relay, chainId: number): TNode | "K
 
 export const getAssetBySymbolOrId = (
     node: TNode,
-    symbolOrId: string | number
+    inputAssetId: string,
+    inputAssetSymbol: string,
+    // symbolOrId: string | number
   ): { symbol?: string; assetId?: string } | null => {
+    console.log("Node: ", node)
+    console.log("Asset symbol: ", inputAssetSymbol)
+    console.log("Asset ID: ", inputAssetId)
+
     const { otherAssets, nativeAssets, relayChainAssetSymbol } = getAssetsObject(node)
-    console.log("Getting asset symbol or ID: " + JSON.stringify(symbolOrId))
-    
-    const asset = [...otherAssets, ...nativeAssets].find(
-      ({ symbol, assetId }) => {
-        // console.log("Asset symobl or id " + JSON.stringify(symbolOrId) + " --- " + symbol + " --- " + assetId)
-        if(typeof symbolOrId === 'string'){
-            return symbol?.toLowerCase() === symbolOrId.toLowerCase() || assetId?.toLowerCase() === symbolOrId.toLowerCase()
-        }
-        else{
-            return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
-        }
+    // console.log("Getting asset symbol or ID: " + JSON.stringify(symbolOrId))
+    let allAssets = [...otherAssets, ...nativeAssets];
+
+    // Modified function to take both asset Id and symbol, which we can get from our assetRegistry
+    // Search for asset but unique ID, but some paraspell assets dont have marked ID, so we can use symbol for that until we add all ID's to paraspell assets
+    let paraspellAsset = allAssets.find(({symbol, assetId}) => {
+        return assetId?.toLowerCase() == inputAssetId.toLowerCase()
     })
+
+    if(!paraspellAsset){
+        paraspellAsset = allAssets.find(({symbol, assetId}) => {
+            return symbol?.toLowerCase() == inputAssetSymbol.toLowerCase()
+        })
+    }
+
+
+    // const asset = [...otherAssets, ...nativeAssets].find(
+    //   ({ symbol, assetId }) => {
+    //     if(typeof symbolOrId === 'string'){ // Check ID first to avoid symbol conflicts
+    //         return assetId?.toLowerCase() === symbolOrId.toLowerCase() || symbol?.toLowerCase() === symbolOrId.toLowerCase()
+    //     }
+    //     else{
+    //         return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
+    //     }
+    // })
   
-    if (asset !== undefined) {
-      const { symbol, assetId } = asset
+    if (paraspellAsset !== undefined) {
+      const { symbol, assetId } = paraspellAsset
       return { symbol, assetId }
     }
     // For xc asset chains, account for the 'xc' prefix when sending to or receiving from
-    if(node == "Moonriver" || node == "Shiden"){
+    // if(node == "Moonriver" || node == "Shiden" || node == "Astar"){
         
-        const asset = [...otherAssets, ...nativeAssets].find(
-            ({ symbol, assetId }) => {
-              // console.log("Asset symobl or id " + JSON.stringify(symbolOrId) + " --- " + symbol + " --- " + assetId)
-              if(typeof symbolOrId === 'string'){
-                let prefixedSymbolOrId = "xc" + symbolOrId
-                return symbol?.toLowerCase() === prefixedSymbolOrId.toLowerCase() || assetId?.toLowerCase() === prefixedSymbolOrId.toLowerCase()
-              }
-              else{
-                  return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
-              }
-          })
-    // Check if asset is coming from an xc chain, and remove the 'xc' prefix
-    } else {
-        const asset = [...otherAssets, ...nativeAssets].find(
-            ({ symbol, assetId }) => {
-              // console.log("Asset symobl or id " + JSON.stringify(symbolOrId) + " --- " + symbol + " --- " + assetId)
-              if(typeof symbolOrId === 'string'){
-                let noPrefixSymbolOrId = symbolOrId.toLowerCase().startsWith("xc") ? symbolOrId.slice(2) : symbolOrId
-                return symbol?.toLowerCase() === noPrefixSymbolOrId.toLowerCase() || assetId?.toLowerCase() === noPrefixSymbolOrId.toLowerCase()
-              }
-              else{
-                  return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
-              }
-          })
-    }
+    //     const asset = [...otherAssets, ...nativeAssets].find(
+    //         ({ symbol, assetId }) => {
+    //           // console.log("Asset symobl or id " + JSON.stringify(symbolOrId) + " --- " + symbol + " --- " + assetId)
+    //           if(typeof symbolOrId === 'string'){
+    //             let prefixedSymbolOrId = "xc" + symbolOrId
+    //             return symbol?.toLowerCase() === prefixedSymbolOrId.toLowerCase() || assetId?.toLowerCase() === prefixedSymbolOrId.toLowerCase()
+    //           }
+    //           else{
+    //               return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
+    //           }
+    //       })
+    // // Check if asset is coming from an xc chain, and remove the 'xc' prefix
+    // } else if (node == 'Moonbeam') {
+    //     // console.log("MOONBEAM REMOVE XC")
+    //     const asset = [...otherAssets, ...nativeAssets].find(
+    //         ({ symbol, assetId }) => {
+    //           // console.log("Asset symobl or id " + JSON.stringify(symbolOrId) + " --- " + symbol + " --- " + assetId)
+    //           if(typeof symbolOrId === 'string'){
+    //             let noPrefixSymbolOrId = symbolOrId.toLowerCase().startsWith("xc") ? symbolOrId.slice(2) : symbolOrId
+    //             // console.log("Asset symobl or id " + noPrefixSymbolOrId.toLowerCase() + " --- " + symbol.toLowerCase() + " --- " + assetId)
+    //             return symbol?.toLowerCase() === noPrefixSymbolOrId.toLowerCase() || assetId?.toLowerCase() === noPrefixSymbolOrId.toLowerCase()
+    //           }
+    //           else{
+    //               return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
+    //           }
+    //       })
+    //     //   console.log("Asset: " + JSON.stringify(asset))
+    //     return asset
+    // } 
+    
+    // else {
+    //     const asset = [...otherAssets, ...nativeAssets].find(
+    //         ({ symbol, assetId }) => {
+    //           // console.log("Asset symobl or id " + JSON.stringify(symbolOrId) + " --- " + symbol + " --- " + assetId)
+    //           if(typeof symbolOrId === 'string'){
+    //             let noPrefixSymbolOrId = symbolOrId.toLowerCase().startsWith("xc") ? symbolOrId.slice(2) : symbolOrId
+    //             return symbol?.toLowerCase() === noPrefixSymbolOrId.toLowerCase() || assetId?.toLowerCase() === noPrefixSymbolOrId.toLowerCase()
+    //           }
+    //           else{
+    //               return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
+    //           }
+    //       })
+    // }
   
-    if (relayChainAssetSymbol === symbolOrId) return { symbol: relayChainAssetSymbol }
+    if (relayChainAssetSymbol.toLowerCase() === inputAssetSymbol.toLowerCase()) return { symbol: relayChainAssetSymbol }
   
     return null
 }
 
-export function getAssetRegistryObject(chainId: number, localId: string): MyAssetRegistryObject{
-    console.log("Getting asset registry object: " + chainId + " --- " + localId)
-    let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
+export function getAssetRegistryObject(chainId: number, localId: string, relay: Relay): MyAssetRegistryObject{
+    // console.log("Getting asset registry object: " + chainId + " --- " + localId)
+    let assetRegistry: MyAssetRegistryObject[] = relay === 'kusama' ? JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8')) : JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssetsPolkadot.json'), 'utf8'));
+    // let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
     let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
         if(chainId == 0 && assetRegistryObject.tokenData.chain == 0){
             return true
         }
+        // console.log(JSON.stringify(assetRegistryObject.tokenData.localId).replace(/\\|"/g, ""))
         return assetRegistryObject.tokenData.chain == chainId && JSON.stringify(assetRegistryObject.tokenData.localId).replace(/\\|"/g, "") == localId
     })
     if(asset == undefined){
-        throw new Error(`Asset not found in registry: chainId: ${chainId}, localId: ${localId}`)
+        throw new Error(`Asset not found in registry: chainId: ${chainId}, localId: ${localId} | localId stringify: ${JSON.stringify(localId)}`)
     }
     return asset
 }
-export function getAssetKeyFromChainAndSymbol(chainId: number, symbol: string): string{
-    let assetRegistryObject: MyAssetRegistryObject = getAssetRegistryObjectBySymbol(chainId, symbol)
+export function getAssetKeyFromChainAndSymbol(chainId: number, symbol: string, relay: Relay): string{
+    let assetRegistryObject: MyAssetRegistryObject = getAssetRegistryObjectBySymbol(chainId, symbol, relay)
     return JSON.stringify(assetRegistryObject.tokenData.chain.toString() + JSON.stringify(assetRegistryObject.tokenData.localId))
 }
-export function getAssetRegistryObjectBySymbol(chainId: number, symbol: string): MyAssetRegistryObject{
-    let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
+export function getAssetRegistryObjectBySymbol(chainId: number, symbol: string, relay: Relay): MyAssetRegistryObject{
+    let assetRegistryPath = relay === 'kusama' ? '../../allAssets.json' : '../../allAssetsPolkadot.json'
+    let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, assetRegistryPath), 'utf8'));
     let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
         return assetRegistryObject.tokenData.chain == chainId && JSON.stringify(assetRegistryObject.tokenData.symbol).toLowerCase() == JSON.stringify(symbol).toLowerCase()
     })
@@ -267,33 +226,46 @@ export function readLogData(jsonObject: JsonPathNode | ResultDataObject, relay: 
     let nodeKey = jsonObject.node_key.replace(/\\|"/g, "");
     if(nodeKey.startsWith("0")){
         chainId = "0"
-        assetLocalId = "KSM"
+        assetLocalId = relay == 'kusama' ? "KSM" : "DOT"
     } else {
         chainId = nodeKey.slice(0,4)
         assetLocalId = nodeKey.slice(4)
     }
 
-    let assetRegistryObject = getAssetRegistryObject(parseInt(chainId), assetLocalId)
+    let assetRegistryObject = getAssetRegistryObject(parseInt(chainId), assetLocalId, relay)
     let assetSymbol = assetRegistryObject.tokenData.symbol
+    let assetId = JSON.stringify(assetRegistryObject.tokenData.localId).replace(/\\|"/g, "")
 
     let paraspellChainName = getParaspellChainName(relay, parseInt(chainId))
+    let path_data = jsonObject.path_data as any
+    let pathDataFormatted: PathData = {
+        dexType: path_data.path_type,
+        lpId: path_data.lp_id
+    }
+
     if(paraspellChainName == "Kusama" || paraspellChainName == "Polkadot"){
         let assetNode = new AssetNode({
             paraspellAsset: {symbol: assetSymbol},
             paraspellChain: paraspellChainName,
             assetRegistryObject: assetRegistryObject,
             pathValue: jsonObject.path_value,
-            pathType: jsonObject.path_identifier
+            pathType: jsonObject.path_identifier,
+            pathData: pathDataFormatted
         });
         return assetNode
     } else {
-        let paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetSymbol)
+
+        
+        let paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetSymbol)
 
         if(paraspellChainName == undefined){
             throw new Error("Paraspell chain name not found for chain id " + chainId)
         }
         if(paraspellAsset == null){
-            throw new Error("Paraspell asset not found for chain " + paraspellChainName + " and asset id " + assetLocalId)
+            paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetLocalId) // Should probably search by local ID first instead of symbol
+            if (paraspellAsset == null){
+                throw new Error("Paraspell asset not found for chain " + paraspellChainName + " and asset id " + assetLocalId)
+            }
         }
         
         let assetNode = new AssetNode({
@@ -301,7 +273,8 @@ export function readLogData(jsonObject: JsonPathNode | ResultDataObject, relay: 
             paraspellChain: paraspellChainName,
             assetRegistryObject: assetRegistryObject,
             pathValue: jsonObject.path_value,
-            pathType: jsonObject.path_identifier
+            pathType: jsonObject.path_identifier,
+            pathData: pathDataFormatted
         });
         // console.log(JSON.stringify(assetNode))
         return assetNode
@@ -328,451 +301,25 @@ export function findValueByKey(obj: any, targetKey: any): any {
 
 
 
-export async function watchTokenDeposit(paraId: number, chopsticks: boolean, destChainApi: ApiPromise, transferrableAssetObject: TransferrableAssetObject, depositAddress: string){
-    let tokenSymbol: string;
-    if(paraId == 0){
-        tokenSymbol = "KSM"
-    }
-    else if(!transferrableAssetObject.paraspellAsset.symbol){
-        // throw logError(new Error("Asset symbol is null. Cant subscribe to token balance"))
-        throw Error("Asset symbol is null. Cant subscribe to token balance")
-    } else {
-        tokenSymbol = transferrableAssetObject.paraspellAsset.symbol;
-    }
 
-    console.log(`Watch Token Deposit: Source Chain Name ${transferrableAssetObject.sourceParaspellChainName} | Token Symbol ${tokenSymbol} | Deposit Address ${depositAddress} `)
-
-    // Make sure api is conencted
-    console.log(`Watch Token Deposit: API connected: ${destChainApi.isConnected}`)
-    if(!destChainApi.isConnected){
-        console.log("Watch Token Deposit: API not connected. Connecting...")
-        await destChainApi.connect()
-        console.log("Watch Token Deposit: API connected: " + destChainApi.isConnected)
-    }
-
-    let destAdapter = getAdapter(paraId)
-    let currentBalance: BalanceData;
-    if(paraId == 2000){
-        // let evmProvider: EvmRpcProvider = new EvmRpcProvider("ws://172.26.130.75:8008")
-        let rpcEndpoint = chopsticks ? localRpcs["Karura"] : karRpc
-        let walletConfigs: WalletConfigs = {
-            evmProvider: EvmRpcProvider.from(rpcEndpoint),
-            wsProvider: new WsProvider(rpcEndpoint)
-        }
-        let adapterWallet = new Wallet(destChainApi, walletConfigs);
-        await destAdapter.init(destChainApi, adapterWallet);
-    } else {
-        await destAdapter.init(destChainApi);
-    }
-    
-    // If chain is movr, make sure tokens have xc prefix
-    if(paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
-        // console.log("Adding XC from token symbol")
-        tokenSymbol = "xc" + tokenSymbol
-    // if chain isnt movr, no prefix
-    } else if(paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
-        // console.log("Removing XC from token symbol")
-        tokenSymbol = tokenSymbol.slice(2)
-    }
-    const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, depositAddress);
-    console.log("Watch Token Deposit: Subscribed to balance")
-    return new Observable<BalanceData>((subscriber) => {
-        const subscription = balanceObservable.subscribe({
-            next(balance) {
-                if(currentBalance){
-                    subscriber.next(balance);
-                    subscriber.complete();
-                    console.log("Watch Token Deposit: Token deposit complete")
-                } else {
-                    currentBalance = balance;
-                    subscriber.next(balance);
-                }
-            },
-            error(err) {
-                subscriber.error(new Error(err));
-                subscriber.complete(); // Complete the outer Observable on error
-            },
-            complete() {
-                subscriber.complete(); // Complete the outer Observable when the inner one completes
-            }
-        });
-        return () => {
-            subscription.unsubscribe();
-        };
-    })
-}
-export async function watchTokenBalance(paraId: number, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, node: string, accountAddress: string){
-    // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
-    let tokenSymbol;
-    if(paraId == 0){
-        tokenSymbol = "KSM"
-    } else {
-        tokenSymbol = assetSymbol
-    }
-
-    console.log(`Watch Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
-
-    // Make sure api is connected
-    console.log(`Watch Token Balance: API connected: ${chainApi.isConnected}`)
-    if(!chainApi.isConnected){
-        console.log("Watch Token Balance: API not connected. Connecting...")
-        await chainApi.connect()
-        console.log("Watch Token Balance: API connected: " + chainApi.isConnected)
-    }
-
-    let destAdapter = getAdapter(paraId)
-    let currentBalance: BalanceData;
-
-    
-    if(paraId == 2000){
-        let rpcEndpoint = chopsticks ? localRpcs[node] : karRpc
-        let walletConfigs: WalletConfigs = {
-            evmProvider: EvmRpcProvider.from(rpcEndpoint),
-            wsProvider: new WsProvider(rpcEndpoint)
-        }
-        let adapterWallet = new Wallet(chainApi, walletConfigs);
-        await destAdapter.init(chainApi, adapterWallet);
-    } else {
-        await destAdapter.init(chainApi);
-    }
-    
-    // printAndLogToFile("Subscribing to balance for destination chain " + paraId + " for asset " + transferrableAssetObject.paraspellAssetSymbol.symbol + " for address " + aliceAddress)
-    
-    // if(node == "Moonriver" && tokenSymbol.toUpperCase().startsWith("XC")){
-    //     console.log("Removing XC from token symbol")
-    //     tokenSymbol = tokenSymbol.slice(2)
-    // }
-    if(paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
-        console.log("Adding XC from token symbol")
-        tokenSymbol = "xc" + tokenSymbol
-    // if chain isnt movr, no prefix
-    } else if(paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
-        console.log("Removing XC from token symbol")
-        tokenSymbol = tokenSymbol.slice(2)
-    }
-    const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, accountAddress);
-    console.log("Watch Token Balance: Subscribed to balance")
-    // console.log(chainApi.registry.chainTokens)
-    // console.log(destAdapter.getTokens())
-    return new Observable<BalanceData>((subscriber) => {
-        const subscription = balanceObservable.subscribe({
-            next(balance) {
-                if(currentBalance){
-                    subscriber.next(balance);
-                    subscriber.complete();
-                    console.log("Watch Token Balance: Observable complete")
-                } else {
-                    currentBalance = balance;
-                    subscriber.next(balance);
-                }
-            },
-            error(err) {
-                subscriber.error(new Error(err));
-                subscriber.complete(); // Complete the outer Observable on error
-            },
-            complete() {
-                subscriber.complete(); // Complete the outer Observable when the inner one completes
-            }
-        });
-        return () => {
-            subscription.unsubscribe();
-        };
-    })
-}
-export async function getBalanceChange(
-    balanceObservable$: Observable<BalanceData>,
-    setUnsubscribeCallback: (unsubscribe: () => void) => void
-  ): Promise<BalanceChangeStats> {
-    console.log("Get Balance Change: waiting for balance change")
-    let currentBalance: BalanceData;
-    let balanceChangeStats: BalanceChangeStats = {
-        startBalance: new FixedPointNumber(0),
-        endBalance: new FixedPointNumber(0),
-        changeInBalance: new FixedPointNumber(0),
-        startBalanceString: "0",
-        endBalanceString: "0",
-        changeInBalanceString: "0"
-    }
-    const balanceChangePromise = new Promise<BalanceChangeStats>((resolve, reject) => {
-        const subscription = balanceObservable$.pipe(timeout(120000)).subscribe({
-            next(balance) {
-                
-                if(currentBalance){
-                    console.log("Get Balance Change: Balance changed")
-                    let changeInBalance = balance.free.sub(currentBalance.free);
-                    // currentBalance = balance;
-                    console.log(`Get Balance Change: Previous Balance: ${currentBalance.free} | New Balance: ${balance.free} | Change in Balance: ${changeInBalance}`)
-
-                    subscription.unsubscribe();
-                    let startBalance = currentBalance.free
-                    let endBalance = balance.free
-                    balanceChangeStats = {
-                        startBalance,
-                        endBalance,
-                        changeInBalance,
-                        startBalanceString: startBalance.toString(),
-                        endBalanceString: endBalance.toString(),
-                        changeInBalanceString: changeInBalance.toString()
-                    }
-                    resolve(balanceChangeStats)
-                } else {
-                    balanceChangeStats.startBalance = balance.free
-                    currentBalance = balance;
-                    console.log(`Get Balance Change: Current Balance: ${balance.free}`);
-                }
-            },
-            
-            error(err) {
-                if(err.name == 'TimeoutError'){
-                    console.log('Get Balance Change: No balance change reported within 120 seconds');
-                    // logError(err, "No balance change reported within 120 seconds")
-                    subscription.unsubscribe();
-                    resolve(balanceChangeStats)
-                } else {
-                    console.log("Get Balance Change: ERROR")
-                    console.log(err)
-                    subscription.unsubscribe()
-                    resolve(balanceChangeStats)
-                }
-                
-            },
-            complete(){
-                console.log('Get Balance Change: Balance change subscription completed for some reason');
-                subscription.unsubscribe();
-                resolve(balanceChangeStats)
-            }
-        });
-        // Providing a way to unsubscribe from outside this function
-        setUnsubscribeCallback(() => {
-            console.log("Get Balance Change: Something went wrong. Unsubscribing from balance change observable")
-            subscription.unsubscribe();
-            resolve(balanceChangeStats)
-        });
-    });
-    return balanceChangePromise
-}
-export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, chainId: number, assetSymbol: string){
-    let account = await getSigner(chopsticks, false)
-
-    let chainNode: TNode | "Kusama" | "Polkadot";
-    if(relay === "kusama"){
-        chainNode = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId)
-    } else if (relay === "polkadot"){
-        chainNode = chainId == 0 ? "Polkadot" : getNodeFromChainId(chainId)
-    } else {
-        throw new Error("Invalid relay")
-    }
-    let chainAdapter = getAdapter(chainId)
-
-    if(chainId == 2000){
-        let rpc;
-        if(relay === 'kusama'){
-            rpc = chopsticks ? localRpcs["Karura"] : karRpc
-        } else {
-            rpc = chopsticks ? localRpcs["Acala"] : karRpc
-        }
-        let provider = new WsProvider(rpc)
-        let walletConfigs: WalletConfigs = {
-            evmProvider: EvmRpcProvider.from(rpc),
-            wsProvider: provider
-        }
-        let karApi = await ApiPromise.create({provider: provider})
-        let adapterWallet = new Wallet(karApi, walletConfigs);
-        await chainAdapter.init(karApi, adapterWallet);
-    } else {
-        let api = await getApiForNode(chainNode, chopsticks)
-        await chainAdapter.init(api);
-    }
-
-    let tokenSymbol = assetSymbol
-    if(chainId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
-        console.log("Adding XC from token symbol")
-        tokenSymbol = "xc" + tokenSymbol
-    // if chain isnt movr, no prefix
-    } else if(chainId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
-        console.log("Removing XC from token symbol")
-        tokenSymbol = tokenSymbol.slice(2)
-    }
-
-    if(chainId == 2004 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "GLMR"){
-        console.log("Adding XC from token symbol")
-        tokenSymbol = "xc" + tokenSymbol
-    // if chain isnt movr, no prefix
-    } else if(chainId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
-        console.log("Removing XC from token symbol")
-        tokenSymbol = tokenSymbol.slice(2)
-    }
-    
-    const balanceObservable = chainAdapter.subscribeTokenBalance(tokenSymbol, account.address);
-    let balance = await firstValueFrom(balanceObservable)
-    
-    return balance
-    // nativeBalances[chainId] = balance.available.toNumber()
-    // asyncAdapters.push(chainAdapter)
-
-}
-export async function getNativeBalanceAcrossChains(chopsticks: boolean, relay: Relay){
-    let nativeBalances = relay === 'kusama' ? 
-    {
-        0: 0,
-        2000: 0,
-        2001: 0,
-        2023: 0,
-        2085: 0,
-        2090: 0,
-        2110: 0
-    } : {
-        0: 0,
-        2000: 0,
-        2030: 0,
-        2034: 0,
-        2004: 0,
-        2012: 0
-    }
-
-    let asyncAdapters = []
-    let chainIds = relay === "kusama" ? [0, 2000, 2001, 2023, 2085, 2090, 2110] : [0, 2000, 2030, 2034, 2004, 2012]
-    let nativeBalancesPromis = chainIds.map(async (chainId) => {
-        let account;
-        if(chainId == 2023 || chainId == 2004){ // MOVR or GLMR
-            account = await getSigner(chopsticks, false)
-        } else {
-            account = await getSigner(chopsticks, false)
-        }
-        console.log("Account Address: " + account.address)
-        let chainNode: TNode | "Kusama" | "Polkadot";
-        if(relay === "kusama"){
-            chainNode = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId)
-        } else if (relay === "polkadot"){
-            chainNode = chainId == 0 ? "Polkadot" : getNodeFromChainId(chainId)
-        } else {
-            throw new Error("Invalid relay")
-        }
-
-
-        // let chainNode: TNode | "Kusama"  = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId)
-        let destAdapter = getAdapter(chainId)
-
-        if(chainId == 2000){
-            let rpc;
-            if(relay === 'kusama'){
-                rpc = chopsticks ? localRpcs["Karura"] : karRpc
-            } else {
-                rpc = chopsticks ? localRpcs["Acala"] : karRpc
-            }
-            let provider = new WsProvider(rpc)
-            let walletConfigs: WalletConfigs = {
-                evmProvider: EvmRpcProvider.from(rpc),
-                wsProvider: provider
-            }
-            let karApi = await ApiPromise.create({provider: provider})
-            let adapterWallet = new Wallet(karApi, walletConfigs);
-            await destAdapter.init(karApi, adapterWallet);
-        } else {
-            let api = await getApiForNode(chainNode, chopsticks)
-            await destAdapter.init(api);
-        }
-
-        let tokenSymbol = relay === "kusama" ? "KSM" : "DOT"
-        if(chainId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
-            console.log("Adding XC from token symbol")
-            tokenSymbol = "xc" + tokenSymbol
-        // if chain isnt movr, no prefix
-        } else if(chainId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
-            console.log("Removing XC from token symbol")
-            tokenSymbol = tokenSymbol.slice(2)
-        }
-
-        if(chainId == 2004 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "GLMR"){
-            console.log("Adding XC from token symbol")
-            tokenSymbol = "xc" + tokenSymbol
-        // if chain isnt movr, no prefix
-        } else if(chainId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
-            console.log("Removing XC from token symbol")
-            tokenSymbol = tokenSymbol.slice(2)
-        }
-
-        const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, account.address);
-        let balance = await firstValueFrom(balanceObservable)
-        nativeBalances[chainId] = balance.available.toNumber()
-        asyncAdapters.push(destAdapter)
-        return nativeBalances
-    })
-    await Promise.all(nativeBalancesPromis)
-    let adapters = await Promise.all(asyncAdapters)
-
-    return nativeBalances
-
-}
 export function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-export async function getBalance(paraId: number, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, node: string, accountAddress: string): Promise<BalanceData>{
 
-
-    console.log(`Get Token Balance for chain ${node} | Token ${assetSymbol}`)
-
-    let destAdapter = getAdapter(paraId)
-    let currentBalance: BalanceData;
-    
-    // Make sure api is connected
-    console.log(`Get Token Balance: API connected: ${chainApi.isConnected}`)
-    if(!chainApi.isConnected){
-        console.log("Get Token Balance: API not connected. Connecting...")
-        await chainApi.connect()
-        console.log("Get Token Balance: API connected: " + chainApi.isConnected)
-    }
-
-    if(paraId == 2000){
-        let rpcEndpoint = chopsticks ? localRpcs[node] : karRpc
-        let walletConfigs: WalletConfigs = {
-            evmProvider: EvmRpcProvider.from(rpcEndpoint),
-            wsProvider: new WsProvider(rpcEndpoint)
-        }
-        let adapterWallet = new Wallet(chainApi, walletConfigs);
-        await destAdapter.init(chainApi, adapterWallet);
-    } else {
-        await destAdapter.init(chainApi);
-    }
-    
-    let tokenSymbol;
-    if(paraId == 0){
-        tokenSymbol = "KSM"
-    } else {
-        tokenSymbol = assetSymbol
-    }
-
-    console.log(`Get Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
-
-    if(paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
-        // console.log("Adding XC from token symbol")
-        tokenSymbol = "xc" + tokenSymbol
-    // if chain isnt movr, no prefix
-    } else if(paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
-        // console.log("Removing XC from token symbol")
-        tokenSymbol = tokenSymbol.slice(2)
-    }
-
-    const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, accountAddress);
-    console.log("Get Token Balance: Subscribed to balance")
-    let balance = await firstValueFrom(balanceObservable)
-    console.log("Balance: " + JSON.stringify(balance.available.toNumber()))
-    return balance
-}
 
 export async function getSigner(chopsticks: boolean, eth: boolean): Promise<KeyringPair>{
     let keyring;
     let key;
 
     
-    if(chopsticks){
+    if(chopsticks){ 
         // Get test accounts
-        if(eth){
+        if(eth){ // CHOPSTICKS EVM WALLET, ONLY FOR TRANSFERS
             const index = 0;
             let ethDerPath = `m/44'/60'/0'/0/${index}`;
             keyring = new Keyring({ type: 'ethereum' });
             return keyring.addFromUri(`${live_wallet_3}/${ethDerPath}`);
-        } else {
+        } else { // CHOPSTICKS SUBSTRATE WALLET
             await cryptoWaitReady()
             keyring = new Keyring({
                 type: "sr25519",
@@ -781,12 +328,12 @@ export async function getSigner(chopsticks: boolean, eth: boolean): Promise<Keyr
         }
     } else {
         // Get live accounts
-        if(eth){
+        if(eth){ // LIVE EVM WALLET
             const index = 0;
             let ethDerPath = `m/44'/60'/0'/0/${index}`;
             keyring = new Keyring({ type: 'ethereum' });
             return keyring.addFromUri(`${live_wallet_3}/${ethDerPath}`);
-        } else {
+        } else { // LIVE SUBSTRATE WALLET
             await cryptoWaitReady()
             keyring = new Keyring({ type: 'sr25519' });
             return keyring.addFromMnemonic(arb_wallet_kusama)
@@ -806,7 +353,7 @@ export function increaseIndex(index: IndexObject) {
 export function printInstruction(instruction: SwapInstruction | TransferInstruction){
     if(instruction.type == InstructionType.Swap){
         // console.log("Swap Instruction: " + JSON.stringify(instruction))
-        console.log(`${instruction.instructionIndex} SWAP chain: ${instruction.chain} ${JSON.stringify(instruction.assetInLocalId)} -> ${JSON.stringify(instruction.assetOutLocalId)}`)
+        console.log(`${instruction.instructionIndex} SWAP chain: ${instruction.chain} ${instruction.assetNodes[0].paraspellChain} ${JSON.stringify(instruction.assetInLocalId)} -> ${JSON.stringify(instruction.assetOutLocalId)}`)
     } else if(instruction.type == InstructionType.TransferToHomeThenDestination){
         // console.log("Transfer instruction")
         const nodes = instruction.assetNodes
@@ -1161,6 +708,10 @@ export function getLatestTargetFilePolkadot(){
     }
 }
 
+export function getLatestDefaultFile(relay: Relay){
+
+}
+
 
 export function constructRouteFromFile(relay: Relay, logFilePath: string) {
     console.log("LatestFile: ", logFilePath)
@@ -1178,8 +729,9 @@ export function constructRouteFromJson(relay: Relay, jsonPathNodes: JsonPathNode
 }
 
 // How much profit we got for latest arb
-export async function getTotalArbResultAmount(lastSuccessfulNode: LastNode){
-    let latestFilePath = path.join(__dirname, './latestAttempt/arbExecutionResults.json')
+export async function getTotalArbResultAmount(relay: Relay, lastSuccessfulNode: LastNode){
+    console.log("Getting total arb amount result")
+    let latestFilePath = path.join(__dirname, `./logResults/latestAttempt/${relay}/arbExecutionResults.json`)
     let latestArbResults: ArbExecutionResult[] = JSON.parse(fs.readFileSync(latestFilePath, 'utf8'))
     let assetOut = latestArbResults[latestArbResults.length - 1].assetSymbolOut
     let arbAmountOut = 0;
@@ -1187,11 +739,18 @@ export async function getTotalArbResultAmount(lastSuccessfulNode: LastNode){
     // if(assetOut == "KSM"){
     //     arbAmountOut = latestArbResults[latestArbResults.length - 1].assetAmountOut - arbAmountIn
     // }
-    if(lastSuccessfulNode.assetSymbol == "KSM" || lastSuccessfulNode.assetSymbol.toUpperCase() == "XCKSM"){
+    console.log("Last Node: ", JSON.stringify(lastSuccessfulNode))
+    let lastNodeAssetSymbol = lastSuccessfulNode.assetSymbol
+    console.log("Last Node Asset Symbol: ", lastNodeAssetSymbol)
+    console.log("Asset out from result set: ", assetOut)
+    if(relay == 'kusama' && lastSuccessfulNode.assetSymbol == "KSM" || lastSuccessfulNode.assetSymbol.toUpperCase() == "XCKSM"){
+        arbAmountOut = Number.parseFloat(lastSuccessfulNode.assetValue) - arbAmountIn
+    }
+    if(relay == 'polkadot' && lastSuccessfulNode.assetSymbol == "DOT" || lastSuccessfulNode.assetSymbol.toUpperCase() == "XCDOT"){
         arbAmountOut = Number.parseFloat(lastSuccessfulNode.assetValue) - arbAmountIn
     }
     // getLastSuccessfulNodeFromResultData
-
+    console.log("Amount Out: ", arbAmountOut)
     return arbAmountOut
 }
 
@@ -1211,4 +770,28 @@ export function printInstructionSet(instructionSet: (SwapInstruction | TransferI
         printInstruction(instruction)
     })
     console.log("*********************************************************************")
+}
+
+export function getAssetRegistry(relay: Relay){
+    let assetRegistry: MyAssetRegistryObject[] = relay === 'kusama' ? JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8')) : JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssetsPolkadot.json'), 'utf8'));
+    return assetRegistry
+}
+
+export async function getArbExecutionPath(relay: Relay, latestFile: string, inputAmount: number, useLatestTarget: boolean, chopsticks: boolean){
+    let arbPathData: ResultDataObject[] | JsonPathNode[] = []
+    
+    // If useLatestTarget is false, will update LPs and run arb
+    if(!useLatestTarget){
+        try{
+            let arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
+            arbPathData = await runAndReturnTargetArb(arbArgs, chopsticks, relay)
+        }  catch {
+            console.log("Failed to run target arb")
+            throw new Error("Failed to run target arb")
+        }
+    } else {
+        arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
+    }
+
+    return arbPathData
 }

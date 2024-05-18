@@ -7,10 +7,11 @@ import { ApiPromise, ApiRx, WsProvider } from '@polkadot/api';
 import { options } from '@acala-network/api/dist/index.js';
 import { prodParasKusama, prodParasKusamaCommon, prodRelayKusama } from '@polkadot/apps-config/endpoints';
 import { TNode } from "@paraspell/sdk";
-import { ksmRpc, localRpcs } from "./txConsts.ts";
+import { dotRpc, ksmRpc, localRpcs } from "./txConsts.ts";
 import { apiMap } from "./liveTest.ts";
 
 // export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsticks: boolean){
+
 //     let apiEndpoint: string[];
 //     console.log("Get api for node: ", node)
 //     if(node == "Kusama"){
@@ -91,6 +92,8 @@ import { apiMap } from "./liveTest.ts";
 // }
 
 // Keep a map of all connections. If a connection to a chain already exists, return it
+
+// POLKADOT_ASSETS HAS THE SAME FUNCTION
 export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsticks: boolean){
     let map = apiMap
 
@@ -110,7 +113,13 @@ export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsti
         apiEndpoint = [ksmRpc]
         // throw new Error("Trying to transfer kusama away from home chain to kusama")
     } else if (node == "Polkadot") {
-
+        apiEndpoint = [dotRpc]
+    } else if(node == "CrustShadow"){
+        apiEndpoint = ["wss://rpc2-shadow.crust.network"]
+    } else if (node == "Parallel") {
+        // apiEndpoint = ['wss://rpc.parallel.fi']
+        // apiEndpoint = ["wss://parallel.api.onfinality.io/public-ws"]
+        apiEndpoint = ["wss://parallel-rpc.dwellir.com"]
     } else{
         apiEndpoint = paraspell.getAllNodeProviders(node)
     }
@@ -154,7 +163,9 @@ export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsti
         }
     } else {
         let endpointIndex = 0;
-        
+        if(node == "Moonbeam" && !chopsticks){
+            endpointIndex = 1 // Currently the working endpoint for moonbeam
+        }
         while(endpointIndex < apiEndpoint.length && !apiConnected){
             console.log("Connecting to api: ", apiEndpoint[endpointIndex])
             try{

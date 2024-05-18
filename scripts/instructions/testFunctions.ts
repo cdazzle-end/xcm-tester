@@ -688,3 +688,143 @@ async function testFallback(){
 //     // let arbSuccess = executionResults.success
 //     // let lastNode = globalState.lastNode
 // }
+
+
+// async function getRequiredBalanceForChain(destinationChainId: number, inputAmount: number, ksmBalances: any, chopsticks: boolean){
+//     //Find first chain with enough balance
+    
+//     console.log(`KSM BALANCES: ${JSON.stringify(ksmBalances, null, 2)}`)
+//     let [chainWithBalance, balance] = Object.entries(ksmBalances).find(([chainId, balance]) => {
+//         console.log(`Comparing chain: ${balance} with balance: ${inputAmount}`)
+//         let chainBalance = balance as number
+//         return chainBalance > inputAmount
+//     })
+    
+//     console.log(`Chain with balance: ${chainWithBalance} : ${balance}`)
+//     let pathNodes = []
+//     let transferTxs: PreExecutionTransfer[] = []
+
+//     let ksmAccount = await getSigner(chopsticks, false)
+//     // Construct Route
+//     if(Number.parseInt(chainWithBalance) != 0){
+
+//         let startChainNode: TNode = getParaspellChainName(Number.parseInt(chainWithBalance)) as TNode
+//         let api: ApiPromise = await getApiForNode(startChainNode, chopsticks)
+//         let formattedAmount = new FixedPointNumber(balance.toString(), 12)
+//         let tx = paraspell.Builder(api).from(startChainNode).amount(formattedAmount.toChainData()).address(ksmAccount.address) .build()
+//         let firstChainToKusama: PreExecutionTransfer = {
+//             fromChainId: Number.parseInt(chainWithBalance),
+//             toChainId: 0,
+//             extrinsic: tx,
+//             transferAmount: Number.parseFloat(balance.toString())
+//         }
+//         transferTxs.push(firstChainToKusama)
+//         console.log(JSON.stringify(tx.toHuman())) 
+//     }
+
+//     let destinationChainNode = getNodeFromChainId(destinationChainId)
+//     let destinationAccount = destinationChainNode == "Moonriver" ? await getSigner(chopsticks, true) : ksmAccount
+
+//     let api: ApiPromise = await getApiForNode("Kusama", 0, chopsticks)
+//     let formattedInput = new FixedPointNumber(inputAmount.toString(), 12).toChainData()
+//     let secondTx = paraspell.Builder(api).to(destinationChainNode).amount(formattedInput).address(destinationAccount.address).build()
+//     let kusamaToDestination: PreExecutionTransfer = {
+//         fromChainId: 0,
+//         toChainId: destinationChainId,
+//         extrinsic: secondTx,
+//         transferAmount: inputAmount
+//     }
+//     transferTxs.push(kusamaToDestination)
+//     console.log(JSON.stringify(secondTx.toHuman()))
+//     return transferTxs
+// }
+
+
+// async function runDynamicArbLive(chopsticks: boolean, executeMovr: boolean, small: boolean){
+//     // let small = true
+//     let latestFile = getLatestFileFromLatestDay(small)
+//     // let latestFile = getLatestFileFromLatestDay(small)
+//     let assetPath = constructRoute(latestFile)
+//     let instructions = await buildInstructionSet(assetPath)
+//     let instructionsAbreviated = await getFirstSwapNode(instructions, chopsticks)
+//     let firstInstruction = instructionsAbreviated[0]
+//     let startChain = firstInstruction.assetNodes[0].getChainId()
+//     let startValue = firstInstruction.assetNodes[0].pathValue
+    
+//     console.log("Start Value: ", startValue)
+
+//     let ksmBalances = await getNativeBalanceAcrossChains(chopsticks)
+//     console.log(ksmBalances)
+//     console.log("Start Chain: ", startChain)
+//     console.log(`Balance on start chain: ${ksmBalances[startChain]} | Input value: ${startValue}`)
+
+//     let executionInstructions = instructionsAbreviated
+//     if(ksmBalances[startChain] > startValue){
+//         console.log("StartNode has sufficient start balance")
+//     } else {
+//         console.log("StartNode has insufficient start balance. Need to allocate")
+//         let prePath = await getPreTransferPath(startChain, startValue, chopsticks, ksmBalances)
+//         let executionPath = prePath.concat(assetPath)
+//         executionInstructions = await buildInstructionSet(executionPath)
+//     }
+
+//     let testLoops = 100
+//     let allExtrinsicSets: ExtrinsicSetResultDynamic[] = []
+//     let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(executionInstructions, chopsticks, executeMovr, testLoops)
+    
+//     allExtrinsicSets.push(executionResults)
+
+//     setLastFile(latestFile)
+//     logAllResultsDynamic(latestFile, true)
+//     logAllArbAttempts(latestFile, chopsticks)
+//     let arbSuccess = executionResults.success
+//     let lastNode = globalState.lastNode
+//     if(!lastNode){
+//         console.log("Last node is undefined. No extrinsics executed successfully. Exiting")
+//         return;
+//     }
+    
+
+//     let arbLoops = 0
+//     //Rerun arb until success or last node is Kusama
+//     while(!arbSuccess && lastNode.chainId != 0 && arbLoops < 3){
+//         arbLoops += 1
+//         let functionArgs = `${lastNode.assetKey} ${ksmTargetNode} ${lastNode.assetValue}`
+//         console.log("Executing Arb Fallback with args: " + functionArgs)
+
+//         let fallbackArbResults: ResultDataObject[];
+//         try{
+//             fallbackArbResults = await runAndReturnFallbackArb(functionArgs, chopsticks)
+//         } catch {
+//             console.log("Failed to run fallback arb")
+//             continue;
+//         }
+//         let assetPath: AssetNode[] = fallbackArbResults.map(result => readLogData(result))
+//         let reverseInstructions = await buildInstructionSet(assetPath)
+//         let reverseExtrinsicResult = await buildAndExecuteExtrinsics(reverseInstructions, chopsticks, executeMovr, 100)
+//         // reverseExtrinsicResult.extrinsicData = reverseExtrinsicResult.extrinsicData.reverse()
+//         // logResultsDynamic(reverseExtrinsicResult, latestFile, true)
+
+//         allExtrinsicSets.push(reverseExtrinsicResult)
+//         logAllResultsDynamic(latestFile, true)
+//         logAllArbAttempts(latestFile, chopsticks)
+//         if(reverseExtrinsicResult.success){
+//             arbSuccess = true
+//         }
+//         // lastNode = await getLastSuccessfulNodeFromAllExtrinsics(allExtrinsicSets)
+//         lastNode = globalState.lastNode
+//         if(!lastNode){
+//             console.log("Last node undefined. ERROR: some extrinsics have executed successfully")
+//             throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
+//         }
+//     }
+//     // lastNode.assetValue
+//     let arbAmountOut = await getTotalArbResultAmount(lastNode)
+//     // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData()
+//     logAllResultsDynamic(latestFile, true)
+//     logAllArbAttempts(latestFile, chopsticks)
+//     await logProfits(arbAmountOut, latestFile, chopsticks )
+    
+//     console.log(`Result for latest file ${latestFile}: ${arbSuccess}`)
+//     console.log(`Total Arb Amount Out: ${arbAmountOut}`)
+// }

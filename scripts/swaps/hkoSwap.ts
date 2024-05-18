@@ -88,11 +88,12 @@ export async function getHkoSwapExtrinsic(
       }
 
       let swapTxContainer: SwapExtrinsicContainer = {
+        relay: 'kusama',
         chainId: 2085,
         chain: "ParallelHeiko",
         assetNodes: assetNodes,
         pathAmount: assetInAmount,
-        pathSwapType: swapType,
+        pathType: swapType,
         extrinsic: swapTx,
         extrinsicIndex: extrinsicIndex.i,
         instructionIndex: instructionIndex,

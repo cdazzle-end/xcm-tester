@@ -22,6 +22,7 @@
         // "noUnusedLocals": true,
         // "noImplicitReturns": true,
         "moduleResolution": "Node",
+        "sourceMap": true
     },
     // Include and exclude can be adjusted as per your project's structure
     "include": ["./**/*"],

@@ -1,48 +1,24 @@
 import fs from 'fs'
-import { Observable, timeout } from 'rxjs'
-import { options } from "@acala-network/api/dist";
 import * as paraspell from '@paraspell/sdk'
-import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
-import { TNode, getAssetsObject, getNode, getNodeEndpointOption, getAllNodeProviders, getTNode } from '@paraspell/sdk'
-import path from 'path';
-import { cryptoWaitReady } from "@polkadot/util-crypto"
-// import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../xcm_tests/testParams.ts'
-import { BN, compactStripLength, u8aToHex } from '@polkadot/util'
-import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange, getSigner, increaseIndex } from './utils.ts'
-import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, ReverseSwapExtrinsicParams, IndexObject, PathNodeValues, PreExecutionTransfer, Relay } from './types.ts'
+import { TNode } from '@paraspell/sdk'
+import { getParaspellChainName, getSigner, increaseIndex } from './utils.ts'
+import { InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TransferrableAssetObject, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, IndexObject, PreExecutionTransfer, Relay } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
-import { prodRelayPolkadot, prodRelayKusama, createWsEndpoints, prodParasKusamaCommon, prodParasKusama } from '@polkadot/apps-config/endpoints'
-import { buildInstructions, getTransferrableAssetObject } from './instructionUtils.ts';
+import { getTransferrableAssetObject } from './instructionUtils.ts';
 import { fileURLToPath } from 'url';
 import {  getKarSwapExtrinsicDynamic } from './../swaps/karSwap.ts';
 import { formatMovrTx, getMovrSwapTx } from './../swaps/movr/movrSwap.ts';
-// import { getBncSwapExtrinsic } from './../swaps/bnc/bncSwap.ts';
 import { getBncSwapExtrinsicDynamic } from './../swaps/bncSwap.ts';
 import { getBsxSwapExtrinsicDynamic } from './../swaps/bsxSwap.ts';
-// const bncSwap = await import('./../swaps/bnc/bncSwap.ts');
-// const { getBncSwapExtrinsic } = bncSwap;
-// import bnc from './../swaps/bnc/bncSwap.ts';
-// import { getBsxSwapExtrinsic } from './../swaps/bsxSwap.ts';
-// const bsxSwap = await import('./../swaps/bsx/bsxSwap.ts');
-// const { getBsxSwapExtrinsic } = bsxSwap;
 import { getMgxSwapExtrinsic } from './../swaps/mgxSwap.ts';
 import { getHkoSwapExtrinsic } from './../swaps/hkoSwap.ts';
-import { checkAndApproveToken } from './../swaps/movr/utils/utils.ts';
-import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
-import { EventRecord } from '@polkadot/types/interfaces/index';
-
-import { FixedPointNumber, Token } from "@acala-network/sdk-core";
-import { ISubmittableResult } from '@polkadot/types/types/extrinsic';
-// import { BalanceData, getAdapter } from '@polkawallet/bridge';
-import { alithAddress, ksmRpc, localRpcs, testNets } from './txConsts.ts';
-import { MultiswapSellAsset } from '@mangata-finance/sdk';
-import { TokenAmount } from '@zenlink-dex/sdk-core';
-import { BatchSwapParams } from './../swaps/movr/utils/types.ts';
+import { FixedPointNumber } from "@acala-network/sdk-core";
 import { getApiForNode } from './apiUtils.ts';
 import { getAcaSwapExtrinsicDynamic } from './../swaps/acaSwap.ts';
 import { getBncPolkadotSwapExtrinsicDynamic } from './../swaps/bncPolkadot.ts';
 import { getParaSwapExtrinsic } from './../swaps/paraSwap.ts';
 import { getHdxSwapExtrinsicDynamic } from './../swaps/hdxSwap.ts';
+import { getGlmrSwapTx } from './../swaps/glmr/glmrSwap.ts';
 
 
 
@@ -149,7 +125,7 @@ export async function buildTransferExtrinsicDynamic(relay: Relay, instruction: T
 
 export async function buildTransferExtrinsicFromInstruction(relay: Relay, instruction: TransferInstruction, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<TransferExtrinsicContainer> {
    
-
+    console.log("Creating transfer extrinsic")
     
     let startTransferrable = getTransferrableAssetObject(relay, instruction.startAssetNode)
     let destinationTransferrable = getTransferrableAssetObject(relay, instruction.destinationAssetNode)
@@ -163,7 +139,8 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     let startApi = await getApiForNode(instruction.startNode, chopsticks)
     let destinationApi = await getApiForNode(instruction.destinationNode, chopsticks)
 
-    // console.log(`Transfer: ${instruction.startNode} -> ${instruction.destinationNode}  (${currencyInput} ${transferAmount.toString()}`)
+
+    console.log(`Transfer: ${instruction.startNode} -> ${instruction.destinationNode}  (${currencyInput} ${transferAmount.toString()})`)
 
     let signer;
 
@@ -174,19 +151,25 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     }
     let destinationAddress = signer.address
 
+    // console.log("Building with parasepll")
     let xcmTx: paraspell.Extrinsic;
     if((instruction.startNode == "Kusama" || instruction.startNode == "Polkadot")  && (instruction.destinationNode != "Kusama" && instruction.destinationNode != "Polkadot")) {
         xcmTx = paraspell.Builder(startApi).to(instruction.destinationNode).amount(transferAmount).address(destinationAddress).build()
     } else if((instruction.destinationNode == "Kusama" || instruction.destinationNode == "Polkadot") && (instruction.startNode != "Kusama" && instruction.startNode != "Polkadot")) {
+        // console.log("Transfer to relay chain")
         xcmTx = paraspell.Builder(startApi).from(instruction.startNode).amount(transferAmount).address(destinationAddress).build()
     } else if((instruction.startNode != "Kusama" && instruction.startNode != "Polkadot") && (instruction.destinationNode != "Kusama" && instruction.destinationNode != "Polkadot")) {
+        // console.log("Transfer between parachains")
         xcmTx = paraspell.Builder(startApi).from(instruction.startNode).to(instruction.destinationNode).currency(currencyInput).amount(transferAmount).address(destinationAddress).build()
     } else {
         throw new Error("Invalid transfer instruction")
     }
 
+    // console.log(`xcmTx ${JSON.stringify(xcmTx, null, 2)}`)
+
     let instructionIndex = instruction.instructionIndex
     let txContainer: TransferExtrinsicContainer = {
+        relay: relay,
         firstNode: instruction.startNode,
         secondNode: instruction.destinationNode,
         assetSymbol: startTransferrable.paraspellAsset.symbol,
@@ -207,6 +190,7 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
         pathAmount: instruction.assetNodes[0].pathValue
     }
     increaseIndex(extrinsicIndex)
+    console.log("Created transfer extrinsic")
     return txContainer
 }
 async function buildDoubleTransferExtrinsic(relay: Relay, instruction: TransferToHomeThenDestInstruction, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<[TransferExtrinsicContainer, TransferExtrinsicContainer]> {
@@ -427,6 +411,7 @@ function getParaIdFromAssetNode(node: TNode | "Kusama" | "Polkadot", assetNode: 
 export async function buildSwapExtrinsicDynamic(relay: Relay, instructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<[SwapExtrinsicContainer, SwapInstruction[]]> {
     let chainId = instructions[0].chain
     let swapType = instructions[0].pathType
+    let swapData = instructions[0].pathData
     let startAsset = instructions[0].assetNodes[0].getAssetRegistrySymbol()
     let destAsset = instructions[instructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
     let amountIn = instructions[0].assetNodes[0].pathValue;
@@ -441,7 +426,7 @@ export async function buildSwapExtrinsicDynamic(relay: Relay, instructions: Swap
     if(relay == 'kusama'){
         [swapContainer, remainingInstructions] = await buildKusamaSwapExtrinsics(instructions, chainId, swapType, startAsset, destAsset, amountIn, expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex)
     } else if (relay == 'polkadot'){
-        [swapContainer, remainingInstructions] = await buildPolkadotSwapExtrinsic(instructions, chainId, swapType, startAsset, destAsset, amountIn, expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex)
+        [swapContainer, remainingInstructions] = await buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapData, startAsset, destAsset, amountIn, expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex)
     } else {
         throw new Error("Invalid relay")
     }
@@ -471,7 +456,7 @@ async function buildKusamaSwapExtrinsics(instructions, chainId, swapType, startA
         chainNonces[2001]++
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2023){
-        const descriptorString = `MOV ${startAsset} -> ${destAsset}`
+        const descriptorString = `MOVR ${startAsset} -> ${destAsset}`
         console.log("**************************************")
         console.log(descriptorString)
         console.log("**************************************")
@@ -516,7 +501,8 @@ async function buildKusamaSwapExtrinsics(instructions, chainId, swapType, startA
     }
 }
 
-async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex){
+async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapData, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex){
+    console.log("Building Polkadot Swap Extrinsic")
     if(chainId == 2000){
         //aca
         let [swapTxContainer, remainingInstructions] = await getAcaSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2000], extrinsicIndex, instructionIndex)
@@ -551,10 +537,9 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, start
         let remainingInstructions: SwapInstruction[] = []
 
         let testnet = false
-        // let movrBatchSwapParams = await getMovrSwapTx(instructions, testnet)
-        // let swapTxContainer = await formatMovrTx(movrBatchSwapParams, instructions, chainNonces, extrinsicIndex, instructionIndex, chopsticks)
-        // swapTxContainer.txString = descriptorString
-        // return [swapTxContainer, remainingInstructions]
+        let swapTxContainer = await getGlmrSwapTx(instructions, testnet, chainNonces, extrinsicIndex, instructionIndex)
+        swapTxContainer.txString = descriptorString
+        return [swapTxContainer, remainingInstructions]
     } else if (chainId == 2012){
         //para
         const descriptorString = `PARA ${startAsset} -> ${destAsset}`
@@ -572,7 +557,7 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, start
         console.log("**************************************")
         console.log(descriptorString)
         console.log("**************************************")
-        let [swapTxContainer, remainingInstructions] = await getHdxSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2090], extrinsicIndex, instructionIndex)
+        let [swapTxContainer, remainingInstructions] = await getHdxSwapExtrinsicDynamic(swapType, swapData, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2090], extrinsicIndex, instructionIndex)
         swapTxContainer.txString = descriptorString
         chainNonces[2090]++
         return [swapTxContainer, remainingInstructions]

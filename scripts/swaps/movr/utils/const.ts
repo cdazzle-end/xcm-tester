@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
-console.log(__dirname)
+// console.log(__dirname)
 
 export const ignoreList = [
     "0x06C08321a530360Ec1B3cC36CFe8b4ee419ce928",
@@ -37,7 +37,8 @@ export let noPrefixPrivateKey = privateKey.slice(2)
 export const wsLocalChain = "ws://172.26.130.75:8000"
 export const defaultWebsocket = "wss://moonriver.public.blastapi.io"
 export const defaultRpc = "https://moonriver.public.blastapi.io"
-export const localRpc = "http://127.0.0.1:8545/"
+// export const localRpc = "http://127.0.0.1:8545/"
+export const localRpc = "http://127.0.0.1:101010101/"
 
 // export const rpcUrl = wsLocalChain
 export const account = privateKeyToAccount(`0x${noPrefixPrivateKey}`);
