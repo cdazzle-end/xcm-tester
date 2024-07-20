@@ -34,28 +34,30 @@ import { Wallet } from "@acala-network/sdk/wallet/wallet.js"
 import { AcalaDex, AggregateDex } from "@acala-network/sdk-swap"
 import { AggregateDexSwapParams, TradingPath } from '@acala-network/sdk-swap/types.js'
 // import { AggregateDexSwapParams } from '../../node_modules/.pnpm/@acala-network+sdk-swap@4.1.9-13_@acala-network+api@5.1.2_@acala-network+eth-providers@2.7.19_7m57xuskb5lxcqt46rnn4nnyhe/node_modules/@acala-network/sdk-swap/index.ts'
-import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
+import { IndexObject, PathNodeValues, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
 import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
-import { increaseIndex } from './../instructions/utils.ts'
+import { getAssetRegistry, increaseIndex } from './../instructions/utils.ts'
 import { AssetNode } from './../instructions/AssetNode.ts'
 // import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
 // const { options } = require('@acala-network/api');
 // import { Fixed18, convertToFixed18, calcSwapTargetAmount } from '@acala-network/api';
 import { getSigner } from '../instructions/utils.ts'
 import { localRpcs } from './../instructions/txConsts.ts'
+import { getApiForNode } from './../instructions/apiUtils.ts'
+
 import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const wsLocalChain = localRpcs["Acala"]
 // const wsLocalDestination = "ws://172.26.130.75:8008" 
-const acaRpc = "'wss://acala-rpc-0.aca-api.network'"
+const acaRpc = "ws://acala-rpc-0.aca-api.network"
 
 
 export async function getAcaSwapExtrinsicDynamic(    
     swapType: number, 
     startAsset: any, 
     destAsset: any, 
-    amountIn: number, 
+    amountIn: string, 
     expectedAmountOut: number, 
     swapInstructions: SwapInstruction[], 
     chopsticks: boolean = true, 
@@ -65,11 +67,15 @@ export async function getAcaSwapExtrinsicDynamic(
     // pathNodeValues: PathNodeValues,
     priceDeviationPercent: number = 2
 ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
-    let rpc = chopsticks ? wsLocalChain : acaRpc
-    const provider = new WsProvider(rpc);
-    const api = new ApiPromise(options({ provider }));
+    // let rpc = chopsticks ? wsLocalChain : acaRpc
+    // const provider = new WsProvider(rpc);
+    // const api = new ApiPromise(options({ provider }));
+    
+
+    const api = await getApiForNode("Acala", chopsticks)
     await api.isReady;
 
+    console.log("Acala api is ready")
     
     const signer = await getSigner(chopsticks, false);
   
@@ -120,73 +126,70 @@ export async function getAcaSwapExtrinsicDynamic(
         // If DOT -> LDOT: Take output balance. Get the output as a percent of the total pool balance. output amount / total pool balance.
         // This will be the percent of total share in the pool.
         // If LDOT -> DOT: Need to convert the input. The input param is for shares. Our instruction input is in actual balance. 
+        // **********
+        // UPDATE to stable pool
+        // Extrinsic input needs to be in shares
+        // arb finder returns amount in balance
+        // need to convert to shares, add fee amount
 
-        let stablePools = await api.query.stableAsset.pools.entries()
-            const matchingStablePool = findObjectWithEntry(stablePools, tokenPath[0])
-            if(!matchingStablePool){
-                throw new Error("No matching stable pool found for asset: " + JSON.stringify(tokenPath[0], null, 2))
-            }
+        // Since there is only one stable pool, dont need to worry about multiple swaps.
+        // So just get the swap instruction pool id
+        BigNumber.set({ DECIMAL_PLACES: 40});
+        let poolId = swapInstructions[0].pathData.lpId
+        let assetRegistry = getAssetRegistry('polkadot');
 
-            const poolData = matchingStablePool[1].toJSON()
-            const poolAssets = poolData["assets"]
-            const stablePoolIndex = poolData["poolAsset"]["stableAssetPoolToken"]
-            const startAssetIndex = getAssetIndex(poolAssets, tokenPath[0])
-            const endAssetIndex = getAssetIndex(poolAssets, tokenPath[1])
-            const assetLength = poolAssets.length
+        console.log("Pool ID: " + poolId)
+        let targetStablePool = getAcalaStablePoolData(Number.parseInt(poolId))
+        
+        let stablePoolAssets = targetStablePool.poolAssets
+        const assetLength = stablePoolAssets.length
 
-            let acalaStablePoolData = getAcalaStablePoolData(stablePoolIndex)
-            let inputAmount = new bn(supplyAmount.toChainData())
-            let dotReserveBalance = new bn(acalaStablePoolData.liquidityStats[0]) // shares and balance are the same for DOT
-            let ldotReserveShares = new bn(acalaStablePoolData.liquidityStats[1])
-            let ldotReserveBalance = new bn(acalaStablePoolData.liquidityStats[3])
-            //if lksm or ksm, adjust parameters
-            if(startAssetDynamic == "LDOT"){
-                // let lksmSupply = supplyAmount.times(new FixedPointNumber(6.587))
-                console.log("Supply Amount: " + inputAmount)
-                console.log("LDOT Reserve Balance: " + ldotReserveBalance)
-                let ldotInputPercent = inputAmount.div(ldotReserveBalance) // Percent of output balance / total balance
-                let ldotInputShares = ldotReserveShares.times(ldotInputPercent)
+        let token0Data = assetRegistry.find((asset) => {
+            return JSON.stringify(asset.tokenData.localId) == JSON.stringify(stablePoolAssets[0])
+        })
+        let token1Data = assetRegistry.find((asset) => {
+            return JSON.stringify(asset.tokenData.localId) == JSON.stringify(stablePoolAssets[1])
+        })
 
-                console.log("LDOT Input Percent: " + ldotInputPercent)
-                console.log("LDOT Input Shares: " + ldotInputShares)
-                swapTx = await api.tx.stableAsset
-                .swap(
-                    stablePoolIndex,
-                    startAssetIndex, 
-                    endAssetIndex, 
-                    ldotInputShares.integerValue().toFixed(), 
-                    // Temporary value for minDy
-                    expectedAmountOutWithDeviation.toChainData(), 
-                    assetLength
-                )
-            } else if (startAssetDynamic == "DOT"){
-                let amountOut = new bn(expectedAmountOutWithDeviation.toChainData())
-                let ldotOutputPercent = amountOut.div(ldotReserveBalance)
-                let ldotOutputShares = ldotOutputPercent.times(ldotReserveShares)
+        let inputIndex;
+        let outputIndex;
+        if(tokenPathSymbols[0].toUpperCase() == token0Data.tokenData.symbol.toUpperCase()){
+            inputIndex = 0
+            outputIndex = 1
+        } else if (tokenPathSymbols[0].toUpperCase() == token1Data.tokenData.symbol.toUpperCase()){
+            inputIndex = 1
+            outputIndex = 0
+        } else {
+            throw new Error("Cant get input/output indexs for stable pool")
+        }
+    
 
-                swapTx = await api.tx.stableAsset
-                .swap(
-                    stablePoolIndex,
-                    startAssetIndex, 
-                    endAssetIndex, 
-                    supplyAmount.toChainData(), 
-                    // Temporary value for minDy
-                    ldotOutputShares.integerValue().toFixed(), 
-                    assetLength
-                )
-            // Other stables can be calculated normally
-            } else {
-                swapTx = await api.tx.stableAsset
-                    .swap(
-                        stablePoolIndex,
-                        startAssetIndex, 
-                        endAssetIndex, 
-                        supplyAmount.toChainData(), 
-                        // Temporary value for minDy
-                        expectedAmountOutWithDeviation.toChainData(), 
-                        assetLength
-                    )
-            }
+        let tokenReserves = targetStablePool.liquidityStats.map((stat) => new bn(stat))
+        let tokenShares = targetStablePool.tokenShares.map((share) => new bn(share))
+
+        // let inputAmountAsBalance = new FixedPointNumber(supplyAmount.toChainData(), startToken.decimals)
+        let inputAmountFormatted = new bn(amountInDynamic).times(new bn(10).pow(new bn(startToken.decimals)))
+        // let outputAmountAsBalance = expectedOutAmountFixed
+        let outputAmountFormatted = new bn(expectedAmountOutDynamic).times(new bn(10).pow(new bn(destToken.decimals)))
+
+        let extrsinsicInputDx = tokenShares[inputIndex].times(inputAmountFormatted.dividedBy(tokenReserves[inputIndex])).integerValue(BigNumber.ROUND_DOWN)
+        let extrinsicOutputDy = tokenShares[outputIndex].times((outputAmountFormatted.div(tokenReserves[outputIndex]))).integerValue(BigNumber.ROUND_DOWN)
+
+        // let feeRate = new bn(targetStablePool.swapFee).div(targetStablePool.feePrecision)
+        // let feeAmountReverse = extrinsicOutputDy.times(feeRate)
+
+        // console.log(`Input ${startAssetDynamic} Amount: ${inputAmountFormatted} | Output ${destAssetDynamic} Amount: ${outputAmountFormatted}`)
+        // console.log(`Input ${startAssetDynamic} Shares: ${extrsinsicInputDx} | Output ${destAssetDynamic} Shares: ${extrinsicOutputDy}`)
+
+        swapTx = await api.tx.stableAsset
+        .swap(
+            poolId,
+            inputIndex, 
+            outputIndex, 
+            extrsinsicInputDx.integerValue().toFixed(), 
+            extrinsicOutputDy.integerValue().toFixed(), 
+            assetLength
+        )
     }
     // let assetNodes = extrinsicNodes[index]
         let swapTxContainer: SwapExtrinsicContainer = {
@@ -202,15 +205,11 @@ export async function getAcaSwapExtrinsicDynamic(
             expectedAmountOut: expectedOutAmountFixed,
             assetSymbolIn: startAssetDynamic,
             assetSymbolOut: destAssetDynamic,
-            // pathInLocalId: pathNodeValues.pathInLocalId,
-            // pathOutLocalId: pathNodeValues.pathOutLocalId,
             pathType: swapType,
             pathAmount: amountIn,
             api: api,
-            // reverseTx: reverseTx
         }
 
-        // extrinsicNodesIndex += 1;
         increaseIndex(extrinsicIndex)
         return [swapTxContainer, remainingInstructions]
 
@@ -225,10 +224,11 @@ function truncateSwapInstructions(startAsset: string, swapInstructions: SwapInst
 
 function getAcalaStablePoolData(poolId: number){
     let acalaStableLps = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../polkadot_assets/lps/lp_registry/aca_stable_lps.json'), 'utf8'))
+    // console.log("Acala Stable LPs: " + JSON.stringify(acalaStableLps, null, 2))
     let poolData = acalaStableLps.find((pool) => {
         return pool["poolId"] == poolId
     })
-    console.log("Pool Data: " + JSON.stringify(poolData, null, 2))
+    // console.log("Pool Data: " + JSON.stringify(poolData, null, 2))
     return poolData
 }
 
@@ -279,6 +279,45 @@ function isWithinPercentage(expected: FixedPointNumber, actual: FixedPointNumber
 
     return percentageDifference.isLessOrEqualTo(new FixedPointNumber(thresholdPercentage));
 }
+
+async function testStablePool(){
+    let poolId = "0"
+    let poolData = getAcalaStablePoolData(Number.parseInt(poolId))
+    let inputAssetSymbol = "LDOT"
+    let outputAssetSymbol = "DOT"
+
+    console.log("Pool Data: " + JSON.stringify(poolData, null, 2))
+
+    // let poolId = swapInstructions[0].pathData.lpId
+    let assetRegistry = getAssetRegistry('polkadot');
+
+    let targetStablePool = getAcalaStablePoolData(Number.parseInt(poolId))
+    let stablePoolAssets = targetStablePool.poolAssets
+    let token0Data = assetRegistry.find((asset) => {
+        return JSON.stringify(asset.tokenData.localId) == JSON.stringify(stablePoolAssets[0])
+    })
+    let token1Data = assetRegistry.find((asset) => {
+        return JSON.stringify(asset.tokenData.localId) == JSON.stringify(stablePoolAssets[1])
+    })
+
+    if(inputAssetSymbol == token0Data.tokenData.symbol){
+        console.log("Input Asset is Token 0")
+    } else if (inputAssetSymbol == token1Data.tokenData.symbol){
+        console.log("Input Asset is Token 1")
+    } else {
+        console.log("Input Asset not found in pool")
+    }
+
+    if(outputAssetSymbol == token0Data.tokenData.symbol){
+        console.log("Output Asset is Token 0")
+    } else if (outputAssetSymbol == token1Data.tokenData.symbol){
+        console.log("Output Asset is Token 1")
+    } else {
+        console.log("Output Asset not found in pool")
+    }
+
+}
+
 // async function swapWithSDK(){
 //     // const api = await getPolkadotApi();
 //     const provider = new WsProvider(wsLocalChain);
@@ -441,7 +480,8 @@ async function run(){
     // let karTx = await getKarSwapExtrinsicBestPath(2, "USDT", "KUSD", 1, 1.6, [])
     // await getSwapExtrinsicBestPath("KSM", "KUSD", 1, 43.194656695628)
     // await testErrorCodes()
-    getAcalaStablePoolData(0)
+    // getAcalaStablePoolData(0)
+    await testStablePool()
     process.exit(0)
 }
 
