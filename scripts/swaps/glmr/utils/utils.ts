@@ -36,7 +36,7 @@ const doubleSwapTxReceiptsPath = path.resolve(currentDir, '../batchResults/doubl
 const doubleSwapErrorsPath = path.resolve(currentDir, '../batchResults/double_swap_errors.json');
 
 export async function wrapGlmr(wallet: ethers.Wallet, inputAmount: bigint){
-    let glmrAbiPath = path.join('./abi/glmrContractAbi.json')
+    let glmrAbiPath = path.join(__dirname, './../abi/glmrContractAbi.json')
     let glmrAbi = JSON.parse(fs.readFileSync(glmrAbiPath, 'utf8'));
     console.log("Wrapping GLMR")
 

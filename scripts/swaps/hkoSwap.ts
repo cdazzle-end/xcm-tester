@@ -2,12 +2,13 @@ import { FixedPointNumber } from "@acala-network/sdk-core"
 import { ApiPromise, options, WsProvider, Keyring } from "@parallel-finance/api" 
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import fs from 'fs'
-import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer } from "./../instructions/types"
+import { IndexObject, PathNodeValues, SwapExtrinsicContainer } from "./../instructions/types"
 const wsLocalChain = "ws://172.26.130.75:8012"
 const hkoWs = "wss://heiko-rpc.parallel.fi"
 import path from 'path'
 import { fileURLToPath } from 'url';
 import { increaseIndex, getSigner } from './../instructions/utils.ts'
+import { getApiForNode } from './../instructions/apiUtils.ts'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -15,8 +16,8 @@ export async function getHkoSwapExtrinsic(
   swapType: number,
   startAssetSymbol: string, 
   destAssetSymbol: string, 
-  assetInAmount: number, 
-  assetOutAmount: number, 
+  assetInAmount: string, 
+  assetOutAmount: string, 
   swapInstructions: any[], 
   chopsticks: boolean = true, 
   txIndex: number, 
@@ -74,19 +75,6 @@ export async function getHkoSwapExtrinsic(
       let reversePriceDev = assetInAmountFn.mul(new FixedPointNumber(5)).div(new FixedPointNumber(100))
       let reverseTarget = assetInAmountFn.sub(reversePriceDev)
 
-      let reverseTxParams: ReverseSwapExtrinsicParams = {
-        chainId: 2085,
-        chain: "ParallelHeiko",
-        path: reverseTokenPathIds,
-        supply: reverseSupply,
-        target: reverseTarget,
-        module : "ammRoute",
-        call: "swapExactTokensForTokens",
-        supplyAssetId: destAssetSymbol,
-        targetAssetId: startAssetSymbol
-
-      }
-
       let swapTxContainer: SwapExtrinsicContainer = {
         relay: 'kusama',
         chainId: 2085,
@@ -103,7 +91,6 @@ export async function getHkoSwapExtrinsic(
         assetAmountIn: assetInAmountFn,
         expectedAmountOut: expectedOutMinusDeviation,
         api: api,
-        reverseTx: reverseTxParams
 
       }
       // return [swapTx, nonce]

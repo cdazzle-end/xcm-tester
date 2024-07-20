@@ -25,10 +25,11 @@ import '@galacticcouncil/api-augment/basilisk';
 
 import { SubmittableExtrinsic } from '@polkadot/api/promise/types';
 import { ZERO, INFINITY, ONE, TradeRouter, PoolService, Router, BigNumber, Asset } from '@galacticcouncil/sdk';
-import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from "./../instructions/types.ts";
+import { IndexObject, PathNodeValues, SwapExtrinsicContainer, SwapInstruction } from "./../instructions/types.ts";
 import { increaseIndex } from './../instructions/utils.ts';
 import { getSigner } from './../instructions/utils.ts';
 import { getAllNodeProviders } from "@paraspell/sdk";
+import { getApiForNode } from './../instructions/apiUtils.ts'
 
 // const gSdk = await import('@galacticcouncil/sdk');
 // const { ZERO, INFINITY, ONE, TradeRouter, PoolService, Router, BigNumber } = await import('@galacticcouncil/sdk');
@@ -312,8 +313,8 @@ export async function getBsxSwapExtrinsicDynamic(
   swapType: number,
   startAssetSymbol: string, 
   destAssetSymbol: string, 
-  assetInAmount: number, 
-  assetOutAmount: number, 
+  assetInAmount: string, 
+  assetOutAmount: string, 
   swapInstructions: any[], 
   chopsticks: boolean = true, 
   txIndex: number = 0, 
@@ -322,11 +323,13 @@ export async function getBsxSwapExtrinsicDynamic(
   priceDeviationPercent: number = 2
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
     // console.log(`BSX (${startAssetSymbol}) -> (${destAssetSymbol}) assetInAmount: ${assetInAmount} assetOutAmount: ${assetOutAmount}`)
-    let endpoints = getAllNodeProviders("Basilisk");
-    let rpc = chopsticks ? wsLocalChain : endpoints[0]
+    // let endpoints = getAllNodeProviders("Basilisk");
+    // let rpc = chopsticks ? wsLocalChain : endpoints[0]
 
-    const provider = new WsProvider(rpc);
-    const api = new ApiPromise({ provider });
+    // const provider = new WsProvider(rpc);
+    // const api = new ApiPromise({ provider });
+
+    const api = await getApiForNode("Basilisk", chopsticks)
     await api.isReady;
     const poolService = new PoolService(api);
     const router = new TradeRouter(poolService);
@@ -392,7 +395,7 @@ export async function getBsxSwapExtrinsicDynamic(
 
     let pathInId = assetIn.id
     let pathOutId = assetOut.id
-    let pathAmount = fnInputAmount.toNumber()
+    let pathAmount = fnInputAmount.toChainData()
     let pathSwapType = swapType
     let swapTxContainer: SwapExtrinsicContainer = {
       relay: 'kusama',

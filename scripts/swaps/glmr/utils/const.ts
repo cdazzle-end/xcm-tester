@@ -125,6 +125,7 @@ export const dexAbis = [
     // JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/zenlinkDexAbi.json'), 'utf8')),
     JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/uniswapDexV2Abi.json'), 'utf8')),
     JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/stellaDexAbi.json'), 'utf8')),
+    JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/fraxDexAbi.json'), 'utf8')),
 ]
 export const routerAbis = [
     // JSON.parse(fs.readFileSync(path.join(__dirname, '../abi/solarRouterAbi.json'), 'utf8')),
@@ -280,8 +281,8 @@ export const maxTickData: TickData = {
 
 export const glmrLpsPath = path.join(__dirname, '../../../../../polkadot_assets/lps/lp_registry/glmr_lps.json')
 
-export const swapManagerContractLocal = "0x09635F643e140090A9A8Dcd712eD6285858ceBef"
-export const swapManagerContractLive = "0x4826533B4897376654Bb4d4AD88B7faFD0C98528"
+export const swapManagerContractLocal = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
+export const swapManagerContractLive = "0x4BF47cE8738d447B94727B6ae01BAB6389144E98"
 
 
 export const uniFactoryContract = "0x28f1158795A3585CaAA3cD6469CD65382b89BB70"

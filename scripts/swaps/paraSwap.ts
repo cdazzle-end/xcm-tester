@@ -2,13 +2,14 @@ import { FixedPointNumber } from "@acala-network/sdk-core"
 import { ApiPromise, options, WsProvider, Keyring } from "@parallel-finance/api" 
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import fs from 'fs'
-import { IndexObject, PathNodeValues, Relay, ReverseSwapExtrinsicParams, SwapExtrinsicContainer } from "./../instructions/types"
+import { IndexObject, PathNodeValues, Relay, SwapExtrinsicContainer } from "./../instructions/types"
 const wsLocalChain = localRpcs["Parallel"]
 const paraWs = "wss://parallel-rpc.dwellir.com"
 import path from 'path'
 import { fileURLToPath } from 'url';
 import { increaseIndex, getSigner, getAssetRegistry } from './../instructions/utils.ts'
 import { localRpcs } from "./../instructions/txConsts.ts"
+import { getApiForNode } from './../instructions/apiUtils.ts'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const relay: Relay = 'polkadot'
@@ -17,8 +18,8 @@ export async function getParaSwapExtrinsic(
   swapType: number,
   startAssetSymbol: string, 
   destAssetSymbol: string, 
-  assetInAmount: number, 
-  assetOutAmount: number, 
+  assetInAmount: string, 
+  assetOutAmount: string, 
   swapInstructions: any[], 
   chopsticks: boolean = true, 
   txIndex: number, 
@@ -26,12 +27,13 @@ export async function getParaSwapExtrinsic(
   instructionIndex: number[],
   priceDeviationPercent: number = 2
   ) {
-  let rpc = chopsticks ? wsLocalChain : paraWs  
-  console.log("RPC: ", rpc)
-  const api = await ApiPromise.create(options({
-        provider: new WsProvider(rpc)
-      }))
+  // let rpc = chopsticks ? wsLocalChain : paraWs  
+  // console.log("RPC: ", rpc)
+  // const api = await ApiPromise.create(options({
+  //       provider: new WsProvider(rpc)
+  //     }))
 
+  const api = await getApiForNode("Parallel", chopsticks)
   console.log("Connected to api")
   let assetNodes = [swapInstructions[0].assetNodes[0]]
     swapInstructions.forEach((instruction) => {

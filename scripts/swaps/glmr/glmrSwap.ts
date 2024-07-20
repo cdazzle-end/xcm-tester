@@ -1,6 +1,6 @@
 import '@moonbeam-network/api-augment/moonriver'
 import { calculateSwapAmountRouterFormula, checkForSubstrateToken, getBestSwapRoute, logBatchContractResults, getContractAbi, checkApproval, getTokenContractData, logDoubleSwapResults, getContractAbiIndex, checkAndApproveToken, wrapGlmr, logLiveWalletTransaction, calculateAlgebraSwap, calculateUni3Swap, approveMax, getPoolFeeRate, getGlmrPoolData } from './utils/utils.ts';
-import { algebraFactoryContract, algebraPoolDeployer, algebraPoolInitHash, algebroPoolInitHashOther as algebraPoolInitHashOther, batchArtifact, batchContractAddress2, boxContractAddress, defaultRpc, dexAbiMap, dexAbis, fraxContractAddress, ignoreList, liveBatchContract, liveWallet3Pk, localRpc, solarFee, swapManagerContractLive, swapManagerContractLocal, test_account_pk, uniFactoryContract, uniPoolInitHash, usdcContractAddress, wEthContractAddress, wGlmrContractAddress, wormUsdcContractAddress, xcAcaContractAddress, xcDotContractAddress } from './utils/const.ts';
+import { algebraFactoryContract, algebraPoolDeployer, algebraPoolInitHash, algebroPoolInitHashOther as algebraPoolInitHashOther, batchArtifact, batchContractAddress2, boxContractAddress, defaultRpc, dexAbiMap, dexAbis, fraxContractAddress, glmrLpsPath, ignoreList, liveBatchContract, liveWallet3Pk, localRpc, solarFee, swapManagerContractLive, swapManagerContractLocal, test_account, test_account_pk, uniFactoryContract, uniPoolInitHash, usdcContractAddress, wEthContractAddress, wGlmrContractAddress, wormUsdcContractAddress, xcAcaContractAddress, xcDotContractAddress } from './utils/const.ts';
 // import * as mutex from 'mutexify'
 // import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 // import { MangataInstance, Mangata, MultiswapBuyAsset, MultiswapSellAsset } from "@mangata-finance/sdk"
@@ -649,14 +649,17 @@ export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsti
     let glmrWrapAmount = BigInt(0)
 
     // If first token is GLMR, send glmr to manager. Else approve token for manager contract
-    let initialTokenIn = swapInstructions[0].assetNodes[0].assetRegistryObject.tokenData.contractAddress
-    let initialInputAmount = new FixedPointNumber(swapInstructions[0].assetInAmount.toString(), Number.parseInt(swapInstructions[0].assetNodes[0].assetRegistryObject.tokenData.decimals))
+    let initialTokenIn = swapInstructions[0].assetNodes[0].assetRegistryObject.tokenData.contractAddress.toLowerCase()
+    let initialInputAmount = new FixedPointNumber(swapInstructions[0].assetNodes[0].pathValue, Number.parseInt(swapInstructions[0].assetNodes[0].assetRegistryObject.tokenData.decimals))
     // let initialInputAmount = BigInt(initialInputAmountFn.toChainData())
-    if (initialTokenIn == wGlmrContractAddress) {
+    if (initialTokenIn == wGlmrContractAddress.toLowerCase()) {
         glmrWrapAmount = BigInt(initialInputAmount.toChainData())
     } else {
-        await checkAndApproveToken(initialTokenIn, wallet, swapManagerContractLocal, BigInt(initialInputAmount.toChainData()))
+        await checkAndApproveToken(initialTokenIn, wallet, swapManagerContractAddress, BigInt(initialInputAmount.toChainData()))
     }
+
+    // Get lp registry ********* TEMP FIX
+    let lpRegistry = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'));
 
     // Loop through swap instructions and get swap params. Contract takes array of ManagerSwapParms
     let swapParams: ManagerSwapParams[] = swapInstructions.map((swapInstruction: SwapInstruction, index: number) => {
@@ -664,7 +667,14 @@ export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsti
         // console.log(JSON.stringify(swapInstruction, null, 2))
         
         let swapType, abiIndex;
-        switch (swapInstruction.pathData.dexType) {
+        console.log("SWAP INSTRUCTION PATH DATA DEX TYPE: ", swapInstruction.pathData.dexType)
+
+        // NEED TO FIX DEX TYPE IN ARB FINDER
+        // For now just query the dex type from lp registry
+        let poolData = getGlmrPoolData(swapInstruction.pathData.lpId)
+        let poolDexType = poolData.dexType
+
+        switch (poolDexType) { 
             case "solar":
                 swapType = 0;
                 abiIndex = 0;
@@ -682,12 +692,13 @@ export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsti
                 abiIndex = 3;
                 break;
         }
+        console.log("SWAP TYPE: ", swapType)
 
         console.log(JSON.stringify(swapInstruction.pathData.lpId, null, 2))
-        let poolData = getGlmrPoolData(swapInstruction.pathData.lpId)
+        
         let tokenIn, tokenOut, inputTokenIndex, zeroForOne, poolAddress, feeRate, sqrtPriceLimitX96: bigint, data;
 
-        [tokenIn, tokenOut] = [swapInstruction.assetNodes[0].assetRegistryObject.tokenData.contractAddress, swapInstruction.assetNodes[1].assetRegistryObject.tokenData.contractAddress]
+        [tokenIn, tokenOut] = [swapInstruction.assetNodes[0].assetRegistryObject.tokenData.contractAddress.toLowerCase(), swapInstruction.assetNodes[1].assetRegistryObject.tokenData.contractAddress.toLowerCase()]
         inputTokenIndex = tokenIn.toLowerCase() < tokenOut.toLowerCase() ? 0 : 1;
         let inputAmount = BigInt(ethers.parseUnits(swapInstruction.assetInAmount.toString(), Number.parseInt(swapInstruction.assetNodes[0].assetRegistryObject.tokenData.decimals)))
         let outputAmount = BigInt(ethers.parseUnits(swapInstruction.assetOutTargetAmount.toString(), Number.parseInt(swapInstruction.assetNodes[1].assetRegistryObject.tokenData.decimals)))
@@ -699,11 +710,20 @@ export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsti
             feeRate = 0;
             sqrtPriceLimitX96 = BigInt(0)
 
+            // TEMP FIX ***************** Need to adjust V2 calculations in arb finder
+            // let reserves = poolData.liquidityStats
+            // let inputReserves = inputTokenIndex == 0 ? BigInt(reserves[0]) : BigInt(reserves[1])
+            // let outputReserves = inputTokenIndex == 0 ? BigInt(reserves[1]) : BigInt(reserves[0])
+            // let slippageTolerance = 100
+            // let fee = 30
+            // let calculatedAmountOut = calculateSwapAmountRouterFormula(inputAmount, inputReserves, outputReserves, slippageTolerance, fee)
+
+            // output has been fixed
+            // outputAmount = outputAmount
         } else { // V3
             zeroForOne = inputTokenIndex == 0 ? true : false;
             feeRate = Number.parseInt(poolData.feeRate)
             sqrtPriceLimitX96 = zeroForOne ? BigInt(TickMath.MIN_SQRT_RATIO.toString()) + BigInt(1) : BigInt(TickMath.MAX_SQRT_RATIO.toString()) - BigInt(1) // *** PRICE SET TO MAX, MAYBE CHANGE TO ACCURATE
-            
         }
         let managerSwapParams: ManagerSwapParams = {
             swapType: swapType,
@@ -742,6 +762,8 @@ export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsti
         }
         // let calculatedPoolAddress = getV3PoolAddress(token0, token1, deployer, poolInitHash, poolType, feeRate)
         // console.log(`Calculated Pool Address: ${calculatedPoolAddress}`)
+        console.log("MANAGER SWAP PARAMS")
+        console.log(JSON.stringify(managerSwapParams, null, 2))
         return managerSwapParams
 
     })
@@ -789,276 +811,129 @@ export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsti
     return swapTxContainer
 }
 
-//     struct ManagerSwapParams {
-//         uint8 swapType; // 0 for V2, 1 for V3
-//         address dexAddress;
-//         uint8 abiIndex;
-//         uint8 inputTokenIndex;
-//         address inputToken;
-//         address outputToken;
-//         uint256 amountIn;
-//         uint256 amountOut;
-//         uint256 movrWrapAmount;
-//         uint24 fee; // V3
-//         uint160 sqrtPriceLimitX96; // V3
-//         bytes data;
-// }
+export async function executeSingleGlmrSwap(){
+    let testNetProvider = new ethers.JsonRpcProvider(localRpc)
+    let testNetWallet = new ethers.Wallet(test_account_pk, testNetProvider)
+    let swapManagerContractAddress = swapManagerContractLocal
+    const managerArtifactPath = path.join(__dirname, './contractArtifacts/DexManager.json');
+    const managerArtifact = JSON.parse(fs.readFileSync(managerArtifactPath, 'utf8')) as any;
+    let managerContract = new ethers.Contract(swapManagerContractAddress, managerArtifact.abi, testNetWallet)
+    let glmrWrapAmount = BigInt(500000000000000000)
 
-export async function formatGlmrTxReworked(swapInstructions: SwapInstruction[], chopsticks: boolean) {
-    let rpcProvider;
-    let wallet;
-    let swapManagerContractAddress;
-    if (chopsticks) {
-        //Local testnet and test account
-        rpcProvider = new ethers.JsonRpcProvider(localRpc)
-        wallet = new ethers.Wallet(test_account_pk, rpcProvider)
-        swapManagerContractAddress = swapManagerContractLocal
-    } else {
-        //Live network and live wallet
-        rpcProvider = new ethers.JsonRpcProvider(defaultRpc)
-        wallet = new ethers.Wallet(live_wallet_3, rpcProvider)
-        swapManagerContractAddress = swapManagerContractLocal
-    }
+    // 331103678929765886n
+    500000000000000000
+    517018394648829474836n
+    let inputAmount = BigInt(500000000000000000)
+    let inputReserve = BigInt(1000000000000000000)
+    let outputReserve = BigInt(1561500000000000000000)
+    let swapAmount = calculateSwapAmountRouterFormula(inputAmount, inputReserve, outputReserve, 100, 30)
+
+    console.log("Swap Amount: ", swapAmount)
+
+    
+    let glmrBalance = await testNetWallet.provider.getBalance(testNetWallet.address)
+    console.log("GLMR Balance: ", glmrBalance.toString())
+
+    let swapType = 0; //v2
+    // let dexAddress = 
+
+
+
+    let swapOne: ManagerSwapParams = {
+        "swapType": 0,
+        "dexAddress": "0xd4f1931f818e60b084fe13a40c31a05a44ed70cf",
+        "abiIndex": 0,
+        "inputTokenIndex": 1,
+        "inputToken": "0xacc15dc74880c9944775448304b263d191c6077f",
+        "outputToken": "0x322E86852e492a7Ee17f28a78c663da38FB33bfb",
+        "amountIn": "500000000000000000",
+        "amountOut": "507018394648829474836",
+        "glmrWrapAmount": "500000000000000000",
+        "fee": 0,
+        "sqrtPriceLimitX96": "0",
+        "data": "0x"
+      }
+
+      console.log("Executing")
+    let txReceipt = await managerContract.executeSwaps([swapOne], { value: glmrWrapAmount })
+
+    // let glmrTx = async function executeSwaps() {
+    //     return await managerContract.executeSwaps(
+    //         [swapOne],
+    //         { value: glmrWrapAmount }
+    //     );
+    // }
+
+    // let txReceipt = await glmrTx()
+    console.log("GLMR swap tx receipt: " + JSON.stringify(txReceipt))
+    let txHash = await txReceipt.wait()
+    console.log("GLMR swap tx hash: " + txHash)
+} 
+
+export async function testGlmrRpc(){
+    let rpcProvider = new ethers.JsonRpcProvider(localRpc)
+    let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
+    let glmrLpRegistry = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'))
+    let dexContractAddress = "0xd4f1931f818e60b084fe13a40c31a05a44ed70cf"
+    let registryDexInfo = glmrLpRegistry.find((lp: any) => lp.contractAddress == dexContractAddress)
+    let [token0, token1] = [registryDexInfo.poolAssets[0], registryDexInfo.poolAssets[1]]
+
+    let wrapReceipt = await wrapGlmr(wallet, BigInt(10000000000000000000))
+
+    let glmrBalance = await rpcProvider.getBalance(test_account)
+    console.log(glmrBalance.toString())
+
+    let fraxDexContractAddress = "0xd4f1931f818e60b084fe13a40c31a05a44ed70cf"
+    let fraxAbi = JSON.parse(fs.readFileSync(path.join(__dirname, './abi/fraxDexAbi.json'), 'utf8'))
+    let fraxDexContract = new ethers.Contract(fraxDexContractAddress, fraxAbi, wallet)
+
+    let inputToken = wGlmrContractAddress
+    let inputIndex = registryDexInfo.poolAssets.findIndex((asset: any) => asset == "GLMR")
+    
+
+    let [reserve0, reserve1] = await fraxDexContract.getReserves()
+    console.log(`Reserves: ${reserve0}, ${reserve1}`)
+
+    let inputReserve = inputIndex == 0 ? reserve0 : reserve1
+    let outputReserve = inputIndex == 0 ? reserve1 : reserve0
+
+    let inputAmount = BigInt(1000000000000000000)
+    
+    let wGlmrContract = new ethers.Contract(wGlmrContractAddress, erc20Abi, wallet)
+    let dexGlmrBalance = await wGlmrContract.balanceOf(wallet.address)
+    console.log('dex glmr Balance: ', dexGlmrBalance.toString())
+
+    let transferReceipt = await wGlmrContract.transfer(fraxDexContractAddress, inputAmount)
+
+    let dexGlmrBalanceAfter = await wGlmrContract.balanceOf(wallet.address)
+    console.log('dex glmr Balance After: ', dexGlmrBalanceAfter.toString())
+
+    let swapAmount = calculateSwapAmountRouterFormula(inputAmount, inputReserve, outputReserve, 100, 30)
+
+    let amount0Out = inputIndex == 0 ? BigInt(0) : swapAmount
+    let amount1Out = inputIndex == 1 ? BigInt(0) : swapAmount
+    let to = test_account
+    let data = '0x'
+
+    await checkAndApproveToken(wGlmrContractAddress, wallet, fraxDexContractAddress, BigInt(5000000000000000000))
+
+    let fraxTokenContract = new ethers.Contract("0x322E86852e492a7Ee17f28a78c663da38FB33bfb", erc20Abi, wallet)
+    let fraxBalance = await fraxTokenContract.balanceOf(wallet.address)
+    console.log(`Frax Balance: ${fraxBalance}`)
+
+    console.log(`Input index: ${inputIndex} | Token 0: ${token0} ${amount0Out} | Token 1: ${token1} ${amount1Out} To: ${to} Data: ${data}`)
+    let swapTx = await fraxDexContract.swap(BigInt(amount0Out), BigInt(amount1Out), to, data)
+    let receipt = await swapTx.wait()
+    console.log(receipt)
+
+    // let glmrBalanceAfter = await rpcProvider.getBalance(test_account)
+    let fraxBalanceAfter = await fraxTokenContract.balanceOf(wallet.address)
+
+    console.log(`Frax Balance After: ${fraxBalanceAfter}`)
+    // let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
+    // let wrapReceipt = await wrapGlmr(wallet, BigInt(1000000000000000000))
+    // console.log(wrapReceipt)
 }
-// export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsticks: boolean): Promise<BatchSwapParams> {
-//     console.log("getGlmrSwapTx")
-//     let rpcProvider;
-//     // let testProvider = new ethers.JsonRpcProvider(localRpc)
-//     let wallet;
-//     // let batchContractAddress;
-//     let managerContractAddress;
-//     let swapManagerContractAddress;
-//     if (chopsticks) {
-//         //Local testnet and test account
-//         rpcProvider = new ethers.JsonRpcProvider(localRpc)
-//         wallet = new ethers.Wallet(test_account_pk, rpcProvider)
-//         // batchContractAddress = batchContractAddress2
-//         managerContractAddress = swapManagerContractAddress
-
-//         swapManagerContractAddress = swapManagerContractLocal
-//     } else {
-//         //Live network and live wallet
-//         rpcProvider = new ethers.JsonRpcProvider(defaultRpc)
-//         wallet = new ethers.Wallet(live_wallet_3, rpcProvider)
-//         // batchContractAddress = liveBatchContract
-//         managerContractAddress = swapManagerContractAddress // ** CHANGE THIS TO LIVE CONTRACT WHEN DEPLOYED
-//     }
-
-
-
-
-//     let managerContract = new ethers.Contract(managerContractAddress, dexAbiMap['manager'], wallet)
-//     let glmrContract = new ethers.Contract(wGlmrContractAddress, erc20Abi, wallet)
-//     // const batchContract = await new ethers.Contract(batchContractAddress, batchArtifact.abi, wallet)
-
-//     let tokenPathLocalId = [];
-//     let tokenPathAssetNodes: AssetNode[] = []
-//     let tokenPathAddresses = []
-//     let tokenPathAssetObjects = []
-//     let swapDatas: PathData[] = []
-//     swapInstructions.forEach((swapInstruction: SwapInstruction, index: number) => {
-//         if (index == 0) {
-//             tokenPathLocalId.push(swapInstruction.assetInLocalId)
-//             tokenPathAssetNodes.push(swapInstruction.assetNodes[0])
-//             tokenPathAddresses.push(swapInstruction.assetNodes[0].assetRegistryObject.tokenData.contractAddress.toLowerCase())
-//             tokenPathAssetObjects.push(swapInstruction.assetNodes[0].assetRegistryObject)
-//         }
-//         tokenPathLocalId.push(swapInstruction.assetOutLocalId)
-//         tokenPathAssetNodes.push(swapInstruction.assetNodes[1])
-//         tokenPathAddresses.push(swapInstruction.assetNodes[1].assetRegistryObject.tokenData.contractAddress.toLowerCase())
-//         tokenPathAssetObjects.push(swapInstruction.assetNodes[1].assetRegistryObject)
-
-//         swapDatas.push(swapInstructions[index].pathData)
-//     })
-
-//     let swapParams = [];
-//     for (let i = 0; i < tokenPathAddresses.length - 1; i++) {
-//         let wrapGlmrAmount = BigInt(0);
-//         const inputAmount = ethers.parseUnits(swapInstructions[i].assetInAmount.toString(), Number.parseInt(tokenPathAssetObjects[i].tokenData.decimals))
-//         const outputAmount = ethers.parseUnits(swapInstructions[i].assetOutTargetAmount.toString(), Number.parseInt(tokenPathAssetObjects[i + 1].tokenData.decimals))
-
-//         // If first token is MOVR, check if we need to wrap first
-//         if (i == 0 && tokenPathAddresses[i].toString().toLowerCase() == wGlmrContractAddress.toString().toLowerCase()) {
-//             // console.log("WRAP MOVR CHECK")
-//             let glmrBalance = await glmrContract.balanceOf(wallet.address)
-//             let nativeGlmrBalance = await wallet.provider.getBalance(wallet.address)
-//             if (glmrBalance < inputAmount && nativeGlmrBalance < inputAmount) {
-//                 throw new Error("Not enough movr or wmovr for input amount")
-//             } else if (glmrBalance < inputAmount) {
-//                 wrapGlmrAmount = inputAmount;
-//             }
-//         }
-        
-//         const tokenIn = tokenPathAddresses[i]
-//         const tokenOut = tokenPathAddresses[i + 1]
-//         // Get dex offering the best price for the swap, but dont use given calculate output yet
-//         console.log("GETTING BEST SWAP ROUTE")
-//         // let [dexAddress, sampleOutput] = await getBestSwapRoute(tokenIn, tokenOut, inputAmount, defaultRpc)
-//         let dexAddress = swapDatas[i].lpId
-//         if (dexAddress == "") {
-//             throw new Error("No swap route found")
-//         }
-
-//         let swapParam = {
-//             tokenIn: tokenIn,
-//             tokenOut: tokenOut,
-//             inputAmount: inputAmount,
-//             calculatedAmountOut: outputAmount,
-//             dexAddress: dexAddress,
-//             wrapGlmrAmount: wrapGlmrAmount
-//         }
-//         swapParams.push(swapParam)
-//     }
-
-//     let dexAddresses: string[] = [];
-//     let abiIndexes: bigint[] = [];
-//     let inputTokens: string[] = [];
-//     let outputTokens: string[] = [];
-//     let amount0Ins: bigint[] = [];
-//     let amount1Ins: bigint[] = [];
-//     let amount0Outs: bigint[] = [];
-//     let amount1Outs: bigint[] = [];
-//     let movrWrapAmounts: bigint[] = [];
-//     let data: string[] = [];
-//     swapParams.forEach((swapParam: any) => {
-//         let dexInfo = getDexInfo(swapParam.dexAddress)
-//         // console.log("TOKEN IN: ", swapParam.tokenIn)
-//         // console.log("TOKEN OUT:", swapParam.tokenOut)
-//         // console.log("DEX TOKEN 0:", dexInfo.token0)
-//         // console.log("DEX TOKEN 1: ", dexInfo.token1)
-//         if (swapParam.tokenIn.toLowerCase() == dexInfo.token0.toLowerCase()) {
-//             amount0Ins.push(swapParam.inputAmount)
-//             amount1Ins.push(BigInt(0))
-//             amount0Outs.push(BigInt(0))
-//             amount1Outs.push(swapParam.calculatedAmountOut)
-//         } else {
-//             amount0Ins.push(BigInt(0))
-//             amount1Ins.push(swapParam.inputAmount)
-//             amount0Outs.push(swapParam.calculatedAmountOut)
-//             amount1Outs.push(BigInt(0))
-//         }
-//         dexAddresses.push(swapParam.dexAddress)
-//         abiIndexes.push(BigInt(dexInfo.abiIndex))
-//         inputTokens.push(swapParam.tokenIn)
-//         outputTokens.push(swapParam.tokenOut)
-//         movrWrapAmounts.push(swapParam.wrapMovrAmount)
-//         data.push("0x")
-//     })
-
-
-//     let batchSwapParams: BatchSwapParams = {
-//         chainId: 2023,
-//         batchContract: managerContract,
-//         wallet: wallet,
-//         dexAddresses: dexAddresses,
-//         abiIndexes: abiIndexes,
-//         inputTokens: inputTokens,
-//         outputTokens: outputTokens,
-//         amount0Ins: amount0Ins,
-//         amount1Ins: amount1Ins,
-//         amount0Outs: amount0Outs,
-//         amount1Outs: amount1Outs,
-//         wrapAmounts: movrWrapAmounts,
-//         data: data,
-//         // reverseSwapParams: reverseSwapParams,
-//     }
-//     return batchSwapParams
-//     // console.log(`Parameters: Dex Addresses: ${dexAddresses} Abi Indexes: ${abiIndexes} Input Tokens: ${inputTokens} Output Tokens: ${outputTokens} Amount 0 Ins: ${amount0Ins} Amount 1 Ins: ${amount1Ins} Amount 0 Outs: ${amount0Outs} Amount 1 Outs: ${amount1Outs} Movr Wrap Amounts: ${movrWrapAmounts} Data: ${data} Wrap Movr Amount: ${wrapMovrAmount}`)
-//     // const swapTx = await batchContract.executeSwaps(dexAddresses, abiIndexes, inputTokens, outputTokens, amount0Ins, amount1Ins, amount0Outs, amount1Outs, movrWrapAmounts, data, {value: wrapMovrAmount})
-//     // let swapReceipt = await swapTx.wait()
-//     // logLiveWalletTransaction(swapReceipt, "Execute Swaps")
-// }
-// export async function formatGlmrTx(glmrBatchSwapParams: BatchSwapParams, swapInstructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, instructionIndex: number[], chopsticks: boolean) {
-//     let liveWallet = glmrBatchSwapParams.wallet;
-//     let batchContract = glmrBatchSwapParams.batchContract;
-//     let api = await getApiForNode("Moonbeam", chopsticks)
-
-//     let batchContractAddress = await batchContract.getAddress()
-//     console.log(`Wallet: ${liveWallet.address} | Batch Contract: ${batchContractAddress}`)
-//     let tokens = glmrBatchSwapParams.inputTokens
-
-//     // //WHEN we execute the tx, we need to approve batch contract to spend tokens first
-//     for (let i = 0; i < tokens.length; i++) {
-//         console.log("Token number ", i)
-//         console.log("Token: ", tokens[i])
-//         let tokenInput = glmrBatchSwapParams.amount0Ins[i] > 0 ? glmrBatchSwapParams.amount0Ins[i] : glmrBatchSwapParams.amount1Ins[i]
-//         let approval = await checkAndApproveToken(tokens[i], liveWallet, batchContractAddress, tokenInput)
-//     }
-//     let wrapMovrAmount = glmrBatchSwapParams.wrapAmounts[0]
-
-//     let tokenOutput = glmrBatchSwapParams.outputTokens[glmrBatchSwapParams.outputTokens.length - 1]
-
-
-//     let assetInNode = swapInstructions[0].assetNodes[0]
-//     let assetOutNode = swapInstructions[swapInstructions.length - 1].assetNodes[1]
-//     let assetInDecimals = assetInNode.assetRegistryObject.tokenData.decimals
-//     let assetOutDecimals = assetOutNode.assetRegistryObject.tokenData.decimals
-//     let inputAmount = swapInstructions[0].assetInAmount
-//     let outputAmount = swapInstructions[swapInstructions.length - 1].assetOutTargetAmount
-
-//     let inputFixedPoint = new FixedPointNumber(inputAmount, Number.parseInt(assetInDecimals))
-//     let outputFixedPoint = new FixedPointNumber(outputAmount, Number.parseInt(assetOutDecimals))
-//     // let inputFixedPoint = new FixedPointNumber(inputAmount.toString(), 18)
-
-//     let glmrTx = async function executeSwapTx() {
-//         return await batchContract.executeSwaps(
-//             glmrBatchSwapParams.dexAddresses,
-//             glmrBatchSwapParams.abiIndexes,
-//             glmrBatchSwapParams.inputTokens,
-//             glmrBatchSwapParams.outputTokens,
-//             glmrBatchSwapParams.amount0Ins,
-//             glmrBatchSwapParams.amount1Ins,
-//             glmrBatchSwapParams.amount0Outs,
-//             glmrBatchSwapParams.amount1Outs,
-//             glmrBatchSwapParams.wrapAmounts,
-//             glmrBatchSwapParams.data,
-//             { value: wrapMovrAmount }
-//         );
-//     };
-//     let startAsset = swapInstructions[0].assetNodes[0].getAssetRegistrySymbol()
-//     let destAsset = swapInstructions[swapInstructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
-//     const descriptorString = `GLMR ${startAsset} -> ${destAsset}`
-//     let pathStartLocalId = swapInstructions[0].assetInLocalId
-//     let pathDestLocalId = swapInstructions[swapInstructions.length - 1].assetOutLocalId
-//     let amountIn = swapInstructions[0].assetNodes[0].pathValue;
-//     let swapType = swapInstructions[0].pathType
-
-//     // If movr out, make sure approve to unwrap
-//     if (destAsset == "GLMR") {
-//         console.log("APPROVING UNWRAP GLMR AMOUNT")
-//         let unwrapMovrAmount = glmrBatchSwapParams.amount0Outs[glmrBatchSwapParams.amount0Outs.length - 1] > 0 ? glmrBatchSwapParams.amount0Outs[glmrBatchSwapParams.amount0Outs.length - 1] : glmrBatchSwapParams.amount1Outs[glmrBatchSwapParams.amount1Outs.length - 1]
-//         let approval = await checkAndApproveToken(wGlmrContractAddress, liveWallet, batchContractAddress, unwrapMovrAmount)
-//     }
-
-//     let firstAssetNode = swapInstructions[0].assetNodes[0]
-//     let assetNodes = [firstAssetNode]
-//     swapInstructions.forEach((swapInstruction: SwapInstruction) => {
-//         assetNodes.push(swapInstruction.assetNodes[1])
-//     })
-//     let swapTxContainer: SwapExtrinsicContainer = {
-//         chainId: 2023,
-//         chain: "Moonbeam",
-//         assetNodes: assetNodes,
-//         extrinsic: glmrTx,
-//         extrinsicIndex: extrinsicIndex.i,
-//         instructionIndex: instructionIndex,
-//         txString: descriptorString,
-//         nonce: chainNonces[2023],
-//         assetSymbolIn: startAsset,
-//         assetSymbolOut: destAsset,
-//         assetAmountIn: inputFixedPoint,
-//         expectedAmountOut: outputFixedPoint,
-//         // pathInLocalId: pathStartLocalId,
-//         // pathOutLocalId: pathDestLocalId,
-//         pathType: swapType,
-//         pathAmount: amountIn,
-//         // reverseTx: reverseMovrBatchSwapParams,
-//         api: api,
-//         glmrSwapParams: glmrBatchSwapParams
-//     }
-//     increaseIndex(extrinsicIndex)
-//     return swapTxContainer
-// }
 
 async function testAlgebraSwapContract(){
     console.log("TestAlgebraSwap")

@@ -33,7 +33,7 @@ import { Wallet } from "@acala-network/sdk/wallet/wallet.js"
 import { AcalaDex, AggregateDex } from "@acala-network/sdk-swap"
 import { AggregateDexSwapParams, TradingPath } from '@acala-network/sdk-swap/types.js'
 // import { AggregateDexSwapParams } from '../../node_modules/.pnpm/@acala-network+sdk-swap@4.1.9-13_@acala-network+api@5.1.2_@acala-network+eth-providers@2.7.19_7m57xuskb5lxcqt46rnn4nnyhe/node_modules/@acala-network/sdk-swap/index.ts'
-import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
+import { IndexObject, PathNodeValues, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
 import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
 import { increaseIndex } from './../instructions/utils.ts'
 import { AssetNode } from './../instructions/AssetNode.ts'
@@ -41,15 +41,17 @@ import { AssetNode } from './../instructions/AssetNode.ts'
 // const { options } = require('@acala-network/api');
 // import { Fixed18, convertToFixed18, calcSwapTargetAmount } from '@acala-network/api';
 import { getSigner } from '../instructions/utils.ts'
+import { getApiForNode } from './../instructions/apiUtils.ts'
 
 const wsLocalChain = "ws://172.26.130.75:8008"
 // const wsLocalDestination = "ws://172.26.130.75:8008" 
 const karRpc = "wss://karura-rpc-0.aca-api.network"
 
 async function karuraSwap() {
-    const provider = new WsProvider(wsLocalChain);
-    const api = new ApiPromise(options({ provider }));
-    await api.isReady;
+    // const provider = new WsProvider(wsLocalChain);
+    // const api = new ApiPromise(options({ provider }));
+    // await api.isReady;
+    let api = await getApiForNode("Karura", false)
 
     const keyring = new Keyring({ type: 'sr25519' });
     const newPair = keyring.addFromUri('//Alice');
@@ -95,6 +97,7 @@ async function karuraSwap() {
 async function testErrorCodes(){
     const provider = new WsProvider(karRpc);
     const api = new ApiPromise(options({ provider }));
+    // const api = await getApiForNode("Karura", chopsticks)
     await api.isReady;
 
     let errorModule = {index:"91",error:"0x09000000"}
@@ -261,7 +264,7 @@ export async function getKarSwapExtrinsicDynamic(
     swapType: number, 
     startAsset: any, 
     destAsset: any, 
-    amountIn: number, 
+    amountIn: string, 
     expectedAmountOut: number, 
     swapInstructions: SwapInstruction[], 
     chopsticks: boolean = true, 
@@ -271,9 +274,10 @@ export async function getKarSwapExtrinsicDynamic(
     // pathNodeValues: PathNodeValues,
     priceDeviationPercent: number = 2
 ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
-    let rpc = chopsticks ? wsLocalChain : karRpc
-    const provider = new WsProvider(rpc);
-    const api = new ApiPromise(options({ provider }));
+    // let rpc = chopsticks ? wsLocalChain : karRpc
+    // const provider = new WsProvider(rpc);
+    // const api = new ApiPromise(options({ provider }));
+    const api = await getApiForNode("Karura", chopsticks)
     await api.isReady;
 
     

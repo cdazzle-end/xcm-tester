@@ -12,7 +12,7 @@ import { firstValueFrom } from 'rxjs';;
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 import { SmartRouterV2 } from '@zenlink-dex/sdk-router';
 import { FixedPointNumber } from '@acala-network/sdk-core';
-import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
+import { IndexObject, PathNodeValues, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
 import { ModuleBApi, ModuleBChainOption, BifrostConfig } from '@zenlink-dex/sdk-api';
 // const sdkApi = await import('@zenlink-dex/sdk-api');
 // const { ModuleBApi } = sdkApi;
@@ -24,6 +24,7 @@ import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 import { increaseIndex } from './../instructions/utils.ts';
 import { getSigner } from './../instructions/utils.ts';
 import { localRpcs } from './../instructions/txConsts.ts';
+import { getApiForNode } from './../instructions/apiUtils.ts'
 
 const wsLocalChain = localRpcs["BifrostPolkadot"]
 const bncRpc = "wss://hk.p.bifrost-rpc.liebi.com/ws"
@@ -107,16 +108,12 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   const account = accountPair.address;
   const standardPairs = await firstValueFrom(dexApi.standardPairOfTokens(tokens));
   const standardPools: any = await firstValueFrom(dexApi.standardPoolOfPairs(standardPairs));
-  const stablePairs = await firstValueFrom(dexApi.stablePairOf());
-  const stablePools = await firstValueFrom(dexApi.stablePoolOfPairs(stablePairs));
-
+  // const stablePairs = await firstValueFrom(dexApi.stablePairOf());
+  // const stablePools = await firstValueFrom(dexApi.stablePoolOfPairs(stablePairs));
+  let stablePools = []
   let tokenInAmountFN = new FixedPointNumber(amountIn, tokenIn.decimals);
   const tokenInAmount = new TokenAmount(tokenIn, tokenInAmountFN.toChainData());
   const tokenOutAmountFn = new FixedPointNumber(expectedAmountOut, tokenOut.decimals);
-  
-  let reversePriceDev = tokenInAmountFN.mul(new FixedPointNumber(5)).div(new FixedPointNumber(100))
-  let reverseExpectedAmountOut = tokenInAmountFN.sub(reversePriceDev)
-  let reverseOut = new TokenAmount(tokenIn, reverseExpectedAmountOut.toChainData());
   
 
   // use smart router to get the best trade;
@@ -145,6 +142,7 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   if (!dexApi.api) return;
 
   const blockNumber = await dexApi.api.query.system.number();
+  
 
   const deadline = Number(blockNumber.toString()) + 40; // deadline is block height
 
@@ -159,18 +157,18 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
     deadline // deadline
   ); 
 
-  let reverseInAmount = tokenOutAmount
-  let reverseTokenOut = tokenIn;
-  const reverseResult = SmartRouterV2.swapExactTokensForTokens(
-    reverseInAmount,
-    reverseTokenOut,
-    standardPools,
-    stablePools
-  );
-  const reverseTrade = reverseResult.trade;
-  if(!reverseTrade){
-    throw new Error("Cant construct reverse trade BNC")
-  }
+  // let reverseInAmount = tokenOutAmount
+  // let reverseTokenOut = tokenIn;
+  // const reverseResult = SmartRouterV2.swapExactTokensForTokens(
+  //   reverseInAmount,
+  //   reverseTokenOut,
+  //   standardPools,
+  //   stablePools
+  // );
+  // const reverseTrade = reverseResult.trade;
+  // if(!reverseTrade){
+  //   throw new Error("Cant construct reverse trade BNC")
+  // }
   if (!extrinsics) return;
 
   let swapTxContainer: SwapExtrinsicContainer = {

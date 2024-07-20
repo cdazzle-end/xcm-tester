@@ -17,9 +17,10 @@ import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { MangataInstance, Mangata, MultiswapBuyAsset, MultiswapSellAsset } from "@mangata-finance/sdk"
 import { BN } from '@polkadot/util';
-import { IndexObject, PathNodeValues, ReverseSwapExtrinsicParams, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
+import { IndexObject, PathNodeValues, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
 import { increaseIndex } from './../instructions/utils.ts';
 import { getSigner } from './../instructions/utils.ts';
+import { getApiForNode } from './../instructions/apiUtils.ts'
 const wsLocalChain = "ws://172.26.130.75:8011"
 const mgxRpc = "wss://kusama-rpc.mangata.online"
 
@@ -28,8 +29,8 @@ export async function getMgxSwapExtrinsic(
   swapType: number,
   assetInSymbol: string,
   assetOutSymbol: string, 
-  amountIn: number, 
-  expectedAmountOut: number, 
+  amountIn: string, 
+  expectedAmountOut: string, 
   swapInstructions: SwapInstruction[], 
   chopsticks: boolean = false,
   txIndex: number, 
@@ -116,18 +117,18 @@ export async function getMgxSwapExtrinsic(
   let reversePriceDev = inputBn.mul(new BN(5)).div(new BN(100))
   let reverseTarget = inputBn.sub(reversePriceDev)
 
-  let reverseTxParams: ReverseSwapExtrinsicParams = {
-    chainId: 2110,
-    chain: "Mangata",
-    path: reversePath,
-    supply: reverseSupply,
-    target: reverseTarget,
-    module : "submitableExtrinsic",
-    call: "multiswapSellAsset",
-    supplyAssetId: assetOutSymbol,
-    targetAssetId: assetInSymbol
+  // let reverseTxParams: ReverseSwapExtrinsicParams = {
+  //   chainId: 2110,
+  //   chain: "Mangata",
+  //   path: reversePath,
+  //   supply: reverseSupply,
+  //   target: reverseTarget,
+  //   module : "submitableExtrinsic",
+  //   call: "multiswapSellAsset",
+  //   supplyAssetId: assetOutSymbol,
+  //   targetAssetId: assetInSymbol
 
-  }
+  // }
   // console.log(JSON.stringify(mgxTx.toHuman()))
   let mgxTxContainer: SwapExtrinsicContainer = {
     relay: 'kusama',
@@ -144,7 +145,7 @@ export async function getMgxSwapExtrinsic(
     expectedAmountOut: expectedOutFixedPoint,
     pathType: swapType,
     pathAmount: amountIn,
-    reverseTx: reverseTxParams,
+    // reverseTx: reverseTxParams,
     api: await mangata.api()
   }
   increaseIndex(extrinsicIndex)

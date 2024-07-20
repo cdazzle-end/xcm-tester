@@ -624,7 +624,7 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
     let assetOutNode = swapInstructions[swapInstructions.length - 1].assetNodes[1]
     let assetInDecimals = assetInNode.assetRegistryObject.tokenData.decimals
     let assetOutDecimals = assetOutNode.assetRegistryObject.tokenData.decimals
-    let inputAmount = swapInstructions[0].assetInAmount
+    let inputAmount = swapInstructions[0].assetNodes[0].pathValue
     let outputAmount = swapInstructions[swapInstructions.length - 1].assetOutTargetAmount
     
     let inputFixedPoint = new FixedPointNumber(inputAmount, Number.parseInt(assetInDecimals))
