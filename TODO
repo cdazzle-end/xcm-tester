@@ -48,3 +48,6 @@ Use tick bitmap or tick table to calclulate all ticks
 ******************
 Change search to try until it fails from the same node twice in a row.
 Then have fallback search get a new route without the node that is not crossable
+
+*****
+Make sure Bnc polkadot can swap all pools properly

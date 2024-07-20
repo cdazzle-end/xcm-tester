@@ -25,6 +25,8 @@ scripts/instructions/glmrTestRouteNotes.txt
 scripts/instructions/glmrTest.ts
 scripts/instructions/testAcaPath.json
 scripts/instructions/executionState/
+scripts/instructions/tests/
+scripts/instructions/deprecated/
 TODO
 /scripts/swaps/
 

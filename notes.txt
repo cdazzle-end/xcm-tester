@@ -1,0 +1,8 @@
+Add type: module to zenlink package.json
+
+C:\Users\dazzl\CodingProjects\substrate\hydra\node_modules\.pnpm\@zenlink-dex+sdk-api@0.0.4\node_modules\@zenlink-dex\sdk-api\build\esm\EvmApi.js
+C:\Users\dazzl\CodingProjects\substrate\xcm-test\node_modules\.pnpm\@zenlink-dex+sdk-api@0.0.4\node_modules\@zenlink-dex\sdk-api\build\esm\ModuleBApi.js
+ModuleBApi.js :
+// import { isEqual } from 'lodash';
+import lodash from 'lodash';
+const { isEqual } = lodash;

@@ -1,0 +1,6763 @@
+{
+  "allFees": [
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "412560282604"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0900000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0900000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2030,
+        "assetSymbol": "BNC",
+        "assetId": {
+          "Native": "BNC"
+        },
+        "assetDecimals": 12,
+        "feeAmount": "82464771537"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0900000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0900000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2030,
+        "assetSymbol": "BNC",
+        "assetId": {
+          "Native": "BNC"
+        },
+        "assetDecimals": 12,
+        "feeAmount": "82656771537"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "113786400"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175766538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        },
+        "chainId": 1000,
+        "assetSymbol": "DOT",
+        "assetId": "DOT",
+        "assetDecimals": 10,
+        "feeAmount": "332800710"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "113786400"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175766538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        },
+        "chainId": 1000,
+        "assetSymbol": "DOT",
+        "assetId": "DOT",
+        "assetDecimals": 10,
+        "feeAmount": "335200710"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "113786400"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175766538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        },
+        "chainId": 1000,
+        "assetSymbol": "DOT",
+        "assetId": "DOT",
+        "assetDecimals": 10,
+        "feeAmount": "335200710"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "113786400"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175766538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X3": [
+            {
+              "Parachain": "1000"
+            },
+            {
+              "PalletInstance": "50"
+            },
+            {
+              "GeneralIndex": "1984"
+            }
+          ]
+        },
+        "chainId": 1000,
+        "assetSymbol": "DOT",
+        "assetId": "DOT",
+        "assetDecimals": 10,
+        "feeAmount": "335200710"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X1": {
+            "Parachain": "2037"
+          }
+        },
+        "chainId": 2037,
+        "assetSymbol": "UNQ",
+        "assetId": "UNQ",
+        "assetDecimals": 18,
+        "feeAmount": "58849054087666009"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "111347677",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "111142598",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "111142598",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110938087",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110772404",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110567282",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110567282",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110362740",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110362740",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110362740",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110362740",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110362740",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110362740",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110362740",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110362740",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110362740",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "112586400",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Token": "INTR"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "110362740",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "112586400",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Token": "INTR"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "345302655",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3705817042214273",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "345917100",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3705817042214273",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "345917100",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3705817042214273",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363169457",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363169457",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3625944599892881",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363107449",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175766538461",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "115"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363107449",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175766538461",
+        "reserveAssetAmount": "5886072894",
+        "reserveAssetId": "115"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363107449",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363107449",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175766538461",
+        "reserveAssetAmount": "5815812304",
+        "reserveAssetId": "115"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363107449",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3625381139864824",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363107449",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363107449",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3624801380595520",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363107449",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3624221917689653",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "14"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2030,
+        "assetSymbol": "BNC",
+        "assetId": {
+          "Native": "BNC"
+        },
+        "assetDecimals": 12,
+        "feeAmount": "82464771537",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Native": "BNC"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363107449",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3623642731040979",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604",
+        "reserveAssetAmount": "9724425073",
+        "reserveAssetId": "14"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2030,
+        "assetSymbol": "BNC",
+        "assetId": {
+          "Native": "BNC"
+        },
+        "assetDecimals": 12,
+        "feeAmount": "82464771537",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Native": "BNC"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "363107449",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3623063820458493",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604",
+        "reserveAssetAmount": "9724425073",
+        "reserveAssetId": "14"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2030,
+        "assetSymbol": "BNC",
+        "assetId": {
+          "Native": "BNC"
+        },
+        "assetDecimals": 12,
+        "feeAmount": "82464771537",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Native": "BNC"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "366253695",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3808068831446311",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "366253695",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3807450407799580",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "366253695",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3806832280612352",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "366253695",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3806214449674218",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "366253695",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3805596914779379",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "366253695",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3804979675720849",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "366253695",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3803215187220362",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "115563027",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "112586400",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Token": "INTR"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3864397888538813",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "25"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X1": {
+            "Parachain": "2037"
+          }
+        },
+        "chainId": 2037,
+        "assetSymbol": "UNQ",
+        "assetId": "UNQ",
+        "assetDecimals": 18,
+        "feeAmount": "58849054087666009",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "UNQ"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "114471586",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "112586400",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Token": "INTR"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3956904412053540",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604",
+        "reserveAssetAmount": "1027714387371141959",
+        "reserveAssetId": "25"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X1": {
+            "Parachain": "2037"
+          }
+        },
+        "chainId": 2037,
+        "assetSymbol": "UNQ",
+        "assetId": "UNQ",
+        "assetDecimals": 18,
+        "feeAmount": "58849054087666009",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "UNQ"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "113466247",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "112586400",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Token": "INTR"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3955945617935719",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "114469234",
+        "reserveAssetId": {
+          "ForeignAssetId": "4"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "112586400",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Token": "INTR"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3956904412053540",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "1",
+        "reserveAssetId": {
+          "ForeignAssetId": "3"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2670004018",
+        "reserveAssetAmount": "1",
+        "reserveAssetId": {
+          "ForeignAssetId": "3"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2032"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0002000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2032,
+        "assetSymbol": "INTR",
+        "assetId": {
+          "Token": "INTR"
+        },
+        "assetDecimals": 10,
+        "feeAmount": "112586400",
+        "reserveAssetAmount": "1",
+        "reserveAssetId": {
+          "Token": "IBTC"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3956904412053540",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604",
+        "reserveAssetAmount": "9724425073",
+        "reserveAssetId": "14"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2030,
+        "assetSymbol": "BNC",
+        "assetId": {
+          "Native": "BNC"
+        },
+        "assetDecimals": 12,
+        "feeAmount": "82464771537",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Native": "BNC"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "368332743",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "8471675474163200",
+        "reserveAssetAmount": "30781591840",
+        "reserveAssetId": "224821240862170613278369189818311486111"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2660002411",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2012"
+            },
+            {
+              "GeneralKey": {
+                "length": "4",
+                "data": "0x5041524100000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2012,
+        "assetSymbol": "PARA",
+        "assetId": "1",
+        "assetDecimals": 12,
+        "feeAmount": "175646538461",
+        "reserveAssetAmount": "3955958504616473",
+        "reserveAssetId": "114"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2004"
+            },
+            {
+              "PalletInstance": "10"
+            }
+          ]
+        },
+        "chainId": 2004,
+        "assetSymbol": "GLMR",
+        "assetId": "GLMR",
+        "assetDecimals": 18,
+        "feeAmount": "3265200351180800",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": "GLMR"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2034"
+            },
+            {
+              "GeneralIndex": "0"
+            }
+          ]
+        },
+        "chainId": 2034,
+        "assetSymbol": "HDX",
+        "assetId": "0",
+        "assetDecimals": 12,
+        "feeAmount": "442560282604",
+        "reserveAssetAmount": "9724425073",
+        "reserveAssetId": "14"
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2030"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0001000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2030,
+        "assetSymbol": "BNC",
+        "assetId": {
+          "Native": "BNC"
+        },
+        "assetDecimals": 12,
+        "feeAmount": "82464771537",
+        "reserveAssetAmount": "0",
+        "reserveAssetId": {
+          "Native": "BNC"
+        }
+      },
+      "paid": false
+    },
+    {
+      "feeData": {
+        "assetLocation": {
+          "X2": [
+            {
+              "Parachain": "2000"
+            },
+            {
+              "GeneralKey": {
+                "length": "2",
+                "data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            }
+          ]
+        },
+        "chainId": 2000,
+        "assetSymbol": "ACA",
+        "assetId": {
+          "NativeAssetId": {
+            "Token": "ACA"
+          }
+        },
+        "assetDecimals": 12,
+        "feeAmount": "2540002411",
+        "reserveAssetAmount": "368332743",
+        "reserveAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        }
+      },
+      "paid": false
+    }
+  ],
+  "feePayments": [],
+  "unpaidFees": {
+    "{\"X2\":[{\"Parachain\":\"2000\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+      "assetSymbol": "ACA",
+      "assetDecimals": 12,
+      "feeAmount": "207130227430"
+    },
+    "{\"X2\":[{\"Parachain\":\"2004\"},{\"PalletInstance\":\"10\"}]}": {
+      "assetSymbol": "GLMR",
+      "assetDecimals": 18,
+      "feeAmount": "350075772793984000"
+    },
+    "{\"X2\":[{\"Parachain\":\"2012\"},{\"GeneralKey\":{\"length\":\"4\",\"data\":\"0x5041524100000000000000000000000000000000000000000000000000000000\"}}]}": {
+      "assetSymbol": "PARA",
+      "assetDecimals": 12,
+      "feeAmount": "4918463076908"
+    },
+    "{\"X2\":[{\"Parachain\":\"2034\"},{\"GeneralIndex\":\"0\"}]}": {
+      "assetSymbol": "HDX",
+      "assetDecimals": 12,
+      "feeAmount": "3983042543436"
+    },
+    "{\"X1\":{\"Parachain\":\"2037\"}}": {
+      "assetSymbol": "UNQ",
+      "assetDecimals": 18,
+      "feeAmount": "176547162262998027"
+    },
+    "{\"X2\":[{\"Parachain\":\"2032\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0002000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+      "assetSymbol": "INTR",
+      "assetDecimals": 10,
+      "feeAmount": "788104800"
+    },
+    "{\"X2\":[{\"Parachain\":\"2030\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0001000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+      "assetSymbol": "BNC",
+      "assetDecimals": 12,
+      "feeAmount": "412323857685"
+    }
+  },
+  "{\"X2\":[{\"Parachain\":\"2000\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0001000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "ACA",
+    "assetDecimals": 12,
+    "feeAmount": "2540002411"
+  },
+  "{\"X2\":[{\"Parachain\":\"2000\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "ACA",
+    "assetDecimals": 12,
+    "feeAmount": "2660002411"
+  },
+  "{\"X2\":[{\"Parachain\":\"2004\"},{\"PalletInstance\":\"10\"}]}": {
+    "assetSymbol": "GLMR",
+    "assetDecimals": 18,
+    "feeAmount": "3265200351180800"
+  },
+  "{\"X2\":[{\"Parachain\":\"2030\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0900000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "BNC",
+    "assetDecimals": 12,
+    "feeAmount": "82656771537"
+  },
+  "{\"X2\":[{\"Parachain\":\"2032\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0002000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "INTR",
+    "assetDecimals": 10,
+    "feeAmount": "113786400"
+  },
+  "{\"X3\":[{\"Parachain\":\"1000\"},{\"PalletInstance\":\"50\"},{\"GeneralIndex\":\"1984\"}]}": {
+    "assetSymbol": "DOT",
+    "assetDecimals": 10,
+    "feeAmount": "335200710"
+  },
+  "{\"X2\":[{\"Parachain\":\"2012\"},{\"GeneralKey\":{\"length\":\"4\",\"data\":\"0x5041524100000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "PARA",
+    "assetDecimals": 12,
+    "feeAmount": "175646538461"
+  }
+}

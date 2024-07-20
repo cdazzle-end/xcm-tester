@@ -12,6 +12,7 @@
   "type": "module",
   "dependencies": {
     "@acala-network/api": "^6.1.0",
+    "@acala-network/chopsticks": "^0.12.1",
     "@acala-network/eth-providers": "^2.7.20",
     "@acala-network/sdk": "^4.1.9-7",
     "@acala-network/sdk-core": "^4.1.9-7",
