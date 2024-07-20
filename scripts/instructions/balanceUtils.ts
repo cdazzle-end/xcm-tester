@@ -1,8 +1,8 @@
 import fs from 'fs'
-import { BalanceData, getAdapter } from '@polkawallet/bridge';
+import { AcalaAdapter, AltairAdapter, AstarAdapter, BalanceData, BasiliskAdapter, BifrostAdapter, BifrostPolkadotAdapter, CalamariAdapter, CentrifugeAdapter, CrabAdapter, CrustAdapter, DarwiniaAdapter, HeikoAdapter, HydraDxAdapter, IntegriteeAdapter, InterlayAdapter, InvarchAdapter, KaruraAdapter, KhalaAdapter, KicoAdapter, KiltAdapter, KintsugiAdapter, KusamaAdapter, ListenAdapter, MangataAdapter, MantaAdapter, MoonbeamAdapter, MoonriverAdapter, NodleAdapter, OakAdapter, ParallelAdapter, PendulumAdapter, PhalaAdapter, PichiuAdapter, PolkadotAdapter, QuartzAdapter, RobonomicsAdapter, ShadowAdapter, ShidenAdapter, StatemineAdapter, StatemintAdapter, SubsocialAdapter, TinkernetAdapter, TuringAdapter, UniqueAdapter, ZeitgeistAdapter, getAdapter } from '@polkawallet/bridge';
 import { TNode } from '@paraspell/sdk'
 import { firstValueFrom, Observable, timeout } from "rxjs";
-import { MyAssetRegistryObject, Relay } from './types.ts'
+import { BalanceChangeStatsBn, MyAssetRegistryObject, NativeBalancesType, Relay } from './types.ts'
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { TransferrableAssetObject, BalanceChangeStats } from './types.ts'
 import { FixedPointNumber} from "@acala-network/sdk-core";
@@ -10,8 +10,13 @@ import { acaRpc, karRpc, localRpcs } from './txConsts.ts';
 import {EvmRpcProvider} from '@acala-network/eth-providers';
 import { Wallet } from '@acala-network/sdk/wallet/wallet.js';
 import { WalletConfigs } from '@acala-network/sdk/wallet/index.js';
-import { getSigner, getNodeFromChainId } from './utils.ts';
+import { getSigner, getNodeFromChainId, delay } from './utils.ts';
 import { getApiForNode } from './apiUtils.ts';
+import { balanceAdapterMap } from './liveTest.ts';
+import {BigNumber as bn } from "bignumber.js"
+bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
+
+export type BalanceAdapter = StatemintAdapter | StatemineAdapter | AcalaAdapter | KaruraAdapter | AstarAdapter | ShidenAdapter | BifrostAdapter | BifrostPolkadotAdapter | CrabAdapter | DarwiniaAdapter | AltairAdapter | CentrifugeAdapter | ShadowAdapter | CrustAdapter | BasiliskAdapter | HydraDxAdapter | PolkadotAdapter | KusamaAdapter | IntegriteeAdapter | InterlayAdapter | KintsugiAdapter | KicoAdapter | PichiuAdapter | ListenAdapter | MangataAdapter | CalamariAdapter | MantaAdapter | MoonbeamAdapter | MoonriverAdapter | KhalaAdapter | PhalaAdapter | TuringAdapter | OakAdapter | HeikoAdapter | ParallelAdapter | RobonomicsAdapter | TinkernetAdapter | InvarchAdapter | QuartzAdapter | UniqueAdapter | ZeitgeistAdapter | SubsocialAdapter | NodleAdapter | PendulumAdapter | KiltAdapter;
 
 export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks: boolean, destChainApi: ApiPromise, transferrableAssetObject: TransferrableAssetObject, depositAddress: string){
     let tokenSymbol: string;
@@ -75,6 +80,7 @@ export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks
                     subscriber.next(balance);
                     subscriber.complete();
                     console.log("Watch Token Deposit: Token deposit complete")
+                    // destAdapter.getApi().disconnect()
                 } else {
                     currentBalance = balance;
                     subscriber.next(balance);
@@ -83,13 +89,16 @@ export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks
             error(err) {
                 subscriber.error(new Error(err));
                 subscriber.complete(); // Complete the outer Observable on error
+                // destAdapter.getApi().disconnect()
             },
             complete() {
                 subscriber.complete(); // Complete the outer Observable when the inner one completes
+                // destAdapter.getApi().disconnect()
             }
         });
         return () => {
             subscription.unsubscribe();
+            // destAdapter.getApi().disconnect()
         };
     })
 }
@@ -162,6 +171,7 @@ export async function watchTokenBalance(relay: Relay, paraId: number, chopsticks
                 if(currentBalance){
                     subscriber.next(balance);
                     subscriber.complete();
+                    // destAdapter.getApi().disconnect()
                     console.log("Watch Token Balance: Observable complete")
                 } else {
                     currentBalance = balance;
@@ -171,54 +181,64 @@ export async function watchTokenBalance(relay: Relay, paraId: number, chopsticks
             error(err) {
                 subscriber.error(new Error(err));
                 subscriber.complete(); // Complete the outer Observable on error
+                // destAdapter.getApi().disconnect()
             },
             complete() {
                 subscriber.complete(); // Complete the outer Observable when the inner one completes
+                // destAdapter.getApi().disconnect()
             }
         });
         return () => {
             subscription.unsubscribe();
+            // destAdapter.getApi().disconnect()
         };
     })
+
+    
 }
 export async function getBalanceChange(
     balanceObservable$: Observable<BalanceData>,
     setUnsubscribeCallback: (unsubscribe: () => void) => void
-  ): Promise<BalanceChangeStats> {
+  ): Promise<BalanceChangeStatsBn> {
     console.log("Get Balance Change: waiting for balance change")
     let currentBalance: BalanceData;
-    let balanceChangeStats: BalanceChangeStats = {
-        startBalance: new FixedPointNumber(0),
-        endBalance: new FixedPointNumber(0),
-        changeInBalance: new FixedPointNumber(0),
-        startBalanceString: "0",
-        endBalanceString: "0",
-        changeInBalanceString: "0"
+    let balanceChangeStats: BalanceChangeStatsBn = {
+        startBalance: new bn(0),
+        endBalance: new bn(0),
+        changeInBalance: new bn(0),
+        startBalanceDisplay: "0",
+        endBalanceDisplay: "0",
+        changeInBalanceDisplay: "0"
     }
-    const balanceChangePromise = new Promise<BalanceChangeStats>((resolve, reject) => {
+    const balanceChangePromise = new Promise<BalanceChangeStatsBn>((resolve, reject) => {
         const subscription = balanceObservable$.pipe(timeout(120000)).subscribe({
             next(balance) {
-                
                 if(currentBalance){
-                    console.log("Get Balance Change: Balance changed")
-                    let changeInBalance = balance.free.sub(currentBalance.free);
-                    // currentBalance = balance;
-                    console.log(`Get Balance Change: Previous Balance: ${currentBalance.free} | New Balance: ${balance.free} | Change in Balance: ${changeInBalance}`)
-
-                    subscription.unsubscribe();
-                    let startBalance = currentBalance.free
-                    let endBalance = balance.free
+                    let decimals = balance.free.getPrecision()
+                    let startBalance = currentBalance.free._getInner()
+                    let endBalance = balance.free._getInner()        
+                    let changeInBalance = endBalance.minus(startBalance).abs()
+            
+                    let startBalanceDisplay = getDisplayBalance(startBalance, decimals)
+                    let endBalanceDisplay = getDisplayBalance(endBalance, decimals)
+                    let changeInBalanceDisplay = getDisplayBalance(changeInBalance, decimals)
+                    // console.log(`Get Balance Change: Previous Balance: ${currentBalance.free} | New Balance: ${balance.free} | Change in Balance: ${changeInBalance}`)
+                    // console.log(`Asset decimals: ${decimals}`)
+                    // console.log(`Start Balance: ${startBalance.toString()} | End Balance: ${endBalance.toString()} | Change in Balance: ${changeInBalance.toString()}`)
+                    console.log(`Start Balance Display: ${startBalanceDisplay.toString()} | End Balance Display: ${endBalanceDisplay.toString()} | Change in Balance Display: ${changeInBalanceDisplay.toString()}`)
                     balanceChangeStats = {
                         startBalance,
                         endBalance,
                         changeInBalance,
-                        startBalanceString: startBalance.toString(),
-                        endBalanceString: endBalance.toString(),
-                        changeInBalanceString: changeInBalance.toString()
+                        startBalanceDisplay: startBalanceDisplay.toString(),
+                        endBalanceDisplay: endBalanceDisplay.toString(),
+                        changeInBalanceDisplay: changeInBalanceDisplay.toString(),
+                        decimals
                     }
+                    subscription.unsubscribe();
                     resolve(balanceChangeStats)
                 } else {
-                    balanceChangeStats.startBalance = balance.free
+                    balanceChangeStats.startBalance = balance.free._getInner()
                     currentBalance = balance;
                     console.log(`Get Balance Change: Current Balance: ${balance.free}`);
                 }
@@ -253,8 +273,21 @@ export async function getBalanceChange(
     });
     return balanceChangePromise
 }
-export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, chainId: number, assetSymbol: string){
-    let account = await getSigner(chopsticks, false)
+export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, node: TNode | "Kusama" | "Polkadot", chainId: number, assetSymbol: string): Promise<BalanceData>{
+    let evm = node == "Moonbeam" || node == "Moonriver" ? true : false
+    let account = await getSigner(chopsticks, evm)
+
+    if(chainId == 0){
+        let relayBalance = await getRelayChainBalance(chopsticks, relay)
+        let tokenDecimals = relay == 'kusama' ? 12 : 10
+        let relayBalanceData: BalanceData = {
+            available: new FixedPointNumber(relayBalance, tokenDecimals),
+            reserved: new FixedPointNumber("0", tokenDecimals),
+            free: new FixedPointNumber(relayBalance, tokenDecimals),
+            locked: new FixedPointNumber("0", tokenDecimals)
+        }
+        return relayBalanceData
+    }
 
     let chainNode: TNode | "Kusama" | "Polkadot";
     if(relay === "kusama"){
@@ -304,106 +337,178 @@ export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, ch
         console.log("Removing XC from token symbol")
         tokenSymbol = tokenSymbol.slice(2)
     }
-    // let validatedTokenSymbol = getBalanceAdapterSymbol(chainId, tokenSymbol, relay)
     const balanceObservable = chainAdapter.subscribeTokenBalance(tokenSymbol, account.address);
     let balance = await firstValueFrom(balanceObservable)
+
     
     return balance
-    // nativeBalances[chainId] = balance.available.toNumber()
-    // asyncAdapters.push(chainAdapter)
 
 }
-export async function getNativeBalanceAcrossChains(chopsticks: boolean, relay: Relay){
-    let nativeBalances = relay === 'kusama' ? 
+
+export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, relay: Relay){
+    let nativeBalances: NativeBalancesType = relay === 'kusama' ? 
     {
-        0: 0,
-        2000: 0,
-        2001: 0,
-        2023: 0,
-        2085: 0,
-        2090: 0,
-        2110: 0
+        0: "0",
+        2000: "0",
+        2001: "0",
+        2023: "0",
+        2085: "0",
+        2090: "0",
+        2110: "0"
     } : {
-        0: 0,
-        2000: 0,
-        2030: 0,
-        2034: 0,
-        2004: 0,
-        2012: 0
+        0: "0",
+        2000: "0",
+        2030: "0",
+        2034: "0",
+        2004: "0",
+        2012: "0"
     }
 
+    let chainIds = Object.keys(nativeBalances)
     let asyncAdapters = []
-    let chainIds = relay === "kusama" ? [0, 2000, 2001, 2023, 2085, 2090, 2110] : [0, 2000, 2030, 2034, 2004, 2012]
-    let nativeBalancesPromise = chainIds.map(async (chainId) => {
+
+    // Something errs when querying the relay chain at the same time
+    let nativeBalancesPromise = chainIds.map(async (chainKey) => {
         let account;
-        if(relay == 'kusama' && chainId == 2023 || relay == 'polkadot' && chainId == 2004){ // MOVR or GLMR
-            account = await getSigner(chopsticks, true)
-        } else {
-            account = await getSigner(chopsticks, false)
-        }
-        console.log("Account Address: " + account.address)
-        let chainNode: TNode | "Kusama" | "Polkadot";
-        if(relay === "kusama"){
-            chainNode = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId, relay)
-        } else if (relay === "polkadot"){
-            chainNode = chainId == 0 ? "Polkadot" : getNodeFromChainId(chainId, relay)
-        } else {
-            throw new Error("Invalid relay")
-        }
-
-
-        // let chainNode: TNode | "Kusama"  = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId)
-        let destAdapter = getAdapter(relay, chainId)
-
-        if(chainId == 2000){
-            let rpc;
-            if(relay === 'kusama'){
-                rpc = chopsticks ? localRpcs["Karura"] : karRpc
+        let chainId = Number.parseInt(chainKey)
+        if (chainId != 0){
+            if(relay == 'kusama' && chainId == 2023 || relay == 'polkadot' && chainId == 2004){ // MOVR or GLMR
+                account = await getSigner(chopsticks, true)
             } else {
-                rpc = chopsticks ? localRpcs["Acala"] : karRpc
+                account = await getSigner(chopsticks, false)
             }
-            let provider = new WsProvider(rpc)
-            let walletConfigs: WalletConfigs = {
-                evmProvider: EvmRpcProvider.from(rpc),
-                wsProvider: provider
+            console.log("Account Address: " + account.address)
+            let chainNode: TNode | "Kusama" | "Polkadot";
+            if(relay === "kusama"){
+                chainNode = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId, relay)
+            } else if (relay === "polkadot"){
+                chainNode = chainId == 0 ? "Polkadot" : getNodeFromChainId(chainId, relay)
+            } else {
+                throw new Error("Invalid relay")
             }
-            let karApi = await ApiPromise.create({provider: provider})
-            let adapterWallet = new Wallet(karApi, walletConfigs);
-            await destAdapter.init(karApi, adapterWallet);
-        } else {
-            let api = await getApiForNode(chainNode, chopsticks)
-            await destAdapter.init(api);
+    
+    
+            // let chainNode: TNode | "Kusama"  = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId)
+            let destAdapter = getAdapter(relay, chainId)
+    
+            if(chainId == 2000){
+                let rpc;
+                if(relay === 'kusama'){
+                    rpc = chopsticks ? localRpcs["Karura"] : karRpc
+                } else {
+                    rpc = chopsticks ? localRpcs["Acala"] : acaRpc
+                }
+                let provider = new WsProvider(rpc)
+                let walletConfigs: WalletConfigs = {
+                    evmProvider: EvmRpcProvider.from(rpc),
+                    wsProvider: provider
+                }
+                // let karApi = await ApiPromise.create({provider: provider})
+                let karApi = await getApiForNode(chainNode, chopsticks)
+                let adapterWallet = new Wallet(karApi, walletConfigs);
+                await destAdapter.init(karApi, adapterWallet);
+            } else {
+                let api = await getApiForNode(chainNode, chopsticks)
+                await destAdapter.init(api);
+            }
+    
+    
+            let tokenSymbol = relay === "kusama" ? "KSM" : "DOT"
+    
+            if(relay == 'kusama' && chainId == 2023 || relay == 'polkadot' && chainId == 2004){
+                // console.log("Adding XC to token symbol")
+                tokenSymbol = "xc" + tokenSymbol
+            }
+    
+    
+            const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, account.address);
+            console.log("Delaying for 5")
+            await delay(5000)
+            let balance = await firstValueFrom(balanceObservable)
+            nativeBalances[chainId] = balance.available.toString()
+            console.log(`Balance for chain ${chainId}: ${balance.available.toString()}`)
+            // asyncAdapters.push(destAdapter)
+    
+            console.log("Closing balance adapter for: " + chainId)
+            // await destAdapter.getApi().disconnect()
+            
+            return nativeBalances
         }
 
-        let tokenSymbol = relay === "kusama" ? "KSM" : "DOT"
-        if(relay == 'kusama' && chainId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"){
-            console.log("Adding XC from token symbol")
-            tokenSymbol = "xc" + tokenSymbol
-        // if chain isnt movr, no prefix
-        } else if(relay == 'kusama' && chainId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")){
-            console.log("Removing XC from token symbol")
-            tokenSymbol = tokenSymbol.slice(2)
-        }
-
-        if(relay == 'polkadot' &&  chainId == 2004 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "GLMR"){
-            console.log("Adding XC from token symbol")
-            tokenSymbol = "xc" + tokenSymbol
-        // if chain isnt movr, no prefix
-        } else if(relay == 'polkadot' && chainId != 2004 && tokenSymbol.toUpperCase().startsWith("XC")){
-            console.log("Removing XC from token symbol")
-            tokenSymbol = tokenSymbol.slice(2)
-        }
-
-        const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, account.address);
-        let balance = await firstValueFrom(balanceObservable)
-        nativeBalances[chainId] = balance.available.toNumber()
-        asyncAdapters.push(destAdapter)
-        return nativeBalances
     })
+    // console.log("Delaying for 10 seconds")
+    // await delay(10000)
     await Promise.all(nativeBalancesPromise)
+
+    let dotBalance = await getBalanceChainAsset(chopsticks, relay, "Polkadot", 0, "DOT")
+    console.log("relay chain dot balance: " + dotBalance.available.toString())
+    nativeBalances[0] = dotBalance.available.toString()
 
     return nativeBalances
 
+}
+
+export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay){
+    console.log("Getting native balances")
+    let nativeBalances: NativeBalancesType = relay === 'kusama' ? 
+    {
+        0: "0",
+        2000: "0",
+        2001: "0",
+        2023: "0",
+        2085: "0",
+        2090: "0",
+        2110: "0"
+    } : {
+        0: "0",
+        2000: "0",
+        2030: "0",
+        2034: "0",
+        2004: "0",
+        2012: "0"
+    }
+
+    let relayToken = relay === 'kusama' ? "KSM" : "DOT"
+    let chainIds = Object.keys(nativeBalances)
+    let nativeBalancesPromise = chainIds.map(async (chainKey) => {
+        let chainId = Number.parseInt(chainKey)
+        // if (chainId != 0){
+            let node = getNodeFromChainId(Number.parseInt(chainKey), relay)
+            let chainBalance = await getBalanceChainAsset(chopsticks, relay, node, chainId, relayToken)
+            nativeBalances[chainId] = chainBalance.available.toString()    
+        // }
+    })
+    await Promise.all(nativeBalancesPromise)
+    return nativeBalances
+        
+}
+
+export async function getRelayChainBalance(chopsticks: boolean, relay: Relay){
+    let relayNode = getNodeFromChainId(0, relay)
+    let relayApi = await getApiForNode(relayNode, chopsticks)
+    let relayTokenDecimals = relay === 'kusama' ? 12 : 10
+
+    let signer = await getSigner(chopsticks, false)
+
+    let balance = await relayApi.query.system.account(signer.address)
+    let balanceBn: bn = new bn(balance.data.free.toString())
+    let balanceFormatted = balanceBn.div(new bn(10).pow(relayTokenDecimals)).toString()
+
+    return balanceFormatted
+}
+
+export async function getBalanceAdapter(relay: Relay, api: ApiPromise, chainId: number, node: TNode | "Kusama" | "Polkadot"){
+    let map = balanceAdapterMap
+    if(map.has(node)){
+        console.log(`Adapter for ${node} already exists`)
+        return map.get(node)
+    }
+
+    console.log(`Creating adapter for ${node}`)
+    let chainAdapter = getAdapter(relay, chainId)
+    await chainAdapter.init(api)
+    map.set(node, chainAdapter)
+    return chainAdapter
 }
 
 export async function getBalance(paraId: number, relay: Relay, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, assetObject: MyAssetRegistryObject, node: string, accountAddress: string): Promise<BalanceData>{
@@ -468,6 +573,8 @@ export async function getBalance(paraId: number, relay: Relay, chopsticks: boole
     console.log("Get Token Balance: Subscribed to balance")
     let balance = await firstValueFrom(balanceObservable)
     console.log("Balance: " + JSON.stringify(balance.available.toNumber()))
+
+    // await destAdapter.getApi().disconnect()
     return balance
 }
 
@@ -535,4 +642,13 @@ function getBalanceAdapterSymbol(chainId: number, tokenSymbol: string, assetObje
 
     }
     return validatedSymbol
+}
+
+// Take balance and decimals, return displayable balance
+export function getDisplayBalance(balance: bn, decimals: number): string {
+    return balance.shiftedBy(-decimals).toFixed(decimals);
+}
+
+export function getBalanceFromDisplay(displayBalance: bn, decimals: number): bn {
+    return displayBalance.shiftedBy(decimals)
 }

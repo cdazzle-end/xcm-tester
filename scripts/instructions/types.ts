@@ -13,6 +13,7 @@ import { MangataInstance } from '@mangata-finance/sdk';
 import { BatchSwapParams } from './../swaps/movr/utils/types.ts';
 import { BalanceData, getAdapter } from '@polkawallet/bridge';
 import { ManagerSwapParams } from 'scripts/swaps/glmr/utils/types.ts';
+import bn, { BigNumber } from 'bignumber.js'
 // import { BalanceData } from '@polkawallet/bridge';
 // import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 
@@ -84,6 +85,10 @@ export type TxDetails = {
     decodedError?: any;
     errorMessages?: string[];
     movrInfo?: any;
+    glmrInfo?: any;
+    xcmMessageHash?: string;
+    xcmMessageId?: string,
+    feeEvent?: any
 }
 export enum InstructionType {
     Swap,
@@ -95,7 +100,8 @@ export enum InstructionType {
 export interface PathData{
     dexType: string, // 0 solar 1 zenlink 2 uni 3 algebra
     lpId: string // pool address
-
+    xcmFeeAmounts?: string[] // fee amounts
+    xcmReserveValues?: string[] // reserve values
 }
 export interface SwapInstruction {
     type: InstructionType.Swap;
@@ -104,10 +110,10 @@ export interface SwapInstruction {
     pathType: number, // 0 xcm | 1 dexV2 | 2 stable swap | 3 dexV3 | 4 omniswap
     pathData: PathData,
     assetInLocalId: string,
-    assetInAmount: number,
+    assetInAmount: string,
     assetInAmountFixed: FixedPointNumber,
     assetOutLocalId: string,
-    assetOutTargetAmount: number,
+    assetOutTargetAmount: string,
     assetOutTargetAmountFixed: FixedPointNumber,
     assetNodes: AssetNode[]
 
@@ -130,6 +136,9 @@ export interface BasicTransferInstructionInterface {
     startAssetNode: AssetNode;
     destinationAssetNode: AssetNode;
 
+    startTransferReserve: string,
+    startTransferFee: string,
+
     assetNodes: AssetNode[]
 
 }
@@ -144,7 +153,9 @@ export interface TransferToHomeThenDestInstruction extends BasicTransferInstruct
     secondInstructionIndex: number,
     middleNode: TNode | "Kusama" | "Polkadot";
     middleAssetNode: AssetNode;
-    middleNodeLocalId: string;  
+    middleNodeLocalId: string;
+    middleTransferReserve: string, 
+    middleTransferFee: string,
 }
 export interface ParaspellAsset {
     symbol?: string;
@@ -168,15 +179,21 @@ export interface TransferParams {
     address?: string;
     transferrableAssetObject: TransferrableAssetObject;
 }
+// export interface TransferFeeData{
+//     originFeeAsset:
+// }
 export interface TransferTxStats {
     startChain: string,
     startParaId: number,
     destChain: string,
     destParaId: number,
     currency: string,
-    startBalanceStats: BalanceChangeStats,
-    destBalanceStats: BalanceChangeStats,
-    feesAndGasAmount: FixedPointNumber,
+    startAssetId: string,
+    startBalanceStats: BalanceChangeStatsBn,
+    destBalanceStats: BalanceChangeStatsBn,
+    feesAndGasAmount: bn,
+    originFee: FeeData,
+    destinationFee: FeeData
 }
 export interface BalanceChangeStats{
     startBalance: FixedPointNumber,
@@ -185,6 +202,16 @@ export interface BalanceChangeStats{
     startBalanceString: string,
     endBalanceString: string,
     changeInBalanceString: string,
+}
+
+export interface BalanceChangeStatsBn{
+    startBalance: bn,
+    endBalance: bn,
+    changeInBalance: bn,
+    startBalanceDisplay: string,
+    endBalanceDisplay: string,
+    changeInBalanceDisplay: string,
+    decimals?: number
 }
 
 export interface ChainNonces{
@@ -207,7 +234,9 @@ export interface ExecutionState{
     transactionState: TransactionState,
     transactionProperties: SwapProperties | TransferProperties,
     executionSuccess: boolean,
-    executionAttempts: number
+    executionAttempts: number,
+    accumulatedFeeData: AccumulatedFeeData,
+    xcmFeeReserves: ReserveFeeData[]
 }
 
 export type Relay = "kusama" | "polkadot"
@@ -217,6 +246,9 @@ export enum TransactionState {
     Broadcasted = "Broadcasted",
     Finalized = "Finalized"
 }
+export type NativeBalancesType = {
+    [key: number]: string;
+  };
 export interface SwapProperties{
     type: 'Swap',
     relay: Relay,
@@ -234,7 +266,7 @@ export interface SwapProperties{
     assetOutStartBalance: BalanceData,
     assetOutStartBalanceString: string,
     assetOutDecimals: string,
-    inputAmount: number,
+    inputAmount: string,
     destAssetKey: string
     
 
@@ -257,7 +289,8 @@ export interface TransferProperties{
     destAddress: string,
     destNodeStartBalance: BalanceData,
     destNodeStartBalanceString: string,
-    inputAmount: number,
+    inputAmount: string,
+    reserveAmount: string,
     assetDecimals: string,
     destAssetKey: string,
 
@@ -289,7 +322,8 @@ export interface TransferExtrinsicContainer{
     pathInLocalId: string,
     pathOutLocalId: string,
     pathSwapType: number,
-    pathAmount: number,
+    pathAmount: string,
+    reserveAmount: string,
 }
 export interface SwapTxStats {
     txHash: Hash,
@@ -301,10 +335,16 @@ export interface SwapTxStats {
     actualAmountIn: string,
     expectedAmountOut: string,
     actualAmountOut: string,
-    tokenInBalanceChange: BalanceChangeStats,
-    tokenOutBalanceChange: BalanceChangeStats,
-    feesAndGasAmount?: FixedPointNumber,
+    tokenInBalanceChange: BalanceChangeStatsBn,
+    tokenOutBalanceChange: BalanceChangeStatsBn,
+    feesAndGasAmount?: bn,
 
+}
+
+
+export interface PromiseTracker {
+    trackedPromise: Promise<any>;
+    isResolved: () => boolean;
 }
 export interface SwapExtrinsicContainer{
     relay: Relay,
@@ -322,7 +362,7 @@ export interface SwapExtrinsicContainer{
     // pathInLocalId: string,
     // pathOutLocalId: string,
     pathType: number,
-    pathAmount: number,
+    pathAmount: string,
 
     assetSymbolOut: string,
     
@@ -343,84 +383,84 @@ export interface PathNodeValues {
 
 }
 
-export interface ReverseSwapExtrinsicParams{
-    chainId: number,
-    chain?: TNode,
-    type?: number,
-    module?: string,
-    call?: string,
-    supply?: FixedPointNumber | TokenAmount | BN,
-    target: FixedPointNumber | TokenAmount | BN,
-    supplyFn?: FixedPointNumber,
-    targetFn?: FixedPointNumber,
-    poolIndex?: any,
-    path?: any[],
-    supplyAssetId: any,
-    supplySymbol?: any,
-    targetAssetId: any,
-    targetSymbol?: any,
-    assetLength?: any,
-    recipient?: any,
-    deadline?: any,
-    moduleBApi?: ModuleBApi,
-    mangataInstance?: MangataInstance,
-    movrBatchSwapParams?: BatchSwapParams
-    assetSymbolIn?: string,
-    assetSymbolOut?: string,
-    assetAmountIn?: FixedPointNumber,
-    assetAmountOut?: FixedPointNumber,
-    startAssetIndex?: number,
-    endAssetIndex?: number,
-}
+// export interface ReverseSwapExtrinsicParams{
+//     chainId: number,
+//     chain?: TNode,
+//     type?: number,
+//     module?: string,
+//     call?: string,
+//     supply?: FixedPointNumber | TokenAmount | BN,
+//     target: FixedPointNumber | TokenAmount | BN,
+//     supplyFn?: FixedPointNumber,
+//     targetFn?: FixedPointNumber,
+//     poolIndex?: any,
+//     path?: any[],
+//     supplyAssetId: any,
+//     supplySymbol?: any,
+//     targetAssetId: any,
+//     targetSymbol?: any,
+//     assetLength?: any,
+//     recipient?: any,
+//     deadline?: any,
+//     moduleBApi?: ModuleBApi,
+//     mangataInstance?: MangataInstance,
+//     movrBatchSwapParams?: BatchSwapParams
+//     assetSymbolIn?: string,
+//     assetSymbolOut?: string,
+//     assetAmountIn?: FixedPointNumber,
+//     assetAmountOut?: FixedPointNumber,
+//     startAssetIndex?: number,
+//     endAssetIndex?: number,
+// }
 
-export interface ReverseKarSwapParams {
-    chainId: number,
-    chain: TNode,
-    type: number,
-    module: string,
-    call: string,
-    supplyAssetId: any,
-    targetAssetId: any,
-    supply: FixedPointNumber,
-    target: FixedPointNumber,
-    // *****
-    path?: any[],
-    // *****
-    poolIndex?: any,
-    startAssetIndex?: number,
-    endAssetIndex?: number,
-    assetLength?: any,
-}
+// export interface ReverseKarSwapParams {
+//     chainId: number,
+//     chain: TNode,
+//     type: number,
+//     module: string,
+//     call: string,
+//     supplyAssetId: any,
+//     targetAssetId: any,
+//     supply: FixedPointNumber,
+//     target: FixedPointNumber,
+//     // *****
+//     path?: any[],
+//     // *****
+//     poolIndex?: any,
+//     startAssetIndex?: number,
+//     endAssetIndex?: number,
+//     assetLength?: any,
+// }
 
-export interface ReverseBncSwapParams {
-    chainId: number,
-    chain: TNode,
-    path: MultiPath[],
-    supply: TokenAmount,
-    supplyFn: FixedPointNumber,
-    target: TokenAmount,
-    targetFn: FixedPointNumber,
-    recipient: string,
-    deadline: number,
-    call: string,
-    moduleBApi: ModuleBApi,
-    supplyAssetId: string,
-    targetAssetId: string
-}
+// export interface ReverseBncSwapParams {
+//     chainId: number,
+//     chain: TNode,
+//     path: MultiPath[],
+//     supply: TokenAmount,
+//     supplyFn: FixedPointNumber,
+//     target: TokenAmount,
+//     targetFn: FixedPointNumber,
+//     recipient: string,
+//     deadline: number,
+//     call: string,
+//     moduleBApi: ModuleBApi,
+//     supplyAssetId: string,
+//     targetAssetId: string
+// }
 
-export interface ReverseBsxSwapParams {
-    chainId: 2090,
-    chain: string,
-    // supplyAssetId: reverseIn.id,
-    // targetAssetId: reverseOut.id,
-    // supplySymbol: destAssetSymbol,
-    // targetSymbol: startAssetSymbol,
-    // supply: reverseSupply,
-    // target: reverseTarget,
-    // module: "router",
-    // call: "sell",
-    // path: route,
-}
+// export interface ReverseBsxSwapParams {
+//     chainId: 2090,
+//     chain: string,
+//     // supplyAssetId: reverseIn.id,
+//     // targetAssetId: reverseOut.id,
+//     // supplySymbol: destAssetSymbol,
+//     // targetSymbol: startAssetSymbol,
+//     // supply: reverseSupply,
+//     // target: reverseTarget,
+//     // module: "router",
+//     // call: "sell",
+//     // path: route,
+// }
 
 export interface SwapResultObject {
     txString?: string,
@@ -439,7 +479,7 @@ export interface ExtrinsicSetResult {
 }
 export interface ExtrinsicSetResultDynamic {
     success: boolean,
-    extrinsicData: (SingleTransferResultData | SingleSwapResultData)[],
+    allExtrinsicResults: (SingleTransferResultData | SingleSwapResultData)[],
     lastSuccessfulNode: LastNode,
 }
 
@@ -453,6 +493,14 @@ export interface SingleExtrinsicResultData{
     lastNode: LastNode,
     extrinsicIndex: number,
 }
+export interface AccumulatedFeeData{
+    [key: string]: { // Key is assetLocation string
+        assetSymbol: string,
+        assetDecimals: number,
+        feeAmount: string
+    }
+}
+
 export interface SingleTransferResultData {
     success: boolean,
     arbExecutionResult: ArbExecutionResult,
@@ -460,6 +508,7 @@ export interface SingleTransferResultData {
     transferTxStats: TransferTxStats,
     lastNode: LastNode,
     extrinsicIndex: number,
+
 }
 
 export interface SingleSwapResultData {
@@ -489,8 +538,8 @@ export interface ArbExecutionResult{
     result: string,
     assetSymbolIn: string,
     assetSymbolOut: string,
-    assetAmountIn: number,
-    assetAmountOut: number,
+    assetAmountIn: string,
+    assetAmountOut: string,
     blockHash: string,
 }
 export interface PreExecutionTransfer {
@@ -514,4 +563,76 @@ export interface AsyncFileData{
 export interface ExecutionSuccess {
     success: boolean,
     executionAttempts: number
+}
+
+
+
+export interface DepositEventData {
+    depositAmount: bn
+    assetSymbol: string,
+    assetId: string,
+    assetDecimals: number,
+    feeAmount: bn,
+    node: TNode | "Polkadot" | "Kusama"
+}
+export interface FeeData{
+    assetLocation: string,
+    chainId: number,
+    assetSymbol: string,
+    assetId: string,
+    assetDecimals: number,
+    feeAmount: string,
+    reserveAssetId?: string,
+    reserveAssetAmount?: string,
+}
+export interface ReserveFeeData {
+    chainId: number,
+    feeAssetId: string,
+    feeAssetAmount: string,
+    reserveAssetId: string,
+    reserveAssetAmount: string
+}
+export interface TransferEventData {
+    transferAmount: bn,
+    transferAssetSymbol: string,
+    transferAssetId: string,
+    transferAssetDecimals: number,
+    feeAmount: bn,
+    feeAssetSymbol: string,
+    feeAssetId: string,
+    feeAssetDecimals: number,
+    node: TNode | "Polkadot" | "Kusama"
+}
+export interface TransferLogData {
+    transferAmount: string,
+    transferDecimals: string,
+    transferAssetSymbol: string,
+    transferAssetId: string,
+    feeAmount: string,
+    feeDecimals: string
+    feeAssetSymbol: string,
+    feeAssetId: string,
+}
+export interface DepositLogData {
+    depositAmount: string,
+    feeAmount: string,
+    feeDecimals: string
+    feeAssetSymbol: string,
+    feeAssetId: string
+
+}
+export interface FeeTrackerEntry {
+    feeData: FeeData,
+    paid: boolean
+}
+export interface FeeTracker {
+    allFees: FeeTrackerEntry[],
+    feePayments: any,
+    unpaidFees: {
+        [assetLocation: string]: {
+            assetSymbol: string,
+            assetDecimals: number,
+            feeAmount: string
+        }
+    }
 }

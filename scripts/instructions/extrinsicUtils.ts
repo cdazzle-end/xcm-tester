@@ -19,6 +19,8 @@ import { getBncPolkadotSwapExtrinsicDynamic } from './../swaps/bncPolkadot.ts';
 import { getParaSwapExtrinsic } from './../swaps/paraSwap.ts';
 import { getHdxSwapExtrinsicDynamic } from './../swaps/hdxSwap.ts';
 import { getGlmrSwapTx } from './../swaps/glmr/glmrSwap.ts';
+import bn from 'bignumber.js'
+
 
 
 
@@ -135,12 +137,35 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     let startParaId = getParaIdFromAssetNode(instruction.startNode, instruction.startAssetNode)
     let destinationParaId = getParaIdFromAssetNode(instruction.destinationNode, instruction.destinationAssetNode)
     let transferAmount = new FixedPointNumber(instruction.assetNodes[0].pathValue, Number.parseInt(assetDecimals.toString())).toChainData()
+    let transferAmountBn = new bn(transferAmount)
+    let feeAmountBn = new bn(instruction.startTransferFee)
+    let reserveAmountBn = new bn(instruction.startTransferReserve)
+    // If transfer native token and there are no reserves, deduct the estimated fee from the input
+
 
     let startApi = await getApiForNode(instruction.startNode, chopsticks)
     let destinationApi = await getApiForNode(instruction.destinationNode, chopsticks)
 
 
-    console.log(`Transfer: ${instruction.startNode} -> ${instruction.destinationNode}  (${currencyInput} ${transferAmount.toString()})`)
+    console.log(`Transfer: ${instruction.startNode} -> ${instruction.destinationNode}  (${currencyInput} ${transferAmount.toString()}) Reserve: ${reserveAmountBn.toString()}`)
+
+    console.log(`***** Building Extrinsic container`)
+    console.log(`***** Transfer Amount: ${transferAmountBn.toString()}`)
+    if(reserveAmountBn.isZero() && feeAmountBn.isZero()){
+        console.log(`**** Reserve amount: ${reserveAmountBn.toString()}`)
+        console.log(`**** Fee amount: ${feeAmountBn.toString()}`)
+        console.log(`No fee or reserve amount`)
+        // transferAmountBn = transferAmountBn.minus(feeAmountBn)
+    } else if(reserveAmountBn.isZero() && !feeAmountBn.isZero()){
+        console.log(`**** Reserve amount: ${reserveAmountBn.toString()}`)
+        console.log(`**** Fee amount: ${feeAmountBn.toString()}`)
+        transferAmountBn = transferAmountBn.minus(feeAmountBn)
+    } else {
+        console.log(`**** Reserve amount: ${reserveAmountBn.toString()}`)
+        // console.log(`**** Fee amount: ${feeAmountBn.toString()}`)
+        transferAmountBn = transferAmountBn.minus(reserveAmountBn)
+    }
+    console.log(`***** Adjusted transfer amount: ${transferAmountBn.toString()}`)
 
     let signer;
 
@@ -151,16 +176,15 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     }
     let destinationAddress = signer.address
 
-    // console.log("Building with parasepll")
     let xcmTx: paraspell.Extrinsic;
     if((instruction.startNode == "Kusama" || instruction.startNode == "Polkadot")  && (instruction.destinationNode != "Kusama" && instruction.destinationNode != "Polkadot")) {
-        xcmTx = paraspell.Builder(startApi).to(instruction.destinationNode).amount(transferAmount).address(destinationAddress).build()
+        xcmTx = paraspell.Builder(startApi).to(instruction.destinationNode).amount(transferAmountBn.toString()).address(destinationAddress).build()
     } else if((instruction.destinationNode == "Kusama" || instruction.destinationNode == "Polkadot") && (instruction.startNode != "Kusama" && instruction.startNode != "Polkadot")) {
         // console.log("Transfer to relay chain")
-        xcmTx = paraspell.Builder(startApi).from(instruction.startNode).amount(transferAmount).address(destinationAddress).build()
+        xcmTx = paraspell.Builder(startApi).from(instruction.startNode).amount(transferAmountBn.toString()).address(destinationAddress).build()
     } else if((instruction.startNode != "Kusama" && instruction.startNode != "Polkadot") && (instruction.destinationNode != "Kusama" && instruction.destinationNode != "Polkadot")) {
         // console.log("Transfer between parachains")
-        xcmTx = paraspell.Builder(startApi).from(instruction.startNode).to(instruction.destinationNode).currency(currencyInput).amount(transferAmount).address(destinationAddress).build()
+        xcmTx = paraspell.Builder(startApi).from(instruction.startNode).to(instruction.destinationNode).currency(currencyInput).amount(transferAmountBn.toString()).address(destinationAddress).build()
     } else {
         throw new Error("Invalid transfer instruction")
     }
@@ -187,8 +211,10 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
         pathInLocalId: instruction.startNodeLocalId,
         pathOutLocalId: instruction.destinationNodeLocalId,
         pathSwapType: 0,
-        pathAmount: instruction.assetNodes[0].pathValue
+        pathAmount: transferAmountBn.toString(),
+        reserveAmount: reserveAmountBn.toString()
     }
+    console.log(`****** Set transfer extrinsic container path amount: ${txContainer.pathAmount}`)
     increaseIndex(extrinsicIndex)
     console.log("Created transfer extrinsic")
     return txContainer
@@ -218,6 +244,9 @@ function splitDoubleTransferInstruction(instruction: TransferToHomeThenDestInstr
         startAssetNode: instruction.startAssetNode,
         destinationAssetNode: instruction.middleAssetNode,
 
+        startTransferFee: instruction.startTransferFee,
+        startTransferReserve: instruction.startTransferReserve,
+
         assetNodes: instruction.assetNodes.slice(0,2)
     }
     let destinationInstruction: TransferInstruction = {
@@ -234,6 +263,9 @@ function splitDoubleTransferInstruction(instruction: TransferToHomeThenDestInstr
 
         startAssetNode: instruction.middleAssetNode,
         destinationAssetNode: instruction.destinationAssetNode,
+
+        startTransferFee: instruction.middleTransferFee,
+        startTransferReserve: instruction.middleTransferReserve,
 
         assetNodes: instruction.assetNodes.slice(1)
     }
@@ -415,6 +447,8 @@ export async function buildSwapExtrinsicDynamic(relay: Relay, instructions: Swap
     let startAsset = instructions[0].assetNodes[0].getAssetRegistrySymbol()
     let destAsset = instructions[instructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
     let amountIn = instructions[0].assetNodes[0].pathValue;
+    instructions[0].assetInAmount = amountIn
+    instructions[0].assetInAmountFixed = new FixedPointNumber(amountIn)
     let expectedAmountOut = instructions[instructions.length - 1].assetNodes[1].pathValue;
     let pathStartLocalId = instructions[0].assetInLocalId
     let pathDestLocalId = instructions[instructions.length - 1].assetOutLocalId
@@ -505,6 +539,7 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapD
     console.log("Building Polkadot Swap Extrinsic")
     if(chainId == 2000){
         //aca
+        console.log("ACA")
         let [swapTxContainer, remainingInstructions] = await getAcaSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2000], extrinsicIndex, instructionIndex)
         let swapAssetNodes = swapTxContainer.assetNodes
         let startAssetDynamic = swapAssetNodes[0].getAssetRegistrySymbol()

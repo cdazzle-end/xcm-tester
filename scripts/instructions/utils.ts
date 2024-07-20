@@ -11,6 +11,7 @@ import {KeyringPair} from '@polkadot/keyring/types'
 import { InstructionType, SwapInstruction, TransferInstruction } from './types.ts'
 import { arb_wallet_kusama, dotTargetNode, ksmTargetNode, live_wallet_3 } from './txConsts.ts';
 import { runAndReturnTargetArb } from './executeArbFallback.ts';
+import bn from 'bignumber.js'
 
 // import { buildTransferExtrinsic } from './extrinsicUtils.ts';
 // Get the __dirname equivalent in ES module
@@ -27,6 +28,9 @@ const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
 export async function getFirstSwapNodeFromAssetNodes(nodes: AssetNode[], chopsticks: boolean){ 
     let instructionIndex = 0;   
     let firstKsmNodeIndex = -1
+
+    // The first node (index 0) will not be a swap, because the next node always indicates path type. 
+    // i.e. node at index 1 will have the path type that indicate that the path type from node 0 -> node 1 is a swap or transfer
     for(let i = 0; i < nodes.length; i++){
         if(nodes[i].pathType !== 0){
             firstKsmNodeIndex = i - 1
@@ -42,10 +46,10 @@ export async function getFirstSwapNodeFromAssetNodes(nodes: AssetNode[], chopsti
 
 
 
-export function getNodeFromChainId(chainId: number, relay: Relay): TNode{
-    // if(chainId == 0){
-    //     return relay === 'kusama' ? 'Kusama' : 'Polkadot'
-    // }
+export function getNodeFromChainId(chainId: number, relay: Relay): TNode | "Polkadot" | "Kusama" {
+    if(chainId == 0){
+        return relay === 'kusama' ? 'Kusama' : 'Polkadot'
+    }
     let relaySymbol = relay === 'kusama' ? 'KSM' : 'DOT'
     let node = paraspell.NODE_NAMES.find((node) => {
         return paraspell.getParaId(node) == chainId && paraspell.getRelayChainSymbol(node) == relaySymbol
@@ -67,20 +71,14 @@ export function getParaspellChainName(relay: Relay, chainId: number): TNode | "K
     return chain as TNode
 }
 
-
-
 export const getAssetBySymbolOrId = (
     node: TNode,
     inputAssetId: string,
     inputAssetSymbol: string,
     // symbolOrId: string | number
   ): { symbol?: string; assetId?: string } | null => {
-    console.log("Node: ", node)
-    console.log("Asset symbol: ", inputAssetSymbol)
-    console.log("Asset ID: ", inputAssetId)
 
     const { otherAssets, nativeAssets, relayChainAssetSymbol } = getAssetsObject(node)
-    // console.log("Getting asset symbol or ID: " + JSON.stringify(symbolOrId))
     let allAssets = [...otherAssets, ...nativeAssets];
 
     // Modified function to take both asset Id and symbol, which we can get from our assetRegistry
@@ -95,67 +93,11 @@ export const getAssetBySymbolOrId = (
         })
     }
 
-
-    // const asset = [...otherAssets, ...nativeAssets].find(
-    //   ({ symbol, assetId }) => {
-    //     if(typeof symbolOrId === 'string'){ // Check ID first to avoid symbol conflicts
-    //         return assetId?.toLowerCase() === symbolOrId.toLowerCase() || symbol?.toLowerCase() === symbolOrId.toLowerCase()
-    //     }
-    //     else{
-    //         return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
-    //     }
-    // })
-  
     if (paraspellAsset !== undefined) {
       const { symbol, assetId } = paraspellAsset
       return { symbol, assetId }
     }
-    // For xc asset chains, account for the 'xc' prefix when sending to or receiving from
-    // if(node == "Moonriver" || node == "Shiden" || node == "Astar"){
-        
-    //     const asset = [...otherAssets, ...nativeAssets].find(
-    //         ({ symbol, assetId }) => {
-    //           // console.log("Asset symobl or id " + JSON.stringify(symbolOrId) + " --- " + symbol + " --- " + assetId)
-    //           if(typeof symbolOrId === 'string'){
-    //             let prefixedSymbolOrId = "xc" + symbolOrId
-    //             return symbol?.toLowerCase() === prefixedSymbolOrId.toLowerCase() || assetId?.toLowerCase() === prefixedSymbolOrId.toLowerCase()
-    //           }
-    //           else{
-    //               return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
-    //           }
-    //       })
-    // // Check if asset is coming from an xc chain, and remove the 'xc' prefix
-    // } else if (node == 'Moonbeam') {
-    //     // console.log("MOONBEAM REMOVE XC")
-    //     const asset = [...otherAssets, ...nativeAssets].find(
-    //         ({ symbol, assetId }) => {
-    //           // console.log("Asset symobl or id " + JSON.stringify(symbolOrId) + " --- " + symbol + " --- " + assetId)
-    //           if(typeof symbolOrId === 'string'){
-    //             let noPrefixSymbolOrId = symbolOrId.toLowerCase().startsWith("xc") ? symbolOrId.slice(2) : symbolOrId
-    //             // console.log("Asset symobl or id " + noPrefixSymbolOrId.toLowerCase() + " --- " + symbol.toLowerCase() + " --- " + assetId)
-    //             return symbol?.toLowerCase() === noPrefixSymbolOrId.toLowerCase() || assetId?.toLowerCase() === noPrefixSymbolOrId.toLowerCase()
-    //           }
-    //           else{
-    //               return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
-    //           }
-    //       })
-    //     //   console.log("Asset: " + JSON.stringify(asset))
-    //     return asset
-    // } 
-    
-    // else {
-    //     const asset = [...otherAssets, ...nativeAssets].find(
-    //         ({ symbol, assetId }) => {
-    //           // console.log("Asset symobl or id " + JSON.stringify(symbolOrId) + " --- " + symbol + " --- " + assetId)
-    //           if(typeof symbolOrId === 'string'){
-    //             let noPrefixSymbolOrId = symbolOrId.toLowerCase().startsWith("xc") ? symbolOrId.slice(2) : symbolOrId
-    //             return symbol?.toLowerCase() === noPrefixSymbolOrId.toLowerCase() || assetId?.toLowerCase() === noPrefixSymbolOrId.toLowerCase()
-    //           }
-    //           else{
-    //               return symbol === symbolOrId.toString() || assetId === symbolOrId.toString()
-    //           }
-    //       })
-    // }
+
   
     if (relayChainAssetSymbol.toLowerCase() === inputAssetSymbol.toLowerCase()) return { symbol: relayChainAssetSymbol }
   
@@ -164,8 +106,9 @@ export const getAssetBySymbolOrId = (
 
 export function getAssetRegistryObject(chainId: number, localId: string, relay: Relay): MyAssetRegistryObject{
     // console.log("Getting asset registry object: " + chainId + " --- " + localId)
-    let assetRegistry: MyAssetRegistryObject[] = relay === 'kusama' ? JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8')) : JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssetsPolkadot.json'), 'utf8'));
+    // let assetRegistry: MyAssetRegistryObject[] = relay === 'kusama' ? JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8')) : JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssetsPolkadot.json'), 'utf8'));
     // let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
+    let assetRegistry = getAssetRegistry(relay)
     let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
         if(chainId == 0 && assetRegistryObject.tokenData.chain == 0){
             return true
@@ -178,13 +121,17 @@ export function getAssetRegistryObject(chainId: number, localId: string, relay: 
     }
     return asset
 }
+export function getAssetKey(assetObject: MyAssetRegistryObject): string{
+    return JSON.stringify(assetObject.tokenData.chain.toString() + JSON.stringify(assetObject.tokenData.localId))
+}
 export function getAssetKeyFromChainAndSymbol(chainId: number, symbol: string, relay: Relay): string{
     let assetRegistryObject: MyAssetRegistryObject = getAssetRegistryObjectBySymbol(chainId, symbol, relay)
     return JSON.stringify(assetRegistryObject.tokenData.chain.toString() + JSON.stringify(assetRegistryObject.tokenData.localId))
 }
 export function getAssetRegistryObjectBySymbol(chainId: number, symbol: string, relay: Relay): MyAssetRegistryObject{
-    let assetRegistryPath = relay === 'kusama' ? '../../allAssets.json' : '../../allAssetsPolkadot.json'
-    let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, assetRegistryPath), 'utf8'));
+    // let assetRegistryPath = relay === 'kusama' ? '../../allAssets.json' : '../../allAssetsPolkadot.json'
+    // let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, assetRegistryPath), 'utf8'));
+    let assetRegistry = getAssetRegistry(relay)
     let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
         return assetRegistryObject.tokenData.chain == chainId && JSON.stringify(assetRegistryObject.tokenData.symbol).toLowerCase() == JSON.stringify(symbol).toLowerCase()
     })
@@ -220,7 +167,7 @@ export function getAssetRegistryObjectBySymbol(chainId: number, symbol: string, 
 
 // Reads a json object from the arbitrage result log and returns the corresponding paraspell asset and amount
 export function readLogData(jsonObject: JsonPathNode | ResultDataObject, relay: Relay ){
-    console.log("Reading log data: " + JSON.stringify(jsonObject))
+    // console.log("Reading log data: " + JSON.stringify(jsonObject))
     let chainId;
     let assetLocalId;
     let nodeKey = jsonObject.node_key.replace(/\\|"/g, "");
@@ -240,7 +187,9 @@ export function readLogData(jsonObject: JsonPathNode | ResultDataObject, relay: 
     let path_data = jsonObject.path_data as any
     let pathDataFormatted: PathData = {
         dexType: path_data.path_type,
-        lpId: path_data.lp_id
+        lpId: path_data.lp_id,
+        xcmFeeAmounts: path_data.xcm_fee_amounts,
+        xcmReserveValues: path_data.xcm_reserve_values,
     }
 
     if(paraspellChainName == "Kusama" || paraspellChainName == "Polkadot"){
@@ -248,31 +197,38 @@ export function readLogData(jsonObject: JsonPathNode | ResultDataObject, relay: 
             paraspellAsset: {symbol: assetSymbol},
             paraspellChain: paraspellChainName,
             assetRegistryObject: assetRegistryObject,
-            pathValue: jsonObject.path_value,
+            pathValue: jsonObject.path_value.toString(),
             pathType: jsonObject.path_identifier,
             pathData: pathDataFormatted
         });
         return assetNode
     } else {
 
-        
-        let paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetSymbol)
+        // If asset has location, get paraspell asset. Else, shouldn't need to worry about paraspell xcm asset
+        let hasLocation = assetRegistryObject.hasLocation;
+        let paraspellAsset 
+        if (hasLocation){
+            paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetSymbol)
 
-        if(paraspellChainName == undefined){
-            throw new Error("Paraspell chain name not found for chain id " + chainId)
-        }
-        if(paraspellAsset == null){
-            paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetLocalId) // Should probably search by local ID first instead of symbol
-            if (paraspellAsset == null){
-                throw new Error("Paraspell asset not found for chain " + paraspellChainName + " and asset id " + assetLocalId)
+            if(paraspellChainName == undefined){
+                throw new Error("Paraspell chain name not found for chain id " + chainId)
             }
+            if(paraspellAsset == null){
+                paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetLocalId) // Should probably search by local ID first instead of symbol
+                if (paraspellAsset == null){
+                    throw new Error("Paraspell asset not found for chain " + paraspellChainName + " and asset id " + assetLocalId)
+                }
+            }
+        } else {
+            paraspellAsset = null
         }
+
         
         let assetNode = new AssetNode({
             paraspellAsset: paraspellAsset,
             paraspellChain: paraspellChainName,
             assetRegistryObject: assetRegistryObject,
-            pathValue: jsonObject.path_value,
+            pathValue: jsonObject.path_value.toString(),
             pathType: jsonObject.path_identifier,
             pathData: pathDataFormatted
         });
@@ -308,6 +264,45 @@ export function delay(ms: number) {
 
 
 export async function getSigner(chopsticks: boolean, eth: boolean): Promise<KeyringPair>{
+    let keyring;
+    let key;
+
+    
+    if(chopsticks){ 
+        // Get test accounts
+        if(eth){ // CHOPSTICKS EVM WALLET, ONLY FOR TRANSFERS
+            const index = 0;
+            let ethDerPath = `m/44'/60'/0'/0/${index}`;
+            keyring = new Keyring({ type: 'ethereum' });
+            return keyring.addFromUri(`${live_wallet_3}/${ethDerPath}`);
+        } else { // CHOPSTICKS SUBSTRATE WALLET
+            await cryptoWaitReady()
+            keyring = new Keyring({
+                type: "sr25519",
+            });
+            return keyring.addFromUri("//Alice");
+        }
+    } else {
+        // Get live accounts
+        if(eth){ // LIVE EVM WALLET
+            const index = 0;
+            let ethDerPath = `m/44'/60'/0'/0/${index}`;
+            keyring = new Keyring({ type: 'ethereum' });
+            return keyring.addFromUri(`${live_wallet_3}/${ethDerPath}`);
+        } else { // LIVE SUBSTRATE WALLET
+            await cryptoWaitReady()
+            keyring = new Keyring({ type: 'sr25519' });
+            return keyring.addFromMnemonic(arb_wallet_kusama)
+        }
+
+
+    }
+
+    
+    
+}
+
+export async function getKeyring(chopsticks: boolean, eth: boolean): Promise<KeyringPair>{
     let keyring;
     let key;
 
@@ -394,7 +389,7 @@ export async function getLastNodeFromResultData(allExtrinsicResultData: (SingleS
 export async function getLastSuccessfulNodeFromAllExtrinsics(allExtrinsicResultData: ExtrinsicSetResultDynamic []){
     let resultData: (SingleSwapResultData | SingleTransferResultData) [] = [];
     allExtrinsicResultData.forEach((extrinsicSetResult) => {
-        extrinsicSetResult.extrinsicData.forEach((extrinsicData) => {
+        extrinsicSetResult.allExtrinsicResults.forEach((extrinsicData) => {
             resultData.push(extrinsicData)
         })
     })
@@ -721,21 +716,27 @@ export function constructRouteFromFile(relay: Relay, logFilePath: string) {
     return assetPath
 }
 export function constructRouteFromJson(relay: Relay, jsonPathNodes: JsonPathNode[]) {
-    // console.log("LatestFile: ", logFilePath)
-    // const testResults: ResultDataObject[] = JSON.parse(fs.readFileSync(logFilePath, 'utf8'));
-    // console.log(JSON.stringify(testResults))
     let assetPath: AssetNode[] = jsonPathNodes.map(node => readLogData(node, relay))
     return assetPath
 }
 
 // How much profit we got for latest arb
-export async function getTotalArbResultAmount(relay: Relay, lastSuccessfulNode: LastNode){
+export async function getTotalArbResultAmount(relay: Relay, lastSuccessfulNode: LastNode, chopsticks: boolean): Promise<string>{
     console.log("Getting total arb amount result")
-    let latestFilePath = path.join(__dirname, `./logResults/latestAttempt/${relay}/arbExecutionResults.json`)
+    let latestFilePath;
+    if(chopsticks){
+        latestFilePath = path.join(__dirname, `./logResults/chopsticks/latestAttempt/${relay}/arbExecutionResults.json`)
+    } else {
+        latestFilePath = path.join(__dirname, `./logResults/latestAttempt/${relay}/arbExecutionResults.json`)
+    }
+    
     let latestArbResults: ArbExecutionResult[] = JSON.parse(fs.readFileSync(latestFilePath, 'utf8'))
+    console.log("Latest arb execution results")
+    console.log(JSON.stringify(latestArbResults, null, 2))
     let assetOut = latestArbResults[latestArbResults.length - 1].assetSymbolOut
-    let arbAmountOut = 0;
-    let arbAmountIn = latestArbResults[0].assetAmountIn;
+    let arbAmountProfit = new bn(0);
+    let arbAmountIn = new bn(latestArbResults[0].assetAmountIn)
+    let arbAmountOut = new bn(lastSuccessfulNode.assetValue)
     // if(assetOut == "KSM"){
     //     arbAmountOut = latestArbResults[latestArbResults.length - 1].assetAmountOut - arbAmountIn
     // }
@@ -743,15 +744,18 @@ export async function getTotalArbResultAmount(relay: Relay, lastSuccessfulNode: 
     let lastNodeAssetSymbol = lastSuccessfulNode.assetSymbol
     console.log("Last Node Asset Symbol: ", lastNodeAssetSymbol)
     console.log("Asset out from result set: ", assetOut)
+    console.log("Amount in: ", arbAmountIn)
     if(relay == 'kusama' && lastSuccessfulNode.assetSymbol == "KSM" || lastSuccessfulNode.assetSymbol.toUpperCase() == "XCKSM"){
-        arbAmountOut = Number.parseFloat(lastSuccessfulNode.assetValue) - arbAmountIn
+        console.log("Amount out: ", arbAmountOut)
+        arbAmountProfit = arbAmountOut.minus(arbAmountIn)
     }
     if(relay == 'polkadot' && lastSuccessfulNode.assetSymbol == "DOT" || lastSuccessfulNode.assetSymbol.toUpperCase() == "XCDOT"){
-        arbAmountOut = Number.parseFloat(lastSuccessfulNode.assetValue) - arbAmountIn
+        console.log("Amount out: ", arbAmountOut)
+        arbAmountProfit = arbAmountOut.minus(arbAmountIn)
     }
     // getLastSuccessfulNodeFromResultData
-    console.log("Amount Out: ", arbAmountOut)
-    return arbAmountOut
+    console.log("Amount Profit: ", arbAmountProfit)
+    return arbAmountProfit.toFixed()
 }
 
 export function printAllocations(instructionSets: (SwapInstruction | TransferInstruction)[][]){
@@ -773,7 +777,9 @@ export function printInstructionSet(instructionSet: (SwapInstruction | TransferI
 }
 
 export function getAssetRegistry(relay: Relay){
-    let assetRegistry: MyAssetRegistryObject[] = relay === 'kusama' ? JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8')) : JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssetsPolkadot.json'), 'utf8'));
+    // let assetRegistry: MyAssetRegistryObject[] = relay === 'kusama' ? JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8')) : JSON.parse(fs.readFileSync(path.join(__dirname, '../../../polkadot_assets/assets/asset_registry/allAssetsPolkadotCollected.json'), 'utf8'));
+    let assetRegistryPath = relay === 'kusama' ? '../../allAssets.json' : '../../../polkadot_assets/assets/asset_registry/allAssetsPolkadotCollected.json'
+    let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, assetRegistryPath), 'utf8'));
     return assetRegistry
 }
 
@@ -794,4 +800,101 @@ export async function getArbExecutionPath(relay: Relay, latestFile: string, inpu
     }
 
     return arbPathData
+}
+
+export function getChainIdFromNode(node: TNode | "Polkadot" | "Kusama"){
+    if(node == "Polkadot" || node == "Kusama"){
+        return 0
+    } else {
+        let chainId = paraspell.getParaId(node)
+        return chainId
+    }
+}
+
+export function deepEqual(obj1: any, obj2: any) {
+    // console.log("***** DEEP EQUAL *****")
+    // console.log("obj1: " + JSON.stringify(obj1))
+    // console.log("obj2: " + JSON.stringify(obj2))
+    if (obj1 === obj2) {
+        return true;
+    }
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null) {
+        return false;
+    }
+
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    if (keys1.length !== keys2.length) {
+        return false;
+    }
+
+    for (let key of keys1) {
+        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+export function getAssetDecimalsFromLocation(location: any, relay: Relay){
+    let assetRegistry: MyAssetRegistryObject[] = getAssetRegistry(relay)
+    // let assetsAtLocation: MyAssetRegistryObject[] = []
+    // let assetsAtLocation: MyAssetRegistryObject = assetRegistry.find((assetObject) => {
+    //     if(JSON.stringify(assetObject.tokenLocation) == JSON.stringify(location)){
+    //         return assetObject
+    //     }
+    // })
+    let firstAssetWithLocation: MyAssetRegistryObject = assetRegistry.find((assetObject) => JSON.stringify(assetObject.tokenLocation) == JSON.stringify(location))
+    return firstAssetWithLocation.tokenData.decimals
+}
+
+export function getAssetsAtLocation(assetLocationObject: any, relay: Relay): MyAssetRegistryObject[]{
+    let assetRegistry: MyAssetRegistryObject[] = getAssetRegistry(relay)
+    // let assetsAtLocation: MyAssetRegistryObject[] = []
+    let assetsAtLocation: MyAssetRegistryObject[] = assetRegistry.map((assetObject) => {
+        if(JSON.stringify(assetObject.tokenLocation) == JSON.stringify(assetLocationObject)){
+            return assetObject
+        }
+    }).filter((assetObject) => assetObject != undefined)
+
+    // let assetBuckets: { [key: string]: MyAssetRegistryObject[] } = {};
+    // assetRegistry.forEach((assetObject: MyAssetRegistryObject) => {
+    //     let locationString = JSON.stringify(assetObject.tokenLocation);
+    //     if (assetBuckets[locationString] == undefined) {
+    //         assetBuckets[locationString] = []
+    //     }
+    //     assetBuckets[locationString].push(assetObject)
+    // })
+
+    // const sortedKeys = Object.keys(assetBuckets).sort((keyA, keyB) => {
+    //     const nameA = assetBuckets[keyA][0]?.tokenData.name || "";
+    //     const nameB = assetBuckets[keyB][0]?.tokenData.name || "";
+    //     return nameA.localeCompare(nameB);
+    // })
+
+    // sortedKeys.forEach((key) => {
+    //     console.log(key)
+    //     assetBuckets[key].forEach((token: MyAssetRegistryObject) => {
+    //         if ('exchange' in token.tokenData) {
+    //             console.log(token.tokenData.name + " " + token.tokenData.exchange);
+    //         } else {
+    //             console.log(token.tokenData.name + " " + token.tokenData.chain);
+    //         }
+    //     });
+    //     console.log("-----------------")
+        
+    // })
+
+    return assetsAtLocation
+}
+
+export function getWalletAddressFormatted(signer: KeyringPair, key: Keyring, chain: TNode | "Polkadot" | "Kusama", ss58Format: any){
+    if(chain == "Moonbeam" || chain == "Moonriver"){
+        return signer.address.toString()
+    } else {
+        return key.encodeAddress(signer.address, ss58Format.toNumber())
+    }
+
 }

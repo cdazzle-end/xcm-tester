@@ -5,6 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url';
 import { FixedPointNumber } from "@acala-network/sdk-core";
+import { deepEqual } from "./utils.ts";
 
 // Get the __dirname equivalent in ES module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -30,7 +31,7 @@ export interface AssetNodeData {
     paraspellAsset: { symbol?: string; assetId?: string } | null,
     paraspellChain: TNode | "Kusama" | "Polkadot",
     assetRegistryObject: MyAssetRegistryObject,
-    pathValue: number,
+    pathValue: string,
     pathType: number,
     pathData: PathData
 }
@@ -39,7 +40,7 @@ export class AssetNode implements AssetNodeData{
     paraspellAsset: { symbol?: string; assetId?: string } | null;
     paraspellChain: TNode | "Kusama" | "Polkadot";
     assetRegistryObject: MyAssetRegistryObject;
-    pathValue: number;
+    pathValue: string;
     pathValueFixed: FixedPointNumber
     pathType: number;
     pathData: PathData;
@@ -56,6 +57,10 @@ export class AssetNode implements AssetNodeData{
         let assetDecimals = this.assetRegistryObject.tokenData.decimals
         // console.log("PATH VALUE ", this.pathValue)
         this.pathValueFixed = new FixedPointNumber(this.pathValue, Number.parseInt(assetDecimals))
+    }
+
+    getPathValueAsNumber(){
+        return Number.parseFloat(this.pathValue)
     }
 
     // Reduce path by 2% to ensure trade amount for reverse
@@ -116,32 +121,3 @@ export class AssetNode implements AssetNodeData{
     }
 }
 
-function deepEqual(obj1: any, obj2: any) {
-    // console.log("***** DEEP EQUAL *****")
-    // console.log("obj1: " + JSON.stringify(obj1))
-    // console.log("obj2: " + JSON.stringify(obj2))
-    if (obj1 === obj2) {
-        return true;
-    }
-    if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 == null || obj2 == null) {
-        return false;
-    }
-
-    const keys1 = Object.keys(obj1);
-    const keys2 = Object.keys(obj2);
-
-    if (keys1.length !== keys2.length) {
-        return false;
-    }
-
-    for (let key of keys1) {
-        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-
-// const areEqual = deepEqual(object1.tokenLocation, object2.tokenLocation);

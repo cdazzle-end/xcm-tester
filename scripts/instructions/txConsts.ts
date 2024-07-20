@@ -36,10 +36,19 @@ export const localRpcs = {
     "BifrostPolkadot": "ws://172.26.130.75:9010",
     "Parallel": "ws://172.26.130.75:9011",
     "Unique": "ws://172.26.130.75:9012",
-    // "BifrostPolkadot": "ws://172.26.130.75:9010",
-    // "BifrostPolkadot": "ws://172.26.130.75:9010",
+    "Crust": "ws://172.26.130.75:9013",
+    "Subsocial": "ws://172.26.130.75:9014",
+    "Pendulum": "ws://172.26.130.75:9015",
+    "Centrifuge": "ws://172.26.130.75:9016",
+    "Nodle": "ws://172.26.130.75:9017",
+    "Kilt": "ws://172.26.130.75:9018",
+    "Darwinia": "ws://172.26.130.75:9019",
+    
     // "BifrostPolkadot": "ws://172.26.130.75:9010",
 }
+
+// This should represent the nodes we are running in chopsticks. Will only execute transfer if the node is in this list
+// Assum that we always execute the swaps because we always run those nodes
 export const testNets = [
     "Kusama", 
     "Karura", 
@@ -56,12 +65,13 @@ export const testNets = [
     // "InvArchTinker"
     "Polkadot",
     "Acala",
+    "BifrostPolkadot",
     "Moonbeam",
     "Phala",
     "HydraDX",
     "Interlay",
-    "Astar",
-    "Polkadex",
+    // "Astar",
+    // "Polkadex",
     "AssetHubPolkadot",
     "Parallel",
     "Unique"

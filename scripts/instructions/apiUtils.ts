@@ -169,10 +169,13 @@ export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsti
         while(endpointIndex < apiEndpoint.length && !apiConnected){
             console.log("Connecting to api: ", apiEndpoint[endpointIndex])
             try{
+                console.log("Trying connect")
                 let provider = new WsProvider(apiEndpoint[endpointIndex])
+                console.log("Provider set")
                 api = await ApiPromise.create({ provider: provider });
-                
+                console.log("Api initialized")
                 await api.isReady
+                
                 console.log("API is ready: TRUE")
                 if(api.isConnected) {
                     console.log("API is connected: TRUE")
@@ -194,7 +197,18 @@ export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsti
     }
 
     map.set(node, api)
+    console.log("Returning api for node: ", node)
     return api
+}
+
+export async function closeApis(){
+    console.log("Close out all APIs")
+    let apiClosePromises: Promise<void>[] = [];
+    apiMap.forEach((api, node) => {
+        console.log("Disconnecting from node: ", node)
+        apiClosePromises.push(api.disconnect())
+    })
+    await Promise.all(apiClosePromises)
 }
 
 export function getEndpointsForChain( chainId: number ) {

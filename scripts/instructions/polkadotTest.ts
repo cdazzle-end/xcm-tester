@@ -2,23 +2,23 @@ import fs from 'fs'
 import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, watchTokenDeposit, getBalanceChange, getSigner, watchTokenBalance, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getBalance, setLastFile, getLastExecutionState, getNativeBalanceAcrossChains, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, setLastExtrinsicSet, setLastNode, getLatestAsyncFilesKusama, setExecutionSuccess, resetExecutionState, getLatestTargetFilePolkadot, setExecutionRelay, getLatestAsyncFilesPolkadot, constructRouteFromJson, getBalanceChainAsset, printAllocations, printInstructionSet } from './utils.ts'
-import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, ReverseSwapExtrinsicParams, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode } from './types.ts'
+import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, getChainIdFromNode, getAssetKey, getAssetRegistry, getAssetsAtLocation } from './utils.ts'
+import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
-import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructions, collectRelayToken, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
+import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
 import { arb_wallet_kusama, dotNodeKeys, dotTargetNode, ksmRpc, ksmTargetNode, kusamaNodeKeys, live_wallet_3, localRpcs, mainWalletAddress, mainWalletEthAddress, testBncNode, testNets, testZlkNode } from './txConsts.ts';
 import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, buildTransferExtrinsicReworked, buildTransferKsmToChain, buildTransferToKsm, createSwapExtrinsicObject, createTransferExtrinsicObject } from './extrinsicUtils.ts';
 import { EventRecord } from "@polkadot/types/interfaces"
 import { fileURLToPath } from 'url';
 // import { BalanceChangeStatue } from 'src/types.ts';
-import { logSwapTxStats, logSwapTxResults, logTransferTxStats, logArbExecutionResults, logInstructions, logSubmittableExtrinsics, logResultsDynamic, logAllArbAttempts, logAllResultsDynamic, logProfits, logLastFilePath } from './logUtils.ts';
+import { logSwapTxStats, logSwapTxResults, logTransferTxStats, logArbExecutionResults, logInstructions, logSubmittableExtrinsics, logAllResultsDynamic, logProfits, logLastFilePath, updateFeeBook, updateEventFeeBook } from './logUtils.ts';
 import { runAndReturnFallbackArb, runAndReturnTargetArb, runArbFallback } from './executeArbFallback.ts';
 import { Mangata, MangataInstance } from '@mangata-finance/sdk';
 import { reverse } from 'dns';
-import { buildAndExecuteSwapExtrinsic, confirmLastTransactionSuccess, executeAndReturnExtrinsic, executeSingleSwapExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleTransferExtrinsic, executeTransferTx } from './executionUtils.ts';
+import { buildAndExecuteSwapExtrinsic, checkAndAllocateRelayToken, confirmLastTransactionSuccess, executeAndReturnExtrinsic, executeSingleSwapExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleTransferExtrinsic, executeTransferTx, executeXcmTransfer } from './executionUtils.ts';
 // import { liveWallet3Pk } from 'scripts/swaps/movr/utils/const.ts';
-import { TNode } from '@paraspell/sdk';
+import { TNode, getParaId } from '@paraspell/sdk';
 import { BN } from '@polkadot/util/bn/bn';
 import { FixedPointNumber } from '@acala-network/sdk-core';
 import { movrContractAddress, xcKarContractAddress, xcXrtContractAddress } from './../swaps/movr/utils/const.ts';
@@ -26,6 +26,20 @@ import { formatMovrTx, getMovrSwapTx, testXcTokensMoonriver } from './../swaps/m
 // import { getBsxSwapExtrinsic, testBsxSwap } from './../swaps/bsxSwap.ts';
 import '@galacticcouncil/api-augment/basilisk';
 import { getApiForNode } from './apiUtils.ts';
+import { setLastExtrinsicSet, getLastExecutionState, setExecutionSuccess } from './globalStateUtils.ts';
+import { getBalanceChainAsset, getBalanceChange, getRelayTokenBalances, getRelayTokenBalanceAcrossChains, watchTokenBalance } from './balanceUtils.ts';
+import bn, { BigNumber } from 'bignumber.js'
+import { ManagerSwapParams } from './../swaps/glmr/utils/types.ts';
+import { executeSingleGlmrSwap, testGlmrRpc } from './../swaps/glmr/glmrSwap.ts';
+import { getAdapter } from '@polkawallet/bridge';
+import { firstValueFrom, Observable, timeout } from "rxjs";
+import { FrameSystemEventRecord } from '@polkadot/types/lookup';
+import { listenForXcmpEventHydra, getHydraDepositFees, listenForXcmpEventAcala, getAcalaDepositFees, getMoonbeamDepositFees, listenForXcmpEventMoonbeam, listenForXcmpTransferPolkadot, listenForXcmpEventThree, listenForXcmpEventForNode as listenForDestinationDepositAmounts, getXcmTransferEventData } from './feeUtils.ts';
+// const { blake2AsU8a } = require('@polkadot/util-crypto');
+// const { u8aToHex } = require('@polkadot/util');
+import { blake2AsU8a } from '@polkadot/util-crypto';
+import { u8aToHex, stringToU8a, numberToU8a } from '@polkadot/util';
+import * as Chopsticks from '@acala-network/chopsticks';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,16 +65,15 @@ export let globalState: ExecutionState = {
     transactionState: null,
     transactionProperties: null,
     executionAttempts: 0,
-    executionSuccess: true
+    executionSuccess: true,
+    accumulatedFeeData: null,
+    xcmFeeReserves: null
 }
 
 
 async function buildTest(){
     let relay: Relay = 'polkadot'
-    // let latestFiles = getLatestAsyncFilesPolkadot()
-    // let latestFile = latestFiles[1][1] // latest file with 1 amount input
-    // console.log(`Latest file: ${latestFile}`)
-    // setLastFile(latestFile, relay)
+
     let latestFile = './testAcaPath.json'
     let arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
@@ -87,7 +100,7 @@ async function buildPolkadotExtrinsics(relay: Relay, instructionSet: (SwapInstru
     if(globalState.extrinsicSetResults != null){
         console.log("********************************************************")
         console.log("Using global state extrinsic set results")
-        allExtrinsicResultData = globalState.extrinsicSetResults.extrinsicData
+        allExtrinsicResultData = globalState.extrinsicSetResults.allExtrinsicResults
     } else {
         console.log("********************************************************")
         console.log("Extrinsic set is null")
@@ -119,7 +132,7 @@ async function buildPolkadotExtrinsics(relay: Relay, instructionSet: (SwapInstru
             if(globalState.lastNode != null && nodeEndKeys.includes(globalState.lastNode.assetKey)){
                 let extrinsicSetResults: ExtrinsicSetResultDynamic = {
                     success: true,
-                    extrinsicData: allExtrinsicResultData,
+                    allExtrinsicResults: allExtrinsicResultData,
                     lastSuccessfulNode: globalState.lastNode,
                 }
                 return extrinsicSetResults
@@ -146,7 +159,7 @@ async function buildPolkadotExtrinsics(relay: Relay, instructionSet: (SwapInstru
 
                         while(instructionsToExecute.length > 0){
                             if(nextInputValue > 0){
-                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
+                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
                             }
 
                             console.log("Building swap extrinsic: ")
@@ -201,7 +214,7 @@ async function buildPolkadotExtrinsics(relay: Relay, instructionSet: (SwapInstru
                         let instructionsToExecute = swapInstructions
                         while(instructionsToExecute.length > 0){
                             if( nextInputValue > 0){
-                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
+                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
                             }
                             console.log("Building swap extrinsic: ")
                             let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
@@ -250,7 +263,7 @@ async function buildPolkadotExtrinsics(relay: Relay, instructionSet: (SwapInstru
                     let instructionsToExecute = [instruction]
                     while(instructionsToExecute.length > 0){
                         if(nextInputValue > 0){
-                            instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
+                            instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
                         }
                         console.log("Building transfer extrinsic: ")
                         let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionsToExecute[0], extrinsicIndex, chopsticks);
@@ -367,7 +380,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
     if(globalState.extrinsicSetResults != null){
         console.log("********************************************************")
         console.log("Using global state extrinsic set results")
-        allExtrinsicResultData = globalState.extrinsicSetResults.extrinsicData
+        allExtrinsicResultData = globalState.extrinsicSetResults.allExtrinsicResults
     } else {
         console.log("********************************************************")
         console.log("Extrinsic set is null")
@@ -388,7 +401,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
         2110: 0,
         2085: 0
     }
-    let nextInputValue: number = 0;
+    let nextInputValue: string = "0";
     let testLoopIndex = 0;
     // let lastNode: LastNode;
     try{
@@ -398,7 +411,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
             if(globalState.lastNode != null && nodeEndKeys.includes(globalState.lastNode.assetKey)){
                 let extrinsicSetResults: ExtrinsicSetResultDynamic = {
                     success: true,
-                    extrinsicData: allExtrinsicResultData,
+                    allExtrinsicResults: allExtrinsicResultData,
                     lastSuccessfulNode: globalState.lastNode,
                 }
                 return extrinsicSetResults
@@ -414,7 +427,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                         chopsticks == true && relay == 'kusama' && instruction.assetNodes[0].getChainId() == 2023 ||
                         chopsticks == true && relay == 'polkadot' && instruction.assetNodes[0].getChainId() == 2004
                     ){
-                        nextInputValue = 0
+                        nextInputValue = "0"
                         break;
                     }
                     // If swap is of the same type, accumulate
@@ -426,8 +439,8 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                         let instructionsToExecute = swapInstructions
 
                         while(instructionsToExecute.length > 0){
-                            if(nextInputValue > 0){
-                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
+                            if(Number.parseFloat(nextInputValue) > 0){
+                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
                             }
                             let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
                             let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
@@ -435,7 +448,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                             let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
                             // MOVR swaps return undefined in test, not error just skip
                             if(!extrinsicResultData){
-                                nextInputValue = 0
+                                nextInputValue = "0"
                                 break;
                             }
                             
@@ -449,7 +462,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                                 // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
                                 let extrinsicSetResults: ExtrinsicSetResultDynamic = {
                                     success: false,
-                                    extrinsicData: allExtrinsicResultData,
+                                    allExtrinsicResults: allExtrinsicResultData,
                                     lastSuccessfulNode: globalState.lastNode,
                                 }
                                 setLastExtrinsicSet(extrinsicSetResults, relay)
@@ -460,11 +473,11 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                             allExtrinsicResultData.push(extrinsicResultData)
                             let extrinsicSetResults: ExtrinsicSetResultDynamic = {
                                 success: true,
-                                extrinsicData: allExtrinsicResultData,
+                                allExtrinsicResults: allExtrinsicResultData,
                                 lastSuccessfulNode: globalState.lastNode,
                             }
                             setLastExtrinsicSet(extrinsicSetResults, relay)
-                            nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
+                            nextInputValue = extrinsicResultData.lastNode.assetValue
                             instructionsToExecute = remainingInstructions
 
                         }
@@ -477,8 +490,8 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                     if (swapInstructions.length > 0) {
                         let instructionsToExecute = swapInstructions
                         while(instructionsToExecute.length > 0){
-                            if( nextInputValue > 0){
-                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
+                            if( Number.parseFloat(nextInputValue) > 0){
+                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
                             }
                             let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
                             let extrinsicObj: ExtrinsicObject = {
@@ -490,7 +503,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                             let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
                             // If undefined, not error just skip
                             if(!extrinsicResultData){
-                                nextInputValue = 0
+                                nextInputValue = "0"
                                 break;
                             }
                             if(extrinsicResultData.success == false){
@@ -501,7 +514,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                                 // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
                                 let extrinsicSetResults: ExtrinsicSetResultDynamic = {
                                     success: false,
-                                    extrinsicData: allExtrinsicResultData,
+                                    allExtrinsicResults: allExtrinsicResultData,
                                     lastSuccessfulNode: globalState.lastNode,
                                 }
                                 setLastExtrinsicSet(extrinsicSetResults, relay)
@@ -510,11 +523,11 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                             allExtrinsicResultData.push(extrinsicResultData)
                             let extrinsicSetResults: ExtrinsicSetResultDynamic = {
                                 success: true,
-                                extrinsicData: allExtrinsicResultData,
+                                allExtrinsicResults: allExtrinsicResultData,
                                 lastSuccessfulNode: globalState.lastNode,
                             }
                             setLastExtrinsicSet(extrinsicSetResults, relay)
-                            nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
+                            nextInputValue = extrinsicResultData.lastNode.assetValue
                             instructionsToExecute = remainingInstructions
                         }
                         swapInstructions = [];   
@@ -522,8 +535,8 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                     // Then execute transfer instructions
                     let instructionsToExecute = [instruction]
                     while(instructionsToExecute.length > 0){
-                        if(nextInputValue > 0){
-                            instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
+                        if(Number.parseFloat(nextInputValue) > 0){
+                            instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
                         }
                         let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionsToExecute[0], extrinsicIndex, chopsticks);
                         let extrinsicObj: ExtrinsicObject = {
@@ -536,7 +549,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                         let transferExtrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
                         // If undefined and running test, either start or dest chain not running in chopsticks. not error just skip
                         if(chopsticks && !transferExtrinsicResultData){
-                            nextInputValue = 0
+                            nextInputValue = "0"
                             break;
                         }
                         if(transferExtrinsicResultData.success == false){
@@ -547,19 +560,19 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                             // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
                             let extrinsicSetResults: ExtrinsicSetResultDynamic = {
                                 success: false,
-                                extrinsicData: allExtrinsicResultData,
+                                allExtrinsicResults: allExtrinsicResultData,
                                 lastSuccessfulNode: globalState.lastNode,
                             }
                             setLastExtrinsicSet(extrinsicSetResults, relay)
                             return extrinsicSetResults
                         }
                         
-                        nextInputValue = Number.parseFloat(transferExtrinsicResultData.lastNode.assetValue)
+                        nextInputValue = transferExtrinsicResultData.lastNode.assetValue
                         allExtrinsicResultData.push(transferExtrinsicResultData)
                         instructionsToExecute = remainingInstructions
                         let extrinsicSetResults: ExtrinsicSetResultDynamic = {
                             success: true,
-                            extrinsicData: allExtrinsicResultData,
+                            allExtrinsicResults: allExtrinsicResultData,
                             lastSuccessfulNode: globalState.lastNode,
                         }
                         setLastExtrinsicSet(extrinsicSetResults, relay)
@@ -580,7 +593,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
                 // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
                 let extrinsicSetResults: ExtrinsicSetResultDynamic = {
                     success: false,
-                    extrinsicData: allExtrinsicResultData,
+                    allExtrinsicResults: allExtrinsicResultData,
                     lastSuccessfulNode: globalState.lastNode,
                 }
                 setLastExtrinsicSet(extrinsicSetResults, relay)
@@ -588,17 +601,17 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
             }
             // If undefined, not error just skip
             if(!extrinsicResultData){
-                nextInputValue = 0
+                nextInputValue = "0"
                 break;
             }
             allExtrinsicResultData.push(extrinsicResultData)
             let extrinsicSetResults: ExtrinsicSetResultDynamic = {
                 success: true,
-                extrinsicData: allExtrinsicResultData,
+                allExtrinsicResults: allExtrinsicResultData,
                 lastSuccessfulNode: globalState.lastNode,
             }
             setLastExtrinsicSet(extrinsicSetResults, relay)
-            nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
+            nextInputValue = extrinsicResultData.lastNode.assetValue
             instructionsToExecute = remainingInstructions
         }
         swapInstructions = [];   
@@ -609,7 +622,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
         // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
         let extrinsicSetResults: ExtrinsicSetResultDynamic = {
             success: false,
-            extrinsicData: allExtrinsicResultData,
+            allExtrinsicResults: allExtrinsicResultData,
             lastSuccessfulNode: globalState.lastNode,
         }
         setLastExtrinsicSet(extrinsicSetResults, relay)
@@ -619,7 +632,7 @@ async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInst
     // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
     let extrinsicSetResults: ExtrinsicSetResultDynamic = {
         success: true,
-        extrinsicData: allExtrinsicResultData,
+        allExtrinsicResults: allExtrinsicResultData,
         lastSuccessfulNode: globalState.lastNode,
     }
     setLastExtrinsicSet(extrinsicSetResults, relay)
@@ -635,7 +648,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
         globalState.transactionState = TransactionState.PreSubmission
     }
 
-    globalState.extrinsicSetResults.extrinsicData.forEach((extrinsicData) => {
+    globalState.extrinsicSetResults.allExtrinsicResults.forEach((extrinsicData) => {
         console.log(JSON.stringify(extrinsicData.arbExecutionResult, null, 2))
     })
     // globalState = executionState
@@ -681,8 +694,8 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
         await printInstructionSet(instructions)
         let extrinsicSetResults = await buildAndExecuteExtrinsics(relay, instructions, chopsticks, executeMovr, 100)
 
-        logAllResultsDynamic(relay, globalState.lastFilePath, true)
-        logAllArbAttempts(relay, globalState.lastFilePath, chopsticks)
+        await logAllResultsDynamic(relay, globalState.lastFilePath, true)
+        // logAllArbAttempts(relay, globalState.lastFilePath, chopsticks)
         if(extrinsicSetResults.success){
             arbSuccess = true
         }
@@ -696,125 +709,377 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
     if(arbSuccess){
         setExecutionSuccess(true, relay)
     }
-    let arbAmountOut = await getTotalArbResultAmount(relay, globalState.lastNode)
-    await logProfits(relay, arbAmountOut, globalState.lastFilePath, chopsticks )
+    // let arbAmountOut = await getTotalArbResultAmount(relay, globalState.lastNode)
+    // await logProfits(relay, arbAmountOut, globalState.lastFilePath, chopsticks )
 }
 
 
 async function testXcm(){
-    let toNode: TNode = 'Moonbeam'
-    let fromNode: TNode = 'AssetHubPolkadot'
-    let assetId = "1337" // USDT
-    let amount = "14000000" // 10
-    let api = await getApiForNode(fromNode, true)
-
-    let signer = await getSigner(true, false)
-    let destWallet = await getSigner(true, true)
-    let destAddress = await destWallet.address
+    let chopsticks = true
+    let relay: Relay = 'polkadot'
 
     
-    let xcmTx = paraspell.Builder(api).from(fromNode).to(toNode).currency(assetId).amount(amount).address(destAddress).build()
-    console.log(JSON.stringify(xcmTx.toHuman(), null, 2))
-    // let tx = await xcmTx.signAndSend(signer)
-    // console.log(tx.toHuman())
+    let assetId = "USDT" // USDT
+    let amount = "1000000" // 1000 hdx
+    
+    let fromNode: TNode = 'HydraDX'
+    let signer = await getSigner(chopsticks, false)
+    
+    let toNode: TNode = 'AssetHubPolkadot'
+    let destWallet = await getSigner(chopsticks, false)
 
-    let txResult: Promise<TxDetails> = new Promise((resolve, reject) => {
-        let success = false;
-        let included: EventRecord[] = [];
-        let finalized: EventRecord[] = [];
-        let eventLogs: any[] = [];
-        let blockHash: string = "";
-        let dispatchErrorCode;
-        let decodedError;
-        xcmTx.signAndSend(signer, ({ events = [], status, txHash, txIndex, dispatchError }) => {
-            if (status.isInBlock) {
-                success = dispatchError ? false : true;
-                console.log(
-                    `Execute Transfer: 📀 Transaction ${xcmTx.meta.name}(..) included at blockHash ${status.asInBlock} [success = ${success}]`
-                );
-                included = [...events];
-                blockHash = status.asInBlock.toString();
+    let fromApi = await getApiForNode(fromNode, chopsticks)
+    let toApi = await getApiForNode(toNode, chopsticks)
+    
+    let xcmTx = paraspell.Builder(fromApi).from(fromNode).to(toNode).currency(assetId).amount(amount).address(destWallet.address).build()
+    // let xcmTx = paraspell.Builder(fromApi).to(toNode).amount(amount).address(destWallet.address).build()
+    console.log(JSON.stringify(xcmTx.toHuman()))
 
-            } else if (status.isBroadcast) {
-                console.log(`Execute Transfer: 🚀 Transaction broadcasted.`);
-            } else if (status.isFinalized) {
-                console.log(
-                    `Execute Transfer: 💯 Transaction ${xcmTx.meta.name}(..) Finalized at blockHash ${status.asFinalized}`
-                );
-                // blockHash = status.asFinalized.toString();
-                finalized = [...events];
-                events.forEach((eventObj) => {
-                    eventLogs.push(eventObj.toHuman())
-                    if(eventObj.event.method == "ExtrinsicFailed" && dispatchError){
-                        console.log("Execute Transfer: Extrinsic Failed event detected")
-                        const {index, error} = dispatchError.asModule;
-                        const moduleIndex = parseInt(index.toString(), 10);
-                        const errorCodeHex = error.toString().substring(2, 4); // "09"
-                        const errorIndex = parseInt(errorCodeHex, 16);
+    let txResult: Promise<TxDetails> = executeXcmTransfer(xcmTx, signer); 
+    console.log("Execute Transfer: tx promise created. Waiting for result...")
+    let txResultData = await txResult
 
-                        // Get the module and error metadata
-                        decodedError = xcmTx.registry.findMetaError({index: new BN(moduleIndex), error: new BN(errorIndex)});
-                        dispatchErrorCode = dispatchError.asModule;
-                        console.log("Execute Transfer: Dispatch Error: " + dispatchError.toString())
-                        console.log("Execute Transfer: DECODED MODULE: " + JSON.stringify(decodedError, null, 2))
-                        console.log("Execute Transfer: Rejecting Transfer tx")
-                        let txDetails: TxDetails = { success: false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs };
-                        reject(txDetails);
-                    }
-                })
-                const hash = status.hash;
-                let txDetails: TxDetails = { success: true, hash, dispatchError: dispatchErrorCode, decodedError, included, finalized, eventLogs, blockHash, txHash, txIndex };
-                console.log("Execute Transfer: Resolving Transfer tx")
-                resolve(txDetails);
-            } else if (status.isReady) {
-                // let's not be too noisy..
-                console.log("Execute Transfer: Status: Ready")
-            } else if (dispatchError){
-                console.log("Execute Transfer: Dispatch error: " + dispatchError.toString())
-                if(dispatchError.isModule){
-                    const decoded = xcmTx.registry.findMetaError(dispatchError.asModule);
-                    console.log("Execute Transfer: DISPATCH ERROR DECODED: " + JSON.stringify(decoded, null, 2))
-                    console.log("Execute Transfer: Rejecting Transfer tx from dispatch error")
-                    let txDetails: TxDetails = { success:false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
-                    reject(txDetails);
-                } else {
-                    console.log("Execute Transfer: Rejecting Transfer tx from dispatch error")
-                    let txDetails: TxDetails = { success:false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
-                    reject(txDetails);
-                }
-            }
-            else {
-                console.log(`Execute Transfer: 🤷 Other status ${status}`);
-            }
-        }).catch((error) => {
-            console.log("Execute Transfer: Error: " + error);
-            reject(error);
-        });
-    });
-    console.log("Execute Transfer: tx promise created")
-    let txDetails: Promise<TxDetails> = txResult;
-    let txResultData = await txDetails
-    console.log("Execute Transfer: tx result data: " + JSON.stringify(txResultData, null, 2))
+    // let xcmEventPromise = listenForDestinationDepositAmounts(toApi, toNode, "hrmp", destWallet.address, txResultData.xcmMessageHash);
+
+    // console.log("Wait for xcmp event")
+    // let eventData  = await xcmEventPromise as any
+    // console.log("XCM Event Data: " + JSON.stringify(eventData, null, 2))
 }
 
-async function testAcala(){
-    let acala: TNode = 'Acala'
-    let fromNode: TNode = 'Unique'
-    let assetId = "UNQ" // USDT
-    let amount = "100000"
+// async function testMoonXcm(){
 
-    let api = await getApiForNode(acala, true)
+//     let chopsticks = true
+//     let relay: Relay = 'polkadot'
+//     let fromNode: TNode = 'HydraDX'
+//     let toNode: TNode = 'Moonbeam'
+
+//     let fromParaId = getParaId(fromNode)
+//     let toParaId = getParaId(toNode)
+
+//     let assetId = "HDX"
+//     let xcmAmount = "10000000000000" // 100 hdx
+//     let relayAmount = "1000000000"
+
+//     let fromEvm = fromParaId == 2004 ? true : false
+//     let toEvm = toParaId == 2004 ? true : false 
+
+//     let signer = await getSigner(chopsticks, fromEvm)
+//     let destWallet = await getSigner(chopsticks, toEvm)
+
+//     let polkadotWallet = await getSigner(chopsticks, false)
+//     let keyring = new Keyring({
+//         ss58Format: 0,
+//         type: 'sr25519'
+//     })
+
+    
+//     let relayApi = await getApiForNode("Polkadot", chopsticks)
+//     let fromApi = await getApiForNode(fromNode, chopsticks)
+//     let toApi = await getApiForNode(toNode, chopsticks)
+
+    
+//     let ss58FormatDest = await toApi.consts.system.ss58Prefix;
+//     let destWalletFormatted = toParaId == 2004 ? 
+//         destWallet.address :
+//         keyring.encodeAddress(destWallet.address, ss58FormatDest.toNumber())
+
+//     // let paraToRelayTx = paraspell.Builder(fromApi).from(fromNode).amount(relayAmount).address(polkadotWallet.address).build()
+//     // console.log(JSON.stringify(paraToRelayTx.toHuman()))
+//     let xcmTx = paraspell.Builder(fromApi).from(fromNode).to(toNode).currency(assetId).amount(xcmAmount).address(destWalletFormatted).build()
+//     console.log(JSON.stringify(xcmTx.toHuman()))
+
+//     let originNativeChainToken = fromApi.registry.chainTokens[0]
+//     let originNativeBalance = await getBalanceChainAsset(chopsticks, relay, fromNode, fromParaId, originNativeChainToken)
+//     let originTransferBalance = await getBalanceChainAsset(chopsticks, relay, fromNode, fromParaId, assetId)
+//     // let originNativeChainToken = relayApi.registry.chainTokens[0]
+//     // let originNativeBalance = await getBalanceChainAsset(chopsticks, relay, "Polkadot", 0, originNativeChainToken)
+//     // let originTransferBalance = await getBalanceChainAsset(chopsticks, relay, fromNode, fromParaId, assetId)
+//     let currentBalanceNative = new bn(originNativeBalance.free.toChainData())
+//     let currentBalanceTransfer = new bn(originTransferBalance.free.toChainData())
+
+//     let destitnationNativeChainToken = toApi.registry.chainTokens[0]
+//     let destinationNativeBalance = new bn((await getBalanceChainAsset(chopsticks, relay, toNode, toParaId, destitnationNativeChainToken)).free.toChainData())
+//     let destinationTransferBalance = new bn((await getBalanceChainAsset(chopsticks, relay, toNode, toParaId, assetId)).free.toChainData())
+    
+//     // let destitnationNativeChainToken = fromApi.registry.chainTokens[0]
+//     // // let destinationNativeBalance = new bn((await getBalanceChainAsset(chopsticks, relay, fromNode, fromParaId, destitnationNativeChainToken)).free.toChainData())
+//     // let destinationTransferBalance = new bn((await getBalanceChainAsset(chopsticks, relay,fromNode, fromParaId, "DOT")).free.toChainData())
+    
+//     // let relayToParaTx = paraspell.Builder(relayApi).to(fromNode).amount(relayAmount).address(destWallet.address).build()
+//     let paraToParaTxReceipts = await executeXcmTransfer(xcmTx, signer);
+//     console.log("Getting origin transfer fees")
+//     let originTransferData = getXcmTransferEventData(fromNode, assetId, originNativeChainToken, paraToParaTxReceipts.finalized)
+
+//     // let relayToParaTxReceipt = await executeXcmTransfer(relayToParaTx, polkadotWallet);
+//     // let depositPromiseDmp = listenForXcmpEventForNode(toApi, toNode, "dmp", destWalletFormatted, relayToParaTxReceipt.xcmHash);
+//     // let depositEventDmp = await depositPromiseDmp
+    
+//     console.log("XCM fee event: " + JSON.stringify(paraToParaTxReceipts.feeEvent, null, 2))
+    
+
+//     let depositPromiseHrmp = listenForDestinationDepositAmounts(toApi, toNode, "hrmp", assetId, 0, destWalletFormatted, paraToParaTxReceipts.xcmMessageHash, paraToParaTxReceipts.xcmMessageId);
+//     // let depositPromiseUmp = listenForDestinationDepositAmounts(toApi, toNode, "hrmp", assetId, destWalletFormatted, paraToParaTxReceipts.xcmMessageHash, paraToParaTxReceipts.xcmMessageId);
+//     let depositEventData = await depositPromiseHrmp
+//     // let [depositAmountEvent, depositFeeEvent] = depositEventData
+
+
+//     let finalBalanceOriginNative = new bn((await getBalanceChainAsset(chopsticks, relay, fromNode, fromParaId, originNativeChainToken)).free.toChainData())
+//     let finalBalanceOriginTransfer = new bn((await getBalanceChainAsset(chopsticks, relay, fromNode, fromParaId, assetId)).free.toChainData())
+
+//     // let finalBalanceOriginNative = new bn((await getBalanceChainAsset(chopsticks, relay, "Polkadot", 0, originNativeChainToken)).free.toChainData())
+//     // let finalBalanceOriginTransfer = new bn((await getBalanceChainAsset(chopsticks, relay, fromNode, fromParaId, assetId)).free.toChainData())
+
+//     let finalBalanceDestinationNative = new bn((await getBalanceChainAsset(chopsticks, relay, toNode, toParaId, destitnationNativeChainToken)).free.toChainData())
+//     let finalBalanceDestinationTransfer = new bn((await getBalanceChainAsset(chopsticks, relay, toNode, toParaId, assetId)).free.toChainData())
+
+//     let originTransferAmount = currentBalanceTransfer.minus(finalBalanceOriginTransfer)
+//     let originCalculatedFee = finalBalanceOriginNative.minus(currentBalanceNative)
+
+//     // let originTransferAmount = currentBalanceNative.minus(finalBalanceOriginNative)
+//     // let originCalculatedFee = finalBalanceOriginNative.minus(currentBalanceNative)
+
+//     let destinationCalculatedDepositAmount = finalBalanceDestinationTransfer.minus(destinationTransferBalance)
+//     let destinationNativeBalanceChange = finalBalanceDestinationNative.minus(destinationNativeBalance)
+
+//     let destinationCalculatedDepositFee = originTransferAmount.minus(destinationCalculatedDepositAmount)
+
+//     console.log(`BALANCES: Origin transfer amount (ORIGIN CHANGE IN TRANSFER TOKEN AMOUNT): ${originTransferAmount.toString()}`)
+//     console.log(`BALANCES: Origin calculated fee (ORIGIN CHANGE IN NATIVE TOKEN BALANCE): ${originCalculatedFee.toString()}`)
+//     console.log(`BALANCES: Destination deposit amount (DestinationFinalBalance - DestinationStartBalance): ${destinationCalculatedDepositAmount.toString()}`)
+//     console.log(`BALANCES: Destination native balance change (SHOULD BE 0): ${destinationNativeBalanceChange.toString()}`)
+//     console.log(`BALANCES: Destination calculated fee (OriginTransferAmount - DestinationDepositAmount): ${destinationCalculatedDepositFee}`)
+
+//     console.log(`EVENT: Origin transfer fee: ${JSON.stringify(originTransferData, null, 2)}`)
+//     console.log(`EVENT: Destination deposit amount: ${depositEventData.depositAmount.toString()} ${depositEventData.assetSymbol}`)
+//     console.log(`EVENT: Destination deposit fee: ${depositEventData.feeAmount.toString()} ${depositEventData.assetSymbol}`)
+
+//     updateEventFeeBook(originTransferData, depositEventData, relay)
+//     let originChainId = getChainIdFromNode(originTransferData.node)
+//     let destinationChainId = getChainIdFromNode(depositEventData.node)
+
+//     let originFeeAsset = getAssetRegistryObjectBySymbol(originChainId, originTransferData.feeAssetSymbol, relay)
+//     let destinationFeeAsset = getAssetRegistryObjectBySymbol(destinationChainId, depositEventData.assetSymbol, relay)
+
+//     let originFeeAssetKey = getAssetKey(originFeeAsset);
+//     let destinationFeeAssetKey = getAssetKey(destinationFeeAsset);
+//     // let originFeeAssetId = origiFneeAsset.
+
+
+//     // let [depositAmount, feeAmount] = await depositPromise
+
+//     // console.log("Deposit Amount: " + depositAmount)
+//     // console.log("Fee Amount: " + feeAmount)
+    
+//     process.exit(0)
+
+    
+// }
+
+
+
+async function testAssetLocation(){
+    let node: TNode = 'HydraDX'
+    let chainId = getChainIdFromNode(node)
+    let assetSymbol = "GLMR"
+    let relay: Relay = "polkadot"
+
+    let assetObject = getAssetRegistryObjectBySymbol(chainId, assetSymbol, relay)
+
+    console.log(JSON.stringify(assetObject, null, 2))
+
+    let testFilePath = path.join(__dirname, 'testLocationData.json')
+
+    fs.writeFileSync(testFilePath, JSON.stringify(assetObject.tokenLocation, null, 2))
+
+    let locationFromFile = JSON.parse(fs.readFileSync(testFilePath).toString())
+    console.log(locationFromFile)
+
+    console.log("Assets at location: ")
+    let assetsAtLocation = getAssetsAtLocation(locationFromFile, relay)
+    assetsAtLocation.forEach((asset) => {
+        console.log(asset.tokenData.symbol + " " + asset.tokenData.chain + " " + asset.tokenData.localId)
+    })
+    // console.log(JSON.stringify(assetsAtLocation, null, 2))
+    // let destinationFeeAsset = getAssetRegistryObjectBySymbol(destinationChainId, depositEventData.assetSymbol, relay)
+}
+
+async function testChopsticks(){
+    let chopsticks = true
+    let localRpc = localRpcs['Acala']
+    let provider = new WsProvider(localRpc)
+    let api = await ApiPromise.create({ provider })
     await api.isReady
+    // let api = await getApiForNode("Acala", chopsticks)
+    // let rpcResponse = await provider.send('dev_setBlockBuildMode', [Chopsticks.BuildBlockMode.Instant]);
+    
+    let rpcResponse = await provider.send('dev_newBlock', [{count: 1}]);
+    console.log("RPC Response: " + JSON.stringify(rpcResponse, null, 2))
+}
 
-    let number = await api.query.system.number();
-    console.log("Current block number: ", number.toNumber())
+
+async function getNativeTokenBalance(relay: Relay, node: TNode, address: string, chopsticks: boolean){
+    let api = await getApiForNode(node, chopsticks)
+    let chainToken = await api.registry.chainTokens[0]
+
+    let paraId = getParaId(node)
+    let balanceAdapter = await getAdapter(relay, paraId)
+
+    await balanceAdapter.init(api)
+    
+
+    let balanceObservable = balanceAdapter.subscribeTokenBalance(chainToken, address)
+    let balance = await firstValueFrom(balanceObservable)
+
+    return balance.free
+}
+async function setBlockModeInstant(node: TNode){
+    let chopsticks = true
+    let localRpc = localRpcs[node]
+    let provider = new WsProvider(localRpc)
+    let api = await ApiPromise.create({ provider })
+    await api.isReady
+    // let api = await getApiForNode("Acala", chopsticks)
+    let rpcResponse = await provider.send('dev_setBlockBuildMode', [Chopsticks.BuildBlockMode.Instant]);
+    
+    // let rpcResponse = await provider.send('dev_newBlock', [{count: 1}]);
+    console.log("RPC Response: " + JSON.stringify(rpcResponse, null, 2))
+}
+async function setBlockModeManual(node: TNode){
+    let chopsticks = true
+    let localRpc = localRpcs[node]
+    let provider = new WsProvider(localRpc)
+    let api = await ApiPromise.create({ provider })
+    await api.isReady
+    let rpcResponse = await provider.send('dev_setBlockBuildMode', [Chopsticks.BuildBlockMode.Manual]);
+    
+    // let rpcResponse = await provider.send('dev_newBlock', [{count: 1}]);
+    console.log("RPC Response: " + JSON.stringify(rpcResponse, null, 2))
+}
+
+async function newBlock(node: TNode){
+    let chopsticks = true
+    let localRpc = localRpcs[node]
+    let provider = new WsProvider(localRpc)
+    let api = await ApiPromise.create({ provider })
+    await api.isReady
+    // let rpcResponse = await provider.send('dev_setBlockBuildMode', [Chopsticks.BuildBlockMode.Manual]);
+    
+    let rpcResponse = await provider.send('dev_newBlock', [{count: 1}]);
+    console.log("RPC Response: " + JSON.stringify(rpcResponse, null, 2))
+}
+
+async function testBifrostWallet(){
+    let chopsticks = true
+    let api = await getApiForNode("BifrostPolkadot", chopsticks)
+    let signer = await getSigner(chopsticks, false)
+
+    console.log("Signer address: " + signer.address)
+
+    let ss58Format = await api.consts.system.ss58Prefix;
+    console.log("SS58 Format: " + ss58Format.toNumber())
+    let keyring = new Keyring({
+        ss58Format: 0,
+        type: 'sr25519'
+    })
+
+    let destAddress = keyring.encodeAddress(signer.address, ss58Format.toNumber())
+
+    console.log("Dest Address: " + destAddress)
+
+
+}
+
+// async function testBncStableSwap(){
+//     const wsLocalChain = localRpcs["BifrostPolkadot"]
+//     const bncRpc = "wss://hk.p.bifrost-rpc.liebi.com/ws"
+//     let chopsticks = true
+//     // let api = await getApiForNode("BifrostPolkadot", chopsticks)
+//     let signer = await getSigner(chopsticks, false)
+
+//     const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-list/main/tokens/bifrost-polkadot.json');
+//     const tokensMeta = response.data.tokens;
+//     await cryptoWaitReady();
+
+//     let tokenInSymbol = "VDOT"
+//     let tokenOutSymbol = "DOT"
+
+//     // generate Tokens
+//     const tokens = tokensMeta.map((item: any) => {
+//         return new Token(item);
+//     });
+
+//     const tokenIn = tokens.find((item) => item.symbol.toLowerCase() === tokenInSymbol.toLowerCase());
+//     const tokenOut = tokens.find((item) => item.symbol.toLowerCase() === tokenOutSymbol.toLowerCase());
+
+//     const tokensMap: Record<string, typeof Token> = {};
+//     tokens.reduce((total: any, cur: any) => {
+//       total[cur.assetId] = cur;
+//       return total;
+//     }, tokensMap);
+  
+//     let rpc = chopsticks ? wsLocalChain : bncRpc
+//     // generate the dex api
+//     const provider = new WsProvider(rpc);
+//     const dexApi = new ModuleBApi(
+//       provider,
+//       BifrostConfig
+//     );
+  
+  
+  
+//     await provider.isReady;
+//     await dexApi.initApi(); // init the api;
+
+//     const account = signer.address;
+//     const standardPairs = await firstValueFrom(dexApi.standardPairOfTokens(tokens));
+//     const standardPools: any = await firstValueFrom(dexApi.standardPoolOfPairs(standardPairs));
+//     const stablePairs = await firstValueFrom(dexApi.stablePairOf());
+//     const stablePools = await firstValueFrom(dexApi.stablePoolOfPairs(stablePairs));
+
+//     let amountIn = 10000000000;
+
+//     let tokenInAmountFN = new FixedPointNumber(amountIn, tokenIn.decimals);
+//     const tokenInAmount = new TokenAmount(tokenIn, tokenInAmountFN.toChainData());
+//     const tokenOutAmountFn = new FixedPointNumber(expectedAmountOut, tokenOut.decimals);
+    
+// }
+async function testCheckAndAllocate(){
+    let chopsticks = true;
+    let executeMovr = false;
+    let relay: Relay = 'polkadot'
+
+    // await checkAndAllocateRelayToken();
+    // let nativeBalances = await getRelayTokenBalanceAcrossChains(chopsticks, relay)
+    let nativeBalances = await getRelayTokenBalances(chopsticks, relay)
+    console.log("Native Balances: " + JSON.stringify(nativeBalances, null, 2))
+    // let relayBalance = await getBalanceChainAsset(chopsticks, relay, "Polkadot", 0, "DOT")
+    // console.log("Relay Balance: " + relayBalance.free.toChainData())
+    // console.log("Relay Balance: " + relayBalance.free.toString())
+}
+
+async function testGlmrSwap(){
+    // await executeSingleGlmrSwap()
+    await testGlmrRpc()
 }
 
 async function main(){
-    await buildTest()
-    // await runFromLastNode('polkadot', true, false)
+    // let wallet = await getSigner(false, false)
+    // let ethWallet = await getSigner(false, true)
+
     // await testXcm()
-    // await testAcala()
+    // await setBlockModeManual('HydraDX')
+    // await setBlockModeInstant('HydraDX')
+    // await testMoonXcm()
+    // await testAssetLocation()
+    // await testBifrostWallet()
+    // await testGlmrSwap()
+    await testCheckAndAllocate();
+    await testCheckAndAllocate();
+    await testCheckAndAllocate();
+    
+    // await newBlock('HydraDX')
+    // await testChopsticks()
+    process.exit(0)
 }
 
 // main()

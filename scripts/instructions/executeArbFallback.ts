@@ -13,30 +13,63 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-export async function runArbFallback(args: string, relay: Relay){
-    return new Promise((resolve, reject) => {
-        let functionCall = relay === "kusama" ? 'fallback_search_a_to_b_kusama ' + args : 'fallback_search_a_to_b_polkadot ' + args;
-        const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
-        // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
+// export async function runArbFallback(args: string, relay: Relay){
+//     return new Promise((resolve, reject) => {
+//         let functionCall = relay === "kusama" ? 'fallback_search_a_to_b_kusama ' + args : 'fallback_search_a_to_b_polkadot ' + args;
+//         const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
+//         // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run ${functionCall}`;
 
-        console.log("Executing arb: " + functionCall)
-        exec(command, (error, stdout, stderr) => {
-            // console.log(`stdout: ${stdout}`);
-            if (error) {
-                console.error(`exec error: ${error}`);
-                reject(error); // Reject the promise on execution error, including non-zero exit codes
-                return;
-            }
-            if (stderr) {
-                console.error(`stderr: ${stderr}`);
-                resolve(false); // You might still resolve with false if you want to treat stderr output as a soft failure
-                // Or you could reject based on specific stderr content:
-                // if (stderr.includes("Error:")) reject(new Error(stderr));
-            } else {
-                resolve(true); // Resolve with true if execution was successful without errors
-            }
-        });
-    });
+//         console.log("Executing arb: " + functionCall)
+//         exec(command, (error, stdout, stderr) => {
+//             // console.log(`stdout: ${stdout}`);
+//             if (error) {
+//                 console.error(`exec error: ${error}`);
+//                 reject(error); // Reject the promise on execution error, including non-zero exit codes
+//                 return;
+//             }
+//             if (stderr) {
+//                 console.error(`stderr: ${stderr}`);
+//                 resolve(false); // You might still resolve with false if you want to treat stderr output as a soft failure
+//                 // Or you could reject based on specific stderr content:
+//                 // if (stderr.includes("Error:")) reject(new Error(stderr));
+//             } else {
+//                 resolve(true); // Resolve with true if execution was successful without errors
+//             }
+//         });
+//     });
+// }
+export async function runArbFallback(args: string, relay: Relay) {
+  return new Promise((resolve, reject) => {
+      let functionCall = relay === "kusama" ? 'fallback_search_a_to_b_kusama ' + args : 'fallback_search_a_to_b_polkadot ' + args;
+      const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
+
+      console.log("Executing arb: " + functionCall);
+      exec(command, (error, stdout, stderr) => {
+          console.log(`stdout: ${stdout}`);
+          console.log(`stderr: ${stderr}`);
+
+          // Filter out benign Cargo messages
+          const benignMessages = [
+            "Finished dev [unoptimized + debuginfo]",
+            "Running `target\\debug\\arb_handler.exe"
+          ];
+      
+          const isCriticalError = benignMessages.every(msg => !stderr.includes(msg));
+
+          if (error) {
+              console.error(`exec error: ${error}`);
+              reject(error); // Reject the promise on execution error, including non-zero exit codes
+              return;
+          }
+
+          if (isCriticalError) {
+              console.error(`stderr: ${stderr}`);
+              resolve(false); // You might still resolve with false if you want to treat stderr output as a soft failure
+          } else {
+              resolve(true); // Resolve with true if execution was successful without critical errors
+          }
+      });
+  });
 }
 export async function runArbTarget(args: string, relay: Relay){
   return new Promise((resolve, reject) => {

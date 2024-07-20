@@ -3,18 +3,23 @@ import { BN } from "@polkadot/util/bn"
 import { checkAndApproveToken } from "./../swaps/movr/utils/utils.ts"
 import { AssetNode } from "./AssetNode.ts"
 import { testNets, localRpcs } from "./txConsts.ts"
-import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, ReverseSwapExtrinsicParams, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ExtrinsicSetResultDynamic, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction } from "./types.ts"
-import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject } from "./utils.ts"
+import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ExtrinsicSetResultDynamic, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, NativeBalancesType, TransferEventData, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, DepositEventData } from "./types.ts"
+import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject, getAssetDecimalsFromLocation, getWalletAddressFormatted } from "./utils.ts"
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { buildSwapExtrinsicDynamic, createSwapExtrinsicObject } from "./extrinsicUtils.ts"
 import { getApiForNode } from "./apiUtils.ts"
 import { BalanceData } from "src/types.ts"
 import * as paraspell from '@paraspell/sdk'
 import {KeyringPair} from '@polkadot/keyring/types'
-import { allocateKsmFromPreTransferPaths, buildInstructionSet, collectKsmToRelayPaths, getPreTransferPath } from "./instructionUtils.ts"
-import { getBalance, getBalanceChange, getNativeBalanceAcrossChains, watchTokenBalance, watchTokenDeposit } from "./balanceUtils.ts"
-import { setLastNode, setTransactionState, setTransctionProperties } from "./globalStateUtils.ts"
-
+import { allocateKsmFromPreTransferPaths, buildInstructionSet, collectKsmToRelayPaths, getFundingPath, getPreTransferPath } from "./instructionUtils.ts"
+import { getBalance, getBalanceChange, getDisplayBalance, getRelayTokenBalanceAcrossChains, getRelayTokenBalances, watchTokenBalance, watchTokenDeposit } from "./balanceUtils.ts"
+import { setLastNode, setResultData, setTransactionState, setTransctionProperties, updateAccumulatedFeeData, updateXcmFeeReserves } from "./globalStateUtils.ts"
+import {BigNumber as bn } from "bignumber.js"
+import { swapManagerContractLive } from "./../swaps/glmr/utils/const.ts"
+import { getTransferType, getXcmTransferEventData, listenForXcmpEventForNode } from "./feeUtils.ts"
+import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
+import { updateEventFeeBook } from "./logUtils.ts"
+bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
 
 
 export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SingleSwapResultData>{
@@ -83,7 +88,7 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
         assetOutLocalId: destAssetRegistryObject.tokenData.localId,
         assetOutStartBalance: tokenOutBalanceStart,
         assetOutStartBalanceString: tokenOutBalanceStart.free.toString(),
-        inputAmount: expectedAmountIn.toNumber(),
+        inputAmount: expectedAmountIn.toChainData(),
         assetInDecimals: assetInDecimals,
         assetOutDecimals: assetOutDecimals,
         destAssetKey: destinationAssetKey
@@ -116,12 +121,12 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
         // let assetRegistryObject = extrinsicObj.swapExtrinsicContainer.assetNodes[extrinsicObj.swapExtrinsicContainer.assetNodes.length - 1].assetRegistryObject;
         let lastNode: LastNode = {
             assetKey: JSON.stringify(assetRegistryObject.tokenData.chain.toString() + JSON.stringify(assetRegistryObject.tokenData.localId)),
-            assetValue: tokenOutBalanceStats.changeInBalanceString,
+            assetValue: tokenOutBalanceStats.changeInBalanceDisplay,
             chainId: assetRegistryObject.tokenData.chain,
             assetSymbol: assetRegistryObject.tokenData.symbol
         }
         let swapSuccess = false
-        if(tokenInBalanceStats.changeInBalance.abs().gt(new FixedPointNumber(0)) && tokenOutBalanceStats.changeInBalance.abs().gt(new FixedPointNumber(0))){
+        if(tokenInBalanceStats.changeInBalance.abs().gt(new bn(0)) && tokenOutBalanceStats.changeInBalance.abs().gt(new bn(0))){
             swapSuccess = true
             console.log("Swap MOVR Extrinsic successful. setting last node...")
             await setLastNode(lastNode, relay)
@@ -143,14 +148,18 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
             tokenInBalanceChange: tokenInBalanceStats,
             tokenOutBalanceChange: tokenOutBalanceStats,
         }
-        let actualAmountIn = tokenInBalanceStats.changeInBalance.toString()
-        let actualAmountOut = tokenOutBalanceStats.changeInBalance.toString()
+        let actualAmountIn = tokenInBalanceStats.changeInBalance.abs()
+        let actualAmountOut = tokenOutBalanceStats.changeInBalance.abs()
         // logSwapTxResults(tx, logFilePath)
+        
+        let inputReadable = new bn(actualAmountIn).div(new bn(10).pow(assetInDecimals)).toString()
+        let outputReadable = new bn(actualAmountOut).div(new bn(10).pow(assetOutDecimals)).toString()
+        
         let arbResultString: ArbExecutionResult = {
             assetSymbolIn: assetInSymbol,
             assetSymbolOut: assetOutSymbol,
-            assetAmountIn: Math.abs(Number.parseFloat(actualAmountIn)),
-            assetAmountOut: Math.abs(Number.parseFloat(actualAmountOut)),
+            assetAmountIn: inputReadable,
+            assetAmountOut: outputReadable,
             blockHash : blockHash,
             result: `SUCCESS: ${true} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut}| Dexes: ${JSON.stringify(dexes)}`
         }
@@ -163,7 +172,7 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
             txString: `(${chain}) ${chainId} ${assetInSymbol} -> ${assetOutSymbol}`,
             txDetails: txDetails
         }
-        let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceString)
+        let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceDisplay)
         let pathNode: PathNodeValues = {
             // pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
             // pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
@@ -186,6 +195,7 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
             lastNode: lastNode,
             extrinsicIndex: extrinsicIndex.i
         }
+        await setResultData(swapResultData, relay)
         return swapResultData
     } catch(e){
         unsubscribeOne()
@@ -201,11 +211,12 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
             txDetails: txDetails
         }
 
+        let inputReadable = new bn(expectedAmountIn.abs().toChainData()).div(new bn(10).pow(assetInDecimals)).toString()
         let arbResultString: ArbExecutionResult = {
             assetSymbolIn: assetInSymbol,
             assetSymbolOut: assetOutSymbol,
-            assetAmountIn: Math.abs(Number.parseFloat(expectedAmountIn.toString())),
-            assetAmountOut: 0,
+            assetAmountIn: inputReadable,
+            assetAmountOut: "0",
             blockHash: blockHash,
             result: `SUCCESS: ${false} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn} -> ${assetOutSymbol} | Dexes: ${JSON.stringify(dexes)}`
         }
@@ -229,9 +240,245 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
             extrinsicIndex: extrinsicIndex.i
         }
 
+        await setResultData(swapResultData, relay)
+
         return swapResultData
     }
 }
+
+export async function executeSingleSwapExtrinsicGlmr(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SingleSwapResultData>{
+    let glmrTx = extrinsicObj.swapExtrinsicContainer.extrinsic
+    let relay = extrinsicObj.swapExtrinsicContainer.relay
+    let chain = extrinsicObj.swapExtrinsicContainer.chain
+    let api = extrinsicObj.swapExtrinsicContainer.api
+    let chainId = extrinsicObj.swapExtrinsicContainer.chainId
+    let assetInSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolIn
+    let assetOutSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolOut
+    // let assetIn = extrinsicObj.swapExtrinsicContainer.pathInLocalId
+    // let assetOut = extrinsicObj.swapExtrinsicContainer.pathOutLocalId
+    let expectedAmountIn = extrinsicObj.swapExtrinsicContainer.assetAmountIn
+    let expectedAmountOut = extrinsicObj.swapExtrinsicContainer.expectedAmountOut
+    let blockHash = ""
+    if(extrinsicIndex.i == 0){
+        let firstAssetNode = extrinsicObj.swapExtrinsicContainer.assetNodes[0]
+    }
+
+    let managerContractAddress = swapManagerContractLive
+
+    let managerSwapParams = extrinsicObj.swapExtrinsicContainer.glmrSwapParams
+    let liveWallet = managerSwapParams
+    // let batchContract = managerSwapParams.batchContract
+    // let tokens = managerSwapParams.inputTokens
+    // let dexes = managerSwapParams.dexAddresses
+    // let inputTokens = managerSwapParams.inputTokens
+    // let outputTokens = managerSwapParams.outputTokens
+    let inputTokens: string[] = []
+    let outputTokens: string[] = [] 
+    let dexes: string[] = []
+    console.log("Manager Swap Params: " + JSON.stringify(managerSwapParams, null, 2))
+    managerSwapParams.forEach((swap) => {
+        inputTokens.push(swap.inputToken)
+        outputTokens.push(swap.outputToken)
+        dexes.push(swap.dexAddress)
+    })
+    let glmrTxInfo = {
+        inputTokens: inputTokens,
+        outputTokens: outputTokens,
+        dexes: dexes
+    }
+
+    // let batchContractAddress = await batchContract.getAddress()
+    // console.log(`Wallet: ${liveWallet.address} | Batch Contract: ${batchContractAddress}`)
+    // let signer = await getSigner(true)
+
+    // for(let i = 0; i < tokens.length; i++){
+    //     let tokenInput = managerSwapParams.amount0Ins[i] > 0 ? managerSwapParams.amount0Ins[i] : managerSwapParams.amount1Ins[i]
+    //     let approval = await checkAndApproveToken(tokens[i], liveWallet, batchContractAddress, tokenInput)
+    // }
+
+    // let tokenInBalanceStart = await getBalance(chainId, chopsticks, api, assetInSymbol, chain, liveWallet.address)
+    // let tokenOutBalanceStart = await getBalance(chainId, chopsticks, api, assetOutSymbol, chain, liveWallet.address)
+
+    //  *** Set transaction properties for state tracking ***
+    let assetNodes = extrinsicObj.swapExtrinsicContainer.assetNodes
+    let startAssetRegistryObject = extrinsicObj.swapExtrinsicContainer.assetNodes[0].assetRegistryObject;
+    let destAssetRegistryObject = extrinsicObj.swapExtrinsicContainer.assetNodes[extrinsicObj.swapExtrinsicContainer.assetNodes.length - 1].assetRegistryObject;
+    let assetInDecimals = assetNodes[0].assetRegistryObject.tokenData.decimals
+    let assetOutDecimals = assetNodes[assetNodes.length - 1].assetRegistryObject.tokenData.decimals
+    let destinationAssetKey = JSON.stringify(destAssetRegistryObject.tokenData.chain.toString() + JSON.stringify(destAssetRegistryObject.tokenData.localId))
+    let signer = await getSigner(chopsticks, true)
+    let tokenInBalanceStart = await getBalance(chainId, relay, chopsticks, api, assetInSymbol, startAssetRegistryObject, chain, signer.address)
+    let tokenOutBalanceStart = await getBalance(chainId, relay, chopsticks, api, assetOutSymbol, destAssetRegistryObject, chain, signer.address)
+    let swapProperties: SwapProperties = {
+        type: 'Swap',
+        relay: relay,
+        chopsticks: chopsticks,
+        node: chain,
+        paraId: chainId,
+        address: signer.address,
+        assetInSymbol: assetInSymbol,
+        assetInLocalId: startAssetRegistryObject.tokenData.localId,
+        assetInStartBalance: tokenInBalanceStart,
+        assetInStartBalanceString: tokenInBalanceStart.free.toString(),
+        assetOutSymbol: assetOutSymbol,
+        assetOutLocalId: destAssetRegistryObject.tokenData.localId,
+        assetOutStartBalance: tokenOutBalanceStart,
+        assetOutStartBalanceString: tokenOutBalanceStart.free.toString(),
+        inputAmount: expectedAmountIn.toChainData(),
+        assetInDecimals: assetInDecimals,
+        assetOutDecimals: assetOutDecimals,
+        destAssetKey: destinationAssetKey
+    }
+    setTransctionProperties(swapProperties, relay)
+    // ******************************************************
+    let unsubscribeOne, unsubscribeTwo;
+    let balanceObservableIn$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetInSymbol, startAssetRegistryObject, chain, signer.address)
+    let balanceObservableOut$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetOutSymbol, destAssetRegistryObject, chain, signer.address)
+    let balancePromiseIn = getBalanceChange(balanceObservableIn$, (unsub) => {
+        unsubscribeOne = unsub
+    })
+    let balancePromiseOut = getBalanceChange(balanceObservableOut$, (unsub) => {
+        unsubscribeTwo = unsub
+    })
+
+    try{
+        // **************************************************************************************
+        setTransactionState(TransactionState.Broadcasted, relay)
+        console.log("Broadcasting GLMR swap...")
+        let txReceipt = await glmrTx()
+        console.log("GLMR swap tx receipt: " + JSON.stringify(txReceipt))
+        let txHash = await txReceipt.wait()
+        blockHash = txHash.blockHash
+        // **************************************************************************************
+
+        let tokenInBalanceStats = await balancePromiseIn
+        let tokenOutBalanceStats = await balancePromiseOut
+        console.log(`EXPECTED TOKEN IN ${expectedAmountIn.toString()} || ACTUAL TOKEN IN ${JSON.stringify(tokenInBalanceStats.changeInBalance.toString())}`)
+        console.log(`EXPECTED TOKEN OUT ${expectedAmountOut.toString()} || ACTUAL TOKEN OUT ${JSON.stringify(tokenOutBalanceStats.changeInBalance.toString())}`)
+        let assetRegistryObject = extrinsicObj.swapExtrinsicContainer.assetNodes[extrinsicObj.swapExtrinsicContainer.assetNodes.length - 1].assetRegistryObject;
+        // let assetRegistryObject = extrinsicObj.swapExtrinsicContainer.assetNodes[extrinsicObj.swapExtrinsicContainer.assetNodes.length - 1].assetRegistryObject;
+        let lastNode: LastNode = {
+            assetKey: JSON.stringify(assetRegistryObject.tokenData.chain.toString() + JSON.stringify(assetRegistryObject.tokenData.localId)),
+            assetValue: tokenOutBalanceStats.changeInBalanceDisplay,
+            chainId: assetRegistryObject.tokenData.chain,
+            assetSymbol: assetRegistryObject.tokenData.symbol
+        }
+        let swapSuccess = false
+        if(tokenInBalanceStats.changeInBalance.abs().gt(new bn(0)) && tokenOutBalanceStats.changeInBalance.abs().gt(new bn(0))){
+            swapSuccess = true
+            console.log("Swap MOVR Extrinsic successful. setting last node...")
+            await setLastNode(lastNode, relay)
+            await setTransactionState(TransactionState.Finalized, relay)
+        }
+
+        
+
+        let swapStats: SwapTxStats = {
+            txHash: txHash,
+            chain: chain,
+            paraId: chainId,
+            currencyIn: assetInSymbol,
+            currencyOut: assetOutSymbol,
+            expectedAmountIn: expectedAmountIn.toString(),
+            actualAmountIn: tokenInBalanceStats.changeInBalance.toString(),
+            expectedAmountOut: expectedAmountOut.toString(),
+            actualAmountOut: tokenOutBalanceStats.changeInBalance.toString(),
+            tokenInBalanceChange: tokenInBalanceStats,
+            tokenOutBalanceChange: tokenOutBalanceStats,
+        }
+        let actualAmountIn = tokenInBalanceStats.changeInBalance.abs()
+        let actualAmountOut = tokenOutBalanceStats.changeInBalance.abs()
+        let inputReadable = new bn(actualAmountIn).div(new bn(10).pow(assetInDecimals)).toString()
+        let outputReadable = new bn(actualAmountOut).div(new bn(10).pow(assetOutDecimals)).toString()
+        // logSwapTxResults(tx, logFilePath)
+        let arbResultString: ArbExecutionResult = {
+            assetSymbolIn: assetInSymbol,
+            assetSymbolOut: assetOutSymbol,
+            assetAmountIn: inputReadable,
+            assetAmountOut: outputReadable,
+            blockHash : blockHash,
+            result: `SUCCESS: ${true} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut}| Dexes: ${JSON.stringify(dexes)}`
+        }
+        let txDetails: TxDetails = {
+            success: swapSuccess,
+            txHash: txHash,
+            glmrInfo: glmrTxInfo
+        }
+        let swapTxResult = {
+            txString: `(${chain}) ${chainId} ${assetInSymbol} -> ${assetOutSymbol}`,
+            txDetails: txDetails
+        }
+        let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceDisplay)
+        let pathNode: PathNodeValues = {
+            pathInSymbol: assetInSymbol,
+            pathOutSymbol: assetOutSymbol,
+            pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
+            pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+            pathValueNext: pathValueNext
+        
+        }
+
+        
+
+        let swapResultData: SingleSwapResultData = {
+            success: swapSuccess,
+            arbExecutionResult: arbResultString,
+            resultPathNode: pathNode,
+            swapTxStats: swapStats,
+            swapTxResults: swapTxResult,
+            lastNode: lastNode,
+            extrinsicIndex: extrinsicIndex.i
+        }
+        await setResultData(swapResultData, relay)
+        return swapResultData
+    } catch(e){
+        unsubscribeOne()
+        unsubscribeTwo()
+        console.log("ERROR: " + e)
+        console.log("GLMR swap failed")
+        let txDetails: TxDetails = {
+            success: false,
+            glmrInfo: glmrTxInfo
+        }
+        let swapTxResult = {
+            txString: `(${chain}) ${chainId} ${assetInSymbol} -> ${assetOutSymbol}`,
+            txDetails: txDetails
+        }
+        let inputReadable = new bn(expectedAmountIn.toChainData()).div(new bn(10).pow(assetInDecimals)).toString()
+        let arbResultString: ArbExecutionResult = {
+            assetSymbolIn: assetInSymbol,
+            assetSymbolOut: assetOutSymbol,
+            assetAmountIn: inputReadable,
+            assetAmountOut: "0",
+            blockHash: blockHash,
+            result: `SUCCESS: ${false} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn} -> ${assetOutSymbol} | Dexes: ${JSON.stringify(dexes)}`
+        }
+        let pathNode: PathNodeValues = {
+            // pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
+            // pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
+            pathInSymbol: assetInSymbol,
+            pathOutSymbol: assetOutSymbol,
+            pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
+            pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+            pathValueNext:0
+        }
+
+        let swapResultData: SingleSwapResultData = {
+            success: false,
+            arbExecutionResult: arbResultString,
+            resultPathNode: pathNode,
+            swapTxStats: null,
+            swapTxResults: swapTxResult,
+            lastNode: null,
+            extrinsicIndex: extrinsicIndex.i
+        }
+        await setResultData(swapResultData, relay)
+
+        return swapResultData
+    }
+}
+
+
 function trackPromise(promise) {
     let isResolved = false;
 
@@ -247,9 +494,14 @@ function trackPromise(promise) {
             throw error; // Rethrow the error to be caught later
         }
     );
+    let promiseTracker: PromiseTracker = {
+        trackedPromise: trackedPromise,
+        isResolved: () => isResolved
+    }
 
     // Return both the new promise and a function to check if it's resolved
-    return { trackedPromise, isResolved: () => isResolved };
+    // return { trackedPromise, isResolved: () => isResolved };
+    return promiseTracker;
 }
 export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SingleSwapResultData>{
     console.log("Swap extrinsic")
@@ -293,7 +545,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         assetOutLocalId: destAssetRegistryObject.tokenData.localId,
         assetOutStartBalance: tokenOutBalanceStart,
         assetOutStartBalanceString: tokenOutBalanceStart.free.toString(),
-        inputAmount: expectedAmountIn.toNumber(),
+        inputAmount: expectedAmountIn.toChainData(),
         assetInDecimals: assetInDecimals,
         assetOutDecimals: assetOutDecimals,
         destAssetKey: destinationAssetKey
@@ -314,7 +566,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     let outTracker = trackPromise(tokenOutBalancePromise)
     let trackedTokenOutBalancePromise = outTracker.trackedPromise
     let tokenOutResolved = outTracker.isResolved
-    let tokenInBalanceStats:BalanceChangeStats, tokenOutBalanceStats:BalanceChangeStats, tx: TxDetails, txHash;
+    let tokenInBalanceStats:BalanceChangeStatsBn, tokenOutBalanceStats:BalanceChangeStatsBn, tx: TxDetails, txHash;
     try{
                     
         // **************************************************************************************
@@ -331,11 +583,12 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         await tokenOutUnsub()
         // For now just throw if an extrinsic fails, and then execute reverse tx
         // throw new Error("Swap failed, executing reverse txs")
+        let inputReadable = new bn(expectedAmountIn.toChainData()).div(new bn(10).pow(assetInDecimals)).toString()
         let arbString: ArbExecutionResult = {
             assetSymbolIn: assetInSymbol,
             assetSymbolOut: assetOutSymbol,
-            assetAmountIn: Math.abs(Number.parseFloat(expectedAmountIn.toString())),
-            assetAmountOut: 0,
+            assetAmountIn: inputReadable,
+            assetAmountOut: "0",
             blockHash: blockHash,
             result:`FAILURE: SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn.toNumber()}-> ${assetOutSymbol} | ERROR: ${JSON.stringify(decodedError)}`
         }
@@ -371,7 +624,9 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
             lastNode: lastNode,
             extrinsicIndex: extrinsicIndex.i
         }
-        // api.disconnect()
+        
+        await setResultData(extrinsicResultData, relay)
+
         return extrinsicResultData
     }
 
@@ -380,18 +635,20 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     }
     console.log("SWAP awaiting token balance in")
     tokenInBalanceStats = await tokenInBalancePromise
-    if(tokenInBalanceStats.changeInBalance.eq(new FixedPointNumber(0))){
+    if(tokenInBalanceStats.changeInBalance.eq(new bn(0))){
 
         let tokenInBalanceEnd: BalanceData = await getBalance(chainId, relay, chopsticks, api, assetInSymbol, startAssetRegistryObject, chain, signer.address)
-        let tokenInBalanceEndFn = tokenInBalanceEnd.free
-        let balanceChangeAmount = tokenInBalanceEndFn.minus(tokenOutBalanceStart.free)
+        let tokenInBalanceStartBn = tokenInBalanceStart.free._getInner()
+        let tokenInBalanceEndBn = tokenInBalanceEnd.free._getInner()
+        let balanceChangeAmount = tokenInBalanceEndBn.minus(tokenInBalanceStartBn).abs()
+        
         tokenInBalanceStats = {
-            startBalance: tokenInBalanceStart.free,
-            endBalance: tokenInBalanceEndFn,
+            startBalance: tokenInBalanceStartBn,
+            endBalance: tokenInBalanceEndBn,
             changeInBalance: balanceChangeAmount,
-            startBalanceString: tokenInBalanceStart.toString(),
-            endBalanceString: tokenInBalanceEnd.toString(),
-            changeInBalanceString: balanceChangeAmount.toString()
+            startBalanceDisplay: tokenInBalanceStartBn.div(new bn(10).pow(assetInDecimals)).toString(),
+            endBalanceDisplay: tokenInBalanceEndBn.div(new bn(10).pow(assetInDecimals)).toString(),
+            changeInBalanceDisplay: balanceChangeAmount.div(new bn(10).pow(assetInDecimals)).toString()
         }
     }
 
@@ -404,24 +661,25 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
             console.log("TOKEN OUT BALANCE CHANGE NORMAL")
             tokenOutBalanceStats = await trackedTokenOutBalancePromise
             tokenOutBalanceConfirmed = true;
-            if(!tokenOutBalanceStats.changeInBalance.gt(new FixedPointNumber(0))){
+            if(!tokenOutBalanceStats.changeInBalance.gt(new bn(0))){
                 success = false
             }
         } else {
             console.log("TOKEN OUT BALANCE NOT DETECTED. QUERYING BALANCE")
             let tokenOutBalanceEnd: BalanceData = await getBalance(chainId, relay, chopsticks, api, assetOutSymbol, destAssetRegistryObject, chain, signer.address)
-            let tokenOutFn = tokenOutBalanceEnd.free
-            let balanceChangeAmount = tokenOutFn.minus(tokenOutBalanceStart.free)
-            if(balanceChangeAmount.gt(new FixedPointNumber(0))){
+            let tokenOutBalanceStartBn = tokenOutBalanceStart.free._getInner()
+            let tokenOutBalanceEndBn = tokenOutBalanceEnd.free._getInner()
+            let balanceChangeAmount = tokenOutBalanceStartBn.minus(tokenOutBalanceEndBn).abs()
+            if(balanceChangeAmount.gt(new bn(0))){
                 console.log("BALANCE QUERIED AND DETECTED CHANGE IN BALANCE")
                 tokenOutBalanceConfirmed = true
                 tokenOutBalanceStats = {
-                    startBalance: tokenOutBalanceStart.free,
-                    endBalance: tokenOutBalanceEnd.free,
+                    startBalance: tokenOutBalanceStartBn,
+                    endBalance: tokenOutBalanceEndBn,
                     changeInBalance: balanceChangeAmount,
-                    startBalanceString: tokenOutBalanceStart.toString(),
-                    endBalanceString: tokenOutBalanceEnd.toString(),
-                    changeInBalanceString: balanceChangeAmount.toString()
+                    startBalanceDisplay: tokenOutBalanceStartBn.div(new bn(10).pow(assetOutDecimals)).toString(),
+                    endBalanceDisplay: tokenOutBalanceEndBn.div(new bn(10).pow(assetOutDecimals)).toString(),
+                    changeInBalanceDisplay: balanceChangeAmount.div(new bn(10).pow(assetOutDecimals)).toString()
                 }
                 setTransactionState(TransactionState.Finalized, relay)
                 tokenOutUnsub()
@@ -435,7 +693,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     
     let lastNode: LastNode = {
         assetKey: JSON.stringify(destAssetRegistryObject.tokenData.chain.toString() + JSON.stringify(destAssetRegistryObject.tokenData.localId)),
-        assetValue: tokenOutBalanceStats.changeInBalanceString,
+        assetValue: tokenOutBalanceStats.changeInBalanceDisplay,
         chainId: destAssetRegistryObject.tokenData.chain,
         assetSymbol: destAssetRegistryObject.tokenData.symbol
     }
@@ -470,23 +728,26 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
 
     let actualAmountIn
     if(success){
-        actualAmountIn = tokenInBalanceStats.changeInBalance.toString() 
+        actualAmountIn = tokenInBalanceStats.changeInBalance.abs()
     } else {
-        actualAmountIn = expectedAmountIn.toString()
+        actualAmountIn = expectedAmountIn.abs().toChainData()
     }
     
-    let actualAmountOut = tokenOutBalanceStats.changeInBalance.toString()
+    let actualAmountOut = tokenOutBalanceStats.changeInBalance.abs()
+
+    let inputReadable = new bn(actualAmountIn).div(new bn(10).pow(new bn(assetInDecimals))).toString()
+    let outputReadable = new bn(actualAmountOut).div(new bn(10).pow(new bn(assetOutDecimals))).toString()
 
     let arbResultString: ArbExecutionResult = {
         assetSymbolIn: assetInSymbol,
         assetSymbolOut: assetOutSymbol,
-        assetAmountIn: Math.abs(Number.parseFloat(actualAmountIn)),
-        assetAmountOut: Math.abs(Number.parseFloat(actualAmountOut)),
+        assetAmountIn: inputReadable,
+        assetAmountOut: outputReadable,
         blockHash: blockHash,
         result:`SUCCESS: ${success} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut} | `
     }
     
-    let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceString)
+    let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceDisplay)
 
     let pathNode: PathNodeValues = {
         // pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
@@ -498,9 +759,9 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         pathValueNext:pathValueNext
     }
 
-
-    if(tokenOutBalanceStats.changeInBalance.gt(new FixedPointNumber(0))){
-        let extrinsicResultData: SingleSwapResultData = {
+    let extrinsicResultData: SingleSwapResultData;
+    if(tokenOutBalanceStats.changeInBalance.gt(new bn(0))){
+        extrinsicResultData = {
             success: true,
             arbExecutionResult: arbResultString,
             resultPathNode: pathNode,
@@ -509,9 +770,9 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
             lastNode: lastNode,
             extrinsicIndex: extrinsicIndex.i
         }
-        return extrinsicResultData
+        
     } else {
-        let extrinsicResultData: SingleSwapResultData = {
+        extrinsicResultData = {
             success: false,
             arbExecutionResult: arbResultString,
             resultPathNode: pathNode,
@@ -520,8 +781,10 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
             lastNode: lastNode,
             extrinsicIndex: extrinsicIndex.i
         }
-        return extrinsicResultData
+        
     }
+    await setResultData(extrinsicResultData, relay)
+    return extrinsicResultData
 
     
 
@@ -557,6 +820,8 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     let assetInSymbol = extrinsicObj.transferExtrinsicContainer.startTransferrable.assetRegistryObject.tokenData.symbol
     let assetOutSymbol = extrinsicObj.transferExtrinsicContainer.destinationTransferrable.assetRegistryObject.tokenData.symbol
     let inputAmount = extrinsicObj.transferExtrinsicContainer.pathAmount
+    let reserveAmount = extrinsicObj.transferExtrinsicContainer.reserveAmount
+    let reserveAssetId = extrinsicObj.transferExtrinsicContainer.assetIdStart
     let assetDecimals =  extrinsicObj.transferExtrinsicContainer.startTransferrable.assetRegistryObject.tokenData.decimals
     let blockHash = ""
     if(startChain == "Kusama" || destChain == "Kusama"){
@@ -564,7 +829,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     }
 
 
-    let startSigner, destSigner;
+    let startSigner: KeyringPair, destSigner: KeyringPair;
     startSigner = relay == 'kusama' ?
         startParaId == 2023 ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false) : // Kusama substrate or eth wallet
         startParaId == 2004 ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false) // Polkadot substrate or eth wallet
@@ -573,19 +838,13 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
         destParaId == 2023 ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false) :
         destParaId == 2004 ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false)
 
-    
-    // if(relay == 'kusama' && startParaId == 2023 || relay == 'polkadot' && startParaId == 2004){
-    //     startSigner = await getSigner(chopsticks, true)
-    // } else {
-    //     startSigner = await getSigner(chopsticks, false)
-    // }
-    // if(relay == 'kusama' && destParaId == 2023 || relay == 'polkadot' && destParaId == 2004){
-    //     destSigner = await getSigner(chopsticks, true)
-    // } else {
-    //     destSigner = await getSigner(chopsticks, false)
-    // }
+    let keyring = new Keyring({
+        ss58Format: 0,
+        type: 'sr25519'
+    })
+    let ss58FormatDest = await destApi.consts.system.ss58Prefix;
 
-    console.log(`TRANSFER TX ****** CHAIN: ${startChain} | PARA ID: ${startParaId} | ADDRESS: ${startSigner.address.toString()}`)
+    // console.log(`TRANSFER TX ****** CHAIN: ${startChain} | PARA ID: ${startParaId} | ADDRESS: ${startSigner.address.toString()}`)
 
     let watchWithdrawAddress: string = startSigner.address.toString()
     let watchDepositAddress: string = destSigner.address.toString()
@@ -601,13 +860,15 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     }
    
 
-    console.log("Execute Extrinsic Set Loop: Transfer extrinsic")
+    // console.log("Execute Extrinsic Set Loop: Transfer extrinsic")
     console.log(`Execute Extrinsic Set Loop: Start Chain: ${startChain} ${startParaId}| Destination Chain: ${destChain} ${destParaId} | Currency: ${JSON.stringify(currency)} `)
     if(execute){
         let startBalance = await getBalance(startParaId, relay, chopsticks, startApi, assetInSymbol, startAssetRegistryObject, startChain, startSigner.address)
         let destinationStartBalance = await getBalance(destParaId, relay, chopsticks, destApi, assetOutSymbol, destAssetRegistryObject, destChain, destSigner.address)
         let assetRegistryObject = extrinsicObj.transferExtrinsicContainer.destinationTransferrable.assetRegistryObject
         let destinationAssetKey = JSON.stringify(assetRegistryObject.tokenData.chain.toString() + JSON.stringify(assetRegistryObject.tokenData.localId))
+
+        
 
         let transferProperties: TransferProperties = {
             type: "Transfer",
@@ -628,6 +889,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             destNodeStartBalanceString: destinationStartBalance.free.toString(),
             destAddress: destSigner.address,
             inputAmount: inputAmount,
+            reserveAmount: reserveAmount,
             assetDecimals: assetDecimals,
             destAssetKey: destinationAssetKey
             
@@ -649,18 +911,23 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
         // console.log(extrinsic.toHuman())
         let txDetailsPromise: Promise<TxDetails>;
 
-        let tokenTracker = trackPromise(destBalanceChangePromise)
-        let trackedDestinationBalancePromise = tokenTracker.trackedPromise
-        let tokenDepositResolved = tokenTracker.isResolved
+        let balanceDepositTracker: PromiseTracker = trackPromise(destBalanceChangePromise)
+        let trackedDestinationBalancePromise = balanceDepositTracker.trackedPromise
+        let tokenDepositResolved = balanceDepositTracker.isResolved
+        let xcmTransferId
+        let originTransferData: TransferEventData
         try{
             // **************************************************************************************
             txDetailsPromise = executeTransferExtrinsic(extrinsicObj.transferExtrinsicContainer, startSigner, chopsticks)
             // **************************************************************************************
             console.log("Execute Extrinsic Set Loop: Transfer promise created")
             let txDetails = await txDetailsPromise
+            xcmTransferId = txDetails.xcmMessageHash
             blockHash = txDetails.blockHash
+            let originNativeChainToken = startApi.registry.chainTokens[0]
+            originTransferData = getXcmTransferEventData(startChain, currency, startAssetRegistryObject, originNativeChainToken, txDetails.finalized, relay)
         } catch(e) {
-            // console.log("ERROR: " + e)
+            console.log("ERROR: " + e)
             // txPromise = e
             let decodedError = e.decodedError
             await startBalanceUnsub()
@@ -668,11 +935,14 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             // For now just throw if an extrinsic fails, and then execute reverse txs
             // throw new Error("Transfer failed, executing reverse txs")
             let transferAmount = extrinsicObj.transferExtrinsicContainer.pathAmount
+
+            
+            // let actualAmountOut = tokenOutBalanceStats.changeInBalance.abs().toChainData()
             arbExecutionResult = { 
                 assetSymbolIn: currency,
                 assetSymbolOut: currency,
                 assetAmountIn: transferAmount,
-                assetAmountOut: 0,
+                assetAmountOut: "0",
                 blockHash: blockHash,
                 result: `FAILURE: TRANSFER: (${startChain} ${startParaId} ${currency} ${transferAmount}-> ${destChain}) ${destParaId} | ERROR: ${JSON.stringify(decodedError)}` 
             }
@@ -697,86 +967,180 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
                 extrinsicIndex: extrinsicIndex.i,
             }
             increaseIndex(extrinsicIndex)
+            await setResultData(extrinsicResultData, relay)
             console.log("Returning on CATCH from failed Transfer Extrinsic")
             return extrinsicResultData
 
         }
 
+        console.log("***** LISTENING FOR DEPOSIT EVENTS ************")
+        let transferType = getTransferType(startChain, destChain)
+        let destWalletFormatted = getWalletAddressFormatted(destSigner, keyring, destChain, ss58FormatDest)
+        let destinationAssetDecimals = Number.parseInt(assetRegistryObject.tokenData.decimals)
+
+        console.log("Execute TRANSFER: Initiating deposit event listener")
+        let depositEventPromise = listenForXcmpEventForNode(destApi, destChain, transferType, assetOutSymbol, destinationAssetDecimals, destAssetRegistryObject, destWalletFormatted, balanceDepositTracker, xcmTransferId) 
+        let depositEventTracker = trackPromise(depositEventPromise)
         
+        console.log("Execute TRANSFER: AWAIT startBalanceChangePromise")
+        let startBalanceChangeStats = await startBalanceChangePromise;
         
-        console.log("Execute swap: AWAIT startBalanceChangePromise")
-        let startBalanceStats = await startBalanceChangePromise;
-        
-        console.log("Execute swap: AWAIT destBalanceChangePromise")
+
         let tokenDepositConfirmed = false;
         let depositSuccess: boolean = false
-        let destinationBalanceStats: BalanceChangeStats;
+        let destBalanceChangeStats: BalanceChangeStatsBn;
+
+        console.log("Execute TRANSFER: AWAIT destBalanceChangePromise")
+        let queryIndex = 0
         while(!tokenDepositConfirmed){
-            if(tokenDepositResolved()){
-                console.log("Token Deposit resolved NORMALLY")
-                destinationBalanceStats = await trackedDestinationBalancePromise
-                tokenDepositConfirmed = true
-                let destEndBalance = destinationBalanceStats.endBalance
-                let depositAmountSufficient = destEndBalance.minus(destinationStartBalance.available).gt(new FixedPointNumber(0))
-                if(!depositAmountSufficient){
-                    console.log("DEST BALANCE CHANGE NOT SUFFICIENT")
-                    depositSuccess = false
-                    // setTransactionState(TransactionState.Finalized)
-                } else {
-                    console.log("DEST BALANCE CHANGE SUFFICIENT")
-                    depositSuccess = true
-                    // globalState.transactionState = TransactionState.Finalized
-                    // setTransactionState(TransactionState.Finalized)
+            queryIndex++
+            if (queryIndex % 10 != 0 ){
+                console.log(`Deposit Event Tracker: ${depositEventTracker.isResolved()} | Waiting 1 sec...`)
+                if(tokenDepositResolved()){
+                    console.log("Token Deposit resolved NORMALLY")
+                    destBalanceChangeStats = await trackedDestinationBalancePromise
+                    tokenDepositConfirmed = true
+                    let destChangeInBalance = destBalanceChangeStats.changeInBalance;
+                    let depositAmountSufficient = destChangeInBalance.gt(new bn(0))
+                    if(!depositAmountSufficient){
+                        console.log("DEST BALANCE CHANGE NOT SUFFICIENT")
+                        depositSuccess = false
+                    } else {
+                        console.log("DEST BALANCE CHANGE SUFFICIENT")
+                        depositSuccess = true
+                    }
                 }
+                await new Promise(resolve => setTimeout(resolve, 1000))
             } else {
-                console.log("Token Deposit NOT resolved yet. QUERYING BALANCE")
+                console.log("Waited 10 seconds. QUERYING BALANCE...")
                 let destEndBalance: BalanceData = await getBalance(destParaId, relay, chopsticks, destApi, assetOutSymbol, destAssetRegistryObject, destChain, destSigner.address)
-                let destinationEndBalanceFn = destEndBalance.free
-                let balanceChangeAmount = destinationEndBalanceFn.minus(destinationStartBalance.free)
-                if(balanceChangeAmount.gt(new FixedPointNumber(0))){
+                let destStartBalanceBn = destinationStartBalance.free._getInner()
+                let destEndBalanceBn = destEndBalance.free._getInner()
+                let destBalanceChange = destEndBalanceBn.minus(destStartBalanceBn)
+
+                let destStartBalanceDisplay = getDisplayBalance(destStartBalanceBn, destinationAssetDecimals)
+                let destEndBalanceDisplay = getDisplayBalance(destEndBalanceBn, destinationAssetDecimals)
+                let destBalanceChangeDisplay = getDisplayBalance(destBalanceChange, destinationAssetDecimals)
+                if(destBalanceChange.gt(new bn(0))){
                     console.log("QUERIED BALANCE AND FOUND CHANGE")
                     tokenDepositConfirmed = true
                     depositSuccess = true
-                    // setTransactionState(TransactionState.Finalized)
-                    destinationBalanceStats = {
-                        startBalance: destinationStartBalance.free,
-                        endBalance: destinationEndBalanceFn,
-                        changeInBalance: balanceChangeAmount,
-                        startBalanceString: destinationStartBalance.toString(),
-                        endBalanceString: destEndBalance.toString(),
-                        changeInBalanceString: balanceChangeAmount.toString()
+                    destBalanceChangeStats = {
+                        startBalance: destStartBalanceBn,
+                        endBalance: destEndBalanceBn,
+                        changeInBalance: destBalanceChange,
+                        startBalanceDisplay: destStartBalanceDisplay.toString(),
+                        endBalanceDisplay: destEndBalanceDisplay.toString(),
+                        changeInBalanceDisplay: destBalanceChangeDisplay.toString(),
+                        decimals: destinationAssetDecimals
                     }
                     destBalanceUnsub()
                 }  else {
                     console.log("BALANCE QUERIED AND NO CHANGE IN BALANCE, waiting 10 seconds")
-                    await new Promise(resolve => setTimeout(resolve, 10000))
-                
+                    await new Promise(resolve => setTimeout(resolve, 1000))
                 }
+                
             }
+
         }
 
 
-        // let destBalanceStats = await destBalanceChangePromise;
 
+
+        // Can get by symbol because no chain should have multiple assets with the same symbol as the native token
+        let originAssetObject = startAssetRegistryObject
+        let originAssetLocation = originAssetObject.tokenLocation
+
+        let originFeeAssetObject = getAssetRegistryObjectBySymbol(startParaId, originTransferData.feeAssetSymbol, relay)
+        let originFeeAssetLocation = originFeeAssetObject.tokenLocation
+
+        let destAssetObject = destTransferrable.assetRegistryObject
+        let destAssetLocation = destAssetObject.tokenLocation
+
+        let originFeeAssetDecimals = originTransferData.feeAssetDecimals
+        if(!originFeeAssetDecimals){
+            console.log("GETTING ORIGIN ASSET DECIMALS BY LOCATION ********")
+            originFeeAssetDecimals = Number.parseInt(startAssetRegistryObject.tokenData.decimals)
+        }
         
+        console.log("*********** WAITING ON DEPOSIT EVENTS **************")
+        // let 
+
+        let depositEventStats: DepositEventData
+        let transferFeeOrReserves
+        let transferFee
+        // let reserveAmount
+        let depositFee
+        let totalXcmFees
+        let reserveTransferData: ReserveFeeData
+        let originFeeData: FeeData 
+        let destinationFeeData: FeeData
+        
+        // If fail to detect deposit events, dont update fee book
+        try {
+            depositEventStats = await depositEventPromise
+            if(!depositEventStats.assetDecimals){
+                depositEventStats.assetDecimals = Number.parseInt(destAssetObject.tokenData.decimals)
+            }
+            reserveTransferData = {
+                chainId: startParaId,
+                feeAssetId: originTransferData.feeAssetId,
+                feeAssetAmount: originTransferData.feeAmount.toString(),
+                reserveAssetId: reserveAssetId,
+                reserveAssetAmount: reserveAmount
+            }
+    
+            originFeeData = {
+                assetLocation: originFeeAssetLocation,
+                chainId: startParaId,
+                assetSymbol: originTransferData.feeAssetSymbol,
+                assetId: originTransferData.feeAssetId,
+                assetDecimals: originFeeAssetDecimals,
+                feeAmount: originTransferData.feeAmount.toString(),
+                reserveAssetAmount: reserveAmount.toString(),
+                reserveAssetId: reserveAssetId
+            }
+            destinationFeeData = {
+                assetLocation: destAssetLocation,
+                chainId: destParaId,
+                assetSymbol: depositEventStats.assetSymbol,
+                assetId: depositEventStats.assetId,
+                assetDecimals: Number.parseInt(destAssetObject.tokenData.decimals),
+                feeAmount: depositEventStats.feeAmount.toString(),
+            }
+            console.log(`Transfer fees: ${originFeeData.feeAmount} | Deposit fees: ${depositEventStats.feeAmount}`)
+            updateEventFeeBook(originTransferData, depositEventStats, relay)
+            await updateAccumulatedFeeData(originFeeData, destinationFeeData, relay, chopsticks)
+            await updateXcmFeeReserves(reserveTransferData, relay)
+
+            transferFee = originFeeData.feeAmount
+            reserveAmount = originFeeData.reserveAssetAmount
+            transferFeeOrReserves = originFeeData.reserveAssetAmount == "0" ? originFeeData.feeAmount : originFeeData.reserveAssetAmount
+            depositFee = destinationFeeData.feeAmount
+            totalXcmFees = new bn(transferFeeOrReserves).plus(new bn(depositFee))
+        } catch (error) {
+            console.error("ERROR: " + error)
+            console.error("Failed to detect deposit events")
+        }
+
+
+
+
+
         let lastNode: LastNode = {
             assetKey: JSON.stringify(assetRegistryObject.tokenData.chain.toString() + JSON.stringify(assetRegistryObject.tokenData.localId)),
-            assetValue: destinationBalanceStats.changeInBalanceString,
+            assetValue: destBalanceChangeStats.changeInBalanceDisplay,
             chainId: assetRegistryObject.tokenData.chain,
             assetSymbol: assetRegistryObject.tokenData.symbol
         }
         // Need to check that received amount is within 1% of expected, so we know the change is not just the fee being paid
-        let minimumExpected = new FixedPointNumber(inputAmount, Number.parseInt(assetDecimals)).times(new FixedPointNumber(0.90))
-        
-        
+        let minimumExpected = new bn(inputAmount).times(.95)
+        let sufficient = destBalanceChangeStats.changeInBalance.minus(minimumExpected)   
 
         console.log("AWAIT txDetailsPromise")
         let txDetails = await txDetailsPromise
-        console.log("Dest change in balance: ", destinationBalanceStats.changeInBalance.toString())
-        // console.log("Minimum expected: ", minimumExpected.toString())
 
-        let sufficient = destinationBalanceStats.changeInBalance.minus(minimumExpected)
-        if(sufficient.gt(new FixedPointNumber(0))){
+        if(sufficient.gt(new bn(0))){
             console.log("CHANGE In balance is sufficient")
             console.log("Transfer Extrinsic successful. setting last node...")
             await setLastNode(lastNode, relay)
@@ -784,40 +1148,46 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             txDetails.success = true
         } else {
             console.log("CHANGE In balance is NOT sufficient")
+            console.log("Balance Change: ", destBalanceChangeStats.changeInBalance.toString())
             console.log("Minimum expected: ", minimumExpected.toString())
             console.log("Suffixient: ", sufficient.toString())
             txDetails.success = false
         }
         console.log("Tx Details Success: " + txDetails.success)
-        let feesAndGasAmount = startBalanceStats.changeInBalance.add(destinationBalanceStats.changeInBalance)
-        console.log(`Execute Extrinsic Set Loop: Start Balance Change: ${JSON.stringify(startBalanceStats)} | Destination Balance Change: ${JSON.stringify(destinationBalanceStats)} | Fees and Gas: ${feesAndGasAmount}`)
+        let feesAndGasAmount = startBalanceChangeStats.changeInBalance.minus(destBalanceChangeStats.changeInBalance).abs()
+
+        console.log(`Execute Extrinsic Set Loop: Start Balance Change: ${JSON.stringify(startBalanceChangeStats)} | Destination Balance Change: ${JSON.stringify(destBalanceChangeStats)} | Fees and Gas: ${feesAndGasAmount}`)
         transferTxStats = {
             startChain: startChain,
             startParaId: startParaId,
             destChain: destChain,
             destParaId: destParaId,
             currency: currency,
-            startBalanceStats: startBalanceStats,
-            destBalanceStats: destinationBalanceStats,
-            feesAndGasAmount: feesAndGasAmount
+            startAssetId: startAssetRegistryObject.tokenData.localId,
+            startBalanceStats: startBalanceChangeStats,
+            destBalanceStats: destBalanceChangeStats,
+            feesAndGasAmount: feesAndGasAmount,
+            originFee: originFeeData,
+            destinationFee: destinationFeeData,
         }
         
-        
-        // let successMetric = destBalanceStats.changeInBalance.gt(new FixedPointNumber(0))
-        let transferAmount = extrinsicObj.transferExtrinsicContainer.pathAmount
         arbExecutionResult = {
             assetSymbolIn: currency,
             assetSymbolOut: currency,
-            assetAmountIn: transferAmount,
-            assetAmountOut: Number.parseFloat(destinationBalanceStats.changeInBalanceString),
+            assetAmountIn: startBalanceChangeStats.changeInBalanceDisplay,
+            assetAmountOut: destBalanceChangeStats.changeInBalanceDisplay,
             blockHash: blockHash,
-            result:`SUCCESS: ${txDetails.success} - TRANSFER: (${startChain} ${startParaId} ${currency} ${transferAmount}-> ${destChain}) ${destParaId} | FEES: ${feesAndGasAmount.toString()} | START: ${startBalanceStats.changeInBalanceString} -> DEST: ${destinationBalanceStats.changeInBalanceString}`
+            result: `SUCCESS: ${txDetails.success} - TRANSFER: (${startChain} ${startParaId} ${currency} ${startBalanceChangeStats.changeInBalance} -> ${destChain} ${destParaId} ${currency} ${destBalanceChangeStats.changeInBalance}) |
+            Old FEES: ${feesAndGasAmount.toString()} |
+            XCM FEES: ${totalXcmFees.toString()} |
+            Transfer Fee: ${transferFee} |
+            Reserve: ${reserveAmount} |
+            Deposit Fee: ${depositFee} |
+            START: ${startBalanceChangeStats.changeInBalanceDisplay} -> DEST: ${destBalanceChangeStats.changeInBalanceDisplay}`
         }
         
-        let pathValueNext = Number.parseFloat(destinationBalanceStats.changeInBalanceString)
+        let pathValueNext = Number.parseFloat(destBalanceChangeStats.changeInBalanceDisplay)
         resultPathNode= {
-            // pathInLocalId: extrinsicObj.transferExtrinsicContainer.pathInLocalId,
-            // pathOutLocalId: extrinsicObj.transferExtrinsicContainer.pathOutLocalId,
             pathInSymbol: currency,
             pathOutSymbol: currency,
             pathValue: extrinsicObj.transferExtrinsicContainer.pathAmount,
@@ -833,6 +1203,8 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             extrinsicIndex: extrinsicIndex.i,
         }
         increaseIndex(extrinsicIndex)
+        await setResultData(extrinsicResultData, relay)
+        console.log(`***** Extrinsic set result LAST NODE PATH VALUE: ${JSON.stringify(lastNode.assetValue)}`)
         return extrinsicResultData
     } else {
         console.log("Chain not supported")
@@ -841,12 +1213,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
 }
 
 export async function executeTransferExtrinsic(transfer: TransferExtrinsicContainer, signer: KeyringPair, chopsticks: boolean): Promise<TxDetails> {
-    // let signer;
-    // if(startParaId ==2023){
-    //     signer = await getSigner(chopsticks, true)
-    // } else {
-    //     signer = await getSigner(chopsticks, false);
-    // }
+
     let relay = transfer.relay
     let tx = transfer.extrinsic
     // signer.
@@ -872,81 +1239,7 @@ export async function executeTransferExtrinsic(transfer: TransferExtrinsicContai
         console.log(`Execute Transfer: (${transfer.firstNode} -> ${transfer.secondNode}) ${JSON.stringify(transfer.assetSymbol)} ${JSON.stringify(transfer.assetIdStart)}`)
         console.log("**************************************")
 
-        let txResult: Promise<TxDetails> = new Promise((resolve, reject) => {
-            let success = false;
-            let included: EventRecord[] = [];
-            let finalized: EventRecord[] = [];
-            let eventLogs: any[] = [];
-            let blockHash: string = "";
-            let dispatchErrorCode;
-            let decodedError;
-            console.log(`Execute Transfer: Sending tx -- ${JSON.stringify(tx.toHuman())}`)
-            setTransactionState(TransactionState.Broadcasted, relay)
-            tx.signAndSend(signer, ({ events = [], status, txHash, txIndex, dispatchError }) => {
-                if (status.isInBlock) {
-                    success = dispatchError ? false : true;
-                    console.log(
-                        `Execute Transfer: 📀 Transaction ${tx.meta.name}(..) included at blockHash ${status.asInBlock} [success = ${success}]`
-                    );
-                    included = [...events];
-                    blockHash = status.asInBlock.toString();
-
-                } else if (status.isBroadcast) {
-                    console.log(`Execute Transfer: 🚀 Transaction broadcasted.`);
-                } else if (status.isFinalized) {
-                    console.log(
-                        `Execute Transfer: 💯 Transaction ${tx.meta.name}(..) Finalized at blockHash ${status.asFinalized}`
-                    );
-                    // blockHash = status.asFinalized.toString();
-                    finalized = [...events];
-                    events.forEach((eventObj) => {
-                        eventLogs.push(eventObj.toHuman())
-                        if(eventObj.event.method == "ExtrinsicFailed" && dispatchError){
-                            console.log("Execute Transfer: Extrinsic Failed event detected")
-                            const {index, error} = dispatchError.asModule;
-                            const moduleIndex = parseInt(index.toString(), 10);
-                            const errorCodeHex = error.toString().substring(2, 4); // "09"
-                            const errorIndex = parseInt(errorCodeHex, 16);
-
-                            // Get the module and error metadata
-                            decodedError = tx.registry.findMetaError({index: new BN(moduleIndex), error: new BN(errorIndex)});
-                            dispatchErrorCode = dispatchError.asModule;
-                            console.log("Execute Transfer: Dispatch Error: " + dispatchError.toString())
-                            console.log("Execute Transfer: DECODED MODULE: " + JSON.stringify(decodedError, null, 2))
-                            console.log("Execute Transfer: Rejecting Transfer tx")
-                            let txDetails: TxDetails = { success: false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs };
-                            reject(txDetails);
-                        }
-                    })
-                    const hash = status.hash;
-                    let txDetails: TxDetails = { success: true, hash, dispatchError: dispatchErrorCode, decodedError, included, finalized, eventLogs, blockHash, txHash, txIndex };
-                    console.log("Execute Transfer: Resolving Transfer tx")
-                    resolve(txDetails);
-                } else if (status.isReady) {
-                    // let's not be too noisy..
-                    console.log("Execute Transfer: Status: Ready")
-                } else if (dispatchError){
-                    console.log("Execute Transfer: Dispatch error: " + dispatchError.toString())
-                    if(dispatchError.isModule){
-                        const decoded = tx.registry.findMetaError(dispatchError.asModule);
-                        console.log("Execute Transfer: DISPATCH ERROR DECODED: " + JSON.stringify(decoded, null, 2))
-                        console.log("Execute Transfer: Rejecting Transfer tx from dispatch error")
-                        let txDetails: TxDetails = { success:false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
-                        reject(txDetails);
-                    } else {
-                        console.log("Execute Transfer: Rejecting Transfer tx from dispatch error")
-                        let txDetails: TxDetails = { success:false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
-                        reject(txDetails);
-                    }
-                }
-                else {
-                    console.log(`Execute Transfer: 🤷 Other status ${status}`);
-                }
-            }).catch((error) => {
-                console.log("Execute Transfer: Error: " + error);
-                reject(error);
-            });
-        });
+        let txResult= executeXcmTransfer(tx, signer)
         console.log("Execute Transfer: tx promise created")
         let txDetails: Promise<TxDetails> = txResult;
         return txDetails
@@ -1083,8 +1376,8 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
     
 }
 
-export async function buildAndExecuteSwapExtrinsic(relay: Relay ,instructionsToExecute: SwapInstruction[], chopsticks: boolean, executeMovr: boolean, nextInputValue: number, chainNonces: ChainNonces, extrinsicIndex: IndexObject): Promise<[(SingleSwapResultData | SingleTransferResultData), SwapInstruction[]]>{
-    if(nextInputValue > 0){
+export async function buildAndExecuteSwapExtrinsic(relay: Relay ,instructionsToExecute: SwapInstruction[], chopsticks: boolean, executeMovr: boolean, nextInputValue: string, chainNonces: ChainNonces, extrinsicIndex: IndexObject): Promise<[(SingleSwapResultData | SingleTransferResultData), SwapInstruction[]]>{
+    if(Number.parseFloat(nextInputValue) > 0){
         instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
     }
     let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
@@ -1110,8 +1403,11 @@ export async function executeAndReturnExtrinsic(extrinsicObj: ExtrinsicObject, e
             if(relay == 'polkadot' && chainId != 2004 || relay == 'kusama' && chainId != 2023){
                 let swapExtrinsicResults: SingleSwapResultData = await executeSingleSwapExtrinsic(extrinsicObj, extrinsicIndex, chopsticks);
                 return swapExtrinsicResults
-            } else if (relay == 'polkadot' && chainId != 2004 && executeMovr == true || relay == 'kusama' && chainId != 2023 && executeMovr == true ){
+            } else if (relay == 'kusama' && chainId == 2023 && executeMovr == true ){
                 let swapExtrinsicResults: SingleSwapResultData = await executeSingleSwapExtrinsicMovr(extrinsicObj, extrinsicIndex, chopsticks);
+                return swapExtrinsicResults
+            } else if (relay == 'polkadot' && chainId == 2004 && executeMovr == true){
+                let swapExtrinsicResults: SingleSwapResultData = await executeSingleSwapExtrinsicGlmr(extrinsicObj, extrinsicIndex, chopsticks);
                 return swapExtrinsicResults
             }
         } 
@@ -1356,27 +1652,42 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
         let assetOutObject = getAssetRegistryObject(swapProperties.paraId, destAssetId, swapProperties.relay)
         let relay = swapProperties.relay
         let swapNodeApi = await getApiForNode(swapProperties.node, swapProperties.chopsticks)
-        let assetInStartBalanceString = swapProperties.assetInStartBalanceString
-        let assetOutStartBalanceString = swapProperties.assetOutStartBalanceString
         let assetInCurrentBalance = await getBalance(swapProperties.paraId, relay, swapProperties.chopsticks, swapNodeApi, swapProperties.assetInSymbol, assetInObject, swapProperties.node, swapProperties.address)
         let assetOutCurrentBalance = await getBalance(swapProperties.paraId, relay, swapProperties.chopsticks, swapNodeApi, swapProperties.assetOutSymbol, assetOutObject, swapProperties.node, swapProperties.address)
+        let assetInCurrentBalanceBn = new bn(assetInCurrentBalance.free.toChainData())
+        let assetOutCurrentBalanceBn = new bn(assetOutCurrentBalance.free.toChainData())
 
-        let assetInStartBalanceFn = new FixedPointNumber(assetInStartBalanceString, Number.parseInt(swapProperties.assetInDecimals))
-        let assetOutStartBalanceFn = new FixedPointNumber(assetOutStartBalanceString, Number.parseInt(swapProperties.assetOutDecimals))
+        console.log("SWAP PROPERTIES: " + JSON.stringify(swapProperties, null, 2))
+        console.log("ASSET IN START BALANCE: " + JSON.stringify(swapProperties.assetInStartBalance.free))
 
-        let assetInBalanceChange = assetInStartBalanceFn.minus(assetInCurrentBalance.free).abs()
-        let assetOutBalanceChange = assetOutStartBalanceFn.minus(assetOutCurrentBalance.free).abs()
-        console.log("Asset In Balance Change: " + assetInBalanceChange.toString())
-        console.log("Asset Out Balance Change: " + assetOutBalanceChange.toString())
+        let assetInStartBalanceBn = new bn((swapProperties.assetInStartBalance.free as any).inner)
+        let assetOutStartBalanceBn = new bn((swapProperties.assetOutStartBalance.free as any).inner)
+
+        let assetInBalanceChangeBn = assetInStartBalanceBn.minus(assetInCurrentBalanceBn).abs()
+        let assetOutBalanceChangeBn = assetOutStartBalanceBn.minus(assetOutCurrentBalanceBn).abs()
 
         let assetInMinimumBalanceChange = new FixedPointNumber(swapProperties.inputAmount, Number.parseInt(swapProperties.assetInDecimals)).times(new FixedPointNumber(0.90))
-        let assetInChangeSufficient = assetInBalanceChange.minus(assetInMinimumBalanceChange)
-        if(assetInChangeSufficient.gt(new FixedPointNumber(0)) && assetOutBalanceChange.gt(new FixedPointNumber(0))){
+        console.log("Asset in minimum balance change: " + assetInMinimumBalanceChange.toChainData())
+
+        // let assetInChangeSufficient = assetInBalanceChangeBn.minus(assetInMinimumBalanceChange)
+        // console.log("Asset in change sufficient: " + assetInChangeSufficient.toChainData())
+
+        // let assetInBalanceChangeBn = new bn(assetInBalanceChange.toChainData())
+        let assetInBalanceChangeMinimumBn = new bn(swapProperties.inputAmount).times(new bn(0.90))
+        let assetInChangeSufficientBn = assetInBalanceChangeBn.gte(assetInBalanceChangeMinimumBn)
+        console.log(`As BigNumber: Asset In Balance Change: ${assetInBalanceChangeBn} | Asset In Minimum Balance Change: ${assetInBalanceChangeMinimumBn} | Asset In Change Sufficient: ${assetInChangeSufficientBn}`)
+
+        // let assetOutBalanceChangeBn = new bn(assetOutBalanceChange.toChainData())
+        let assetOutBalanceChangeSufficientBn = assetOutBalanceChangeBn.gt(new bn(0))
+        console.log(`As BigNumber: Asset out balance change ${assetOutBalanceChangeBn} | Asset out balance change sufficient: ${assetOutBalanceChangeSufficientBn}`)
+
+        if(assetInChangeSufficientBn && assetOutBalanceChangeSufficientBn){
             transactionSuccess = true
             console.log("LAST TRANSACTION (SWAP) WAS SUCCESSFUL")
+            let assetOutBalanceChangeReadable = assetOutBalanceChangeBn.div(new bn(10).pow(new bn(swapProperties.assetOutDecimals)))
             let lastSuccessfulNode: LastNode = {
                 assetKey: swapProperties.destAssetKey,
-                assetValue: assetOutBalanceChange.toString(),
+                assetValue: assetOutBalanceChangeReadable.toString(),
                 assetSymbol: swapProperties.assetOutSymbol,
                 chainId: swapProperties.paraId
             }
@@ -1391,8 +1702,8 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
 }
 
 
-export async function collectRelayToken(relay: Relay, chopsticks: boolean, executeMovr: boolean, nativeBalances: any){
-    let allocationPaths = await collectKsmToRelayPaths(relay,  nativeBalances)
+export async function collectRelayToken(relay: Relay, chopsticks: boolean, executeMovr: boolean, nativeBalances: NativeBalancesType, startChainId: number){
+    let allocationPaths = await collectKsmToRelayPaths(relay,  nativeBalances, startChainId)
     let allocationInstructions = await Promise.all(allocationPaths.map(async (path) => await buildInstructionSet(relay, path)))
 
     console.log("Executing allocations from chains to Kusama")
@@ -1422,23 +1733,29 @@ export async function collectRelayToken(relay: Relay, chopsticks: boolean, execu
 
 
 // Get balance of native token accross chains. If RELAY chain has low funds, collect all funds to relay. Return balances of all chains
-export async function checkAndAllocateRelayToken(relay: Relay, chopsticks: boolean, inputAmount: number, executeMovr: boolean){
+export async function checkAndAllocateRelayToken(relay: Relay, startChainId: number, chopsticks: boolean, inputAmount: number, executeMovr: boolean){
     let nativeBalancesSuccess = false;
     let nativeBalancesQueries = 0;
     let nativeBalances;
+    const relayChainMinimum = relay == 'kusama' ? 0.01 : 1
+    const relayTokenMinimum = relay == 'kusama' ? 0.01 : 0.02 // Keep a small bit of token on each chain to not reap the account
+    let executedAllocation = false;
     while(!nativeBalancesSuccess && nativeBalancesQueries < 3){
         console.log("Querying Relay Token Balances")
         nativeBalancesQueries += 1
         try{
             // Query balances. Query may fail
-            nativeBalances = await getNativeBalanceAcrossChains(chopsticks, relay)
-            console.log(nativeBalances)
+            nativeBalances = await getRelayTokenBalances(chopsticks, relay)
+            // console.log("NATIVE BALANCES")
+            // console.log(nativeBalances)
             nativeBalancesSuccess = true
 
             // Allocate relay token if needed
-            if(nativeBalances[0] < inputAmount + 0.01){
+            if(nativeBalances[0] < inputAmount + relayChainMinimum){
                 console.log("Insufficient Relay Token balance. Collecting ksm to relay")
-                await collectRelayToken(relay, chopsticks,  executeMovr, nativeBalances)
+                executedAllocation = true
+                await collectRelayToken(relay, chopsticks,  executeMovr, nativeBalances, startChainId)
+                nativeBalancesSuccess = false;
             }
         } catch(e){
             console.log(e)
@@ -1449,12 +1766,13 @@ export async function checkAndAllocateRelayToken(relay: Relay, chopsticks: boole
         throw new Error("Failed to query Relay Token balances")
     }
     // Query balances again after allocation
-    nativeBalancesSuccess = false;
+
     nativeBalancesQueries = 0
-    while(!nativeBalancesSuccess && nativeBalancesQueries < 3){
+    while(executedAllocation && !nativeBalancesSuccess && nativeBalancesQueries < 3){
+        console.log("Query balance again after executing allocation")
         nativeBalancesQueries += 1
         try{
-            nativeBalances = await getNativeBalanceAcrossChains(chopsticks, relay)
+            nativeBalances = await getRelayTokenBalances(chopsticks, relay)
             nativeBalancesSuccess = true
         } catch(e) {
             console.log(e)
@@ -1470,16 +1788,17 @@ export async function checkAndAllocateRelayToken(relay: Relay, chopsticks: boole
 
 export async function allocateFundsForSwap(relay: Relay, assetPath: AssetNode[],  nativeBalances: any, chopsticks: boolean, executeMovr: boolean){
     let startChain = assetPath[0].getChainId()
-    let startValue = assetPath[0].pathValue
+    let startValue = assetPath[0].getPathValueAsNumber()
 
+    console.log("ALLOCATING FUNDS FOR SWAP")
     let executionPath: AssetNode[] = assetPath
-    if(nativeBalances[startChain] < startValue){
+    if(new bn(nativeBalances[startChain]).lt(startValue)){
         
         // Build allocation All chains -> relay chain && relay chain -> startChain when enough allocation
-        console.log("StartNode has insufficient start balance. Need to allocate")
+        console.log("*** StartNode has insufficient start balance. Need to allocate")
         let allocationPaths: AssetNode[][] = await getPreTransferPath(relay, startChain, startValue, chopsticks, nativeBalances)
         
-        // Execute allocations to KSM, then add Kusama -> StartNode to execution path
+        // Execute allocations to RELAY, then add RELAY -> StartNode to execution path
         if(allocationPaths.length > 1){
             let ksmAllocationPath = allocationPaths.pop()
             await allocateKsmFromPreTransferPaths(relay, allocationPaths, chopsticks, executeMovr)
@@ -1487,6 +1806,139 @@ export async function allocateFundsForSwap(relay: Relay, assetPath: AssetNode[],
         } else {
             executionPath = allocationPaths[0].concat(assetPath)
         }
-    } 
+    }  else {
+        console.log("SWAP CHAIN HAS ENOUGH FUNDS")
+    }
     return executionPath
+}
+
+export async function allocateFundsForSwapFromRelay(relay: Relay, assetPath: AssetNode[],  nativeBalances: any, chopsticks: boolean, executeMovr: boolean){
+    let startChain = assetPath[0].getChainId()
+    let startValue = assetPath[0].getPathValueAsNumber()
+
+    // console.log("Checking balance again to allocate funds for swap")
+    let nativeBalancesRefreshed = await getRelayTokenBalances(chopsticks, relay)
+
+    // console.log("Native Balances: " + JSON.stringify(nativeBalancesRefreshed))
+
+    console.log("ALLOCATING FUNDS FOR SWAP")
+    let executionPath: AssetNode[] = assetPath
+    if(new bn(nativeBalancesRefreshed[startChain]).lt(startValue)){
+        
+        // Build allocation All chains -> relay chain && relay chain -> startChain when enough allocation
+        console.log("*** StartNode has insufficient start balance. Need to allocate")
+        let allocationNode: AssetNode[] = await getFundingPath(relay, startChain, startValue, chopsticks, nativeBalancesRefreshed)
+        executionPath = allocationNode.concat(assetPath)
+    }  else {
+        console.log("SWAP CHAIN HAS ENOUGH FUNDS")
+    }
+    return executionPath
+}
+
+export async function executeXcmTransfer(xcmTx: paraspell.Extrinsic, signer: KeyringPair): Promise<TxDetails>{
+    return new Promise((resolve, reject) => {
+        let success = false;
+        let included: EventRecord[] = [];
+        let finalized: EventRecord[] = [];
+        let eventLogs: any[] = [];
+        let blockHash: string = "";
+        let dispatchErrorCode;
+        let decodedError;
+        let xcmMessageHash;
+        let xcmMessageId;
+        let feeEvent;
+        xcmTx.signAndSend(signer, ({ events = [], status, txHash, txIndex, dispatchError }) => {
+            if (status.isInBlock) {
+                success = dispatchError ? false : true;
+                console.log(
+                    `Execute Transfer: 📀 Transaction ${xcmTx.meta.name}(..) included at blockHash ${status.asInBlock} [success = ${success}]`
+                );
+                included = [...events];
+                blockHash = status.asInBlock.toString();
+
+            } else if (status.isBroadcast) {
+                console.log(`Execute Transfer: 🚀 Transaction broadcasted.`);
+            } else if (status.isFinalized) {
+                console.log(
+                    `Execute Transfer: 💯 Transaction ${xcmTx.meta.name}(..) Finalized at blockHash ${status.asFinalized}`
+                );
+                finalized = [...events];
+                events.forEach((eventObj) => {
+                    // console.log("*******************************************")
+                    // console.log(JSON.stringify(eventObj.toHuman(), null, 2))
+                    eventLogs.push(eventObj.toHuman())
+
+                    // XTokens Transfer event
+                    if (eventObj.event.section === 'xcmpQueue' && eventObj.event.method === 'XcmpMessageSent') {
+                        xcmMessageHash = eventObj.event.data[0].toString();
+                    }
+
+                    if(eventObj.event.section === 'polkadotXcm' && eventObj.event.method === 'Sent'){
+                        xcmMessageId = eventObj.event.data[3].toString();
+                    }
+
+                    // XTokens UMP transfer event
+                    if(eventObj.event.section === 'parachainSystem' && eventObj.event.method === 'UpwardMessageSent'){
+                        xcmMessageHash= eventObj.event.data[0].toString();
+                    }
+
+                    // XcmPallet Transfer event (Polkadot DMP)
+                    if (eventObj.event.section === 'xcmPallet' && eventObj.event.method === 'Sent') {
+                        xcmMessageHash = eventObj.event.data[3].toString();
+                    }
+
+                    // FEE Event
+                    if(eventObj.event.section === 'transactionPayment' && eventObj.event.method === 'TransactionFeePaid'){
+                        // console.log("Found FEE Event")
+                        feeEvent = eventObj.event.data
+                        // console.log("FEE EVENT: " + JSON.stringify(feeEvent, null, 2))
+                        // console.log(`Fee amount: ${feeEvent[1].toString()} ${feeEvent[0].toString()}`)
+                    }
+
+
+                    if(eventObj.event.method == "ExtrinsicFailed" && dispatchError){
+                        console.log("Execute Transfer: Extrinsic Failed event detected")
+                        const {index, error} = dispatchError.asModule;
+                        const moduleIndex = parseInt(index.toString(), 10);
+                        const errorCodeHex = error.toString().substring(2, 4); // "09"
+                        const errorIndex = parseInt(errorCodeHex, 16);
+
+                        // Get the module and error metadata
+                        decodedError = xcmTx.registry.findMetaError({index: new BN(moduleIndex), error: new BN(errorIndex)});
+                        dispatchErrorCode = dispatchError.asModule;
+                        console.log("Execute Transfer: Dispatch Error: " + dispatchError.toString())
+                        console.log("Execute Transfer: DECODED MODULE: " + JSON.stringify(decodedError, null, 2))
+                        console.log("Execute Transfer: Rejecting Transfer tx")
+                        let txDetails: TxDetails = { success: false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs, xcmMessageHash: xcmMessageHash };
+                        reject(txDetails);
+                    }
+                })
+                const hash = status.hash;
+                let txDetails: TxDetails = { success: true, hash, dispatchError: dispatchErrorCode, decodedError, included, finalized, eventLogs, blockHash, txHash, txIndex, xcmMessageHash: xcmMessageHash, xcmMessageId: xcmMessageId, feeEvent };
+                console.log("Execute Transfer: Resolving Transfer tx")
+                resolve(txDetails);
+            } else if (status.isReady) {
+                console.log("Execute Transfer: Status: Ready")
+            } else if (dispatchError){
+                console.log("Execute Transfer: Dispatch error: " + dispatchError.toString())
+                if(dispatchError.isModule){
+                    const decoded = xcmTx.registry.findMetaError(dispatchError.asModule);
+                    console.log("Execute Transfer: DISPATCH ERROR DECODED: " + JSON.stringify(decoded, null, 2))
+                    console.log("Execute Transfer: Rejecting Transfer tx from dispatch error")
+                    let txDetails: TxDetails = { success:false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
+                    reject(txDetails);
+                } else {
+                    console.log("Execute Transfer: Rejecting Transfer tx from dispatch error")
+                    let txDetails: TxDetails = { success:false, dispatchError: dispatchErrorCode, decodedError, included, finalized, blockHash, eventLogs }
+                    reject(txDetails);
+                }
+            }
+            else {
+                console.log(`Execute Transfer: 🤷 Other status ${status}`);
+            }
+        }).catch((error) => {
+            console.log("Execute Transfer: Error: " + error);
+            reject(error);
+        });
+    });
 }
