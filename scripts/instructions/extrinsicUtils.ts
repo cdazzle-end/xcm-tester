@@ -51,7 +51,6 @@ export async function buildTransferExtrinsicReworked(relay: Relay, instruction: 
 export async function buildTransferExtrinsicDynamic(relay: Relay, instruction: TransferInstruction, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<[TransferExtrinsicContainer, TransferInstruction[]]> {
     let transferExtrinsic: TransferExtrinsicContainer;
     let remainingInstructions: TransferInstruction[] = [];
-    // console.log("**************************************")
     switch(instruction.type){
         case InstructionType.TransferToHomeChain:
             transferExtrinsic = await buildTransferExtrinsicFromInstruction(relay, instruction, extrinsicIndex, chopsticks);
@@ -127,7 +126,7 @@ export async function buildTransferExtrinsicDynamic(relay: Relay, instruction: T
 
 export async function buildTransferExtrinsicFromInstruction(relay: Relay, instruction: TransferInstruction, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<TransferExtrinsicContainer> {
    
-    console.log("Creating transfer extrinsic")
+
     
     let startTransferrable = getTransferrableAssetObject(relay, instruction.startAssetNode)
     let destinationTransferrable = getTransferrableAssetObject(relay, instruction.destinationAssetNode)
@@ -146,26 +145,26 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     let startApi = await getApiForNode(instruction.startNode, chopsticks)
     let destinationApi = await getApiForNode(instruction.destinationNode, chopsticks)
 
-
-    console.log(`Transfer: ${instruction.startNode} -> ${instruction.destinationNode}  (${currencyInput} ${transferAmount.toString()}) Reserve: ${reserveAmountBn.toString()}`)
-
-    console.log(`***** Building Extrinsic container`)
-    console.log(`***** Transfer Amount: ${transferAmountBn.toString()}`)
+    console.log("**************************************")
+    console.log(`${instruction.startNode} -> ${instruction.destinationNode} (${startTransferrable.assetRegistryObject.tokenData.symbol}) | Currency: ${currencyInput}  | Amount: ${transferAmount.toString()})`)
+    console.log("**************************************")
+    console.log(`Transfer Amount: ${transferAmountBn.toString()}`)
+    console.log(`Reserve amount: ${reserveAmountBn.toString()}`)
+    console.log(`Fee amount: ${feeAmountBn.toString()}`)
+    if(!reserveAmountBn.isZero() && feeAmountBn.isZero()){
+        console.log(`*** Reserve amount but not fee should be an ERROR`)
+        throw new Error("Reserve amount but no fee")
+    }
     if(reserveAmountBn.isZero() && feeAmountBn.isZero()){
-        console.log(`**** Reserve amount: ${reserveAmountBn.toString()}`)
-        console.log(`**** Fee amount: ${feeAmountBn.toString()}`)
-        console.log(`No fee or reserve amount`)
-        // transferAmountBn = transferAmountBn.minus(feeAmountBn)
+        console.log(`*** No fee or reserve amount | Fee book not updated`)
     } else if(reserveAmountBn.isZero() && !feeAmountBn.isZero()){
-        console.log(`**** Reserve amount: ${reserveAmountBn.toString()}`)
-        console.log(`**** Fee amount: ${feeAmountBn.toString()}`)
+        console.log(`*** Should be transferring native token so need need to convert fee to reserve`)
         transferAmountBn = transferAmountBn.minus(feeAmountBn)
     } else {
-        console.log(`**** Reserve amount: ${reserveAmountBn.toString()}`)
-        // console.log(`**** Fee amount: ${feeAmountBn.toString()}`)
+        console.log(`*** Fee amount and reserve amount detected. | Fee amount converted to reserve. Reserve amount deducted from transfer amount`)
         transferAmountBn = transferAmountBn.minus(reserveAmountBn)
     }
-    console.log(`***** Adjusted transfer amount: ${transferAmountBn.toString()}`)
+    console.log(`Adjusted transfer amount: ${transferAmountBn.toString()}`)
 
     let signer;
 
@@ -214,9 +213,10 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
         pathAmount: transferAmountBn.toString(),
         reserveAmount: reserveAmountBn.toString()
     }
-    console.log(`****** Set transfer extrinsic container path amount: ${txContainer.pathAmount}`)
+    console.log(`Transfer tx container pathAmount set to final input transfer amount: ${txContainer.pathAmount}`)
     increaseIndex(extrinsicIndex)
     console.log("Created transfer extrinsic")
+    console.log("**************************************")
     return txContainer
 }
 async function buildDoubleTransferExtrinsic(relay: Relay, instruction: TransferToHomeThenDestInstruction, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<[TransferExtrinsicContainer, TransferExtrinsicContainer]> {
@@ -269,6 +269,10 @@ function splitDoubleTransferInstruction(instruction: TransferToHomeThenDestInstr
 
         assetNodes: instruction.assetNodes.slice(1)
     }
+    console.log("**************************************")
+    console.log(`Splitting transfer instruction`)
+    console.log(`${startInstruction.startNode} -> ${startInstruction.destinationNode} | ${startInstruction.startAssetNode.getAssetRegistrySymbol()}`)
+    console.log(`${destinationInstruction.startNode} -> ${destinationInstruction.destinationNode} | ${destinationInstruction.startAssetNode.getAssetRegistrySymbol()}`)
     return [startInstruction, destinationInstruction]
 }
 
@@ -291,161 +295,12 @@ function getParaIdFromAssetNode(node: TNode | "Kusama" | "Polkadot", assetNode: 
 }
 
 
-// Takes array of swap instructions. Builds extrinsics start asset in instruction 1, to destination asset in the final instruction
-// export async function buildSwapExtrinsic(instructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SwapExtrinsicContainer[]> {
-//     let chainId = instructions[0].chain
-//     let swapType = instructions[0].pathType
-//     let startAsset = instructions[0].assetNodes[0].getAssetRegistrySymbol()
-//     let destAsset = instructions[instructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
-//     let amountIn = instructions[0].assetNodes[0].pathValue;
-//     let expectedAmountOut = instructions[instructions.length - 1].assetNodes[1].pathValue;
-//     let pathStartLocalId = instructions[0].assetInLocalId
-//     let pathDestLocalId = instructions[instructions.length - 1].assetOutLocalId
-//     let signer = await getSigner(chopsticks, false);
-//     let instructionIndex: number[] = []
-//     instructionIndex: instructions.forEach((instruction) => {
-//         instructionIndex.push(instruction.instructionIndex)
-//     })
-
-//     let pathNodeValues : PathNodeValues = {
-//         pathInSymbol: "TEST Symbol in",
-//         pathOutSymbol: "TEST Symbol out",
-//         pathInLocalId: pathStartLocalId,
-//         pathOutLocalId: pathDestLocalId,
-//         pathSwapType: swapType,
-//         pathValue: amountIn
-//     }
-//     // Kar dex can handle swap pathing in single extrinsic
-//     let test = true;
-//     if(chainId == 2000){
-//         // Can use symbol or local id
-//         const descriptorString = `KAR ${startAsset} -> ${destAsset}`
-//         console.log(descriptorString)
-//         let swapTxContainers = await getKarSwapExtrinsicBestPath(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, test, chainNonces[2000], extrinsicIndex, instructionIndex, pathNodeValues)
-//         // console.log(JSON.stringify(swapTxContainer))
-//         swapTxContainers.forEach((swapTxContainer) => {
-//             swapTxContainer.txString = descriptorString
-//         })
-//         chainNonces[2000]++
-//         return swapTxContainers
-//     // Movr needs explicit pathing
-//     } else if(chainId == 2001){
-//         // CAN CONSOLIDATE SWAP INSTRUCTIONS INTO SINGLE EXTRINSIC
-//         console.log(`BNC ${startAsset} -> ${destAsset}`)
-//         const descriptorString = `BNC ${startAsset} -> ${destAsset}`
-//         let swapTxContainer = await getBncSwapExtrinsic(startAsset, destAsset, amountIn, expectedAmountOut, instructions, test, chainNonces[2001], extrinsicIndex, instructionIndex, pathNodeValues)
-//         swapTxContainer.txString = descriptorString
-//         chainNonces[2001]++
-//         return [swapTxContainer]
-//     } else if(chainId == 2023){
-//         console.log(`MOV ${startAsset} -> ${destAsset}`)
-//         const descriptorString = `MOV ${startAsset} -> ${destAsset}`
-//         let movrBatchSwapParams = await getMovrSwapTx(instructions, false)
-//         let reverseMovrBatchSwapParams = movrBatchSwapParams.reverseSwapParams
-//         let liveWallet = movrBatchSwapParams.wallet;
-//         let batchContract = movrBatchSwapParams.batchContract;
-        
-//         let batchContractAddress = await batchContract.getAddress()
-//         console.log(`Wallet: ${liveWallet.address} | Batch Contract: ${batchContractAddress}`)
-//         let tokens = movrBatchSwapParams.inputTokens
-
-//         // //WHEN we execute the tx, we need to approve batch contract to spend tokens first
-//         for(let i = 0; i < tokens.length; i++){
-//             let tokenInput = movrBatchSwapParams.amount0Ins[i] > 0 ? movrBatchSwapParams.amount0Ins[i] : movrBatchSwapParams.amount1Ins[i]
-//             let approval = await checkAndApproveToken(tokens[i], liveWallet, batchContractAddress, tokenInput)
-//         }
-//         let wrapMovrAmount = movrBatchSwapParams.movrWrapAmounts[0]
-
-//         let assetInNode = instructions[0].assetNodes[0]
-//         let assetOutNode = instructions[instructions.length - 1].assetNodes[1]
-//         let assetInDecimals = assetInNode.assetRegistryObject.tokenData.decimals
-//         let assetOutDecimals = assetOutNode.assetRegistryObject.tokenData.decimals
-//         let inputAmount = instructions[0].assetInAmount
-//         let outputAmount = instructions[instructions.length - 1].assetOutTargetAmount
-        
-//         let inputFixedPoint = new FixedPointNumber(inputAmount, Number.parseInt(assetInDecimals))
-//         let outputFixedPoint = new FixedPointNumber(outputAmount, Number.parseInt(assetOutDecimals))
-//         // let inputFixedPoint = new FixedPointNumber(inputAmount.toString(), 18)
-
-//         let movrTx = async function executeSwapTx() {
-//             return await batchContract.executeSwaps(
-//                 movrBatchSwapParams.dexAddresses, 
-//                 movrBatchSwapParams.abiIndexes, 
-//                 movrBatchSwapParams.inputTokens,
-//                 movrBatchSwapParams.outputTokens, 
-//                 movrBatchSwapParams.amount0Ins, 
-//                 movrBatchSwapParams.amount1Ins, 
-//                 movrBatchSwapParams.amount0Outs, 
-//                 movrBatchSwapParams.amount1Outs, 
-//                 movrBatchSwapParams.movrWrapAmounts, 
-//                 movrBatchSwapParams.data, 
-//                 {value: wrapMovrAmount}
-//             );
-//         };
-//         let assetNodes: AssetNode[] = [instructions[0].assetNodes[0]]
-//         instructions.forEach((swapInstruction) => {
-//             assetNodes.push(swapInstruction.assetNodes[1])
-//         })
-//         // let assetNodes = instructions[0].assetNodes
-//         let swapTxContainer: SwapExtrinsicContainer = {
-//             chainId: 2023,
-//             chain: "Moonriver",
-//             assetNodes: assetNodes,
-//             extrinsic: movrTx,
-//             extrinsicIndex: extrinsicIndex.i,
-//             instructionIndex: instructionIndex,
-//             txString: descriptorString,
-//             nonce: chainNonces[2023],
-//             assetSymbolIn: startAsset,
-//             assetSymbolOut: destAsset,
-//             assetAmountIn: inputFixedPoint,
-//             expectedAmountOut: outputFixedPoint,
-//             // pathInLocalId: pathStartLocalId,
-//             // pathOutLocalId: pathDestLocalId,
-//             pathSwapType: swapType,
-//             pathAmount: amountIn,
-//             reverseTx: reverseMovrBatchSwapParams,
-//             movrBatchSwapParams: movrBatchSwapParams
-//         }
-//         increaseIndex(extrinsicIndex)
-//         return [swapTxContainer]
-
-//     // Basilisk will return array of extrinsics
-//     } else if(chainId == 2090){
-    
-//         console.log(`BSX ${startAsset} -> ${destAsset}`)
-//         const descriptorString = `BSX ${startAsset} -> ${destAsset}`
-//         let swapTxContainers = await getBsxSwapExtrinsic(startAsset, destAsset, amountIn, expectedAmountOut, instructions, test, chainNonces[2090], extrinsicIndex, instructionIndex, pathNodeValues)
-//         swapTxContainers.forEach((swapTxContainer) => {
-//             swapTxContainer.txString = descriptorString
-//         })
-//         chainNonces[2090]++
-//         return swapTxContainers
-//     } else if (chainId == 2110){
-//         console.log(`MGX ${startAsset} -> ${destAsset}`)
-//         const descriptorString = `MGX ${startAsset} -> ${destAsset}`
-//         let swapTxContainer = await getMgxSwapExtrinsic(startAsset, destAsset, amountIn, expectedAmountOut, instructions, test, chainNonces[2110], extrinsicIndex,instructionIndex, pathNodeValues)
-//         swapTxContainer.txString = descriptorString
-//         chainNonces[2110]++
-//         return [swapTxContainer]
-//     } else if(chainId == 2085){
-//         console.log(`HKO ${startAsset} -> ${destAsset}`)
-//         const descriptorString = `HKO ${startAsset} -> ${destAsset}`
-//         let swapTxContainer = await getHkoSwapExtrinsic(startAsset, destAsset, amountIn, expectedAmountOut, instructions, test, chainNonces[2085], extrinsicIndex, instructionIndex, pathNodeValues)
-//         swapTxContainer.txString = descriptorString
-//         chainNonces[2085]++
-//         return [swapTxContainer]
-//     } else {
-//         throw new Error("Chain not supported")
-//     }
-// }
-
 export async function buildSwapExtrinsicDynamic(relay: Relay, instructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<[SwapExtrinsicContainer, SwapInstruction[]]> {
     let chainId = instructions[0].chain
     let swapType = instructions[0].pathType
     let swapData = instructions[0].pathData
     let startAsset = instructions[0].assetNodes[0].getAssetRegistrySymbol()
-    let destAsset = instructions[instructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
+    let destAsset = instructions[instructions.length - 1].assetNodes[1].getAssetRegistrySymbol()    
     let amountIn = instructions[0].assetNodes[0].pathValue;
     instructions[0].assetInAmount = amountIn
     instructions[0].assetInAmountFixed = new FixedPointNumber(amountIn)
@@ -536,16 +391,15 @@ async function buildKusamaSwapExtrinsics(instructions, chainId, swapType, startA
 }
 
 async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapData, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex){
+    console.log("**************************************")
     console.log("Building Polkadot Swap Extrinsic")
     if(chainId == 2000){
-        //aca
-        console.log("ACA")
         let [swapTxContainer, remainingInstructions] = await getAcaSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2000], extrinsicIndex, instructionIndex)
         let swapAssetNodes = swapTxContainer.assetNodes
         let startAssetDynamic = swapAssetNodes[0].getAssetRegistrySymbol()
         let destAssetDynamic = swapAssetNodes[swapAssetNodes.length - 1].getAssetRegistrySymbol()
-        const descriptorString = `ACA ${startAssetDynamic} -> ${destAssetDynamic}`
-        console.log("**************************************")
+        const descriptorString = `Acala ${startAssetDynamic} -> ${destAssetDynamic}`
+
         console.log(descriptorString)
         console.log("**************************************")
         swapTxContainer.txString = descriptorString
@@ -554,8 +408,7 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapD
     } else if (chainId == 2030) {
         //bnc
             // console.log(`BNC ${startAsset} -> ${destAsset}`)
-            const descriptorString = `BNC ${startAsset} -> ${destAsset}`
-            console.log("**************************************")
+            const descriptorString = `BifrostPolkadot ${startAsset} -> ${destAsset}`
             console.log(descriptorString)
             console.log("**************************************")
             let [swapTxContainer, remainingInstructions] = await getBncPolkadotSwapExtrinsicDynamic(swapType, instructions, chopsticks, chainNonces[2001], extrinsicIndex, instructionIndex)
@@ -565,8 +418,7 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapD
 
     }else if (chainId == 2004){
         //glmr
-        const descriptorString = `GLMR ${startAsset} -> ${destAsset}`
-        console.log("**************************************")
+        const descriptorString = `Moonbeam ${startAsset} -> ${destAsset}`
         console.log(descriptorString)
         console.log("**************************************")
         let remainingInstructions: SwapInstruction[] = []
@@ -577,8 +429,7 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapD
         return [swapTxContainer, remainingInstructions]
     } else if (chainId == 2012){
         //para
-        const descriptorString = `PARA ${startAsset} -> ${destAsset}`
-        console.log("**************************************")
+        const descriptorString = `Parallel ${startAsset} -> ${destAsset}`
         console.log(descriptorString)
         console.log("**************************************")
         let swapTxContainer = await getParaSwapExtrinsic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2085], extrinsicIndex, instructionIndex)
@@ -588,8 +439,7 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapD
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2034){
         //hdx
-        const descriptorString = `HDX ${startAsset} -> ${destAsset}`
-        console.log("**************************************")
+        const descriptorString = `HydraDX ${startAsset} -> ${destAsset}`
         console.log(descriptorString)
         console.log("**************************************")
         let [swapTxContainer, remainingInstructions] = await getHdxSwapExtrinsicDynamic(swapType, swapData, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2090], extrinsicIndex, instructionIndex)

@@ -4,7 +4,7 @@ import { readdir, stat } from 'fs/promises';
 import path, { join } from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { Relay, ResultDataObject } from './types';
+import { Relay, JsonPathNode } from './types';
 // import * as lp from './../../../test2/arb-dot-2/lps/all_lp.js'
 import { dotTargetNode, ksmTargetNode } from './txConsts.js';
 // import pkg from './../../../test2/arb-dot-2/lps/all_lp.ts';
@@ -192,7 +192,7 @@ export async function updateLps(chop: boolean, relay: Relay){
   });
   }
 
-export async function runAndReturnFallbackArb(args: string, chopsticks: boolean, relay: Relay): Promise<ResultDataObject[]>{
+export async function runAndReturnFallbackArb(args: string, chopsticks: boolean, relay: Relay): Promise<JsonPathNode[]>{
   let lpsResult;
   try{
     lpsResult = await updateLps(chopsticks, relay)
@@ -222,7 +222,7 @@ export async function runAndReturnFallbackArb(args: string, chopsticks: boolean,
         if(arbCompleted){
             const fallbackLogFolder = await path.join(__dirname, `/../../../test2/arb-dot-2/arb_handler/fallback_log_data/${relay}/`);
             const latestFile = await findLatestFileInLatestDirectory(fallbackLogFolder);
-            let latestFileData: ResultDataObject[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
+            let latestFileData: JsonPathNode[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
             return latestFileData
         } else {
             throw new Error("Arb Fallback failed")
@@ -238,7 +238,7 @@ export async function runAndReturnFallbackArb(args: string, chopsticks: boolean,
 
 
 
-export async function runAndReturnTargetArb(args: string, chopsticks: boolean, relay: Relay): Promise<ResultDataObject[]>{
+export async function runAndReturnTargetArb(args: string, chopsticks: boolean, relay: Relay): Promise<JsonPathNode[]>{
   let lpsResult;
   try{
     lpsResult = await updateLps(chopsticks, relay)
@@ -266,7 +266,7 @@ export async function runAndReturnTargetArb(args: string, chopsticks: boolean, r
     if(arbCompleted){
         const targetLogFolder = await path.join(__dirname, `/../../../test2/arb-dot-2/arb_handler/target_log_data/${relay}/`);
         const latestFile = await findLatestFileInLatestDirectory(targetLogFolder);
-        let latestFileData: ResultDataObject[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
+        let latestFileData: JsonPathNode[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
         return latestFileData
     } else {
         throw new Error("Arb Fallback failed")
@@ -287,7 +287,7 @@ async function testArbFinder(relay: Relay){
     if(arbCompleted){
         const targetLogFolder = await path.join(__dirname, '/../../../test2/arb-dot-2/arb_handler/target_log_data/');
         const latestFile = await findLatestFileInLatestDirectory(targetLogFolder);
-        let latestFileData: ResultDataObject[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
+        let latestFileData: JsonPathNode[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'));
         return latestFileData
     } else {
         throw new Error("Arb Fallback failed")

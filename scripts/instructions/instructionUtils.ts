@@ -1,6 +1,6 @@
 import * as paraspell from "@paraspell/sdk";
 import { AssetNode } from "./AssetNode.ts";
-import { IndexObject, InstructionType, JsonPathNode, MyAssetRegistryObject, NativeBalancesType, Relay, ResultDataObject, SwapInstruction, TransferInstruction, TransferrableAssetObject, TransferToHomeThenDestInstruction } from "./types.ts";
+import { IndexObject, InstructionType, MyAssetRegistryObject, NativeBalancesType, Relay, JsonPathNode, SwapInstruction, TransferInstruction, TransferrableAssetObject, TransferToHomeThenDestInstruction } from "./types.ts";
 import { getParaspellChainName, getAssetRegistryObjectBySymbol, getAssetBySymbolOrId, increaseIndex, constructRouteFromFile, constructRouteFromJson, getAssetKeyFromChainAndSymbol, printAllocations, getSigner } from "./utils.ts";
 import fs from 'fs'
 import path from 'path'
@@ -84,12 +84,6 @@ export function buildInstructions(relay: Relay, assetNodes: AssetNode[], instruc
 export function buildSwapInstruction(assetNodes: AssetNode[], index: IndexObject): SwapInstruction {
     //Path type is important for distinguishing between swap types like stable and standard dex.
     //Path type is stored in each node of arb log results, and the path type of the next node is the type of swap between them.
-    //When reverse, its the path type of this node that
-    // let pathTypeIndex = reverse ? 0 : 1
-    // let chainId = assetNodes[0].getChainId()
-    // if(chainId == 2000){
-
-    // }
 
   let swapInstruction: SwapInstruction = {
     type: InstructionType.Swap,
@@ -197,6 +191,7 @@ function createMiddleNode(relay: Relay, startAssetNode: AssetNode, destinationAs
 function createInstructionTransfer(relay: Relay, assetNodes: AssetNode[], transferType: InstructionType.TransferToHomeChain | InstructionType.TransferAwayFromHomeChain, index: IndexObject) {
     let startAssetNode = assetNodes[0]
     let destinationAssetNode = assetNodes[1]
+    let xcmTransferFees = assetNodes[1].pathData.xcmFeeAmounts
     let xcmTransferReserves = assetNodes[1].pathData.xcmReserveValues
     let relayNode: 'Kusama' | 'Polkadot' = relay === 'kusama' ? 'Kusama' : 'Polkadot'
     let transferInstruction: TransferInstruction = {
@@ -206,7 +201,7 @@ function createInstructionTransfer(relay: Relay, assetNodes: AssetNode[], transf
         startNode: getParaspellChainNameByParaId(relay, startAssetNode.getChainId()) || relayNode,
         startNodeLocalId: startAssetNode.assetRegistryObject.tokenData.localId,
         startAssetNode,
-        startTransferFee: startAssetNode.pathData.xcmFeeAmounts[0],
+        startTransferFee: xcmTransferFees[0],
         startTransferReserve: xcmTransferReserves[0],
         toChainId: destinationAssetNode.getChainId(),
         destinationNode: getParaspellChainNameByParaId(relay, destinationAssetNode.getChainId()) || relayNode,
@@ -514,7 +509,7 @@ export async function createTransferPathNode(relay: Relay, assetKey: string, pat
         node_key: assetKey,
         asset_name: nativeAssetName,
         path_value: pathValue,
-        path_identifier: 0,
+        path_type: 0,
         path_data: {
             "path_type": "Xcm",
             "lp_id": null
@@ -531,7 +526,7 @@ export async function createAllocationToKusamaPath(relay: Relay, allocationAsset
         node_key: assetKeyOne,
         asset_name: nativeAssetName,
         path_value: pathValue,
-        path_identifier: 0,
+        path_type: 0,
         path_data: {
             "path_type": "Xcm",
             "lp_id": null
@@ -543,7 +538,7 @@ export async function createAllocationToKusamaPath(relay: Relay, allocationAsset
         node_key: assetKeyTwo,
         asset_name: nativeAssetName,
         path_value: pathValue,
-        path_identifier: 0,
+        path_type: 0,
         path_data: {
             "path_type": "Xcm",
             "lp_id": null
@@ -559,7 +554,7 @@ export async function createAllocationKusamaToStartPath(relay: Relay, startAsset
         node_key: relayAssetKey,
         asset_name: nativeAssetName,
         path_value: pathValue,
-        path_identifier: pathValue,
+        path_type: pathValue,
         path_data: {
             "path_type": "Xcm",
             "lp_id": null
@@ -570,7 +565,7 @@ export async function createAllocationKusamaToStartPath(relay: Relay, startAsset
         node_key: startAssetKey,
         asset_name: nativeAssetName,
         path_value: pathValue,
-        path_identifier: pathValue,
+        path_type: pathValue,
         path_data: {
             "path_type": "Xcm",
             "lp_id": null

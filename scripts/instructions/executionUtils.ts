@@ -504,7 +504,7 @@ function trackPromise(promise) {
     return promiseTracker;
 }
 export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SingleSwapResultData>{
-    console.log("Swap extrinsic")
+    console.log("Execute Single Swap Extrinsic ()")
     let extrinsic = extrinsicObj.swapExtrinsicContainer.extrinsic
     let relay = extrinsicObj.swapExtrinsicContainer.relay
     let chain = extrinsicObj.swapExtrinsicContainer.chain
@@ -633,7 +633,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     if(!tx.success){
         throw new Error("Swap Tx failed, but didnt throw error in catch")
     }
-    console.log("SWAP awaiting token balance in")
+    console.log("() AWAIT getBalanceChange(tokenIn)")
     tokenInBalanceStats = await tokenInBalancePromise
     if(tokenInBalanceStats.changeInBalance.eq(new bn(0))){
 
@@ -652,26 +652,26 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         }
     }
 
-    console.log("SWAP awaiting token balance out")
+    console.log("() AWAIT getBalanceChange(tokenOut)")
     let tokenOutBalanceConfirmed = false;
     let success: boolean = tx.success
     // tokenOutBalanceStats = await tokenOutBalancePromise
     while (!tokenOutBalanceConfirmed){
         if(tokenOutResolved()){
-            console.log("TOKEN OUT BALANCE CHANGE NORMAL")
+            console.log("promiseTracker tokenOut RESOLVED")
             tokenOutBalanceStats = await trackedTokenOutBalancePromise
             tokenOutBalanceConfirmed = true;
             if(!tokenOutBalanceStats.changeInBalance.gt(new bn(0))){
                 success = false
             }
         } else {
-            console.log("TOKEN OUT BALANCE NOT DETECTED. QUERYING BALANCE")
+            console.log("promiseTracker tokenOut NOT RESOLVED. Querying balance...")
             let tokenOutBalanceEnd: BalanceData = await getBalance(chainId, relay, chopsticks, api, assetOutSymbol, destAssetRegistryObject, chain, signer.address)
             let tokenOutBalanceStartBn = tokenOutBalanceStart.free._getInner()
             let tokenOutBalanceEndBn = tokenOutBalanceEnd.free._getInner()
             let balanceChangeAmount = tokenOutBalanceStartBn.minus(tokenOutBalanceEndBn).abs()
             if(balanceChangeAmount.gt(new bn(0))){
-                console.log("BALANCE QUERIED AND DETECTED CHANGE IN BALANCE")
+                console.log("balanceQuery SUCCESS")
                 tokenOutBalanceConfirmed = true
                 tokenOutBalanceStats = {
                     startBalance: tokenOutBalanceStartBn,
@@ -684,7 +684,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
                 setTransactionState(TransactionState.Finalized, relay)
                 tokenOutUnsub()
             } else {
-                console.log("BALANCE QUERIED AND NO CHANGE IN BALANCE, waiting 10 seconds")
+                console.log("balanceQuery FAILED. Retrying in 10 seconds...")
                 await new Promise(resolve => setTimeout(resolve, 10000))
             
             }
@@ -784,6 +784,9 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         
     }
     await setResultData(extrinsicResultData, relay)
+
+    console.log(`SUCCESS: ${success} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut}`)
+    console.log("*******************************************************")
     return extrinsicResultData
 
     
@@ -793,6 +796,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
 
 // Some transactions dont track, like allocate, with asyncronoouus execution would be a mess
 export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean):Promise<SingleTransferResultData>{
+    console.log("Execute Single Transfer Extrinsic ()")
     let extrinsicResultData: SingleTransferResultData;
     let arbExecutionResult: ArbExecutionResult;
     let resultPathNode: PathNodeValues;
@@ -1392,10 +1396,9 @@ export async function executeAndReturnExtrinsic(extrinsicObj: ExtrinsicObject, e
     // let executeMovr = false
     
     try {
+        console.log("********************************")
         if (extrinsicObj.type == "Transfer"){
             let transferExtrinsicResults: SingleTransferResultData = await executeSingleTransferExtrinsic(extrinsicObj, extrinsicIndex, chopsticks)
-            // extrinsicObj.transferExtrinsicContainer.startApi.disconnect()
-            // extrinsicObj.transferExtrinsicContainer.destinationApi.disconnect()
             return transferExtrinsicResults
         } else if (extrinsicObj.type == "Swap"){
             let relay = extrinsicObj.swapExtrinsicContainer.relay;
@@ -1867,6 +1870,10 @@ export async function executeXcmTransfer(xcmTx: paraspell.Extrinsic, signer: Key
                     // console.log("*******************************************")
                     // console.log(JSON.stringify(eventObj.toHuman(), null, 2))
                     eventLogs.push(eventObj.toHuman())
+
+                    console.log("********************************************")
+                    console.log("XCM Transfer execution event data. LOOKING for xcm ID and HASH")
+                    console.log(JSON.stringify(eventObj.event.data.toHuman(), null, 2))
 
                     // XTokens Transfer event
                     if (eventObj.event.section === 'xcmpQueue' && eventObj.event.method === 'XcmpMessageSent') {

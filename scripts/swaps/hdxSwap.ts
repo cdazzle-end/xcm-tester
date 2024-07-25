@@ -40,34 +40,29 @@ export async function getHdxSwapExtrinsicDynamic(
   priceDeviationPercent: number = 2
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
     console.log(`HDX (${startAssetSymbol}) -> (${destAssetSymbol}) assetInAmount: ${assetInAmount} assetOutAmount: ${assetOutAmount}`)
-    // let endpoints = getAllNodeProviders("HydraDX");
-    // let rpc = chopsticks ? wsLocalChain : endpoints[1]
-    // // console.log("RPC: ", rpc)
-    // const provider = new WsProvider(rpc);
-    // const api = new ApiPromise({ provider });
+
     const api = await getApiForNode("HydraDX", chopsticks)
     await api.isReady;
-    // console.log("Connected to api")
     const poolService = new PoolService(api);
     const router = new TradeRouter(poolService);
-    let pools = await router.getPools()
-    // console.log("Got pools")
-    // console.log(`Pools: ${pools}`)
-    // console.log("Connected to router api")
+
     let signer = await getSigner(chopsticks, false)
     let accountNonce = await api.query.system.account(signer.address)
     let nonce = accountNonce.nonce.toNumber()
     nonce += txIndex
 
     let startAssetId = swapInstructions[0].assetInLocalId
-    let allAssets: Asset[] = await router.getAllAssets()
-    // console.log("ALL HYDRA Assets from query")
-    // console.log(JSON.stringify(allAssets))
+
+    
+    // Suppress unexpected console.log output from the SDK. This is a temporary workaround, because i cant turn it back on for the sdk, but normal console.log messages will resturn
+    const originalConsoleLog = console.log;
+    console.log = () => {};
+    let allAssets: Asset[] = await router.getAllAssets() // This prints sdk logs
+    console.log = originalConsoleLog;
+  
     let assetPathSymbols = [startAssetSymbol]
     let assetPathIds = [startAssetId]
-    // swapInstructions.forEach((instruction) => {
-    //   assetPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
-    // })
+
     // CHANGING to ID's
     swapInstructions.forEach((instruction) => {
       assetPathIds.push(instruction.assetNodes[1].getAssetLocalId())

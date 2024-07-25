@@ -2,8 +2,8 @@ import fs from 'fs'
 import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, getFirstSwapNodeFromAssetNodes as truncateAssetPath, getArbExecutionPath } from './utils.ts'
-import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode } from './types.ts'
+import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, truncateAssetPath, getArbExecutionPath } from './utils.ts'
+import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructionSetTest, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
@@ -217,8 +217,8 @@ async function buildAndExecuteExtrinsics(
                             }
                             let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
 
-                            console.log("2 SWAP EXTRINSIC INPUT VALUE: ", swapExtrinsicContainer.assetAmountIn.toChainData())
-                            console.log("SWAP EXTRINSIC PATH VALUE: ", swapExtrinsicContainer.pathAmount)
+                            console.log("Swap Tx container assetAmountIn (Actual Value): ", swapExtrinsicContainer.assetAmountIn.toChainData())
+                            console.log("Swap Tx container pathAmount (Display Value) ", swapExtrinsicContainer.pathAmount)
 
                             let extrinsicObj: ExtrinsicObject = {
                                 type: "Swap",
@@ -248,13 +248,13 @@ async function buildAndExecuteExtrinsics(
                     // Then execute transfer instructions
                     let instructionsToExecute = [instruction]
                     while(instructionsToExecute.length > 0){
+                        console.log("************************************")
+                        console.log("Creating transfer extrinsic")
                         if(Number.parseFloat(nextInputValue) > 0){
                             instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
-                            console.log(`***** Setting path value: ${nextInputValue}`)
+                            console.log(`Setting instruction.assetNodes[0].pathValue to previous output: ${nextInputValue}`)
                         }
                         let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionsToExecute[0], extrinsicIndex, chopsticks);
-
-                        console.log("TRANSFER EXTRINSIC INPUT VALUE: ", transferExtrinsic.pathAmount)
 
                         let extrinsicObj: ExtrinsicObject = {
                             type: "Transfer",
@@ -384,7 +384,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
         console.log("Executing Arb Fallback with args: " + functionArgs)
         
 
-        let arbResults: ResultDataObject[];
+        let arbResults: JsonPathNode[];
         try{
             arbResults = await runAndReturnFallbackArb(functionArgs, chopsticks, relay)
         } catch {
@@ -452,25 +452,14 @@ async function runDynamicArbTargetRelay(relay: Relay, chopsticks: boolean, execu
     setLastFile(latestFile, relay) // *** FIGURE out better place for this. Last file is used to track arb execution across multiple attempts
 
     // GET arb execution path data
-    let arbPathData: ResultDataObject[] | JsonPathNode[] = await getArbExecutionPath(relay, latestFile, inputAmount, useLatestTarget, chopsticks)
-
-    // console.log("ARB EXECUTION PATH")
-    // console.log(JSON.stringify(arbPathData))
+    let arbPathData: JsonPathNode[] = await getArbExecutionPath(relay, latestFile, inputAmount, useLatestTarget, chopsticks)
 
     // READ arb path data, construct asset path
     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
-    // console.log("ASSET PATH NODES")
-    // assetPath.forEach((node) => {
-    //     console.log(`CHAIN: ${node.paraspellChain} ASSET ID: ${node.getAssetLocalId()} (${node.getAssetRegistrySymbol()}) PATH TYPE: ${node.pathType}` )
-    // })
 
-    //REMOVE uneccessary transfer nodes/instructions from the start
-    // console.log("TRUNCATING ASSET PATH")
+    // Skip nodes up to first swap node
     let assetNodesAbreviated = await truncateAssetPath(assetPath, chopsticks)
-    // console.log("TRUNCATED ASSET PATH NODES")
-    // assetNodesAbreviated.forEach((node) => {
-    //     console.log(`CHAIN: ${node.paraspellChain} ASSET ID: ${node.getAssetLocalId()} (${node.getAssetRegistrySymbol()}) PATH TYPE: ${node.pathType}` )
-    // })
+
     let startChainId = assetNodesAbreviated[0].getChainId()
 
     // Allocate tokens to relay if needed. Return balance on all chains
@@ -503,16 +492,12 @@ async function runDynamicArbTargetRelay(relay: Relay, chopsticks: boolean, execu
         instructionsToExecute[0].assetNodes[0].pathValue = globalState.lastNode.assetValue
     }
 
-
-
-
     let testLoops = 100
     
     // BUILD and EXECUTE extrinsics
     let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, executeMovr, testLoops, true)
 
     // LOG results
-    // await logAllArbAttempts(relay, latestFile, chopsticks) 
     await logAllResultsDynamic(relay, latestFile, chopsticks) // Logs Global State Extrinsic Set Results, and to latest attempt folder
     
     let arbSuccess = executionResults.success
@@ -536,7 +521,7 @@ async function runDynamicArbTargetRelay(relay: Relay, chopsticks: boolean, execu
         let functionArgs = `${lastNode.assetKey} ${targetNode} ${lastNode.assetValue}`
         console.log("Executing Arb Fallback with args: " + functionArgs)
 
-        let fallbackArbResults: ResultDataObject[];
+        let fallbackArbResults: JsonPathNode[];
         try{
             fallbackArbResults = await runAndReturnFallbackArb(functionArgs, chopsticks, relay)
         } catch {
@@ -580,7 +565,7 @@ async function executeTestPath(relay: Relay, chopsticks: boolean, executeMovr: b
     setExecutionRelay(relay)
 
     let testFilePath = path.join(__dirname, `./testXcmPath.json`)
-    let arbPathData: ResultDataObject[] | JsonPathNode[] = JSON.parse(fs.readFileSync(testFilePath, 'utf8'))
+    let arbPathData: JsonPathNode[] = JSON.parse(fs.readFileSync(testFilePath, 'utf8'))
 
     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
 
@@ -624,7 +609,7 @@ async function getLatest(relay: Relay){
 
 
     let estimatedResults = latestFile.map(async ([inputAmount, filePath]) => {
-        let latestFileData: ResultDataObject[] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        let latestFileData: JsonPathNode[] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
         let estimatedOutput = latestFileData[latestFileData.length - 1].path_value - inputAmount
         console.log(`Estimated output for input amount ${inputAmount}: ${estimatedOutput}`)

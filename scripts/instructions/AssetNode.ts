@@ -31,7 +31,9 @@ export interface AssetNodeData {
     paraspellAsset: { symbol?: string; assetId?: string } | null,
     paraspellChain: TNode | "Kusama" | "Polkadot",
     assetRegistryObject: MyAssetRegistryObject,
-    pathValue: string,
+    pathValue: string, // asset amount display
+    // ** Maybe remove. 0 = Xcm, 1 = Dex,  2 = Stable (All forms of stable), 3 = DexV3 (PathData.path_type = pool name like uni3 or algebra), 4 = Omnipool, 100 = Cex (Not in use atm),
+    // pathType is confusing and redundant as it can be inferred from pathData
     pathType: number,
     pathData: PathData
 }
@@ -40,9 +42,9 @@ export class AssetNode implements AssetNodeData{
     paraspellAsset: { symbol?: string; assetId?: string } | null;
     paraspellChain: TNode | "Kusama" | "Polkadot";
     assetRegistryObject: MyAssetRegistryObject;
-    pathValue: string;
-    pathValueFixed: FixedPointNumber
-    pathType: number;
+    pathValue: string; 
+    pathValueFixed: FixedPointNumber // asset amount formatted
+    pathType: number; 
     pathData: PathData;
     
 

@@ -27,6 +27,9 @@ scripts/instructions/testAcaPath.json
 scripts/instructions/executionState/
 scripts/instructions/tests/
 scripts/instructions/deprecated/
+/accumulatedFees.json
+/chopsticksFeeTracker.json
+dailyNotes/
 TODO
 /scripts/swaps/
 

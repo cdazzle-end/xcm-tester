@@ -44,14 +44,14 @@ export interface MyAsset {
     contractAddress?: string;
 }
 
-// Type for JSON objects stored in result data files
-export interface ResultDataObject {
-    node_key: string,
-    asset_name: string,
-    path_value: number,
-    path_identifier: number,
-    path_data: any
-}
+// // Type for JSON objects stored in result data files
+// export interface JsonPathNode {
+//     node_key: string,
+//     asset_name: string,
+//     path_value: number,
+//     path_type: number,
+//     path_data: any
+// }
 
 export interface AssetNodeData {
     paraspellAsset: { symbol?: string; assetId?: string },
@@ -66,7 +66,7 @@ export interface JsonPathNode {
     node_key: string,
     asset_name: string,
     path_value: number,
-    path_identifier: number,
+    path_type: number,
     path_data: any
 }
 export type TxDetails = {
@@ -97,6 +97,13 @@ export enum InstructionType {
     TransferToHomeThenDestination
 }
 
+enum PathType {
+    Xcm,
+    DexV2,
+    StableSwap,
+    DexV3,
+    OmniSwap
+}
 export interface PathData{
     dexType: string, // 0 solar 1 zenlink 2 uni 3 algebra
     lpId: string // pool address
@@ -556,7 +563,7 @@ export interface PreExecutionTransfer {
 export interface AsyncFileData{
     inputAmount: number,
     estimatedOutput: number,
-    latestFileData: ResultDataObject[]
+    latestFileData: JsonPathNode[]
 
 }
 

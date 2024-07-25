@@ -3,7 +3,7 @@ import * as paraspell from '@paraspell/sdk'
 import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { MyAssetRegistryObject, ResultDataObject, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic, LastNode, ArbExecutionResult, Relay, JsonPathNode, PathData } from './types.ts'
+import { MyAssetRegistryObject, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic, LastNode, ArbExecutionResult, Relay, JsonPathNode, PathData } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { fileURLToPath } from 'url';
 import { Keyring } from '@polkadot/api'
@@ -23,23 +23,26 @@ const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
 
 
 
-
-// TRUNCATE execution path. Skips to the first swap
-export async function getFirstSwapNodeFromAssetNodes(nodes: AssetNode[], chopsticks: boolean){ 
-    let instructionIndex = 0;   
+// After reading log data, truncate the asset node path to the first swap node. To avoid unnecessary transfers
+export async function truncateAssetPath(nodes: AssetNode[], chopsticks: boolean){ 
     let firstKsmNodeIndex = -1
 
-    // The first node (index 0) will not be a swap, because the next node always indicates path type. 
-    // i.e. node at index 1 will have the path type that indicate that the path type from node 0 -> node 1 is a swap or transfer
+    // The first node (index 0) will not be a swap, the json node path_identifier is 0 (logically incorrect, 0 is for xcm path traversal but this is the first node with node previous path)
+    // and PathData.path_type will be "Start"
+    // Since first node is always start node, then first swap node will always be at index 1 or greater
     for(let i = 0; i < nodes.length; i++){
-        if(nodes[i].pathType !== 0){
+        if(nodes[i].pathData.dexType != "Start" || nodes[i].pathData.dexType != "Xcm"){
             firstKsmNodeIndex = i - 1
-            break;
+            break;            
         }
     }
     if(firstKsmNodeIndex == -1){
         throw new Error("No swap instructions found")
     }
+
+    // If the first asset node with a swap type is at index 2 (the third node), that means the first swap is from the second node (index 1) to the third (index 2).
+    // Therefore we remove all nodes up to index 1, just the first node(index 0)
+    // Thats why when we find the first swap node we substract one from the index and remove all nodes up tho that index.
     let truncatedAssetNodes = nodes.slice(firstKsmNodeIndex)
     return truncatedAssetNodes
 }
@@ -165,32 +168,42 @@ export function getAssetRegistryObjectBySymbol(chainId: number, symbol: string, 
     return asset
 }
 
-// Reads a json object from the arbitrage result log and returns the corresponding paraspell asset and amount
-export function readLogData(jsonObject: JsonPathNode | ResultDataObject, relay: Relay ){
-    // console.log("Reading log data: " + JSON.stringify(jsonObject))
-    let chainId;
-    let assetLocalId;
-    let nodeKey = jsonObject.node_key.replace(/\\|"/g, "");
-    if(nodeKey.startsWith("0")){
-        chainId = "0"
-        assetLocalId = relay == 'kusama' ? "KSM" : "DOT"
+export function parsePathNodeKey(nodeKey: string): [number, string]{
+    let chainId: number, assetLocalId: string
+    let cleanedNodeKey = nodeKey.replace(/\\|"/g, "")
+    if(cleanedNodeKey.startsWith("0")){
+        chainId = 0
+        assetLocalId = cleanedNodeKey.slice(1)
     } else {
-        chainId = nodeKey.slice(0,4)
-        assetLocalId = nodeKey.slice(4)
+        chainId = parseInt(cleanedNodeKey.slice(0,4))
+        assetLocalId = cleanedNodeKey.slice(4)
     }
+    return [chainId, assetLocalId]
 
-    let assetRegistryObject = getAssetRegistryObject(parseInt(chainId), assetLocalId, relay)
+}
+
+export function parseJsonNodePathData(jsonObject: JsonPathNode): PathData{
+    let data = jsonObject.path_data as any
+    let pathDataFormatted: PathData = {
+        dexType: data.path_type,
+        lpId: data.lp_id,
+        xcmFeeAmounts: data.xcm_fee_amounts,
+        xcmReserveValues: data.xcm_reserve_values,
+    }
+    return pathDataFormatted
+}
+
+// Reads a json object from the arbitrage result log and returns the corresponding paraspell asset and amount
+export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Relay ){
+    // console.log("Reading log data: " + JSON.stringify(jsonObject))
+    let [chainId, assetLocalId] = parsePathNodeKey(jsonObject.node_key)
+
+    let assetRegistryObject = getAssetRegistryObject(chainId, assetLocalId, relay)
     let assetSymbol = assetRegistryObject.tokenData.symbol
     let assetId = JSON.stringify(assetRegistryObject.tokenData.localId).replace(/\\|"/g, "")
 
-    let paraspellChainName = getParaspellChainName(relay, parseInt(chainId))
-    let path_data = jsonObject.path_data as any
-    let pathDataFormatted: PathData = {
-        dexType: path_data.path_type,
-        lpId: path_data.lp_id,
-        xcmFeeAmounts: path_data.xcm_fee_amounts,
-        xcmReserveValues: path_data.xcm_reserve_values,
-    }
+    let paraspellChainName = getParaspellChainName(relay, chainId)
+    let pathDataFormatted = parseJsonNodePathData(jsonObject)
 
     if(paraspellChainName == "Kusama" || paraspellChainName == "Polkadot"){
         let assetNode = new AssetNode({
@@ -198,7 +211,7 @@ export function readLogData(jsonObject: JsonPathNode | ResultDataObject, relay: 
             paraspellChain: paraspellChainName,
             assetRegistryObject: assetRegistryObject,
             pathValue: jsonObject.path_value.toString(),
-            pathType: jsonObject.path_identifier,
+            pathType: jsonObject.path_type,
             pathData: pathDataFormatted
         });
         return assetNode
@@ -229,7 +242,7 @@ export function readLogData(jsonObject: JsonPathNode | ResultDataObject, relay: 
             paraspellChain: paraspellChainName,
             assetRegistryObject: assetRegistryObject,
             pathValue: jsonObject.path_value.toString(),
-            pathType: jsonObject.path_identifier,
+            pathType: jsonObject.path_type,
             pathData: pathDataFormatted
         });
         // console.log(JSON.stringify(assetNode))
@@ -629,15 +642,12 @@ export function getLatestTargetFileKusama(){
             .map(dirent => dirent.name)
             .filter((day) => !day.includes("_small"))
         sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-        // Get the latest day's directory
-        console.log("Sorted days: ", JSON.stringify(days, null, 2))
 
+        // Get the latest day's directory
         latestDayDir = sortedDays[0]
         latestDayPath = path.join(resultsDirPath, latestDayDir);
 
-        console.log("Days: ", JSON.stringify(days, null, 2))
         // Sort directories by date
-        console.log("Latest Target Day Path: ", latestDayPath)
         // Get list of files in the latest day's directory
         const files = fs.readdirSync(latestDayPath);
 
@@ -673,15 +683,12 @@ export function getLatestTargetFilePolkadot(){
             .map(dirent => dirent.name)
             .filter((day) => !day.includes("_small"))
         sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-        // Get the latest day's directory
-        console.log("Sorted days: ", JSON.stringify(days, null, 2))
 
+        // Get the latest day's directory
         latestDayDir = sortedDays[0]
         latestDayPath = path.join(resultsDirPath, latestDayDir);
 
-        console.log("Days: ", JSON.stringify(days, null, 2))
         // Sort directories by date
-        console.log("Latest Target Day Path: ", latestDayPath)
         // Get list of files in the latest day's directory
         const files = fs.readdirSync(latestDayPath);
 
@@ -710,7 +717,7 @@ export function getLatestDefaultFile(relay: Relay){
 
 export function constructRouteFromFile(relay: Relay, logFilePath: string) {
     console.log("LatestFile: ", logFilePath)
-    const testResults: ResultDataObject[] = JSON.parse(fs.readFileSync(logFilePath, 'utf8'));
+    const testResults: JsonPathNode[] = JSON.parse(fs.readFileSync(logFilePath, 'utf8'));
     console.log(JSON.stringify(testResults))
     let assetPath: AssetNode[] = testResults.map(result => readLogData(result, relay))
     return assetPath
@@ -784,7 +791,7 @@ export function getAssetRegistry(relay: Relay){
 }
 
 export async function getArbExecutionPath(relay: Relay, latestFile: string, inputAmount: number, useLatestTarget: boolean, chopsticks: boolean){
-    let arbPathData: ResultDataObject[] | JsonPathNode[] = []
+    let arbPathData: JsonPathNode[] | JsonPathNode[] = []
     
     // If useLatestTarget is false, will update LPs and run arb
     if(!useLatestTarget){

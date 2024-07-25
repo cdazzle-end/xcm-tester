@@ -3,7 +3,7 @@ import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, getChainIdFromNode, findValueByKey } from './utils.ts'
-import { ResultDataObject, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode, TransferEventData, DepositEventData, PromiseTracker } from './types.ts'
+import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode, TransferEventData, DepositEventData, PromiseTracker } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
@@ -109,6 +109,7 @@ export async function listenForXcmpEventForNode(api: ApiPromise, node: TNode | "
                     // console.log(`COMMON EVENT: ${JSON.stringify(event, null, 2)}`)
                 }
                 if (event.section === xcmEventSection) {
+                    console.log("Found xcm event")
                     if(nodeEventData.xcm.idIndex !== -1){
                         // Comparing message hash of 
                         try{
@@ -124,9 +125,12 @@ export async function listenForXcmpEventForNode(api: ApiPromise, node: TNode | "
                             console.log(`Can't find xcm deposit even in registry for ${node} | ${transferType} | ${tokenType}`)
                             console.log("Registry Node Data:")
                             console.log(JSON.stringify(nodeEventData, null, 2))
-                            console.log("Event data:")
-                            console.log(JSON.stringify(event, null, 2))
+                            console.log("Event:")
+                            console.log(JSON.stringify(event.toHuman(), null, 2))
+                            console.log("Event data: " + JSON.stringify(event.data.toHuman(), null, 2))
                             eventPromiseResolved = true
+                            console.log(`Trying to match against registry xcmpMessage id/hash ${xcmpMessageId} | ${xcmpMessageHash}`)
+                            console.log(`*** Problem usually cant find ID index: ${nodeEventData.xcm.idIndex} in event.data: ${JSON.stringify(event.data.toHuman())}`)
                             unsubscribe()
                             reject(error)
                         }

@@ -40,7 +40,7 @@
 //         if(lastNodeChainId == 0){
 //             console.log("Last node chain is KUSAMA. Cant find arb with that. Can just exit successfully")
 //         } else {
-//             let fallbackArbResults: ResultDataObject[] = await runAndReturnFallbackArb(functionArgs, true)
+//             let fallbackArbResults: JsonPathNode[] = await runAndReturnFallbackArb(functionArgs, true)
 //             console.log("Fallback Arb Results: ")
 //             console.log(JSON.stringify(fallbackArbResults, null, 2))
     
