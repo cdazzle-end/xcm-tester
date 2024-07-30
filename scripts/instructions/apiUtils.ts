@@ -94,14 +94,14 @@ import { apiMap } from "./liveTest.ts";
 // Keep a map of all connections. If a connection to a chain already exists, return it
 
 // POLKADOT_ASSETS HAS THE SAME FUNCTION
-export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsticks: boolean){
+export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsticks: boolean): Promise<ApiPromise>{
     let map = apiMap
 
     console.log("**********************************************")
     console.log("Checking for existing api for node: ", node)
     if(map.has(node)){
         console.log("Returning existing api for node: ", node)
-        return map.get(node)
+        return map.get(node) as ApiPromise
     }
 
     console.log("No existing api for node: ", node)
@@ -132,7 +132,7 @@ export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsti
         }
     }
     console.log("Node RPC: ", apiEndpoint[0])
-    let api: ApiPromise;
+    let api: ApiPromise | undefined;
     let apiConnected = false;
     if(node == "Mangata"){
         try{
@@ -147,6 +147,7 @@ export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsti
                 console.log("API now connected")
             }
             apiConnected = true;
+            
         } catch(e){
             console.log(`Error connecting mangata api ${apiEndpoint[0]}, trying next endpoint`)
             const MangataSDK = await import('@mangata-finance/sdk')
@@ -192,7 +193,7 @@ export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsti
         }
     }
 
-    if(!apiConnected){
+    if(!apiConnected || !api){
         throw new Error("Could not connect to api")
     }
 
@@ -212,7 +213,7 @@ export async function closeApis(){
 }
 
 export function getEndpointsForChain( chainId: number ) {
-    let nodes = []
+    let nodes: string[] = []
 
     if (chainId == 0) {
         nodes = Object.values(prodRelayKusama.providers).filter((e) =>
