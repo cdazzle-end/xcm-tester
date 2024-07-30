@@ -2,7 +2,7 @@ import fs from 'fs'
 import * as paraspell from '@paraspell/sdk'
 import { TNode } from '@paraspell/sdk'
 import { getParaspellChainName, getSigner, increaseIndex } from './utils.ts'
-import { InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TransferrableAssetObject, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, IndexObject, PreExecutionTransfer, Relay } from './types.ts'
+import { InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TransferrableAssetObject, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, IndexObject, PreExecutionTransfer, Relay, PathType } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { getTransferrableAssetObject } from './instructionUtils.ts';
 import { fileURLToPath } from 'url';
@@ -132,7 +132,10 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     let destinationTransferrable = getTransferrableAssetObject(relay, instruction.destinationAssetNode)
     let currencyInput = startTransferrable.paraspellAsset.assetId? startTransferrable.paraspellAsset.assetId : startTransferrable.paraspellAsset.symbol
     
-    let assetDecimals = getAssetDecimalsForNode(instruction.startNode, startTransferrable)
+    // let assetDecimals = getAssetDecimalsForNode(instruction.startNode, startTransferrable)
+
+    let assetDecimals = startTransferrable.assetRegistryObject.tokenData.decimals
+
     let startParaId = getParaIdFromAssetNode(instruction.startNode, instruction.startAssetNode)
     let destinationParaId = getParaIdFromAssetNode(instruction.destinationNode, instruction.destinationAssetNode)
     let transferAmount = new FixedPointNumber(instruction.assetNodes[0].pathValue, Number.parseInt(assetDecimals.toString())).toChainData()
@@ -276,16 +279,16 @@ function splitDoubleTransferInstruction(instruction: TransferToHomeThenDestInstr
     return [startInstruction, destinationInstruction]
 }
 
-
-function getAssetDecimalsForNode(node: TNode | "Kusama" | "Polkadot", transferObject: TransferrableAssetObject){
-    if(node == "Kusama"){
-        return 12
-    } else if (node == "Polkadot"){
-        return 10
-    } else {
-        return paraspell.getAssetDecimals(node, transferObject.paraspellAsset.symbol)
-    }
-}
+// #REVIEW
+// function getAssetDecimalsForNode(node: TNode | "Kusama" | "Polkadot", transferObject: TransferrableAssetObject){
+//     if(node == "Kusama"){
+//         return 12
+//     } else if (node == "Polkadot"){
+//         return 10
+//     } else {
+//         return paraspell.getAssetDecimals(node, transferObject.paraspellAsset.symbol)
+//     }
+// }
 function getParaIdFromAssetNode(node: TNode | "Kusama" | "Polkadot", assetNode: AssetNode){
     if(node == "Kusama" || node == "Polkadot"){
         return 0
@@ -297,7 +300,7 @@ function getParaIdFromAssetNode(node: TNode | "Kusama" | "Polkadot", assetNode: 
 
 export async function buildSwapExtrinsicDynamic(relay: Relay, instructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<[SwapExtrinsicContainer, SwapInstruction[]]> {
     let chainId = instructions[0].chain
-    let swapType = instructions[0].pathType
+    let swapType: PathType = instructions[0].pathType
     let swapData = instructions[0].pathData
     let startAsset = instructions[0].assetNodes[0].getAssetRegistrySymbol()
     let destAsset = instructions[instructions.length - 1].assetNodes[1].getAssetRegistrySymbol()    
@@ -390,7 +393,7 @@ async function buildKusamaSwapExtrinsics(instructions, chainId, swapType, startA
     }
 }
 
-async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapData, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex){
+async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType: PathType, swapData, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex){
     console.log("**************************************")
     console.log("Building Polkadot Swap Extrinsic")
     if(chainId == 2000){
