@@ -69,60 +69,6 @@ export async function buildTransferExtrinsicDynamic(relay: Relay, instruction: T
     return [transferExtrinsic, remainingInstructions]
 }
 
-// export async function buildReverseTransferExtrinsicFromExtrinsic(transferTxContainer: TransferExtrinsicContainer){
-//     let firstNode = transferTxContainer.secondNode
-//     let firstApi = transferTxContainer.destinationApi
-//     let firstTransferrable = transferTxContainer.destinationTransferrable
-    
-//     let secondNode = transferTxContainer.firstNode
-//     let secondApi = transferTxContainer.startApi
-//     let secondTransferrable = transferTxContainer.startTransferrable
-
-//     let currencyInput = firstTransferrable.paraspellAssetSymbol.assetId? firstTransferrable.paraspellAssetSymbol.assetId : firstTransferrable.paraspellAssetSymbol.symbol
-
-//     let assetDecimals = getAssetDecimalsForNode(firstNode, firstTransferrable)
-//     let firstParaId = transferTxContainer.destinationChainId
-//     let secondParaId = transferTxContainer.startChainId
-//     let transferAmount = new FixedPointNumber(transferTxContainer.pathValue, Number.parseInt(assetDecimals.toString())).toChainData()
-
-
-//     let signer = await getSigner();
-//     let destinationAddress = signer.address
-//     if(secondNode == "Moonriver"){
-//         destinationAddress = alithAddress
-
-//     }
-
-
-//     let xcmTx: paraspell.Extrinsic;
-//     if(firstNode == "Kusama" && secondNode != "Kusama") {
-//         xcmTx = paraspell.Builder(firstApi).to(secondNode).amount(transferAmount).address(destinationAddress).build()
-//     } else if(secondNode == "Kusama" && firstNode != "Kusama") {
-//         xcmTx = paraspell.Builder(firstApi).from(firstNode).amount(transferAmount).address(destinationAddress).build()
-//     } else if(firstNode != "Kusama" && secondNode != "Kusama") {
-//         xcmTx = paraspell.Builder(firstApi).from(firstNode).to(secondNode).currency(currencyInput).amount(transferAmount).address(destinationAddress).build()
-//     } else {
-//         throw new Error("Invalid transfer instruction")
-//     }
-
-
-//     let reverseExtrinsic: TransferExtrinsicContainer = {
-//         firstNode: firstNode,
-//         secondNode: secondNode,
-//         assetSymbol: firstTransferrable.paraspellAssetSymbol.symbol,
-//         assetIdStart: transferTxContainer.assetIdEnd,
-//         assetIdEnd: transferTxContainer.assetIdStart,
-//         extrinsic: xcmTx,
-//         startApi: firstApi,
-//         destinationApi: secondApi,
-//         startChainId: firstParaId,
-//         destinationChainId: secondParaId,
-//         startTransferrable: firstTransferrable,
-//         destinationTransferrable: secondTransferrable,
-//         pathValue: transferTxContainer.pathValue
-//     }
-//     return reverseExtrinsic
-// }
 
 export async function buildTransferExtrinsicFromInstruction(relay: Relay, instruction: TransferInstruction, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<TransferExtrinsicContainer> {
    
@@ -131,6 +77,10 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     let startTransferrable = getTransferrableAssetObject(relay, instruction.startAssetNode)
     let destinationTransferrable = getTransferrableAssetObject(relay, instruction.destinationAssetNode)
     let currencyInput = startTransferrable.paraspellAsset.assetId? startTransferrable.paraspellAsset.assetId : startTransferrable.paraspellAsset.symbol
+
+    if(!currencyInput){
+        throw new Error("Transfer Tx: currencyInput undefined")
+    }
     
     // let assetDecimals = getAssetDecimalsForNode(instruction.startNode, startTransferrable)
 
@@ -194,11 +144,15 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     // console.log(`xcmTx ${JSON.stringify(xcmTx, null, 2)}`)
 
     let instructionIndex = instruction.instructionIndex
+    let paraspellAssetSymbol = startTransferrable.paraspellAsset.symbol
+    if(!paraspellAssetSymbol){
+        throw new Error("Transfer Tx: paraspell Asset Symbol undefined")
+    } 
     let txContainer: TransferExtrinsicContainer = {
         relay: relay,
         firstNode: instruction.startNode,
         secondNode: instruction.destinationNode,
-        assetSymbol: startTransferrable.paraspellAsset.symbol,
+        assetSymbol: paraspellAssetSymbol,
         assetIdStart: instruction.startAssetNode.getAssetLocalId(),
         assetIdEnd: instruction.destinationAssetNode.getAssetLocalId(),
         extrinsic: xcmTx,
@@ -279,16 +233,6 @@ function splitDoubleTransferInstruction(instruction: TransferToHomeThenDestInstr
     return [startInstruction, destinationInstruction]
 }
 
-// #REVIEW
-// function getAssetDecimalsForNode(node: TNode | "Kusama" | "Polkadot", transferObject: TransferrableAssetObject){
-//     if(node == "Kusama"){
-//         return 12
-//     } else if (node == "Polkadot"){
-//         return 10
-//     } else {
-//         return paraspell.getAssetDecimals(node, transferObject.paraspellAsset.symbol)
-//     }
-// }
 function getParaIdFromAssetNode(node: TNode | "Kusama" | "Polkadot", assetNode: AssetNode){
     if(node == "Kusama" || node == "Polkadot"){
         return 0
@@ -308,8 +252,8 @@ export async function buildSwapExtrinsicDynamic(relay: Relay, instructions: Swap
     instructions[0].assetInAmount = amountIn
     instructions[0].assetInAmountFixed = new FixedPointNumber(amountIn)
     let expectedAmountOut = instructions[instructions.length - 1].assetNodes[1].pathValue;
-    let pathStartLocalId = instructions[0].assetInLocalId
-    let pathDestLocalId = instructions[instructions.length - 1].assetOutLocalId
+
+    
     let instructionIndex: number[] = []
     instructionIndex: instructions.forEach((instruction) => {
         instructionIndex.push(instruction.instructionIndex)
@@ -325,7 +269,7 @@ export async function buildSwapExtrinsicDynamic(relay: Relay, instructions: Swap
     return [swapContainer, remainingInstructions]
 }
 
-async function buildKusamaSwapExtrinsics(instructions, chainId, swapType, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex){
+async function buildKusamaSwapExtrinsics(instructions, chainId, swapType: PathType, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex){
     if(chainId == 2000){
         let [swapTxContainer, remainingInstructions] = await getKarSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2000], extrinsicIndex, instructionIndex)
         let swapAssetNodes = swapTxContainer.assetNodes

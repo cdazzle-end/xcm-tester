@@ -3,7 +3,7 @@ import * as paraspell from '@paraspell/sdk'
 import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { MyAssetRegistryObject, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic, LastNode, ArbExecutionResult, Relay, JsonPathNode, PathData } from './types.ts'
+import { MyAssetRegistryObject, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic, LastNode, ArbExecutionResult, Relay, JsonPathNode, PathData, PathType, TxDetails, SwapTxStats, TransferTxStats } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { fileURLToPath } from 'url';
 import { Keyring } from '@polkadot/api'
@@ -31,7 +31,8 @@ export async function truncateAssetPath(nodes: AssetNode[], chopsticks: boolean)
     // and PathData.path_type will be "Start"
     // Since first node is always start node, then first swap node will always be at index 1 or greater
     for(let i = 0; i < nodes.length; i++){
-        if(nodes[i].pathData.dexType != "Start" || nodes[i].pathData.dexType != "Xcm"){
+        // console.log("Node path data: ", JSON.stringify(nodes[i].pathData))
+        if(nodes[i].pathData.dexType != "Start" && nodes[i].pathData.dexType != "Xcm"){
             firstKsmNodeIndex = i - 1
             break;            
         }
@@ -205,13 +206,15 @@ export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Rela
     let paraspellChainName = getParaspellChainName(relay, chainId)
     let pathDataFormatted = parseJsonNodePathData(jsonObject)
 
+    let pathType: PathType = jsonObject.path_type as PathType
+
     if(paraspellChainName == "Kusama" || paraspellChainName == "Polkadot"){
         let assetNode = new AssetNode({
             paraspellAsset: {symbol: assetSymbol},
             paraspellChain: paraspellChainName,
             assetRegistryObject: assetRegistryObject,
             pathValue: jsonObject.path_value.toString(),
-            pathType: jsonObject.path_type,
+            pathType: pathType,
             pathData: pathDataFormatted
         });
         return assetNode
@@ -242,7 +245,7 @@ export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Rela
             paraspellChain: paraspellChainName,
             assetRegistryObject: assetRegistryObject,
             pathValue: jsonObject.path_value.toString(),
-            pathType: jsonObject.path_type,
+            pathType: pathType,
             pathData: pathDataFormatted
         });
         // console.log(JSON.stringify(assetNode))
@@ -464,8 +467,8 @@ export function getLatestFileFromLatestDay(small: boolean) {
 
         // Sort files by timestamp in filename
         const sortedFiles = files.sort((a, b) => {
-            const timeA = a.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
-            const timeB = b.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+            const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ':');
+            const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ':');
             return new Date(`${latestDayDir}T${timeA}`).getTime() - new Date(`${latestDayDir}T${timeB}`).getTime();
         });
 
@@ -513,8 +516,8 @@ export function getLatestAsyncFilesPolkadot(): [number, string][]{
     
             // Sort files by timestamp in filename
             const sortedFiles = files.sort((a, b) => {
-                const timeA = a.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
-                const timeB = b.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+                const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ':');
+                const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ':');
                 return new Date(`${latestDayDir}T${timeA}`).getTime() - new Date(`${latestDayDir}T${timeB}`).getTime();
             });
     
@@ -526,7 +529,7 @@ export function getLatestAsyncFilesPolkadot(): [number, string][]{
 
         } catch (error) {
             console.error('Error:', error);
-            return null;
+            throw new Error("Cant parse latest files")
         }
 
     })
@@ -568,8 +571,8 @@ export function getLatestAsyncFilesKusama(): [number, string][]{
     
             // Sort files by timestamp in filename
             const sortedFiles = files.sort((a, b) => {
-                const timeA = a.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
-                const timeB = b.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+                const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ':');
+                const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ':');
                 return new Date(`${latestDayDir}T${timeA}`).getTime() - new Date(`${latestDayDir}T${timeB}`).getTime();
             });
     
@@ -581,7 +584,7 @@ export function getLatestAsyncFilesKusama(): [number, string][]{
 
         } catch (error) {
             console.error('Error:', error);
-            return null;
+            throw new Error("Cant parse latest files")
         }
 
     })
@@ -653,8 +656,8 @@ export function getLatestTargetFileKusama(){
 
         // Sort files by timestamp in filename
         const sortedFiles = files.sort((a, b) => {
-            const timeA = a.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
-            const timeB = b.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+            const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ':');
+            const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ':');
             return new Date(`${latestDayDir}T${timeA}`).getTime() - new Date(`${latestDayDir}T${timeB}`).getTime();
         });
 
@@ -694,8 +697,8 @@ export function getLatestTargetFilePolkadot(){
 
         // Sort files by timestamp in filename
         const sortedFiles = files.sort((a, b) => {
-            const timeA = a.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
-            const timeB = b.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
+            const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ':');
+            const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ':');
             return new Date(`${latestDayDir}T${timeA}`).getTime() - new Date(`${latestDayDir}T${timeB}`).getTime();
         });
 
@@ -853,48 +856,21 @@ export function getAssetDecimalsFromLocation(location: any, relay: Relay){
     //         return assetObject
     //     }
     // })
-    let firstAssetWithLocation: MyAssetRegistryObject = assetRegistry.find((assetObject) => JSON.stringify(assetObject.tokenLocation) == JSON.stringify(location))
+    let firstAssetWithLocation: MyAssetRegistryObject = assetRegistry.find((assetObject) => JSON.stringify(assetObject.tokenLocation) == JSON.stringify(location))!
     return firstAssetWithLocation.tokenData.decimals
 }
 
-export function getAssetsAtLocation(assetLocationObject: any, relay: Relay): MyAssetRegistryObject[]{
+export function getAssetsAtLocation(assetLocationObject: any, relay: Relay): MyAssetRegistryObject[] {
     let assetRegistry: MyAssetRegistryObject[] = getAssetRegistry(relay)
-    // let assetsAtLocation: MyAssetRegistryObject[] = []
-    let assetsAtLocation: MyAssetRegistryObject[] = assetRegistry.map((assetObject) => {
-        if(JSON.stringify(assetObject.tokenLocation) == JSON.stringify(assetLocationObject)){
-            return assetObject
-        }
-    }).filter((assetObject) => assetObject != undefined)
+    let assetsAtLocation: MyAssetRegistryObject[] = assetRegistry
+        .map((assetObject) => {
+            if (JSON.stringify(assetObject.tokenLocation) === JSON.stringify(assetLocationObject)) {
+                return assetObject;
+            }
+        })
+        .filter((assetObject): assetObject is MyAssetRegistryObject => assetObject !== undefined);
 
-    // let assetBuckets: { [key: string]: MyAssetRegistryObject[] } = {};
-    // assetRegistry.forEach((assetObject: MyAssetRegistryObject) => {
-    //     let locationString = JSON.stringify(assetObject.tokenLocation);
-    //     if (assetBuckets[locationString] == undefined) {
-    //         assetBuckets[locationString] = []
-    //     }
-    //     assetBuckets[locationString].push(assetObject)
-    // })
-
-    // const sortedKeys = Object.keys(assetBuckets).sort((keyA, keyB) => {
-    //     const nameA = assetBuckets[keyA][0]?.tokenData.name || "";
-    //     const nameB = assetBuckets[keyB][0]?.tokenData.name || "";
-    //     return nameA.localeCompare(nameB);
-    // })
-
-    // sortedKeys.forEach((key) => {
-    //     console.log(key)
-    //     assetBuckets[key].forEach((token: MyAssetRegistryObject) => {
-    //         if ('exchange' in token.tokenData) {
-    //             console.log(token.tokenData.name + " " + token.tokenData.exchange);
-    //         } else {
-    //             console.log(token.tokenData.name + " " + token.tokenData.chain);
-    //         }
-    //     });
-    //     console.log("-----------------")
-        
-    // })
-
-    return assetsAtLocation
+    return assetsAtLocation;
 }
 
 export function getWalletAddressFormatted(signer: KeyringPair, key: Keyring, chain: TNode | "Polkadot" | "Kusama", ss58Format: any){
@@ -904,4 +880,18 @@ export function getWalletAddressFormatted(signer: KeyringPair, key: Keyring, cha
         return key.encodeAddress(signer.address, ss58Format.toNumber())
     }
 
+}
+
+//TODO maybe make own file
+// Type guard function
+export function isTxDetails(error: unknown): error is TxDetails {
+    return typeof error === 'object' && error !== null && 'success' in error;
+}
+
+export function isSwapResult(result: any): result is { swapTxStats: SwapTxStats, swapTxResults: any, arbExecutionResult: ArbExecutionResult } {
+    return 'swapTxStats' in result;
+}
+
+export function isTransferResult(result: any): result is { transferTxStats: TransferTxStats, arbExecutionResult: ArbExecutionResult } {
+    return 'transferTxStats' in result;
 }

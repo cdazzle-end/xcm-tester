@@ -30,7 +30,7 @@
         }
       },
       "{\"NativeAssetId\":{\"Token\":\"ACA\"}}": {
-        "transferAmount": "108561099211719",
+        "transferAmount": "103261965609213",
         "transferDecimals": "12",
         "transferAssetSymbol": "ACA",
         "transferAssetId": {
@@ -64,7 +64,7 @@
         }
       },
       "{\"NativeAssetId\":{\"Token\":\"AUSD\"}}": {
-        "transferAmount": "6227302844508",
+        "transferAmount": "6595312717300",
         "transferDecimals": "12",
         "transferAssetSymbol": "aUSD",
         "transferAssetId": {
@@ -94,7 +94,7 @@
         "feeAssetId": "GLMR"
       },
       "\"224821240862170613278369189818311486111\"": {
-        "transferAmount": "108570188814130",
+        "transferAmount": "103271055211624",
         "transferDecimals": "12",
         "transferAssetSymbol": "ACA",
         "transferAssetId": "224821240862170613278369189818311486111",
@@ -156,7 +156,7 @@
         "feeAssetId": "1"
       },
       "\"115\"": {
-        "transferAmount": "30846587743406",
+        "transferAmount": "56981878853688",
         "transferDecimals": "12",
         "transferAssetSymbol": "PHA",
         "transferAssetId": "115",
@@ -260,11 +260,11 @@
     },
     "2035": {
       "\"PHA\"": {
-        "transferAmount": "30782291672126",
+        "transferAmount": "56917582782408",
         "transferDecimals": "12",
         "transferAssetSymbol": "PHA",
         "transferAssetId": "PHA",
-        "feeAmount": "1680000223",
+        "feeAmount": "1680000177",
         "feeDecimals": "12",
         "feeAssetSymbol": "PHA",
         "feeAssetId": "PHA"
@@ -295,7 +295,7 @@
     },
     "2000": {
       "{\"NativeAssetId\":{\"Token\":\"ACA\"}}": {
-        "depositAmount": "108563759214130",
+        "depositAmount": "103264625611624",
         "feeAmount": "6429600000",
         "feeDecimals": "12",
         "feeAssetSymbol": "ACA",
@@ -358,7 +358,7 @@
         "feeAssetId": "120637696315203257380661607956669368914"
       },
       "\"110021739665376159354538090254163045594\"": {
-        "depositAmount": "6223066585249",
+        "depositAmount": "6591076458041",
         "feeAmount": "4236259259",
         "feeDecimals": "12",
         "feeAssetSymbol": "xcaUSD",
@@ -402,7 +402,7 @@
         "feeAssetId": "115"
       },
       "\"108\"": {
-        "depositAmount": "108443452152896",
+        "depositAmount": "103144318550390",
         "feeAmount": "117647058823",
         "feeDecimals": "12",
         "feeAssetSymbol": "ACA",
@@ -486,8 +486,8 @@
         "feeAssetId": "10"
       },
       "\"8\"": {
-        "depositAmount": "30776176181595",
-        "feeAmount": "6115490531",
+        "depositAmount": "56912993573779",
+        "feeAmount": "4589208629",
         "feeDecimals": "12",
         "feeAssetSymbol": "PHA",
         "feeAssetId": "8"
@@ -495,7 +495,7 @@
     },
     "2035": {
       "\"PHA\"": {
-        "depositAmount": "30782291743406",
+        "depositAmount": "56917582853688",
         "feeAmount": "64296000000",
         "feeDecimals": "12",
         "feeAssetSymbol": "PHA",

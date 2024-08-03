@@ -66,7 +66,7 @@ export interface JsonPathNode {
     node_key: string,
     asset_name: string,
     path_value: number,
-    path_type: number,
+    path_type: string,
     path_data: any
 }
 export type TxDetails = {
@@ -97,12 +97,12 @@ export enum InstructionType {
     TransferToHomeThenDestination
 }
 
-enum PathType {
-    Xcm,
-    DexV2,
-    StableSwap,
-    DexV3,
-    OmniSwap
+export const enum PathType {
+    Xcm = "Xcm",
+    DexV2 = "Dex", // REVIEW DexV2 is saved as Dex in arb finder. Should reformat to make consistant from arb finder
+    StableSwap = "StableSwap",
+    DexV3 = "DexV3",
+    OmniSwap = "OmniSwap"
 }
 export interface PathData{
     dexType: string, // 0 solar 1 zenlink 2 uni 3 algebra
@@ -114,7 +114,7 @@ export interface SwapInstruction {
     type: InstructionType.Swap;
     chain: number,
     instructionIndex: number,
-    pathType: number, // 0 xcm | 1 dexV2 | 2 stable swap | 3 dexV3 | 4 omniswap
+    pathType: PathType, // 0 xcm | 1 dexV2 | 2 stable swap | 3 dexV3 | 4 omniswap
     pathData: PathData,
     assetInLocalId: string,
     assetInAmount: string,
@@ -234,16 +234,16 @@ export interface ChainNonces{
 // }
 export interface ExecutionState{
     tracking: boolean, // If true, we are currently tracking the execution of a set of extrinsics
-    relay: Relay,
-    lastNode: LastNode,
-    lastFilePath: string,
-    extrinsicSetResults: ExtrinsicSetResultDynamic,
-    transactionState: TransactionState,
-    transactionProperties: SwapProperties | TransferProperties,
+    relay: Relay | null,
+    lastNode: LastNode | null,
+    lastFilePath: string | null,
+    extrinsicSetResults: ExtrinsicSetResultDynamic | null,
+    transactionState: TransactionState | null,
+    transactionProperties: SwapProperties | TransferProperties | null,
     executionSuccess: boolean,
-    executionAttempts: number,
-    accumulatedFeeData: AccumulatedFeeData,
-    xcmFeeReserves: ReserveFeeData[]
+    executionAttempts: number | null,
+    accumulatedFeeData: AccumulatedFeeData | null,
+    xcmFeeReserves: ReserveFeeData[] | null
 }
 
 export type Relay = "kusama" | "polkadot"
@@ -368,7 +368,7 @@ export interface SwapExtrinsicContainer{
     
     // pathInLocalId: string,
     // pathOutLocalId: string,
-    pathType: number,
+    pathType: PathType,
     pathAmount: string,
 
     assetSymbolOut: string,
@@ -487,7 +487,7 @@ export interface ExtrinsicSetResult {
 export interface ExtrinsicSetResultDynamic {
     success: boolean,
     allExtrinsicResults: (SingleTransferResultData | SingleSwapResultData)[],
-    lastSuccessfulNode: LastNode,
+    lastSuccessfulNode: LastNode | null,
 }
 
 export interface SingleExtrinsicResultData{
@@ -512,8 +512,8 @@ export interface SingleTransferResultData {
     success: boolean,
     arbExecutionResult: ArbExecutionResult,
     resultPathNode?: PathNodeValues,
-    transferTxStats: TransferTxStats,
-    lastNode: LastNode,
+    transferTxStats: TransferTxStats | null,
+    lastNode: LastNode | null,
     extrinsicIndex: number,
 
 }
@@ -522,9 +522,9 @@ export interface SingleSwapResultData {
     success: boolean,
     arbExecutionResult: ArbExecutionResult,
     resultPathNode?: PathNodeValues,
-    swapTxStats: SwapTxStats,
+    swapTxStats: SwapTxStats | null,
     swapTxResults: any,
-    lastNode: LastNode,
+    lastNode: LastNode | null,
     extrinsicIndex: number,
 }
 // Last node contains info for the last node we successfully reached in the extrinsic path, and we can use this info to start another arb path

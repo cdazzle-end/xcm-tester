@@ -1,5 +1,5 @@
 import { TNode } from "@paraspell/sdk";
-import { MyAssetRegistryObject, PathData } from "./types.ts";
+import { MyAssetRegistryObject, PathData, PathType } from "./types.ts";
 // import { findValueByKey } from "./utils.ts";
 import fs from 'fs'
 import path from 'path'
@@ -34,7 +34,7 @@ export interface AssetNodeData {
     pathValue: string, // asset amount display
     // ** Maybe remove. 0 = Xcm, 1 = Dex,  2 = Stable (All forms of stable), 3 = DexV3 (PathData.path_type = pool name like uni3 or algebra), 4 = Omnipool, 100 = Cex (Not in use atm),
     // pathType is confusing and redundant as it can be inferred from pathData
-    pathType: number,
+    pathType: PathType,
     pathData: PathData
 }
 
@@ -44,7 +44,7 @@ export class AssetNode implements AssetNodeData{
     assetRegistryObject: MyAssetRegistryObject;
     pathValue: string; 
     pathValueFixed: FixedPointNumber // asset amount formatted
-    pathType: number; 
+    pathType: PathType; 
     pathData: PathData;
     
 

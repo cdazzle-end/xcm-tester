@@ -2,7 +2,7 @@ import { FixedPointNumber } from "@acala-network/sdk-core"
 import { ApiPromise, options, WsProvider, Keyring } from "@parallel-finance/api" 
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import fs from 'fs'
-import { IndexObject, PathNodeValues, SwapExtrinsicContainer } from "./../instructions/types"
+import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer } from "./../instructions/types"
 const wsLocalChain = "ws://172.26.130.75:8012"
 const hkoWs = "wss://heiko-rpc.parallel.fi"
 import path from 'path'
@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function getHkoSwapExtrinsic(
-  swapType: number,
+  swapType: PathType,
   startAssetSymbol: string, 
   destAssetSymbol: string, 
   assetInAmount: string, 

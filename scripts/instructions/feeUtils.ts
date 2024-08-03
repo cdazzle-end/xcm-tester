@@ -85,9 +85,9 @@ export async function listenForXcmpEventForNode(api: ApiPromise, node: TNode | "
     // let nodeEventData = depositEventDictionary[node][transferType][tokenType]
     let nodeEventData
     if(transferType === "hrmp"){
-        nodeEventData = depositEventDictionary[node][transferType][tokenType]
+        nodeEventData = depositEventDictionary[node]?.[transferType]?.[tokenType] ?? null;
     } else {
-        nodeEventData = depositEventDictionary[node][transferType]
+        nodeEventData = depositEventDictionary[node][transferType] ?? null
     }
     if(!nodeEventData){
         console.log(`Deposit type ${transferType} not avaiable for ${node}`)
@@ -246,18 +246,21 @@ export function getXcmTransferEventData(node: TNode | "Polkadot" | "Kusama", tra
     } else {
         let parachain = findValueByKey(transferredAssetObject.tokenLocation, "Parachain")
         if(!parachain){
-            throw new Error("Can't find origin chain for asset node: " + JSON.stringify(this, null, 2))
+            throw new Error("Can't find origin chain for asset node: " + JSON.stringify(transferredAssetObject, null, 2))
         }
         assetOriginChainId = parseInt(parachain)
     }
     let nodeBalanceEvent
     if (transferredAssetSymbol === nativeCurrencySymbol){
-        nodeBalanceEvent = transferEventDictionary[node].balanceEvents.nativeCurrency
+        nodeBalanceEvent = transferEventDictionary[node].balanceEvents?.nativeCurrency ?? null
     } else {
         nodeBalanceEvent = assetOriginChainId == chainId ?
-        transferEventDictionary[node].balanceEvents.nativeTokens : 
-        transferEventDictionary[node].balanceEvents.foreignTokens
+        transferEventDictionary[node].balanceEvents?.nativeTokens ?? null : 
+        transferEventDictionary[node].balanceEvents?.foreignTokens ?? null
     } 
+    if(!nodeBalanceEvent){
+        throw new Error("Cant get Xcm Transfer execution event data from start chain")
+    }
     // if(node == "Acala"){
     //     if (transferredAssetSymbol === nativeCurrencySymbol){
     //         nodeBalanceEvent = transferEventDictionary[node].balanceEvents.nativeCurrency
@@ -371,7 +374,7 @@ export async function listenForXcmpEventTwo(api: ApiPromise, xcmpMessageHash: st
 // DMP from polkadot -> hydra, 
 export async function listenForXcmpEventThree(api: ApiPromise, depositAddress: string): Promise<any[]> {
     
-        let eventRecordsPromise = new Promise(async (resolve) => {
+        let eventRecordsPromise: Promise<FrameSystemEventRecord[]>= new Promise(async (resolve) => {
             console.log(`Listening for XCMP message hash on the destination chain. Deposit Addres: ${depositAddress}`);
             let eventRecords: FrameSystemEventRecord[] = []
             const unsubscribe = await api.query.system.events((events) => {

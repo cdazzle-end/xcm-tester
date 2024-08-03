@@ -177,6 +177,9 @@ export async function updateLps(chop: boolean, relay: Relay){
       });
       // let child = exec(command)
 
+      if (!child.stdout || !child.stderr){
+        throw new Error("Execute arb fallback std error")
+      }
       // Ignore package manager warnings
       child.stdout.on('data', (data) => {
         if (!data.includes('The following conflicting packages were found:')) {

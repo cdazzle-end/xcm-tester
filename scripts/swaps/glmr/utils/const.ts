@@ -183,7 +183,7 @@ export const multicallAbi2 = fs.readFileSync(path.join(__dirname, '../abi/multic
 
 export const multicallAbi3 = fs.readFileSync(path.join(__dirname, '../abi/multicall3.json'), 'utf8')
 
-import { MyLp, TickData } from './types.ts';
+import { TickData } from './types.ts';
 export const rpc1 = 'wss://moonbeam.public.blastapi.io';
 export const rpc2 = 'wss://moonbeam-rpc.dwellir.com';
 // const rpc3 = 'wss://moonriver.api.onfinality.io/public-ws';

@@ -3,7 +3,7 @@ import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, getChainIdFromNode, getAssetKey, getAssetRegistry, getAssetsAtLocation } from './utils.ts'
-import { JsonPathNode, MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode } from './types.ts'
+import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
@@ -40,6 +40,8 @@ import { listenForXcmpEventHydra, getHydraDepositFees, listenForXcmpEventAcala, 
 import { blake2AsU8a } from '@polkadot/util-crypto';
 import { u8aToHex, stringToU8a, numberToU8a } from '@polkadot/util';
 import * as Chopsticks from '@acala-network/chopsticks';
+
+import {mainLogger, dbLogger, apiLogger} from './logger.ts'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1062,6 +1064,19 @@ async function testGlmrSwap(){
     await testGlmrRpc()
 }
 
+async function testLogger(){
+    let testPath = path.join(__dirname, './tests/testGlmrPath.json')
+
+    let pathNodes: JsonPathNode[] = JSON.parse(fs.readFileSync(testPath).toString())
+
+    await mainLogger.info("Main Test Logger")
+    // mainLogger.info(JSON.stringify(pathNodes, null, 2))
+
+    await apiLogger.info("Api Test Logger")
+    await apiLogger.info(JSON.stringify(pathNodes, null, 2))
+
+}
+
 async function main(){
     // let wallet = await getSigner(false, false)
     // let ethWallet = await getSigner(false, true)
@@ -1073,13 +1088,13 @@ async function main(){
     // await testAssetLocation()
     // await testBifrostWallet()
     // await testGlmrSwap()
-    await testCheckAndAllocate();
-    await testCheckAndAllocate();
-    await testCheckAndAllocate();
-    
+    // await testCheckAndAllocate();
+    // await testCheckAndAllocate();
+    // await testCheckAndAllocate();
+    await testLogger()
     // await newBlock('HydraDX')
     // await testChopsticks()
-    process.exit(0)
+    // process.exit(0)
 }
 
 // main()

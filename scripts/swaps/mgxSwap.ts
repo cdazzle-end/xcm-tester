@@ -17,7 +17,7 @@ import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { MangataInstance, Mangata, MultiswapBuyAsset, MultiswapSellAsset } from "@mangata-finance/sdk"
 import { BN } from '@polkadot/util';
-import { IndexObject, PathNodeValues, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
+import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
 import { increaseIndex } from './../instructions/utils.ts';
 import { getSigner } from './../instructions/utils.ts';
 import { getApiForNode } from './../instructions/apiUtils.ts'
@@ -26,7 +26,7 @@ const mgxRpc = "wss://kusama-rpc.mangata.online"
 
 
 export async function getMgxSwapExtrinsic(
-  swapType: number,
+  swapType: PathType,
   assetInSymbol: string,
   assetOutSymbol: string, 
   amountIn: string, 
@@ -79,8 +79,8 @@ export async function getMgxSwapExtrinsic(
         }
       }
     })
-    let startTokenDecimals = tokenPath[0].decimals
-    let endTokenDecimals = tokenPath[tokenPath.length - 1].decimals
+    let startTokenDecimals = tokenPath[0]!.decimals
+    let endTokenDecimals = tokenPath[tokenPath.length - 1]!.decimals
 
     let inputFixedPoint = new FixedPointNumber(amountIn, startTokenDecimals).toChainData()
     let expectedOutFixedPoint = new FixedPointNumber(expectedAmountOut, endTokenDecimals)
@@ -93,7 +93,7 @@ export async function getMgxSwapExtrinsic(
     // let inputAmount = new BN(amountIn).mul(new BN(10).pow(startTokenDecimals))
     // let expectedOutAmount = new BN(assetOutAmount).mul(new BN(10).pow(endTokenDecimals))
     console.log(`inputAmount: ${inputBn} expectedOutAmount: ${expectedOutBn}`)
-    let tokenPathIds = tokenPath.map((token) => token.id)
+    let tokenPathIds = tokenPath.map((token) => token!.id)
     // const args: MultiswapSellAsset = {
     //   tokenIds: tokenPathIds,
     //   amount: inputBn,

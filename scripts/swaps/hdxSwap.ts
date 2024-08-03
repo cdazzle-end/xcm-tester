@@ -9,7 +9,7 @@ import '@galacticcouncil/api-augment/basilisk';
 import { SubmittableExtrinsic } from '@polkadot/api/promise/types';
 // import { ZERO, INFINITY, ONE, TradeRouter, PoolService, Router, BigNumber, Asset } from '@galacticcouncil/sdk';
 import { ZERO, INFINITY, ONE, TradeRouter, PoolService, Router, BigNumber, Asset } from 'hydra-sdk';
-import { IndexObject, PathData, PathNodeValues, SwapExtrinsicContainer, SwapInstruction } from "./../instructions/types.ts";
+import { IndexObject, PathData, PathNodeValues, PathType, SwapExtrinsicContainer, SwapInstruction } from "./../instructions/types.ts";
 import { increaseIndex } from './../instructions/utils.ts';
 import { getSigner } from './../instructions/utils.ts';
 import { getAllNodeProviders } from "@paraspell/sdk";
@@ -26,7 +26,7 @@ const wsLocalChain = localRpcs["HydraDX"]
 
 
 export async function getHdxSwapExtrinsicDynamic(
-  swapType: number,
+  swapType: PathType,
   swapData: PathData,
   startAssetSymbol: string, 
   destAssetSymbol: string, 
@@ -86,7 +86,7 @@ export async function getHdxSwapExtrinsicDynamic(
     let path: Asset[] = assetPathToExecute.map((assetId) => {
       const assetInPath =  allAssets.find((asset) => asset.id == assetId)
       // console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
-      return assetInPath
+      return assetInPath!
     })
     const assetIn = path[0]
     const assetOut = path[path.length - 1]
@@ -104,7 +104,7 @@ export async function getHdxSwapExtrinsicDynamic(
     let swapZero = bestBuy.toTx(number)
     let tx: SubmittableExtrinsic = swapZero.get()
     
-    const route = tx.toHuman()["method"]["args"]["route"]
+    const route = tx.toHuman()!["method"]["args"]["route"]
 
     // console.log(` FN INput amount: ${fnInputAmount.toChainData()}`)
     const txFormatted = await api.tx.router
@@ -142,7 +142,7 @@ export async function getHdxSwapExtrinsicDynamic(
 }
 
 function splitAssetPaths(assetPathSymbols: string[]){
-  let assetPaths = []
+  let assetPaths: [string[]] = [[]]
   let assetCounter = {}
   let previousIndex
   let remainingInstructions: SwapInstruction[] = []

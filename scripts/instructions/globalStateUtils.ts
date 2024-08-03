@@ -114,7 +114,7 @@ export async function setExecutionSuccess(success: boolean, relay: Relay){
             globalState.executionSuccess = true
             globalState.executionAttempts = 0
         } else {
-            globalState.executionAttempts += 1
+            globalState.executionAttempts! += 1
         }
         // let executionSuccess: ExecutionSuccess = {success, executionAttempts: globalState.executionAttempts}
         if(relay == 'kusama'){

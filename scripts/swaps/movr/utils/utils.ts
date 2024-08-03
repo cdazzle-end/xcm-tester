@@ -454,7 +454,7 @@ export async function getTokenContractData(tokenContractAddress: string, walletA
     const tokenContract = new ethers.Contract(tokenContractAddress, tokenAbi, provider)
     const tokenSymbol = await tokenContract.symbol()
     const tokenDecimals = await tokenContract.decimals()
-    let tokenBalance: bigint;
+    let tokenBalance: bigint = BigInt(0);
 
     if(walletAddress){
         tokenBalance = await tokenContract.balanceOf(walletAddress)

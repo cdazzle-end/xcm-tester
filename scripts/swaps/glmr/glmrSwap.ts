@@ -1,5 +1,5 @@
 import '@moonbeam-network/api-augment/moonriver'
-import { calculateSwapAmountRouterFormula, checkForSubstrateToken, getBestSwapRoute, logBatchContractResults, getContractAbi, checkApproval, getTokenContractData, logDoubleSwapResults, getContractAbiIndex, checkAndApproveToken, wrapGlmr, logLiveWalletTransaction, calculateAlgebraSwap, calculateUni3Swap, approveMax, getPoolFeeRate, getGlmrPoolData } from './utils/utils.ts';
+import { calculateSwapAmountRouterFormula, checkForSubstrateToken, getBestSwapRoute, logBatchContractResults, getContractAbi, checkApproval, getTokenContractData, logDoubleSwapResults, getContractAbiIndex, checkAndApproveToken, wrapGlmr, logLiveWalletTransaction, calculateAlgebraSwap, calculateUni3Swap, approveMax, getPoolFeeRate, getGlmrPoolData, isV3Pool } from './utils/utils.ts';
 import { algebraFactoryContract, algebraPoolDeployer, algebraPoolInitHash, algebroPoolInitHashOther as algebraPoolInitHashOther, batchArtifact, batchContractAddress2, boxContractAddress, defaultRpc, dexAbiMap, dexAbis, fraxContractAddress, glmrLpsPath, ignoreList, liveBatchContract, liveWallet3Pk, localRpc, solarFee, swapManagerContractLive, swapManagerContractLocal, test_account, test_account_pk, uniFactoryContract, uniPoolInitHash, usdcContractAddress, wEthContractAddress, wGlmrContractAddress, wormUsdcContractAddress, xcAcaContractAddress, xcDotContractAddress } from './utils/const.ts';
 // import * as mutex from 'mutexify'
 // import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
@@ -18,7 +18,7 @@ import bn, { BigNumber } from 'bignumber.js'
 import {toBigInt} from 'ethers'
 import { BigNumberish } from 'ethers';
 import { BatchSwapParams, ManagerSwapParams, SwapData, SwapSingleParams } from './utils/types.ts';
-import {ChainNonces, IndexObject, PathData, SwapExtrinsicContainer, SwapInstruction} from '../../instructions/types.ts'
+import {ChainNonces, IndexObject, PathData, PathType, SwapExtrinsicContainer, SwapInstruction} from '../../instructions/types.ts'
 import { fileURLToPath } from 'url';
 import { AssetNode } from '../../instructions/AssetNode.ts';
 import { increaseIndex } from '../../instructions/utils.ts';
@@ -176,7 +176,8 @@ async function swapAForB(tokenInContract: string, tokenOutContract:string, dexAd
         } else if (dexAbiIndex == 1){
             swapTx = await batchContract.zenlinkTransferAndSwap(tokenInContract, tokenOutContract, dexAddress, inputAmount, calculatedAmountOut, token0In, token1In, amount0Out, amount1Out, to, reserves0, reserves1, {nonce: inputNonce})
         }
-    } catch (e) {
+        // REVIEW Glmr evm eccxecution error types
+    } catch (e: any) {
         // console.log(dexAddress)\
         console.log(`Token A: ${tokenInContract} Token B: ${tokenOutContract} Dex Address: ${dexAddress} Input Amount: ${inputAmount} Calculated Amount Out: ${calculatedAmountOut} Amount 0 Out: ${amount0Out} Amount 1 Out: ${amount1Out} To: ${to} Data: ${data}`)
         console.log("EEEEEEEEEEEEEEEEEEEEEEEEE")
@@ -316,178 +317,178 @@ async function swapAForB(tokenInContract: string, tokenOutContract:string, dexAd
 //     console.log(`Balance In After: ${balanceInAfter} Balance Out After: ${balanceOutAfter}`)
 
 // }
-async function testXcTokensMoonbase(){
-    let rpc = "https://moonbase-alpha.public.blastapi.io"
-    let provider = new ethers.JsonRpcProvider(localRpc)
-    let wallet = new ethers.Wallet(test_account_pk, provider)
+// async function testXcTokensMoonbase(){
+//     let rpc = "https://moonbase-alpha.public.blastapi.io"
+//     let provider = new ethers.JsonRpcProvider(localRpc)
+//     let wallet = new ethers.Wallet(test_account_pk, provider)
 
-    let xcCsmAddress = "0xFFFFFFFF519811215e05efa24830eebe9c43acd7";
+//     let xcCsmAddress = "0xFFFFFFFF519811215e05efa24830eebe9c43acd7";
 
-    // const tokenContract = new ethers.Contract("0xffFfFFFf519811215E05eFA24830Eebe9c43aCD7", erc20Abi, wallet)
-    // const tokenContract = new ethers.Contract(xcCsmAddress.toLowerCase(), erc20Abi, wallet)
-    // let symbol = await tokenContract.symbol()
-    // console.log(symbol)
-    let xcTokens = getXcTokens()
-    let xcAlphaTokens = []
-    for(const xcToken of xcTokens){
-        try{
-            const tokenContract = new ethers.Contract(xcToken.tokenData.contractAddress.toLowerCase(), erc20Abi, wallet)
-            let symbol = await tokenContract.symbol()
-            console.log(`${xcToken.tokenData.contractAddress}: ${symbol}: true`)
-            let alphaToken = {
-                contractAddress: xcToken.tokenData.contractAddress,
-                localId: xcToken.tokenData.localId,
-                symbol: xcToken.tokenData.symbol,
-                alpha: true
-            }
-            xcAlphaTokens.push(alphaToken)
-        } catch(e){
-            console.log(`${xcToken.tokenData.contractAddress}: ${xcToken.tokenData.symbol}: false`)
-            let alphaToken = {
-                contractAddress: xcToken.tokenData.contractAddress,
-                localId: xcToken.tokenData.localId,
-                symbol: xcToken.tokenData.symbol,
-                alpha: false
-            }
-            xcAlphaTokens.push(alphaToken)
-        }
+//     // const tokenContract = new ethers.Contract("0xffFfFFFf519811215E05eFA24830Eebe9c43aCD7", erc20Abi, wallet)
+//     // const tokenContract = new ethers.Contract(xcCsmAddress.toLowerCase(), erc20Abi, wallet)
+//     // let symbol = await tokenContract.symbol()
+//     // console.log(symbol)
+//     let xcTokens = getXcTokens()
+//     let xcAlphaTokens = []
+//     for(const xcToken of xcTokens){
+//         try{
+//             const tokenContract = new ethers.Contract(xcToken.tokenData.contractAddress.toLowerCase(), erc20Abi, wallet)
+//             let symbol = await tokenContract.symbol()
+//             console.log(`${xcToken.tokenData.contractAddress}: ${symbol}: true`)
+//             let alphaToken = {
+//                 contractAddress: xcToken.tokenData.contractAddress,
+//                 localId: xcToken.tokenData.localId,
+//                 symbol: xcToken.tokenData.symbol,
+//                 alpha: true
+//             }
+//             xcAlphaTokens.push(alphaToken)
+//         } catch(e){
+//             console.log(`${xcToken.tokenData.contractAddress}: ${xcToken.tokenData.symbol}: false`)
+//             let alphaToken = {
+//                 contractAddress: xcToken.tokenData.contractAddress,
+//                 localId: xcToken.tokenData.localId,
+//                 symbol: xcToken.tokenData.symbol,
+//                 alpha: false
+//             }
+//             xcAlphaTokens.push(alphaToken)
+//         }
 
-    }
-    // fs.writeFileSync('./xcAlphaTokens.json', JSON.stringify(xcAlphaTokens, null, 2))
-    // xcTokens.forEach(async (xcToken: any) => {
+//     }
+//     // fs.writeFileSync('./xcAlphaTokens.json', JSON.stringify(xcAlphaTokens, null, 2))
+//     // xcTokens.forEach(async (xcToken: any) => {
 
-    // })
-}
+//     // })
+// }
 
 
 
-async function cleanXcTokenAddresses(){
-    // let dexes = JSON.parse(fs.readFileSync('./dexInfo.json', 'utf8'));
-    let xcTokens = getXcTokens()
-    console.log(xcTokens)
+// async function cleanXcTokenAddresses(){
+//     // let dexes = JSON.parse(fs.readFileSync('./dexInfo.json', 'utf8'));
+//     let xcTokens = getXcTokens()
+//     console.log(xcTokens)
 
-    let contracts = xcTokens.map((asset) => asset.tokenData.contractAddress)
-    console.log(contracts)
+//     let contracts = xcTokens.map((asset) => asset.tokenData.contractAddress)
+//     console.log(contracts)
 
-    let provider = new ethers.JsonRpcProvider(defaultRpc)
-    let ksmContract = new ethers.Contract(xcDotContractAddress, erc20Abi, provider)
-    let address = await ksmContract.getAddress()
-    console.log(address)
-    contracts.forEach(async (contract) => {
-        let tokenContract = new ethers.Contract(contract.toLowerCase(), erc20Abi, provider)
-        let symbol = await tokenContract.symbol()
-        console.log(symbol)
+//     let provider = new ethers.JsonRpcProvider(defaultRpc)
+//     let ksmContract = new ethers.Contract(xcDotContractAddress, erc20Abi, provider)
+//     let address = await ksmContract.getAddress()
+//     console.log(address)
+//     contracts.forEach(async (contract) => {
+//         let tokenContract = new ethers.Contract(contract.toLowerCase(), erc20Abi, provider)
+//         let symbol = await tokenContract.symbol()
+//         console.log(symbol)
 
-        let address = await tokenContract.getAddress()
-        console.log(contract)
-        console.log(address)
-    })
+//         let address = await tokenContract.getAddress()
+//         console.log(contract)
+//         console.log(address)
+//     })
 
-}
-function getXcTokens(){
-    const allAssets = JSON.parse(fs.readFileSync(path.join(__dirname, './allAssets.json'), 'utf8'));
-    let xcAssets = allAssets.filter((asset: any) => asset.tokenData.chain == "2023" && asset.tokenData.symbol.toLowerCase().includes("xc"))
-    return xcAssets
-}
-async function getAllAbis(){
-    // const provider = new ethers.JsonRpcProvider(defaultRpc)
-    const provider = new ethers.JsonRpcProvider(localRpc)
-    const wallet = new ethers.Wallet(test_account_pk, provider)
+// }
+// function getXcTokens(){
+//     const allAssets = JSON.parse(fs.readFileSync(path.join(__dirname, './allAssets.json'), 'utf8'));
+//     let xcAssets = allAssets.filter((asset: any) => asset.tokenData.chain == "2023" && asset.tokenData.symbol.toLowerCase().includes("xc"))
+//     return xcAssets
+// }
+// async function getAllAbis(){
+//     // const provider = new ethers.JsonRpcProvider(defaultRpc)
+//     const provider = new ethers.JsonRpcProvider(localRpc)
+//     const wallet = new ethers.Wallet(test_account_pk, provider)
 
-    let lps = JSON.parse(fs.readFileSync('./lpsCleaned.json', 'utf8'));
-    let dexInfos = []
-    for(const lp of lps){
-        console.log(`${lp.contractAddress}`)
-        try{
-            const contract = new ethers.Contract(lp.contractAddress, dexAbis[0], wallet)
-            const token0 = await contract.token0()
-            const token1 = await contract.token1()
-            const abiIndex = 0;
-            // const token0Contract = new ethers.Contract(token0, erc20Abi, wallet)
-            // const token1Contract = new ethers.Contract(token1, erc20Abi, wallet)
-            // const symbol0 = await token0Contract.symbol()
-            // const symbol1 = await token1Contract.symbol()
-            const [reserves0, reserves1, timestamp] = await contract.getReserves()
-            console.log(`Dex: ${lp.contractAddress} Token0: ${token0} Token1: ${token1}  Reserves0: ${reserves0} Reserves1: ${reserves1} Timestamp: ${timestamp}`)
-            let dexInfo = {
-                contractAddress: lp.contractAddress,
-                token0: token0,
-                token1: token1,
-                abiIndex: abiIndex,
-                // symbol0: symbol0,
-                // symbol1: symbol1,
-            }
-            dexInfos.push(dexInfo)
-        } catch (e){
-            const contract = new ethers.Contract(lp.contractAddress, dexAbis[1], wallet)
-            const token0 = await contract.token0()
-            const token1 = await contract.token1()
-            const abiIndex = 1;
-            // const token0Contract = new ethers.Contract(token0, erc20Abi, wallet)
-            // const token1Contract = new ethers.Contract(token1, erc20Abi, wallet)
-            // const symbol0 = await token0Contract.symbol()
-            // const symbol1 = await token1Contract.symbol()
-            const [reserves0, reserves1, timestamp] = await contract.getReserves()
-            console.log(`Dex: ${lp.contractAddress} Token0: ${token0} Token1: ${token1}  Reserves0: ${reserves0} Reserves1: ${reserves1} Timestamp: ${timestamp}`)
-            let dexInfo = {
-                contractAddress: lp.contractAddress,
-                token0: token0,
-                token1: token1,
-                abiIndex: abiIndex,
-                // symbol0: symbol0,
-                // symbol1: symbol1,
-            }
-            dexInfos.push(dexInfo)
-        }
+//     let lps = JSON.parse(fs.readFileSync('./lpsCleaned.json', 'utf8'));
+//     let dexInfos = []
+//     for(const lp of lps){
+//         console.log(`${lp.contractAddress}`)
+//         try{
+//             const contract = new ethers.Contract(lp.contractAddress, dexAbis[0], wallet)
+//             const token0 = await contract.token0()
+//             const token1 = await contract.token1()
+//             const abiIndex = 0;
+//             // const token0Contract = new ethers.Contract(token0, erc20Abi, wallet)
+//             // const token1Contract = new ethers.Contract(token1, erc20Abi, wallet)
+//             // const symbol0 = await token0Contract.symbol()
+//             // const symbol1 = await token1Contract.symbol()
+//             const [reserves0, reserves1, timestamp] = await contract.getReserves()
+//             console.log(`Dex: ${lp.contractAddress} Token0: ${token0} Token1: ${token1}  Reserves0: ${reserves0} Reserves1: ${reserves1} Timestamp: ${timestamp}`)
+//             let dexInfo = {
+//                 contractAddress: lp.contractAddress,
+//                 token0: token0,
+//                 token1: token1,
+//                 abiIndex: abiIndex,
+//                 // symbol0: symbol0,
+//                 // symbol1: symbol1,
+//             }
+//             dexInfos.push(dexInfo)
+//         } catch (e){
+//             const contract = new ethers.Contract(lp.contractAddress, dexAbis[1], wallet)
+//             const token0 = await contract.token0()
+//             const token1 = await contract.token1()
+//             const abiIndex = 1;
+//             // const token0Contract = new ethers.Contract(token0, erc20Abi, wallet)
+//             // const token1Contract = new ethers.Contract(token1, erc20Abi, wallet)
+//             // const symbol0 = await token0Contract.symbol()
+//             // const symbol1 = await token1Contract.symbol()
+//             const [reserves0, reserves1, timestamp] = await contract.getReserves()
+//             console.log(`Dex: ${lp.contractAddress} Token0: ${token0} Token1: ${token1}  Reserves0: ${reserves0} Reserves1: ${reserves1} Timestamp: ${timestamp}`)
+//             let dexInfo = {
+//                 contractAddress: lp.contractAddress,
+//                 token0: token0,
+//                 token1: token1,
+//                 abiIndex: abiIndex,
+//                 // symbol0: symbol0,
+//                 // symbol1: symbol1,
+//             }
+//             dexInfos.push(dexInfo)
+//         }
         
-    }
+//     }
 
-    fs.writeFileSync('./dexInfoUpdated.json', JSON.stringify(dexInfos, null, 2))
+//     fs.writeFileSync('./dexInfoUpdated.json', JSON.stringify(dexInfos, null, 2))
 
-    let oldDexInfo = JSON.parse(fs.readFileSync('./dexInfo.json', 'utf8'));
+//     let oldDexInfo = JSON.parse(fs.readFileSync('./dexInfo.json', 'utf8'));
     
-    dexInfos.forEach((dexInfo: any) => {
-        let oldDex = oldDexInfo.find((oldDex: any) => oldDex.contractAddress == dexInfo.contractAddress)
-        if(!oldDex){
-            oldDexInfo.push(dexInfo)
-        }
-    })
+//     dexInfos.forEach((dexInfo: any) => {
+//         let oldDex = oldDexInfo.find((oldDex: any) => oldDex.contractAddress == dexInfo.contractAddress)
+//         if(!oldDex){
+//             oldDexInfo.push(dexInfo)
+//         }
+//     })
 
-    fs.writeFileSync('./dexInfoCombined.json', JSON.stringify(oldDexInfo, null, 2))
-    // lps.forEach((lp: any) => {
-    //     console.log(`${lp.contractAddress}`)
-    //     const contract = new ethers.Contract(lp.contractAddress, dexAbis[0], wallet)
-    //     const token0 = await contract.token0()
-    //     const token1 = await contract.token1()
-    //     const [reserves0, reserves1, timestamp] = await contract.getReserves()
-    //     console.log(`Dex: ${lp.contractAddress} Token0: ${token0} Token1: ${token1} Reserves0: ${reserves0} Reserves1: ${reserves1} Timestamp: ${timestamp}`)
-    // })
-}
-async function readDexes(){
-    const dexInfos = JSON.parse(fs.readFileSync('./dexInfo.json', 'utf8'));
-    const dexInfosUpdated = JSON.parse(fs.readFileSync('./dexInfoUpdated.json', 'utf8'));
-    const provider = new ethers.JsonRpcProvider(localRpc)
-    const wallet = new ethers.Wallet(test_account_pk, provider)
+//     fs.writeFileSync('./dexInfoCombined.json', JSON.stringify(oldDexInfo, null, 2))
+//     // lps.forEach((lp: any) => {
+//     //     console.log(`${lp.contractAddress}`)
+//     //     const contract = new ethers.Contract(lp.contractAddress, dexAbis[0], wallet)
+//     //     const token0 = await contract.token0()
+//     //     const token1 = await contract.token1()
+//     //     const [reserves0, reserves1, timestamp] = await contract.getReserves()
+//     //     console.log(`Dex: ${lp.contractAddress} Token0: ${token0} Token1: ${token1} Reserves0: ${reserves0} Reserves1: ${reserves1} Timestamp: ${timestamp}`)
+//     // })
+// }
+// async function readDexes(){
+//     const dexInfos = JSON.parse(fs.readFileSync('./dexInfo.json', 'utf8'));
+//     const dexInfosUpdated = JSON.parse(fs.readFileSync('./dexInfoUpdated.json', 'utf8'));
+//     const provider = new ethers.JsonRpcProvider(localRpc)
+//     const wallet = new ethers.Wallet(test_account_pk, provider)
 
-    dexInfos.forEach((dexInfo: any) => {
-        let matches = 0
-        let match;
-        dexInfosUpdated.forEach((dexInfoUpdated: any) => {
-            if(dexInfo.contractAddress == dexInfoUpdated.contractAddress){
-                if(dexInfo.abiIndex != dexInfoUpdated.abiIndex){
-                    console.log("ABI index mismatch: ", dexInfo.contractAddress)
-                }
-                matches++
-            }
-        })
-        if(matches == 0){
-            console.log("Dex not found: ", dexInfo.contractAddress)
-        } else if (matches > 1){
-            console.log("Multiple dexes found: ", dexInfo.contractAddress)
-        }
-    })
+//     dexInfos.forEach((dexInfo: any) => {
+//         let matches = 0
+//         let match;
+//         dexInfosUpdated.forEach((dexInfoUpdated: any) => {
+//             if(dexInfo.contractAddress == dexInfoUpdated.contractAddress){
+//                 if(dexInfo.abiIndex != dexInfoUpdated.abiIndex){
+//                     console.log("ABI index mismatch: ", dexInfo.contractAddress)
+//                 }
+//                 matches++
+//             }
+//         })
+//         if(matches == 0){
+//             console.log("Dex not found: ", dexInfo.contractAddress)
+//         } else if (matches > 1){
+//             console.log("Multiple dexes found: ", dexInfo.contractAddress)
+//         }
+//     })
 
-}
+// }
 // async function testBatchUnwrap(){
 
 //     let provider = new ethers.JsonRpcProvider(localRpc)
@@ -649,26 +650,20 @@ export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsti
     let glmrWrapAmount = BigInt(0)
 
     // If first token is GLMR, send glmr to manager. Else approve token for manager contract
-    let initialTokenIn = swapInstructions[0].assetNodes[0].assetRegistryObject.tokenData.contractAddress.toLowerCase()
+    let initialTokenIn = swapInstructions[0].assetNodes[0].assetRegistryObject.tokenData.contractAddress!.toLowerCase()
     let initialInputAmount = new FixedPointNumber(swapInstructions[0].assetNodes[0].pathValue, Number.parseInt(swapInstructions[0].assetNodes[0].assetRegistryObject.tokenData.decimals))
-    // let initialInputAmount = BigInt(initialInputAmountFn.toChainData())
     if (initialTokenIn == wGlmrContractAddress.toLowerCase()) {
         glmrWrapAmount = BigInt(initialInputAmount.toChainData())
     } else {
         await checkAndApproveToken(initialTokenIn, wallet, swapManagerContractAddress, BigInt(initialInputAmount.toChainData()))
     }
 
-    // Get lp registry ********* TEMP FIX
-    let lpRegistry = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'));
-
     // Loop through swap instructions and get swap params. Contract takes array of ManagerSwapParms
     let swapParams: ManagerSwapParams[] = swapInstructions.map((swapInstruction: SwapInstruction, index: number) => {
-        // console.log("Swap Instruction: ", index)
-        // console.log(JSON.stringify(swapInstruction, null, 2))
-        
         let swapType, abiIndex;
         console.log("SWAP INSTRUCTION PATH DATA DEX TYPE: ", swapInstruction.pathData.dexType)
 
+        // FIXME
         // NEED TO FIX DEX TYPE IN ARB FINDER
         // For now just query the dex type from lp registry
         let poolData = getGlmrPoolData(swapInstruction.pathData.lpId)
@@ -698,31 +693,22 @@ export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsti
         
         let tokenIn, tokenOut, inputTokenIndex, zeroForOne, poolAddress, feeRate, sqrtPriceLimitX96: bigint, data;
 
-        [tokenIn, tokenOut] = [swapInstruction.assetNodes[0].assetRegistryObject.tokenData.contractAddress.toLowerCase(), swapInstruction.assetNodes[1].assetRegistryObject.tokenData.contractAddress.toLowerCase()]
+        [tokenIn, tokenOut] = [swapInstruction.assetNodes[0].assetRegistryObject.tokenData.contractAddress!.toLowerCase(), swapInstruction.assetNodes[1].assetRegistryObject.tokenData.contractAddress!.toLowerCase()]
         inputTokenIndex = tokenIn.toLowerCase() < tokenOut.toLowerCase() ? 0 : 1;
         let inputAmount = BigInt(ethers.parseUnits(swapInstruction.assetInAmount.toString(), Number.parseInt(swapInstruction.assetNodes[0].assetRegistryObject.tokenData.decimals)))
         let outputAmount = BigInt(ethers.parseUnits(swapInstruction.assetOutTargetAmount.toString(), Number.parseInt(swapInstruction.assetNodes[1].assetRegistryObject.tokenData.decimals)))
-        // glmrWrapAmount = BigInt(0);
+
         poolAddress = swapInstruction.pathData.lpId;
         data = "0x" // Maybe unecessary
         if (swapType == 0) { // V2
+            if(isV3Pool(poolData)) throw new Error("Pool is not V2")
             zeroForOne = false;
             feeRate = 0;
             sqrtPriceLimitX96 = BigInt(0)
-
-            // TEMP FIX ***************** Need to adjust V2 calculations in arb finder
-            // let reserves = poolData.liquidityStats
-            // let inputReserves = inputTokenIndex == 0 ? BigInt(reserves[0]) : BigInt(reserves[1])
-            // let outputReserves = inputTokenIndex == 0 ? BigInt(reserves[1]) : BigInt(reserves[0])
-            // let slippageTolerance = 100
-            // let fee = 30
-            // let calculatedAmountOut = calculateSwapAmountRouterFormula(inputAmount, inputReserves, outputReserves, slippageTolerance, fee)
-
-            // output has been fixed
-            // outputAmount = outputAmount
         } else { // V3
+            if(!isV3Pool(poolData)) throw new Error("Pool is not V3")
             zeroForOne = inputTokenIndex == 0 ? true : false;
-            feeRate = Number.parseInt(poolData.feeRate)
+            feeRate = Number.parseInt(poolData.feeRate!)
             sqrtPriceLimitX96 = zeroForOne ? BigInt(TickMath.MIN_SQRT_RATIO.toString()) + BigInt(1) : BigInt(TickMath.MAX_SQRT_RATIO.toString()) - BigInt(1) // *** PRICE SET TO MAX, MAYBE CHANGE TO ACCURATE
         }
         let managerSwapParams: ManagerSwapParams = {
@@ -803,7 +789,8 @@ export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsti
         assetSymbolOut: destAsset,
         assetAmountIn: initialInputAmount,
         expectedAmountOut: finalOutputAmount,
-        pathType: 1, // glmr swap can have multiple types (V2, V3, stable?) so this property wont be used
+        // REVIEW Glmr path type for swaps
+        pathType: PathType.DexV2, // glmr swap can have multiple types (V2, V3, stable?) so this property wont be used
         pathAmount: swapInstructions[0].assetNodes[0].pathValue,
         api: api,
         glmrSwapParams: swapParams
@@ -831,7 +818,7 @@ export async function executeSingleGlmrSwap(){
     console.log("Swap Amount: ", swapAmount)
 
     
-    let glmrBalance = await testNetWallet.provider.getBalance(testNetWallet.address)
+    let glmrBalance = await testNetWallet.provider!.getBalance(testNetWallet.address)
     console.log("GLMR Balance: ", glmrBalance.toString())
 
     let swapType = 0; //v2
@@ -988,7 +975,7 @@ async function testAlgebraSwapContract(){
     // let wrapReceipt = await wrapGlmr(wallet, wrapGlmrAmount)
     // tokenInBalance = await tokenInContract.balanceOf(wallet.address)
 
-    let walletNativeTokenBalance = await wallet.provider.getBalance(wallet.address)
+    let walletNativeTokenBalance = await wallet.provider!.getBalance(wallet.address)
 
     // let tokenInAmount = ethers.parseUnits("1", 18)
     
@@ -1071,430 +1058,430 @@ async function testAlgebraSwapContract(){
     
 }
 
-async function testUniV3SwapContract(){
-    let rpcProvider = new ethers.JsonRpcProvider(localRpc)
-    let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
-    let tokenInAddress = wGlmrContractAddress
-    let tokenOutAddress = wEthContractAddress
-    let glmrEthUniDex = "0xBa66370D96a9D61AfA66283900b78C1F6Ed02782"
-    let swapContract = swapManagerContractLocal
+// async function testUniV3SwapContract(){
+//     let rpcProvider = new ethers.JsonRpcProvider(localRpc)
+//     let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
+//     let tokenInAddress = wGlmrContractAddress
+//     let tokenOutAddress = wEthContractAddress
+//     let glmrEthUniDex = "0xBa66370D96a9D61AfA66283900b78C1F6Ed02782"
+//     let swapContract = swapManagerContractLocal
 
-    let uniDexAbi = dexAbiMap['uni3']
-    let managerAbi = dexAbiMap['manager']
+//     let uniDexAbi = dexAbiMap['uni3']
+//     let managerAbi = dexAbiMap['manager']
 
-    let tokenInContract = await new ethers.Contract(tokenInAddress, erc20Abi, wallet)
-    let tokenOutContract = await new ethers.Contract(tokenOutAddress, erc20Abi, wallet)
-    let uniDexContract = await new ethers.Contract(glmrEthUniDex, uniDexAbi, wallet)
-    let managerContract = await new ethers.Contract(swapContract, managerAbi, wallet)
+//     let tokenInContract = await new ethers.Contract(tokenInAddress, erc20Abi, wallet)
+//     let tokenOutContract = await new ethers.Contract(tokenOutAddress, erc20Abi, wallet)
+//     let uniDexContract = await new ethers.Contract(glmrEthUniDex, uniDexAbi, wallet)
+//     let managerContract = await new ethers.Contract(swapContract, managerAbi, wallet)
 
-    let tickSpacing = await uniDexContract.tickSpacing()
+//     let tickSpacing = await uniDexContract.tickSpacing()
 
-    let tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-    let tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
+//     let tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+//     let tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
 
-    const WGLMR_TOKEN = new Token(
-        1284,
-        wGlmrContractAddress.toLowerCase(),
-        18,
-        'WGLMR',
-        'Wrapped GLMR'
-      )
+//     const WGLMR_TOKEN = new Token(
+//         1284,
+//         wGlmrContractAddress.toLowerCase(),
+//         18,
+//         'WGLMR',
+//         'Wrapped GLMR'
+//       )
       
-    const WETH_TOKEN = new Token(
-        1284,
-        wEthContractAddress.toLowerCase(),
-        18,
-        'WETH',
-        'Wrapped Ether'
-      )
+//     const WETH_TOKEN = new Token(
+//         1284,
+//         wEthContractAddress.toLowerCase(),
+//         18,
+//         'WETH',
+//         'Wrapped Ether'
+//       )
     
-    let fee = 3000
-    const initHash = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
+//     let fee = 3000
+//     const initHash = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54';
 
-    console.log(`Token 0: ${WETH_TOKEN.address}`)
-    console.log(`Token 1: ${WGLMR_TOKEN.address}`)
-    console.log(`Fee: ${fee}`)
-    console.log(`Factory: ${uniFactoryContract}`)
+//     console.log(`Token 0: ${WETH_TOKEN.address}`)
+//     console.log(`Token 1: ${WGLMR_TOKEN.address}`)
+//     console.log(`Fee: ${fee}`)
+//     console.log(`Factory: ${uniFactoryContract}`)
 
-    let [tokenA, tokenB] = [WETH_TOKEN, WGLMR_TOKEN]
-    const [token0, token1] = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
+//     let [tokenA, tokenB] = [WETH_TOKEN, WGLMR_TOKEN]
+//     const [token0, token1] = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
 
-    console.log(`Token 0: ${token0.address} Token 1: ${token1.address} Fee: ${fee} Factory: ${uniFactoryContract}`)
+//     console.log(`Token 0: ${token0.address} Token 1: ${token1.address} Fee: ${fee} Factory: ${uniFactoryContract}`)
 
-    let coder = ethers.AbiCoder.defaultAbiCoder()
-    // let codeBytes = ethers.solidityPacked(['address', 'address', 'uint24'], [WETH_TOKEN.address, WGLMR_TOKEN.address, 3000])
-    let packedOne = coder.encode(['address', 'address', 'uint24'], [token0.address, token1.address, 3000])
-    // let epPackedOne = defaultAbiCoder.encode(['address', 'address', 'uint24'], [token0.address, token1.address, 3000])
-    console.log(`Packed One: ${packedOne}`)
-    // console.log(`EP Packed One: ${epPackedOne}`)
+//     let coder = ethers.AbiCoder.defaultAbiCoder()
+//     // let codeBytes = ethers.solidityPacked(['address', 'address', 'uint24'], [WETH_TOKEN.address, WGLMR_TOKEN.address, 3000])
+//     let packedOne = coder.encode(['address', 'address', 'uint24'], [token0.address, token1.address, 3000])
+//     // let epPackedOne = defaultAbiCoder.encode(['address', 'address', 'uint24'], [token0.address, token1.address, 3000])
+//     console.log(`Packed One: ${packedOne}`)
+//     // console.log(`EP Packed One: ${epPackedOne}`)
 
-    let poolKeyHash = epKeccak(['bytes'], [packedOne])
-    console.log(`Pool Key Hash: ${poolKeyHash}`)
-    console.log('---------------------------------')
+//     let poolKeyHash = epKeccak(['bytes'], [packedOne])
+//     console.log(`Pool Key Hash: ${poolKeyHash}`)
+//     console.log('---------------------------------')
 
-    // let packedTwo = coder.encode(['bytes', 'address', 'bytes32', 'bytes32'], ['0xff', uniFactoryContract, poolKeyHash, initHash])
-    let packedTwo = concat([ "0xff", ethers.getAddress(uniFactoryContract), poolKeyHash, initHash ])
-    console.log(`Packed Two: ${packedTwo}`)
+//     // let packedTwo = coder.encode(['bytes', 'address', 'bytes32', 'bytes32'], ['0xff', uniFactoryContract, poolKeyHash, initHash])
+//     let packedTwo = concat([ "0xff", ethers.getAddress(uniFactoryContract), poolKeyHash, initHash ])
+//     console.log(`Packed Two: ${packedTwo}`)
 
-    let packedTwoHex = ethers.hexlify(packedTwo)
-    console.log(`Packed Two Hex: ${packedTwoHex}`)
+//     let packedTwoHex = ethers.hexlify(packedTwo)
+//     console.log(`Packed Two Hex: ${packedTwoHex}`)
 
-    let poolAddressHash = epKeccak(['bytes'], [packedTwo])
-    console.log(`EP Pool Address Hash: ${poolAddressHash}`)
-    console.log('---------------------------------')
-    let epPoolAddress = getAddress(dataSlice(poolAddressHash, 12))
-    // let epPoolAddressSliced = ethers.getAddress()
-    console.log(`EP Pool Address Hex: ${epPoolAddress}`)
+//     let poolAddressHash = epKeccak(['bytes'], [packedTwo])
+//     console.log(`EP Pool Address Hash: ${poolAddressHash}`)
+//     console.log('---------------------------------')
+//     let epPoolAddress = getAddress(dataSlice(poolAddressHash, 12))
+//     // let epPoolAddressSliced = ethers.getAddress()
+//     console.log(`EP Pool Address Hex: ${epPoolAddress}`)
 
-    let poolParams = {
-        factoryAddress: uniFactoryContract,
-        tokenA: token0,
-        tokenB: token1,
-        fee: fee,
-        initCodeHashManualOverride: initHash
-    }
+//     let poolParams = {
+//         factoryAddress: uniFactoryContract,
+//         tokenA: token0,
+//         tokenB: token1,
+//         fee: fee,
+//         initCodeHashManualOverride: initHash
+//     }
 
-    let computedPoolAddress = computePoolAddress(poolParams)
-    console.log(`Computed address: ${computedPoolAddress}`)
+//     let computedPoolAddress = computePoolAddress(poolParams)
+//     console.log(`Computed address: ${computedPoolAddress}`)
 
-    const poolAddressCalculated = Pool.getAddress(WETH_TOKEN, WGLMR_TOKEN, 3000, initHash, uniFactoryContract)
+//     const poolAddressCalculated = Pool.getAddress(WETH_TOKEN, WGLMR_TOKEN, 3000, initHash, uniFactoryContract)
 
-    console.log(`Pool Address Calculated: ${poolAddressCalculated}`)
-
-
-    let wrapGlmrAmount = ethers.parseUnits("1000", 18)
+//     console.log(`Pool Address Calculated: ${poolAddressCalculated}`)
 
 
-    // console.log("Wrapping glmr")
-    // let wrapReceipt = await wrapGlmr(wallet, wrapGlmrAmount)
-    // tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-
-    let walletNativeTokenBalance = await wallet.provider.getBalance(wallet.address)
-
-    console.log(`1 WALLET | Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
-    console.log(`- WALLET | Native Token Balance: ${walletNativeTokenBalance}`)
-
-    let tokenInAmount = ethers.parseUnits("1", 18)
-
-    let calcResult = await calculateUni3Swap(tokenInAddress, tokenOutAddress, 1, glmrEthUniDex)
-
-    console.log(calcResult)
-
-    // let amountSpecifiedMinusSlip = BigInt(calcResult.outputAmount.minus(calcResult.outputAmount.times(new bn(0.02))).integerValue().toFixed())
-
-    let gasLimit = BigInt(30000000)
-
-    let managerNativeTokenBalance = await wallet.provider.getBalance(swapManagerContractLocal)
-    console.log(`2 MANAGER | Native Token Balance: ${(managerNativeTokenBalance)}`)
-
-    let oneGlmr = ethers.parseUnits("1", 18)
-    let tenGlmr = ethers.parseUnits("10", 18)
+//     let wrapGlmrAmount = ethers.parseUnits("1000", 18)
 
 
+//     // console.log("Wrapping glmr")
+//     // let wrapReceipt = await wrapGlmr(wallet, wrapGlmrAmount)
+//     // tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+
+//     let walletNativeTokenBalance = await wallet.provider.getBalance(wallet.address)
+
+//     console.log(`1 WALLET | Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
+//     console.log(`- WALLET | Native Token Balance: ${walletNativeTokenBalance}`)
+
+//     let tokenInAmount = ethers.parseUnits("1", 18)
+
+//     let calcResult = await calculateUni3Swap(tokenInAddress, tokenOutAddress, 1, glmrEthUniDex)
+
+//     console.log(calcResult)
+
+//     // let amountSpecifiedMinusSlip = BigInt(calcResult.outputAmount.minus(calcResult.outputAmount.times(new bn(0.02))).integerValue().toFixed())
+
+//     let gasLimit = BigInt(30000000)
+
+//     let managerNativeTokenBalance = await wallet.provider.getBalance(swapManagerContractLocal)
+//     console.log(`2 MANAGER | Native Token Balance: ${(managerNativeTokenBalance)}`)
+
+//     let oneGlmr = ethers.parseUnits("1", 18)
+//     let tenGlmr = ethers.parseUnits("10", 18)
 
 
-    let managerTokenInBalance = await tokenInContract.balanceOf(swapManagerContractLocal)
-    console.log(`4 MANAGER | Token In Balance: ${(managerTokenInBalance)}`)
 
-    let transferTx = await tokenInContract.transfer(swapManagerContractLocal, oneGlmr);
-    let transferReceipt = await transferTx.wait()
 
-    managerTokenInBalance = await tokenInContract.balanceOf(swapManagerContractLocal)
-    console.log(`5 MANAGER | Token In Balance ${managerTokenInBalance}`)
+//     let managerTokenInBalance = await tokenInContract.balanceOf(swapManagerContractLocal)
+//     console.log(`4 MANAGER | Token In Balance: ${(managerTokenInBalance)}`)
+
+//     let transferTx = await tokenInContract.transfer(swapManagerContractLocal, oneGlmr);
+//     let transferReceipt = await transferTx.wait()
+
+//     managerTokenInBalance = await tokenInContract.balanceOf(swapManagerContractLocal)
+//     console.log(`5 MANAGER | Token In Balance ${managerTokenInBalance}`)
     
-    let allowance = await tokenInContract.allowance(wallet.address, swapManagerContractLocal)
+//     let allowance = await tokenInContract.allowance(wallet.address, swapManagerContractLocal)
 
-    console.log(`6 MANAGER | Token in Allowance: ${allowance}`)
+//     console.log(`6 MANAGER | Token in Allowance: ${allowance}`)
 
-    let approved = await approveMax(tokenInAddress, wallet, swapManagerContractLocal)
-    let approvedOut = await approveMax(tokenOutAddress, wallet, swapManagerContractLocal)
+//     let approved = await approveMax(tokenInAddress, wallet, swapManagerContractLocal)
+//     let approvedOut = await approveMax(tokenOutAddress, wallet, swapManagerContractLocal)
     
-    tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-    tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
+//     tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+//     tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
 
-    console.log(`7 WALLET | Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
+//     console.log(`7 WALLET | Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
 
-    // let payer = recipient
-    let poolAddress: ethers.AddressLike = glmrEthUniDex
-    let zeroForOne: boolean = false
-    let amountSpecified = BigInt(tokenInAmount)
-    let sqrtPriceLimit: bigint = BigInt(TickMath.MAX_SQRT_RATIO.toString()) - BigInt(1)
+//     // let payer = recipient
+//     let poolAddress: ethers.AddressLike = glmrEthUniDex
+//     let zeroForOne: boolean = false
+//     let amountSpecified = BigInt(tokenInAmount)
+//     let sqrtPriceLimit: bigint = BigInt(TickMath.MAX_SQRT_RATIO.toString()) - BigInt(1)
 
     
-    let recipient: ethers.AddressLike = wallet.address
-    // let swapCalldata = coder.encode(
-    //     ["address", "address", "address"],
-    //     [tokenInAddress, tokenOutAddress, recipient]
-    //   );
+//     let recipient: ethers.AddressLike = wallet.address
+//     // let swapCalldata = coder.encode(
+//     //     ["address", "address", "address"],
+//     //     [tokenInAddress, tokenOutAddress, recipient]
+//     //   );
 
-    // console.log(`manager swap params: ${poolAddress} | ${zeroForOne} | ${amountSpecified} | ${sqrtPriceLimit} | ${swapCalldata}`)
+//     // console.log(`manager swap params: ${poolAddress} | ${zeroForOne} | ${amountSpecified} | ${sqrtPriceLimit} | ${swapCalldata}`)
 
-    let singleSwapParams: SwapSingleParams = {
-        tokenIn: tokenInAddress,
-        tokenOut: tokenOutAddress,
-        fee: BigInt(fee),
-        amountIn: amountSpecified,
-        sqrtPriceLimitX96: sqrtPriceLimit,
-        poolAddress: poolAddress,
-    } 
+//     let singleSwapParams: SwapSingleParams = {
+//         tokenIn: tokenInAddress,
+//         tokenOut: tokenOutAddress,
+//         fee: BigInt(fee),
+//         amountIn: amountSpecified,
+//         sqrtPriceLimitX96: sqrtPriceLimit,
+//         poolAddress: poolAddress,
+//     } 
 
-    managerTokenInBalance = await tokenInContract.balanceOf(swapManagerContractLocal)
-    console.log(`8 MANAGER | Token In Balance ${managerTokenInBalance}`)
+//     managerTokenInBalance = await tokenInContract.balanceOf(swapManagerContractLocal)
+//     console.log(`8 MANAGER | Token In Balance ${managerTokenInBalance}`)
 
-    let testTransferTx = await managerContract.transferToContract(oneGlmr, tokenInAddress);
-    let testTransferReceipt = await testTransferTx.wait()
+//     let testTransferTx = await managerContract.transferToContract(oneGlmr, tokenInAddress);
+//     let testTransferReceipt = await testTransferTx.wait()
 
-    managerTokenInBalance = await tokenInContract.balanceOf(swapManagerContractLocal)
-    console.log(`9 MANAGER | Token In Balance ${managerTokenInBalance}`)
+//     managerTokenInBalance = await tokenInContract.balanceOf(swapManagerContractLocal)
+//     console.log(`9 MANAGER | Token In Balance ${managerTokenInBalance}`)
 
-    console.log(JSON.stringify(singleSwapParams))
-    // let  swapTx = await managerContract.swap(poolAddress, zeroForOne, amountSpecified, sqrtPriceLimit, swapCalldata)
-    let swapTx = await managerContract.swapSingle(singleSwapParams);
-    let swapTxReceipt = swapTx.wait()
+//     console.log(JSON.stringify(singleSwapParams))
+//     // let  swapTx = await managerContract.swap(poolAddress, zeroForOne, amountSpecified, sqrtPriceLimit, swapCalldata)
+//     let swapTx = await managerContract.swapSingle(singleSwapParams);
+//     let swapTxReceipt = swapTx.wait()
 
-    console.log(`Swap Tx Receipt: ${swapTxReceipt}`)
+//     console.log(`Swap Tx Receipt: ${swapTxReceipt}`)
 
-    // const deadline = Math.floor(Date.now() / 1000) + 900;
-    //   let swapTx = await uniDexContract.swap(recipient, zeroForOne, amountSpecified.toString(), sqrtPriceLimit, '0x', {value: oneGlmr, deadline: deadline, gasLimit: 10000000, maxPriorityFeePerGas: 853687807, maxFeePerGas: ethers.parseUnits("100", "gwei")})
+//     // const deadline = Math.floor(Date.now() / 1000) + 900;
+//     //   let swapTx = await uniDexContract.swap(recipient, zeroForOne, amountSpecified.toString(), sqrtPriceLimit, '0x', {value: oneGlmr, deadline: deadline, gasLimit: 10000000, maxPriorityFeePerGas: 853687807, maxFeePerGas: ethers.parseUnits("100", "gwei")})
 
   
       
-    tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-    tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
+//     tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+//     tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
 
-    console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
-}
+//     console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
+// }
 
-async function testUniV3Swap(){
-    let rpcProvider = new ethers.JsonRpcProvider(localRpc)
-    let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
-    let tokenIn = wGlmrContractAddress
-    let tokenOut = wEthContractAddress
-    let glmrEthUniDex = "0xBa66370D96a9D61AfA66283900b78C1F6Ed02782".toLowerCase()
+// async function testUniV3Swap(){
+//     let rpcProvider = new ethers.JsonRpcProvider(localRpc)
+//     let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
+//     let tokenIn = wGlmrContractAddress
+//     let tokenOut = wEthContractAddress
+//     let glmrEthUniDex = "0xBa66370D96a9D61AfA66283900b78C1F6Ed02782".toLowerCase()
 
-    let uniDexAbi = dexAbiMap['uni3']
+//     let uniDexAbi = dexAbiMap['uni3']
 
-    let tokenInContract = await new ethers.Contract(tokenIn, erc20Abi, wallet)
-    let tokenOutContract = await new ethers.Contract(tokenOut, erc20Abi, wallet)
-    let uniDexContract = await new ethers.Contract(glmrEthUniDex, uniDexAbi, wallet)
+//     let tokenInContract = await new ethers.Contract(tokenIn, erc20Abi, wallet)
+//     let tokenOutContract = await new ethers.Contract(tokenOut, erc20Abi, wallet)
+//     let uniDexContract = await new ethers.Contract(glmrEthUniDex, uniDexAbi, wallet)
 
-    let tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-    let tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
+//     let tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+//     let tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
 
-    console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
+//     console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
 
-    let tokenInAmount = ethers.parseUnits("1", 18)
+//     let tokenInAmount = ethers.parseUnits("1", 18)
 
-    let calcResult = await calculateUni3Swap(tokenIn, tokenOut, 1, glmrEthUniDex)
+//     let calcResult = await calculateUni3Swap(tokenIn, tokenOut, 1, glmrEthUniDex)
 
-    console.log(calcResult)
+//     console.log(calcResult)
 
-    // let amountSpecifiedMinusSlip = BigInt(calcResult.outputAmount.minus(calcResult.outputAmount.times(new bn(0.02))).integerValue().toFixed())
-    let amountSpecified = BigInt(tokenInAmount)
-    let recipient: ethers.AddressLike = wallet.address
-    let zeroForOne = false
-    // let sqrtPriceLimit = BigInt(calcResult.targetPrice.toFixed())
-    let sqrtPriceLimit = BigInt(TickMath.MAX_SQRT_RATIO.toString()) - BigInt(1)
-    let gasLimit = BigInt(30000000)
+//     // let amountSpecifiedMinusSlip = BigInt(calcResult.outputAmount.minus(calcResult.outputAmount.times(new bn(0.02))).integerValue().toFixed())
+//     let amountSpecified = BigInt(tokenInAmount)
+//     let recipient: ethers.AddressLike = wallet.address
+//     let zeroForOne = false
+//     // let sqrtPriceLimit = BigInt(calcResult.targetPrice.toFixed())
+//     let sqrtPriceLimit = BigInt(TickMath.MAX_SQRT_RATIO.toString()) - BigInt(1)
+//     let gasLimit = BigInt(30000000)
     
-    // let sqrtPriceLimit = BigInt(0)
+//     // let sqrtPriceLimit = BigInt(0)
 
-    let dexTokenInBalance = await tokenInContract.balanceOf(glmrEthUniDex)
-    console.log(`Dex token In Balance ${(dexTokenInBalance)}`)
+//     let dexTokenInBalance = await tokenInContract.balanceOf(glmrEthUniDex)
+//     console.log(`Dex token In Balance ${(dexTokenInBalance)}`)
 
-    let oneGlmr = ethers.parseUnits("1", 18)
-    let transferTx = await tokenInContract.transfer(glmrEthUniDex, oneGlmr);
-    let transferReceipt = await transferTx.wait()
+//     let oneGlmr = ethers.parseUnits("1", 18)
+//     let transferTx = await tokenInContract.transfer(glmrEthUniDex, oneGlmr);
+//     let transferReceipt = await transferTx.wait()
 
-    dexTokenInBalance = await tokenInContract.balanceOf(glmrEthUniDex)
-    console.log(`Dex token In Balance ${dexTokenInBalance}`)
+//     dexTokenInBalance = await tokenInContract.balanceOf(glmrEthUniDex)
+//     console.log(`Dex token In Balance ${dexTokenInBalance}`)
     
-    let approved = await checkAndApproveToken(tokenIn, wallet, glmrEthUniDex, oneGlmr)
-    let approvedOut = await checkAndApproveToken(tokenOut, wallet, glmrEthUniDex, BigInt(calcResult.outputAmount.toFixed()))
-
-    
-    tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-    tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
-
-    console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
-
-    console.log(`Swao params: ${recipient} ${zeroForOne} ${amountSpecified} ${sqrtPriceLimit} 0x`)
-    const deadline = Math.floor(Date.now() / 1000) + 900;
-    let swapTx = await uniDexContract.swap(glmrEthUniDex, zeroForOne, amountSpecified.toString(), sqrtPriceLimit, '0x', {value: oneGlmr, deadline: deadline, gasLimit: 10000000, maxPriorityFeePerGas: 853687807, maxFeePerGas: ethers.parseUnits("100", "gwei")})
-    let swapTxReceipt = swapTx.wait()
+//     let approved = await checkAndApproveToken(tokenIn, wallet, glmrEthUniDex, oneGlmr)
+//     let approvedOut = await checkAndApproveToken(tokenOut, wallet, glmrEthUniDex, BigInt(calcResult.outputAmount.toFixed()))
 
     
-    tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-    tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
+//     tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+//     tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
 
-    console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
+//     console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
 
-
-}
-async function liveUniV3Swap(){
-    //Live network and live wallet
-    let rpcProvider = new ethers.JsonRpcProvider(defaultRpc)
-    let wallet = new ethers.Wallet(live_wallet_3, rpcProvider)
-    // let rpcProvider = new ethers.JsonRpcProvider(localRpc)
-    // let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
-    let tokenIn = wGlmrContractAddress
-    let tokenOut = wEthContractAddress
-    let glmrEthUniDex = "0xBa66370D96a9D61AfA66283900b78C1F6Ed02782"
-
-    let uniDexAbi = dexAbiMap['uni3']
-
-    let tokenInContract = await new ethers.Contract(tokenIn, erc20Abi, wallet)
-    let tokenOutContract = await new ethers.Contract(tokenOut, erc20Abi, wallet)
-    let uniDexContract = await new ethers.Contract(glmrEthUniDex, uniDexAbi, wallet)
-
-    let tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-    let tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
-
-    console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
-
-    let wrapGlmrAmount = ethers.parseUnits("4", 18)
-
-    console.log("Wrapping glmr")
-    let wrapReceipt = await wrapGlmr(wallet, wrapGlmrAmount)
-    tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-
-    console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
-
-
-    let tokenInAmount = ethers.parseUnits("0.1", 18)
-
-    let calcResult = await calculateUni3Swap(tokenIn, tokenOut, 1, glmrEthUniDex)
-
-    console.log(calcResult)
-
-    // let amountSpecifiedMinusSlip = BigInt(calcResult.outputAmount.minus(calcResult.outputAmount.times(new bn(0.02))).integerValue().toFixed())
-    let amountSpecified = tokenInAmount
-    let recipient: ethers.AddressLike = wallet.address
-    let zeroForOne = false
-    let sqrtPriceLimit = BigInt(calcResult.targetPrice.toFixed())
-    let gasLimit = BigInt(30000000)
-    
-    // let sqrtPriceLimit = BigInt(0)
-
-    let dexTokenInBalance = await tokenInContract.balanceOf(glmrEthUniDex)
-    console.log(`Dex token In Balance ${(dexTokenInBalance)}`)
-
-    // let oneGlmr = ethers.parseUnits("1", 18)
-    // let transferTx = await tokenInContract.transfer(glmrEthUniDex, tokenInAmount);
-    // let transferReceipt = await transferTx.wait()
-
-    dexTokenInBalance = await tokenInContract.balanceOf(glmrEthUniDex)
-    console.log(`Dex token In Balance ${dexTokenInBalance}`)
-    
-    let approved = await checkAndApproveToken(tokenIn, wallet, glmrEthUniDex, tokenInAmount)
+//     console.log(`Swao params: ${recipient} ${zeroForOne} ${amountSpecified} ${sqrtPriceLimit} 0x`)
+//     const deadline = Math.floor(Date.now() / 1000) + 900;
+//     let swapTx = await uniDexContract.swap(glmrEthUniDex, zeroForOne, amountSpecified.toString(), sqrtPriceLimit, '0x', {value: oneGlmr, deadline: deadline, gasLimit: 10000000, maxPriorityFeePerGas: 853687807, maxFeePerGas: ethers.parseUnits("100", "gwei")})
+//     let swapTxReceipt = swapTx.wait()
 
     
-    tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-    tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
+//     tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+//     tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
 
-    console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
+//     console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
 
-    let swapTx = await uniDexContract.swap(recipient, zeroForOne, amountSpecified, sqrtPriceLimit, '0x')
-    let swapTxReceipt = swapTx.wait()
+
+// }
+// async function liveUniV3Swap(){
+//     //Live network and live wallet
+//     let rpcProvider = new ethers.JsonRpcProvider(defaultRpc)
+//     let wallet = new ethers.Wallet(live_wallet_3, rpcProvider)
+//     // let rpcProvider = new ethers.JsonRpcProvider(localRpc)
+//     // let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
+//     let tokenIn = wGlmrContractAddress
+//     let tokenOut = wEthContractAddress
+//     let glmrEthUniDex = "0xBa66370D96a9D61AfA66283900b78C1F6Ed02782"
+
+//     let uniDexAbi = dexAbiMap['uni3']
+
+//     let tokenInContract = await new ethers.Contract(tokenIn, erc20Abi, wallet)
+//     let tokenOutContract = await new ethers.Contract(tokenOut, erc20Abi, wallet)
+//     let uniDexContract = await new ethers.Contract(glmrEthUniDex, uniDexAbi, wallet)
+
+//     let tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+//     let tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
+
+//     console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
+
+//     let wrapGlmrAmount = ethers.parseUnits("4", 18)
+
+//     console.log("Wrapping glmr")
+//     let wrapReceipt = await wrapGlmr(wallet, wrapGlmrAmount)
+//     tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+
+//     console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
+
+
+//     let tokenInAmount = ethers.parseUnits("0.1", 18)
+
+//     let calcResult = await calculateUni3Swap(tokenIn, tokenOut, 1, glmrEthUniDex)
+
+//     console.log(calcResult)
+
+//     // let amountSpecifiedMinusSlip = BigInt(calcResult.outputAmount.minus(calcResult.outputAmount.times(new bn(0.02))).integerValue().toFixed())
+//     let amountSpecified = tokenInAmount
+//     let recipient: ethers.AddressLike = wallet.address
+//     let zeroForOne = false
+//     let sqrtPriceLimit = BigInt(calcResult.targetPrice.toFixed())
+//     let gasLimit = BigInt(30000000)
+    
+//     // let sqrtPriceLimit = BigInt(0)
+
+//     let dexTokenInBalance = await tokenInContract.balanceOf(glmrEthUniDex)
+//     console.log(`Dex token In Balance ${(dexTokenInBalance)}`)
+
+//     // let oneGlmr = ethers.parseUnits("1", 18)
+//     // let transferTx = await tokenInContract.transfer(glmrEthUniDex, tokenInAmount);
+//     // let transferReceipt = await transferTx.wait()
+
+//     dexTokenInBalance = await tokenInContract.balanceOf(glmrEthUniDex)
+//     console.log(`Dex token In Balance ${dexTokenInBalance}`)
+    
+//     let approved = await checkAndApproveToken(tokenIn, wallet, glmrEthUniDex, tokenInAmount)
 
     
-    tokenInBalance = await tokenInContract.balanceOf(wallet.address)
-    tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
+//     tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+//     tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
 
-    console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
+//     console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
 
-
-}
-
-
-async function testV3Swaps(){
-    
-    // let rpcProvider = new LoggingProvider(localRpc)
-    let rpcProvider = new ethers.JsonRpcProvider(localRpc)
-    let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
-    let algebraGlmrTracDex = "0xfd6f6e8ab476151d5fda98c62f70f1085a329fc2"
-    let algebraGlmrStellaDex = "0x1b11D991f32FB59Ec4EE744de68aD65d9e85b2d2"
-    let glmrContractAddress = "0xAcc15dC74880C9944775448304B263D191c6077F"
-    let tracContractAddress = "0xed80FEf95392bB8c0e29cF75BE356E491d0d7661"
-    let stellaContractAddress = "0x0E358838ce72d5e61E0018a2ffaC4bEC5F4c88d2"
+//     let swapTx = await uniDexContract.swap(recipient, zeroForOne, amountSpecified, sqrtPriceLimit, '0x')
+//     let swapTxReceipt = swapTx.wait()
 
     
-    let tokenOut = stellaContractAddress;
-    let tokenOutContract = new ethers.Contract(tokenOut, erc20Abi, wallet)
-    let tokenIn = glmrContractAddress;
-    let tokenInContract = new ethers.Contract(tokenIn, erc20Abi, wallet)
+//     tokenInBalance = await tokenInContract.balanceOf(wallet.address)
+//     tokenOutBalance = await tokenOutContract.balanceOf(wallet.address)
 
-    let algebraDex = algebraGlmrStellaDex
-    let wrapAmount = ethers.parseUnits("100", 18)
-    // let wrapReceipt = await wrapGlmr(wallet, wrapAmount)
-
-    let glmrContract = new ethers.Contract(glmrContractAddress, erc20Abi, wallet)
-    // let stellaContract = new ethers.Contract(tracContractAddress, erc20Abi, wallet)
-
-    let wrappedGlmrBalance = await glmrContract.balanceOf(wallet.address)
-    let nativeGlmrBalance = await wallet.provider.getBalance(wallet.address)
-    console.log(`Wrapped GLMR Balance: ${wrappedGlmrBalance}`)
-    console.log(`Native GLMR Balance: ${nativeGlmrBalance}`)
-
-    // let inputAmount
-    let calcResult = await calculateAlgebraSwap(tokenIn, tokenOut, 1, algebraDex)
-    console.log(calcResult)
-    let oneGlmr = ethers.parseUnits("1", 18)
-    let tenGlmr = ethers.parseUnits("10", 18)
-    console.log(`Min sqrt ratio: ${TickMath.MIN_SQRT_RATIO}`)
-    console.log(`Max sqrt ratio: ${TickMath.MAX_SQRT_RATIO}`)
-    let amountRequiredMinusSlip = calcResult.outputAmount.minus(calcResult.outputAmount.times(new bn(0.02))).integerValue()
-    // let rpcProvider = new ethers.JsonRpcProvider(localRpc)
-    // let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
-    let testOutputAmount = BigInt(1887401983561990843)
-    let testPriceLimit = BigInt(4295128740)
-    let recipient: ethers.AddressLike = wallet.address
-    let zeroToOne = true
-    let amountRequired = BigInt(amountRequiredMinusSlip.toFixed())
-    // let amountRequired = testOutputAmount
-    // let sqrtPriceLimit = BigInt(calcResult.targetPrice.toFixed())
-    // let lowestSqrtPriceLimit = BigInt(TickMath.MIN_SQRT_RATIO.toString())
-    // let sqrtPriceLimit = BigInt(TickMath.MIN_SQRT_RATIO.toString())
-    // let sqrtPriceLimit = testPriceLimit
-    let sqrtPriceLimit = BigInt(calcResult.targetPrice.toFixed())
-    let data = '0x'
+//     console.log(`Token In Balance: ${tokenInBalance} Token Out Balance: ${tokenOutBalance}`)
 
 
-    let algebraDexAbi = dexAbiMap['algebra'];
-
-    let outputTokenBalance = await tokenOutContract.balanceOf(wallet.address)
-    console.log(`Output Token Balance: ${outputTokenBalance}`)
-
-    let approved = await checkAndApproveToken(glmrContractAddress, wallet, algebraDex, oneGlmr)
-    let checkedApproval = await checkApproval(glmrContract, wallet.address, algebraDex)
-
-    let dexInBalance = await tokenInContract.balanceOf(algebraDex)
-    let dexOutBalance = await tokenOutContract.balanceOf(algebraDex)
-    console.log(`Dex In Balance: ${dexInBalance} Dex Out Balance: ${dexOutBalance}`)
-
-    let transferTx = await glmrContract.transfer(algebraDex, oneGlmr)
-    let transferReceipt = await transferTx.wait()
-
-    dexInBalance = await tokenInContract.balanceOf(algebraDex)
-    console.log(`Dex In Balance: ${dexInBalance}`)
-
-    let dexContract = new ethers.Contract(algebraDex, algebraDexAbi, wallet)
-    let swapTx = await dexContract.swap(recipient, zeroToOne, amountRequired, sqrtPriceLimit, data)
-    let receipt = swapTx.wait()
-
-    console.log(receipt)
+// }
 
 
-    outputTokenBalance = await tokenOutContract.balanceOf(wallet.address)
-    wrappedGlmrBalance = await glmrContract.balanceOf(wallet.address)
+// async function testV3Swaps(){
+    
+//     // let rpcProvider = new LoggingProvider(localRpc)
+//     let rpcProvider = new ethers.JsonRpcProvider(localRpc)
+//     let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
+//     let algebraGlmrTracDex = "0xfd6f6e8ab476151d5fda98c62f70f1085a329fc2"
+//     let algebraGlmrStellaDex = "0x1b11D991f32FB59Ec4EE744de68aD65d9e85b2d2"
+//     let glmrContractAddress = "0xAcc15dC74880C9944775448304B263D191c6077F"
+//     let tracContractAddress = "0xed80FEf95392bB8c0e29cF75BE356E491d0d7661"
+//     let stellaContractAddress = "0x0E358838ce72d5e61E0018a2ffaC4bEC5F4c88d2"
 
-    console.log(`Output Token Balance: ${outputTokenBalance}`)
-    console.log(`Wrapped GLMR Balance: ${wrappedGlmrBalance}`)
+    
+//     let tokenOut = stellaContractAddress;
+//     let tokenOutContract = new ethers.Contract(tokenOut, erc20Abi, wallet)
+//     let tokenIn = glmrContractAddress;
+//     let tokenInContract = new ethers.Contract(tokenIn, erc20Abi, wallet)
 
-    process.exit(0)
+//     let algebraDex = algebraGlmrStellaDex
+//     let wrapAmount = ethers.parseUnits("100", 18)
+//     // let wrapReceipt = await wrapGlmr(wallet, wrapAmount)
+
+//     let glmrContract = new ethers.Contract(glmrContractAddress, erc20Abi, wallet)
+//     // let stellaContract = new ethers.Contract(tracContractAddress, erc20Abi, wallet)
+
+//     let wrappedGlmrBalance = await glmrContract.balanceOf(wallet.address)
+//     let nativeGlmrBalance = await wallet.provider.getBalance(wallet.address)
+//     console.log(`Wrapped GLMR Balance: ${wrappedGlmrBalance}`)
+//     console.log(`Native GLMR Balance: ${nativeGlmrBalance}`)
+
+//     // let inputAmount
+//     let calcResult = await calculateAlgebraSwap(tokenIn, tokenOut, 1, algebraDex)
+//     console.log(calcResult)
+//     let oneGlmr = ethers.parseUnits("1", 18)
+//     let tenGlmr = ethers.parseUnits("10", 18)
+//     console.log(`Min sqrt ratio: ${TickMath.MIN_SQRT_RATIO}`)
+//     console.log(`Max sqrt ratio: ${TickMath.MAX_SQRT_RATIO}`)
+//     let amountRequiredMinusSlip = calcResult.outputAmount.minus(calcResult.outputAmount.times(new bn(0.02))).integerValue()
+//     // let rpcProvider = new ethers.JsonRpcProvider(localRpc)
+//     // let wallet = new ethers.Wallet(test_account_pk, rpcProvider)
+//     let testOutputAmount = BigInt(1887401983561990843)
+//     let testPriceLimit = BigInt(4295128740)
+//     let recipient: ethers.AddressLike = wallet.address
+//     let zeroToOne = true
+//     let amountRequired = BigInt(amountRequiredMinusSlip.toFixed())
+//     // let amountRequired = testOutputAmount
+//     // let sqrtPriceLimit = BigInt(calcResult.targetPrice.toFixed())
+//     // let lowestSqrtPriceLimit = BigInt(TickMath.MIN_SQRT_RATIO.toString())
+//     // let sqrtPriceLimit = BigInt(TickMath.MIN_SQRT_RATIO.toString())
+//     // let sqrtPriceLimit = testPriceLimit
+//     let sqrtPriceLimit = BigInt(calcResult.targetPrice.toFixed())
+//     let data = '0x'
 
 
-}
+//     let algebraDexAbi = dexAbiMap['algebra'];
+
+//     let outputTokenBalance = await tokenOutContract.balanceOf(wallet.address)
+//     console.log(`Output Token Balance: ${outputTokenBalance}`)
+
+//     let approved = await checkAndApproveToken(glmrContractAddress, wallet, algebraDex, oneGlmr)
+//     let checkedApproval = await checkApproval(glmrContract, wallet.address, algebraDex)
+
+//     let dexInBalance = await tokenInContract.balanceOf(algebraDex)
+//     let dexOutBalance = await tokenOutContract.balanceOf(algebraDex)
+//     console.log(`Dex In Balance: ${dexInBalance} Dex Out Balance: ${dexOutBalance}`)
+
+//     let transferTx = await glmrContract.transfer(algebraDex, oneGlmr)
+//     let transferReceipt = await transferTx.wait()
+
+//     dexInBalance = await tokenInContract.balanceOf(algebraDex)
+//     console.log(`Dex In Balance: ${dexInBalance}`)
+
+//     let dexContract = new ethers.Contract(algebraDex, algebraDexAbi, wallet)
+//     let swapTx = await dexContract.swap(recipient, zeroToOne, amountRequired, sqrtPriceLimit, data)
+//     let receipt = swapTx.wait()
+
+//     console.log(receipt)
+
+
+//     outputTokenBalance = await tokenOutContract.balanceOf(wallet.address)
+//     wrappedGlmrBalance = await glmrContract.balanceOf(wallet.address)
+
+//     console.log(`Output Token Balance: ${outputTokenBalance}`)
+//     console.log(`Wrapped GLMR Balance: ${wrappedGlmrBalance}`)
+
+//     process.exit(0)
+
+
+// }
 
 async function run(){
     // writeDexInfo()

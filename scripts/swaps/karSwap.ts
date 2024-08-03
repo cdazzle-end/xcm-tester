@@ -14,16 +14,6 @@ import path from 'path';
 // import { getAdapter } from './adapters'
 
 import { RegistryError } from '@polkadot/types/types/registry';
-// import * as s from 'json-stringify-safe';
-// import flatted from 'flatted';
-// import { encodeAddress, decodeAddress } from "@polkadot/keyring";
-// import { BalanceChangeStatue } from '../../src/types';
-// import {Mangata} from '@mangata-finance/sdk'
-// import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../xcm_tests/testParams'
-// import { u8aToHex } from '@polkadot/util';
-// import { mnemonicToLegacySeed, hdEthereum } from '@polkadot/util-crypto';
-// const { ApiPromise } = require('@polkadot/api');
-// const { WsProvider } = require('@polkadot/rpc-provider');
 import { options } from '@acala-network/api';
 // import { SwapPromise } from "@acala-network/sdk-swap";
 import { WalletPromise } from "@acala-network/sdk-wallet";
@@ -33,7 +23,7 @@ import { Wallet } from "@acala-network/sdk/wallet/wallet.js"
 import { AcalaDex, AggregateDex } from "@acala-network/sdk-swap"
 import { AggregateDexSwapParams, TradingPath } from '@acala-network/sdk-swap/types.js'
 // import { AggregateDexSwapParams } from '../../node_modules/.pnpm/@acala-network+sdk-swap@4.1.9-13_@acala-network+api@5.1.2_@acala-network+eth-providers@2.7.19_7m57xuskb5lxcqt46rnn4nnyhe/node_modules/@acala-network/sdk-swap/index.ts'
-import { IndexObject, PathNodeValues, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
+import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
 import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
 import { increaseIndex } from './../instructions/utils.ts'
 import { AssetNode } from './../instructions/AssetNode.ts'
@@ -261,7 +251,7 @@ function buildTokenPaths(startAsset: string, swapInstructions: any[]): [string[]
     return [tokenPaths, extrinsicNodes];
 }
 export async function getKarSwapExtrinsicDynamic(    
-    swapType: number, 
+    swapType: PathType, 
     startAsset: any, 
     destAsset: any, 
     amountIn: string, 
@@ -316,7 +306,7 @@ export async function getKarSwapExtrinsicDynamic(
     let expectedAmountOutWithDeviation = expectedOutAmountFixed.sub(priceDeviation);
     let swapTx: SubmittableExtrinsic<"promise", ISubmittableResult> | SubmittableExtrinsic<"rxjs", ISubmittableResult>;
 
-    if(swapType == 1){
+    if(swapType == PathType.DexV2){
         // Dex swap
         swapTx = await api.tx.dex
             .swapWithExactSupply(

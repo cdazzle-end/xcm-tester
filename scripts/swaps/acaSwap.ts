@@ -34,7 +34,7 @@ import { Wallet } from "@acala-network/sdk/wallet/wallet.js"
 import { AcalaDex, AggregateDex } from "@acala-network/sdk-swap"
 import { AggregateDexSwapParams, TradingPath } from '@acala-network/sdk-swap/types.js'
 // import { AggregateDexSwapParams } from '../../node_modules/.pnpm/@acala-network+sdk-swap@4.1.9-13_@acala-network+api@5.1.2_@acala-network+eth-providers@2.7.19_7m57xuskb5lxcqt46rnn4nnyhe/node_modules/@acala-network/sdk-swap/index.ts'
-import { IndexObject, PathNodeValues, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
+import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
 import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
 import { getAssetRegistry, increaseIndex } from './../instructions/utils.ts'
 import { AssetNode } from './../instructions/AssetNode.ts'
@@ -54,7 +54,7 @@ const acaRpc = "ws://acala-rpc-0.aca-api.network"
 
 
 export async function getAcaSwapExtrinsicDynamic(    
-    swapType: number, 
+    swapType: PathType, 
     startAsset: any, 
     destAsset: any, 
     amountIn: string, 
@@ -112,7 +112,9 @@ export async function getAcaSwapExtrinsicDynamic(
     let expectedAmountOutWithDeviation = expectedOutAmountFixed.sub(priceDeviation);
     let swapTx: SubmittableExtrinsic<"promise", ISubmittableResult> | SubmittableExtrinsic<"rxjs", ISubmittableResult>;
 
-    if(swapType == 1){
+    console.log(`*** Acala swap PathType: ${swapType}`)
+
+    if(swapType == PathType.DexV2){
         // Dex swap
         swapTx = await api.tx.dex
             .swapWithExactSupply(
@@ -139,6 +141,7 @@ export async function getAcaSwapExtrinsicDynamic(
         let assetRegistry = getAssetRegistry('polkadot');
 
         console.log("Pool ID: " + poolId)
+        console.log("Swap instruction path data: - " + JSON.stringify(swapInstructions[0].pathData, null, 2))
         let targetStablePool = getAcalaStablePoolData(Number.parseInt(poolId))
         
         let stablePoolAssets = targetStablePool.poolAssets
@@ -150,6 +153,10 @@ export async function getAcaSwapExtrinsicDynamic(
         let token1Data = assetRegistry.find((asset) => {
             return JSON.stringify(asset.tokenData.localId) == JSON.stringify(stablePoolAssets[1])
         })
+
+        if(!token0Data || !token1Data ){
+            throw new Error("ACA swap builder error getting token data from registry")
+        }
 
         let inputIndex;
         let outputIndex;
@@ -299,6 +306,9 @@ async function testStablePool(){
     let token1Data = assetRegistry.find((asset) => {
         return JSON.stringify(asset.tokenData.localId) == JSON.stringify(stablePoolAssets[1])
     })
+    if(!token0Data || !token1Data ){
+        throw new Error("ACA swap builder error getting token data from registry")
+    }
 
     if(inputAssetSymbol == token0Data.tokenData.symbol){
         console.log("Input Asset is Token 0")

@@ -17,7 +17,7 @@
         "typeRoots": ["./node_modules/@polkadot/ts", "./node_modules/@types"],
         "jsx": "preserve",
         "declaration": true,
-        "strict":  false,
+        "strict":  true,
         "noImplicitAny": false,
         // "noUnusedLocals": true,
         // "noImplicitReturns": true,

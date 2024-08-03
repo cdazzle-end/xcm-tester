@@ -7,7 +7,7 @@ declare const fetch: any;
 
 import { fileURLToPath } from 'url';
 import { getParaId } from "@paraspell/sdk";
-import { getAssetRegistryObject } from "./utils.ts";
+import { getAssetRegistryObject, isSwapResult, isTransferResult } from "./utils.ts";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -41,7 +41,11 @@ export async function logSubmittableExtrinsics(extrinsicSet: ExtrinsicObject[], 
 
     let loggableExtrinsics = extrinsicSet.map((extrinsic) => {
         let loggableTx
+
         if(extrinsic.type == "Swap"){
+            if(!extrinsic.swapExtrinsicContainer){
+                throw new Error("swap tx container undefined")
+            }
             try {
                 loggableTx = {
                     type: extrinsic.type,
@@ -71,6 +75,9 @@ export async function logSubmittableExtrinsics(extrinsicSet: ExtrinsicObject[], 
                 return loggableTx
             }
         } else {
+            if(!extrinsic.transferExtrinsicContainer){
+                throw new Error("transfer tx container undefined")
+            }
             try{
                 loggableTx = {
                     type: extrinsic.type,
@@ -453,19 +460,20 @@ export async function logAllResultsDynamic(relay: Relay, logFilePath: string, ch
     let xcmReserveFees: ReserveFeeData[] = []
 
     const { globalState } = await import("./liveTest.ts");
-    let allExtrinsicsSet = globalState.extrinsicSetResults
-    allExtrinsicsSet.allExtrinsicResults.forEach((swapOrTransferResultData) => {
-        arbResults.push(swapOrTransferResultData.arbExecutionResult)
-        if('swapTxStats' in swapOrTransferResultData){
-            swapTxStats.push(swapOrTransferResultData.swapTxStats)
-            swapTxResults.push(swapOrTransferResultData.swapTxResults)
-        } else if ('transferTxStats' in swapOrTransferResultData){
-            transferTxStats.push(swapOrTransferResultData.transferTxStats)
+    let allExtrinsicsSet = globalState.extrinsicSetResults!
+    allExtrinsicsSet.allExtrinsicResults.forEach((result) => {
+        arbResults.push(result.arbExecutionResult);
+    
+        if (isSwapResult(result)) {
+            swapTxStats.push(result.swapTxStats);
+            swapTxResults.push(result.swapTxResults);
+        } else if (isTransferResult(result)) {
+            transferTxStats.push(result.transferTxStats);
         }
     })
 
-    accumulatedFees = globalState.accumulatedFeeData
-    xcmReserveFees = globalState.xcmFeeReserves
+    accumulatedFees = globalState.accumulatedFeeData!
+    xcmReserveFees = globalState.xcmFeeReserves!
 
     await logSwapTxStats(relay, swapTxStats, logFilePath, chopsticks)
     await logSwapTxResults(relay, swapTxResults, logFilePath, chopsticks)
@@ -762,10 +770,8 @@ export function updateFeeBook(){
 
 
     let feeBookFinal = {}
-    Object.entries(feeBook).forEach(([key, entry]: [any, any[]]) => {
-        // console.log(key)
-        // console.log(entry)
-        let firstNonZeroEntry = entry.find((feeData) => {
+    Object.entries(feeBook).forEach(([key, entry]: [string, any]) => {
+        let firstNonZeroEntry = (entry as any[]).find((feeData: any) => {
             feeData = feeData as any
             let value = new bn(feeData.inner)
             if(value.abs() > new bn(0)){

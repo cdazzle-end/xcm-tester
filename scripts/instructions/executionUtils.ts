@@ -1,10 +1,10 @@
-import { EventRecord } from "@polkadot/types/interfaces"
+import { DispatchError, EventRecord, ExtrinsicStatus, H256, Hash } from "@polkadot/types/interfaces"
 import { BN } from "@polkadot/util/bn"
 import { checkAndApproveToken } from "./../swaps/movr/utils/utils.ts"
 import { AssetNode } from "./AssetNode.ts"
 import { testNets, localRpcs } from "./txConsts.ts"
 import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ExtrinsicSetResultDynamic, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, NativeBalancesType, TransferEventData, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, DepositEventData } from "./types.ts"
-import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject, getAssetDecimalsFromLocation, getWalletAddressFormatted } from "./utils.ts"
+import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject, getAssetDecimalsFromLocation, getWalletAddressFormatted, isTxDetails } from "./utils.ts"
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { buildSwapExtrinsicDynamic, createSwapExtrinsicObject } from "./extrinsicUtils.ts"
 import { getApiForNode } from "./apiUtils.ts"
@@ -19,14 +19,17 @@ import { swapManagerContractLive } from "./../swaps/glmr/utils/const.ts"
 import { getTransferType, getXcmTransferEventData, listenForXcmpEventForNode } from "./feeUtils.ts"
 import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import { updateEventFeeBook } from "./logUtils.ts"
+// import { H256 } from '@polkadot/types/primitive';
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
 
 
 export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SingleSwapResultData>{
+    if (!extrinsicObj.swapExtrinsicContainer) throw new Error("Evm swap container undefined")
+
     let movrTx = extrinsicObj.swapExtrinsicContainer.extrinsic
     let relay = extrinsicObj.swapExtrinsicContainer.relay
     let chain = extrinsicObj.swapExtrinsicContainer.chain
-    let api = extrinsicObj.swapExtrinsicContainer.api
+    let api = extrinsicObj.swapExtrinsicContainer.api!
     let chainId = extrinsicObj.swapExtrinsicContainer.chainId
     let assetInSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolIn
     let assetOutSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolOut
@@ -38,7 +41,7 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
     if(extrinsicIndex.i == 0){
         let firstAssetNode = extrinsicObj.swapExtrinsicContainer.assetNodes[0]
     }
-    let movrBatchSwapParams = extrinsicObj.swapExtrinsicContainer.movrBatchSwapParams
+    let movrBatchSwapParams = extrinsicObj.swapExtrinsicContainer.movrBatchSwapParams!
     let liveWallet = movrBatchSwapParams.wallet
     let batchContract = movrBatchSwapParams.batchContract
     let tokens = movrBatchSwapParams.inputTokens
@@ -247,10 +250,11 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
 }
 
 export async function executeSingleSwapExtrinsicGlmr(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SingleSwapResultData>{
+    if (!extrinsicObj.swapExtrinsicContainer) throw new Error("Evm swap tx container undefined")
     let glmrTx = extrinsicObj.swapExtrinsicContainer.extrinsic
     let relay = extrinsicObj.swapExtrinsicContainer.relay
     let chain = extrinsicObj.swapExtrinsicContainer.chain
-    let api = extrinsicObj.swapExtrinsicContainer.api
+    let api = extrinsicObj.swapExtrinsicContainer.api!
     let chainId = extrinsicObj.swapExtrinsicContainer.chainId
     let assetInSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolIn
     let assetOutSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolOut
@@ -265,7 +269,7 @@ export async function executeSingleSwapExtrinsicGlmr(extrinsicObj: ExtrinsicObje
 
     let managerContractAddress = swapManagerContractLive
 
-    let managerSwapParams = extrinsicObj.swapExtrinsicContainer.glmrSwapParams
+    let managerSwapParams = extrinsicObj.swapExtrinsicContainer.glmrSwapParams!
     let liveWallet = managerSwapParams
     // let batchContract = managerSwapParams.batchContract
     // let tokens = managerSwapParams.inputTokens
@@ -505,22 +509,22 @@ function trackPromise(promise) {
 }
 export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<SingleSwapResultData>{
     console.log("Execute Single Swap Extrinsic ()")
-    let extrinsic = extrinsicObj.swapExtrinsicContainer.extrinsic
-    let relay = extrinsicObj.swapExtrinsicContainer.relay
-    let chain = extrinsicObj.swapExtrinsicContainer.chain
-    let api = extrinsicObj.swapExtrinsicContainer.api
-    let chainId = extrinsicObj.swapExtrinsicContainer.chainId
-    let assetInSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolIn
-    let assetOutSymbol = extrinsicObj.swapExtrinsicContainer.assetSymbolOut
-    // let assetIn = extrinsicObj.swapExtrinsicContainer.pathInLocalId
-    // let assetOut = extrinsicObj.swapExtrinsicContainer.pathOutLocalId
-    let expectedAmountIn = extrinsicObj.swapExtrinsicContainer.assetAmountIn
-    let expectedAmountOut = extrinsicObj.swapExtrinsicContainer.expectedAmountOut
+    let swapTxContainer = extrinsicObj.swapExtrinsicContainer!
+    let api = swapTxContainer.api!
+
+    let relay = swapTxContainer.relay
+    let chain = swapTxContainer.chain
+    let chainId = swapTxContainer.chainId
+    let assetInSymbol = swapTxContainer.assetSymbolIn
+    let assetOutSymbol = swapTxContainer.assetSymbolOut
+
+    let expectedAmountIn = swapTxContainer.assetAmountIn
+    let expectedAmountOut = swapTxContainer.expectedAmountOut
     let blockHash = ""
 
-    let assetNodes = extrinsicObj.swapExtrinsicContainer.assetNodes
-    let startAssetRegistryObject = extrinsicObj.swapExtrinsicContainer.assetNodes[0].assetRegistryObject;
-    let destAssetRegistryObject = extrinsicObj.swapExtrinsicContainer.assetNodes[extrinsicObj.swapExtrinsicContainer.assetNodes.length - 1].assetRegistryObject;
+    let assetNodes = swapTxContainer.assetNodes
+    let startAssetRegistryObject = swapTxContainer.assetNodes[0].assetRegistryObject;
+    let destAssetRegistryObject = swapTxContainer.assetNodes[swapTxContainer.assetNodes.length - 1].assetRegistryObject;
 
     let assetInDecimals = assetNodes[0].assetRegistryObject.tokenData.decimals
     let assetOutDecimals = assetNodes[assetNodes.length - 1].assetRegistryObject.tokenData.decimals
@@ -566,18 +570,25 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     let outTracker = trackPromise(tokenOutBalancePromise)
     let trackedTokenOutBalancePromise = outTracker.trackedPromise
     let tokenOutResolved = outTracker.isResolved
-    let tokenInBalanceStats:BalanceChangeStatsBn, tokenOutBalanceStats:BalanceChangeStatsBn, tx: TxDetails, txHash;
+    let tokenInBalanceStats: BalanceChangeStatsBn,
+        tokenOutBalanceStats: BalanceChangeStatsBn = {} as BalanceChangeStatsBn,
+        tx: TxDetails,
+        txHash;
+
+
     try{
                     
         // **************************************************************************************
-        tx = await executeSwapExtrinsic(extrinsicObj.swapExtrinsicContainer, chopsticks)
+        tx = await executeSwapExtrinsic(swapTxContainer, chopsticks)
         // **************************************************************************************
         txHash = tx.txHash
-        blockHash = tx.blockHash
+        blockHash = tx.blockHash!
     } catch (e) {
-        // console.log("ERROR: ")
-        // console.log(e)     
+        //REVIEW type safety
+        if(!isTxDetails(e)) throw new Error("Swap failure, unknown error type");
+
         let decodedError = e.decodedError
+        let txDetailsResponse = e as TxDetails
         console.log("DECODED ERROR: " + JSON.stringify(decodedError, null, 2))               
         await tokenInUnsub()
         await tokenOutUnsub()
@@ -593,7 +604,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
             result:`FAILURE: SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn.toNumber()}-> ${assetOutSymbol} | ERROR: ${JSON.stringify(decodedError)}`
         }
         
-        let txDetailsResponse = e.txDetails
+        // REVIEW how movr swap tx details work
         let txDetails: TxDetails = {
             success: false,
             movrInfo: txDetailsResponse
@@ -604,24 +615,22 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         }
 
         let pathNode: PathNodeValues = {
-            // pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
-            // pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
+            // pathInLocalId: swapTxContainer.pathInLocalId,
+            // pathOutLocalId: swapTxContainer.pathOutLocalId,
             pathInSymbol: assetInSymbol,
             pathOutSymbol: assetOutSymbol,
-            pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
-            pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+            pathSwapType: swapTxContainer.pathType,
+            pathValue: swapTxContainer.pathAmount,
             pathValueNext: 0
         }
 
-        let swapTxStats: SwapTxStats;
-        let lastNode: LastNode;
         let extrinsicResultData: SingleSwapResultData = {
             success: false,
             arbExecutionResult: arbString,
             resultPathNode: pathNode,
-            swapTxStats: swapTxStats,
+            swapTxStats: null,
             swapTxResults: swapTxResult,
-            lastNode: lastNode,
+            lastNode: null,
             extrinsicIndex: extrinsicIndex.i
         }
         
@@ -690,6 +699,8 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
             }
         }
     }
+
+
     
     let lastNode: LastNode = {
         assetKey: JSON.stringify(destAssetRegistryObject.tokenData.chain.toString() + JSON.stringify(destAssetRegistryObject.tokenData.localId)),
@@ -750,12 +761,12 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceDisplay)
 
     let pathNode: PathNodeValues = {
-        // pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
-        // pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
+        // pathInLocalId: swapTxContainer.pathInLocalId,
+        // pathOutLocalId: swapTxContainer.pathOutLocalId,
         pathInSymbol: assetInSymbol,
         pathOutSymbol: assetOutSymbol,
-        pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
-        pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+        pathSwapType: swapTxContainer.pathType,
+        pathValue: swapTxContainer.pathAmount,
         pathValueNext:pathValueNext
     }
 
@@ -795,38 +806,38 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
 }
 
 // Some transactions dont track, like allocate, with asyncronoouus execution would be a mess
-export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean):Promise<SingleTransferResultData>{
+// Only returns undefined when in testing, and skipping chains to execute transfers on.
+export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean):Promise<SingleTransferResultData | undefined>{
     console.log("Execute Single Transfer Extrinsic ()")
     let extrinsicResultData: SingleTransferResultData;
     let arbExecutionResult: ArbExecutionResult;
     let resultPathNode: PathNodeValues;
     let transferTxStats: TransferTxStats;
-    let relay = extrinsicObj.transferExtrinsicContainer.relay
+    let transferTxContainer = extrinsicObj.transferExtrinsicContainer! 
+    let relay = transferTxContainer.relay
 
-    // let lastNodeAssetKey: string;
-    // let lastNodeAssetValue: string;
-    // let lastNode: LastNode;
-    // globalState.transactionState = TransactionState.PreSubmission
     setTransactionState(TransactionState.PreSubmission, relay)
 
-    let extrinsic = extrinsicObj.transferExtrinsicContainer.extrinsic
-    let startChain = extrinsicObj.transferExtrinsicContainer.firstNode
-    let destChain = extrinsicObj.transferExtrinsicContainer.secondNode
-    let startApi = extrinsicObj.transferExtrinsicContainer.startApi
-    let destApi = extrinsicObj.transferExtrinsicContainer.destinationApi
-    let startParaId = extrinsicObj.transferExtrinsicContainer.startChainId
-    let destParaId = extrinsicObj.transferExtrinsicContainer.destinationChainId
-    let startTransferrable = extrinsicObj.transferExtrinsicContainer.startTransferrable
+    let extrinsic = transferTxContainer.extrinsic
+    let startChain = transferTxContainer.firstNode
+    let destChain = transferTxContainer.secondNode
+    let startApi = transferTxContainer.startApi
+    let destApi = transferTxContainer.destinationApi
+    let startParaId = transferTxContainer.startChainId
+    let destParaId = transferTxContainer.destinationChainId
+    let startTransferrable = transferTxContainer.startTransferrable
     let startAssetRegistryObject = startTransferrable.assetRegistryObject
-    let destTransferrable = extrinsicObj.transferExtrinsicContainer.destinationTransferrable
+    let destTransferrable = transferTxContainer.destinationTransferrable
     let destAssetRegistryObject = destTransferrable.assetRegistryObject
-    let currency = extrinsicObj.transferExtrinsicContainer.destinationTransferrable.paraspellAsset.symbol
-    let assetInSymbol = extrinsicObj.transferExtrinsicContainer.startTransferrable.assetRegistryObject.tokenData.symbol
-    let assetOutSymbol = extrinsicObj.transferExtrinsicContainer.destinationTransferrable.assetRegistryObject.tokenData.symbol
-    let inputAmount = extrinsicObj.transferExtrinsicContainer.pathAmount
-    let reserveAmount = extrinsicObj.transferExtrinsicContainer.reserveAmount
-    let reserveAssetId = extrinsicObj.transferExtrinsicContainer.assetIdStart
-    let assetDecimals =  extrinsicObj.transferExtrinsicContainer.startTransferrable.assetRegistryObject.tokenData.decimals
+
+    //TODO reformat paraspell asset symbol
+    let currency = transferTxContainer.destinationTransferrable.paraspellAsset.symbol!
+    let assetInSymbol = transferTxContainer.startTransferrable.assetRegistryObject.tokenData.symbol
+    let assetOutSymbol = transferTxContainer.destinationTransferrable.assetRegistryObject.tokenData.symbol
+    let inputAmount = transferTxContainer.pathAmount
+    let reserveAmount = transferTxContainer.reserveAmount
+    let reserveAssetId = transferTxContainer.assetIdStart
+    let assetDecimals =  transferTxContainer.startTransferrable.assetRegistryObject.tokenData.decimals
     let blockHash = ""
     if(startChain == "Kusama" || destChain == "Kusama"){
         currency = "KSM"
@@ -869,7 +880,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     if(execute){
         let startBalance = await getBalance(startParaId, relay, chopsticks, startApi, assetInSymbol, startAssetRegistryObject, startChain, startSigner.address)
         let destinationStartBalance = await getBalance(destParaId, relay, chopsticks, destApi, assetOutSymbol, destAssetRegistryObject, destChain, destSigner.address)
-        let assetRegistryObject = extrinsicObj.transferExtrinsicContainer.destinationTransferrable.assetRegistryObject
+        let assetRegistryObject = transferTxContainer.destinationTransferrable.assetRegistryObject
         let destinationAssetKey = JSON.stringify(assetRegistryObject.tokenData.chain.toString() + JSON.stringify(assetRegistryObject.tokenData.localId))
 
         
@@ -911,34 +922,45 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
         let destBalanceChangePromise = getBalanceChange(destBalanceObservable$, (unsub) =>{
             destBalanceUnsub = unsub
         })
-        console.log(`(${startChain} -> ${destChain}) ${JSON.stringify(extrinsicObj.transferExtrinsicContainer.assetSymbol)} ${JSON.stringify(extrinsicObj.transferExtrinsicContainer.assetIdStart)}`)
+        console.log(`(${startChain} -> ${destChain}) ${JSON.stringify(transferTxContainer.assetSymbol)} ${JSON.stringify(transferTxContainer.assetIdStart)}`)
         // console.log(extrinsic.toHuman())
-        let txDetailsPromise: Promise<TxDetails>;
+        let txDetailsPromise: Promise<TxDetails | undefined>;
 
         let balanceDepositTracker: PromiseTracker = trackPromise(destBalanceChangePromise)
         let trackedDestinationBalancePromise = balanceDepositTracker.trackedPromise
         let tokenDepositResolved = balanceDepositTracker.isResolved
         let xcmTransferId
         let originTransferData: TransferEventData
+        let txDetails: TxDetails;
         try{
             // **************************************************************************************
-            txDetailsPromise = executeTransferExtrinsic(extrinsicObj.transferExtrinsicContainer, startSigner, chopsticks)
-            // **************************************************************************************
+            let txDetailsPromise = executeTransferExtrinsic(transferTxContainer, startSigner, chopsticks)
+            
             console.log("Execute Extrinsic Set Loop: Transfer promise created")
-            let txDetails = await txDetailsPromise
+            // REVIEW Awaiting transfer execution here, but also awaiting it later in the function. The later await is unecessary, but maybe better to await later
+            let txReturnCheck = await txDetailsPromise
+            // TODO Reformat to properly account for tests skipping instead of returning undefined, probably better way to write this
+            if(!txReturnCheck){
+                return undefined
+            }
+            txDetails = txReturnCheck
+            // **************************************************************************************
+
             xcmTransferId = txDetails.xcmMessageHash
-            blockHash = txDetails.blockHash
+            blockHash = txDetails.blockHash!
             let originNativeChainToken = startApi.registry.chainTokens[0]
-            originTransferData = getXcmTransferEventData(startChain, currency, startAssetRegistryObject, originNativeChainToken, txDetails.finalized, relay)
+            originTransferData = getXcmTransferEventData(startChain, currency, startAssetRegistryObject, originNativeChainToken, txDetails.finalized!, relay)
         } catch(e) {
             console.log("ERROR: " + e)
             // txPromise = e
+
+            if(!isTxDetails(e)) throw new Error("Transfer failure, unknown error type");
             let decodedError = e.decodedError
             await startBalanceUnsub()
             await destBalanceUnsub()
             // For now just throw if an extrinsic fails, and then execute reverse txs
             // throw new Error("Transfer failed, executing reverse txs")
-            let transferAmount = extrinsicObj.transferExtrinsicContainer.pathAmount
+            let transferAmount = transferTxContainer.pathAmount
 
             
             // let actualAmountOut = tokenOutBalanceStats.changeInBalance.abs().toChainData()
@@ -952,22 +974,20 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             }
             
             resultPathNode = {
-                // pathInLocalId: extrinsicObj.transferExtrinsicContainer.pathInLocalId,
-                // pathOutLocalId: extrinsicObj.transferExtrinsicContainer.pathOutLocalId,
                 pathInSymbol: currency,
                 pathOutSymbol: currency,
-                pathSwapType: extrinsicObj.transferExtrinsicContainer.pathSwapType,
-                pathValue: extrinsicObj.transferExtrinsicContainer.pathAmount,
+                pathSwapType: transferTxContainer.pathSwapType,
+                pathValue: transferTxContainer.pathAmount,
                 pathValueNext: 0
             
             }   
-            let lastNode: LastNode;
+
             extrinsicResultData = {
                 success: false,
                 arbExecutionResult: arbExecutionResult,
                 resultPathNode: resultPathNode,
-                transferTxStats: transferTxStats,
-                lastNode: lastNode,
+                transferTxStats: null,
+                lastNode: null,
                 extrinsicIndex: extrinsicIndex.i,
             }
             increaseIndex(extrinsicIndex)
@@ -992,7 +1012,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
 
         let tokenDepositConfirmed = false;
         let depositSuccess: boolean = false
-        let destBalanceChangeStats: BalanceChangeStatsBn;
+        let destBalanceChangeStats: BalanceChangeStatsBn = {} as BalanceChangeStatsBn;
 
         console.log("Execute TRANSFER: AWAIT destBalanceChangePromise")
         let queryIndex = 0
@@ -1056,10 +1076,10 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
         let originAssetLocation = originAssetObject.tokenLocation
 
         let originFeeAssetObject = getAssetRegistryObjectBySymbol(startParaId, originTransferData.feeAssetSymbol, relay)
-        let originFeeAssetLocation = originFeeAssetObject.tokenLocation
+        let originFeeAssetLocation = originFeeAssetObject.tokenLocation!
 
         let destAssetObject = destTransferrable.assetRegistryObject
-        let destAssetLocation = destAssetObject.tokenLocation
+        let destAssetLocation = destAssetObject.tokenLocation!
 
         let originFeeAssetDecimals = originTransferData.feeAssetDecimals
         if(!originFeeAssetDecimals){
@@ -1077,8 +1097,8 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
         let depositFee
         let totalXcmFees
         let reserveTransferData: ReserveFeeData
-        let originFeeData: FeeData 
-        let destinationFeeData: FeeData
+        let originFeeData: FeeData = {} as FeeData
+        let destinationFeeData: FeeData = {} as FeeData
         
         // If fail to detect deposit events, dont update fee book
         try {
@@ -1118,7 +1138,9 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             await updateXcmFeeReserves(reserveTransferData, relay)
 
             transferFee = originFeeData.feeAmount
-            reserveAmount = originFeeData.reserveAssetAmount
+
+            //REVIEW is this necessary?
+            reserveAmount = originFeeData.reserveAssetAmount!
             transferFeeOrReserves = originFeeData.reserveAssetAmount == "0" ? originFeeData.feeAmount : originFeeData.reserveAssetAmount
             depositFee = destinationFeeData.feeAmount
             totalXcmFees = new bn(transferFeeOrReserves).plus(new bn(depositFee))
@@ -1141,8 +1163,9 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
         let minimumExpected = new bn(inputAmount).times(.95)
         let sufficient = destBalanceChangeStats.changeInBalance.minus(minimumExpected)   
 
-        console.log("AWAIT txDetailsPromise")
-        let txDetails = await txDetailsPromise
+        // REVIEW This is where thought i was await transfer execution.
+        // console.log("AWAIT txDetailsPromise")
+        // let txDetails = await txDetailsPromise! as TxDetails
 
         if(sufficient.gt(new bn(0))){
             console.log("CHANGE In balance is sufficient")
@@ -1194,8 +1217,8 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
         resultPathNode= {
             pathInSymbol: currency,
             pathOutSymbol: currency,
-            pathValue: extrinsicObj.transferExtrinsicContainer.pathAmount,
-            pathSwapType: extrinsicObj.transferExtrinsicContainer.pathSwapType,
+            pathValue: transferTxContainer.pathAmount,
+            pathSwapType: transferTxContainer.pathSwapType,
             pathValueNext: pathValueNext
         }
         extrinsicResultData = {
@@ -1216,7 +1239,9 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     console.log("---------------------------------------------")
 }
 
-export async function executeTransferExtrinsic(transfer: TransferExtrinsicContainer, signer: KeyringPair, chopsticks: boolean): Promise<TxDetails> {
+
+// only Return undefined when testing
+export async function executeTransferExtrinsic(transfer: TransferExtrinsicContainer, signer: KeyringPair, chopsticks: boolean): Promise<TxDetails | undefined> {
 
     let relay = transfer.relay
     let tx = transfer.extrinsic
@@ -1259,6 +1284,7 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
     if(txContainer.chainId == 2023){
         throw new Error("Function: executeSwapExtrinsic() should not be called with MOVR swaps")
     } else {
+        // REVIEW Why would txContainer.extrinsic every be undefined?
         if(txContainer.extrinsic){
             let tx = txContainer.extrinsic
             let txNonce = txContainer.nonce
@@ -1290,7 +1316,13 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
                 let dispatchErrorCode;
                 let decodedError;
                 setTransactionState(TransactionState.Broadcasted, relay)
-                tx.signAndSend(signer, {nonce: accountNonce}, ({ events = [], status, txHash, txIndex, dispatchError }) => {
+                tx.signAndSend(signer, {nonce: accountNonce}, ({ events = [], status, txHash, txIndex, dispatchError }: {
+                    events?: EventRecord[],
+                    status: ExtrinsicStatus,
+                    txHash: Hash,
+                    txIndex?: number,
+                    dispatchError?: DispatchError
+                }) => {
                     if (status.isInBlock) {
                         success = dispatchError ? false : true;
                         console.log(
@@ -1310,10 +1342,11 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
                         finalized = [...events];
                         events.forEach((eventObj) => {
                             eventLogs.push(eventObj.toHuman())
-                            if(eventObj.event.method == "ExtrinsicFailed" && eventObj.event.data.dispatchError){
+                            // REVIEW Changing check because dispatchError doesnt exist on eventObj.event.data, but we get dispatch error in the tx callback 
+                            if(eventObj.event.method == "ExtrinsicFailed" && dispatchError){
                                 console.log("Execute Swap: Extrinsic Failed event detected")
                                 const {index, error} = dispatchError.asModule;
-                                const moduleIndex = parseInt(index, 10);
+                                const moduleIndex = parseInt(index.toString(), 10);
                                 const errorCodeHex = error.toString().substring(2, 4); // "09"
                                 const errorIndex = parseInt(errorCodeHex, 16);
 
@@ -1374,35 +1407,41 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
 
             console.log("Sent TX. Returning SWAP Tx Promise")
             return txResult
+        } else {
+            throw new Error("Swap tx container extrinsic is undefined")
         }
 
     }
     
 }
 
-export async function buildAndExecuteSwapExtrinsic(relay: Relay ,instructionsToExecute: SwapInstruction[], chopsticks: boolean, executeMovr: boolean, nextInputValue: string, chainNonces: ChainNonces, extrinsicIndex: IndexObject): Promise<[(SingleSwapResultData | SingleTransferResultData), SwapInstruction[]]>{
+// TODO Reformat this, only used once at the end of the arb execution loop to handle remaining instructions.
+// The rest of the loop uses a build function and an execute function
+export async function buildAndExecuteSwapExtrinsic(relay: Relay ,instructionsToExecute: SwapInstruction[], chopsticks: boolean, executeMovr: boolean, nextInputValue: string, chainNonces: ChainNonces, extrinsicIndex: IndexObject): Promise<[(SingleSwapResultData | SingleTransferResultData | undefined), SwapInstruction[]]>{
     if(Number.parseFloat(nextInputValue) > 0){
         instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
     }
     let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
     let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
     
-    let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+    let extrinsicResultData: SingleTransferResultData | SingleSwapResultData | undefined = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
     return [extrinsicResultData, remainingInstructions]
 }
 
 // Handle different extrinsic types
-export async function executeAndReturnExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean, executeMovr: boolean = false) {
+export async function executeAndReturnExtrinsic(extrinsicObj: ExtrinsicObject, extrinsicIndex: IndexObject, chopsticks: boolean, executeMovr: boolean = false): Promise<SingleTransferResultData | SingleSwapResultData | undefined>{
     // let executeMovr = false
     
     try {
         console.log("********************************")
         if (extrinsicObj.type == "Transfer"){
-            let transferExtrinsicResults: SingleTransferResultData = await executeSingleTransferExtrinsic(extrinsicObj, extrinsicIndex, chopsticks)
+            // Returns undefined on certain tests
+            let transferExtrinsicResults: SingleTransferResultData | undefined = await executeSingleTransferExtrinsic(extrinsicObj, extrinsicIndex, chopsticks)
             return transferExtrinsicResults
         } else if (extrinsicObj.type == "Swap"){
-            let relay = extrinsicObj.swapExtrinsicContainer.relay;
-            let chainId = extrinsicObj.swapExtrinsicContainer.chainId;
+            let swapTxContainer = extrinsicObj.swapExtrinsicContainer! 
+            let relay = swapTxContainer.relay;
+            let chainId = swapTxContainer.chainId;
             if(relay == 'polkadot' && chainId != 2004 || relay == 'kusama' && chainId != 2023){
                 let swapExtrinsicResults: SingleSwapResultData = await executeSingleSwapExtrinsic(extrinsicObj, extrinsicIndex, chopsticks);
                 return swapExtrinsicResults
@@ -1462,7 +1501,13 @@ export async function executeTransferTx(transferExtrinsicInput: paraspell.Extrin
         let decodedError;
         let transferExtrinsic = transferExtrinsicInput as any
         console.log(`Execute Transfer: Sending tx -- ${JSON.stringify(transferExtrinsic.toHuman())}`)
-        transferExtrinsic.signAndSend(signerAccount, ({ events = [], status, txHash, txIndex, dispatchError }) => {
+        transferExtrinsic.signAndSend(signerAccount, ({ events = [], status, txHash, txIndex, dispatchError }: {
+            events?: EventRecord[],
+            status: ExtrinsicStatus,
+            txHash: Hash,
+            txIndex?: number,
+            dispatchError?: DispatchError
+        }) => {
             if (status.isInBlock) {
                 success = dispatchError ? false : true;
                 console.log(
@@ -1803,7 +1848,7 @@ export async function allocateFundsForSwap(relay: Relay, assetPath: AssetNode[],
         
         // Execute allocations to RELAY, then add RELAY -> StartNode to execution path
         if(allocationPaths.length > 1){
-            let ksmAllocationPath = allocationPaths.pop()
+            let ksmAllocationPath = allocationPaths.pop()!
             await allocateKsmFromPreTransferPaths(relay, allocationPaths, chopsticks, executeMovr)
             executionPath = ksmAllocationPath.concat(assetPath)
         } else {

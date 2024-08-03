@@ -137,8 +137,8 @@ function createInstructionTransferToHomeThenDestination(relay: Relay, assetNodes
         startNode: getParaspellChainNameByParaId(relay, startAssetNode.getChainId()) || relayNode,
         startNodeLocalId: startAssetNode.assetRegistryObject.tokenData.localId,
         startAssetNode,
-        startTransferFee: xcmFeeAmounts[0],
-        startTransferReserve: xcmTransferReserves[0],
+        startTransferFee: xcmFeeAmounts![0],
+        startTransferReserve: xcmTransferReserves![0],
         toChainId: destinationAssetNode.getChainId(),
         destinationNode: getParaspellChainNameByParaId(relay, destinationAssetNode.getChainId()) || relayNode,
         destinationNodeLocalId: destinationAssetNode.assetRegistryObject.tokenData.localId,
@@ -146,8 +146,8 @@ function createInstructionTransferToHomeThenDestination(relay: Relay, assetNodes
         middleNode: getParaspellChainNameByParaId(relay, middleAssetNode.getChainId()) || relayNode,
         middleNodeLocalId: middleAssetNode.assetRegistryObject.tokenData.localId,
         middleAssetNode,
-        middleTransferFee: xcmFeeAmounts[1],
-        middleTransferReserve: xcmTransferReserves[1],
+        middleTransferFee: xcmFeeAmounts![1],
+        middleTransferReserve: xcmTransferReserves![1],
         assetNodes,
     };
     console.log(`New Transfer Instruction ${transferInstruction.startNode} -> ${transferInstruction.destinationNode} (${assetNodes[0].getAssetRegistrySymbol()}) Xcm Fee: ${xcmFeeAmounts}`)
@@ -201,8 +201,8 @@ function createInstructionTransfer(relay: Relay, assetNodes: AssetNode[], transf
         startNode: getParaspellChainNameByParaId(relay, startAssetNode.getChainId()) || relayNode,
         startNodeLocalId: startAssetNode.assetRegistryObject.tokenData.localId,
         startAssetNode,
-        startTransferFee: xcmTransferFees[0],
-        startTransferReserve: xcmTransferReserves[0],
+        startTransferFee: xcmTransferFees![0],
+        startTransferReserve: xcmTransferReserves![0],
         toChainId: destinationAssetNode.getChainId(),
         destinationNode: getParaspellChainNameByParaId(relay, destinationAssetNode.getChainId()) || relayNode,
         destinationNodeLocalId: destinationAssetNode.assetRegistryObject.tokenData.localId,
@@ -333,7 +333,7 @@ export async function getPreTransferPath(relay: Relay, startChainId: number, inp
         // Add 5% more allocation to account for fees
         let remainingRelayTokenToAllocate = inputAmount - accumulatedBalance
         remainingRelayTokenToAllocate = remainingRelayTokenToAllocate + (remainingRelayTokenToAllocate * 0.05)
-        let nodesToAllocateFrom = []
+        let nodesToAllocateFrom: any[] = []
         let allocationSufficient = false
         Object.entries(nativeBalances).forEach(([chainId, balance]) => {
             let chainBalance = balance as number
@@ -464,7 +464,7 @@ export async function getFundingPath(relay: Relay, startChainId: number, inputAm
 
 // This is helpful just to collect all the native asset occasionally
 export async function collectKsmToRelayPaths(relay: Relay, nativeBalances: NativeBalancesType, startChainId: number){
-    let nodesToAllocateFrom = []
+    let nodesToAllocateFrom: any[] = []
     let minimumTokenBalance = relay == 'kusama' ? 0.01 : 0.02
     Object.entries(nativeBalances).forEach(([chainId, balance]) => {
         if(Number.parseInt(chainId) != 0 && Number.parseInt(chainId) != startChainId){
@@ -509,7 +509,7 @@ export async function createTransferPathNode(relay: Relay, assetKey: string, pat
         node_key: assetKey,
         asset_name: nativeAssetName,
         path_value: pathValue,
-        path_type: 0,
+        path_type: "Xcm",
         path_data: {
             "path_type": "Xcm",
             "lp_id": null
@@ -526,7 +526,7 @@ export async function createAllocationToKusamaPath(relay: Relay, allocationAsset
         node_key: assetKeyOne,
         asset_name: nativeAssetName,
         path_value: pathValue,
-        path_type: 0,
+        path_type: "Xcm",
         path_data: {
             "path_type": "Xcm",
             "lp_id": null
@@ -538,7 +538,7 @@ export async function createAllocationToKusamaPath(relay: Relay, allocationAsset
         node_key: assetKeyTwo,
         asset_name: nativeAssetName,
         path_value: pathValue,
-        path_type: 0,
+        path_type: "Xcm",
         path_data: {
             "path_type": "Xcm",
             "lp_id": null
@@ -554,7 +554,7 @@ export async function createAllocationKusamaToStartPath(relay: Relay, startAsset
         node_key: relayAssetKey,
         asset_name: nativeAssetName,
         path_value: pathValue,
-        path_type: pathValue,
+        path_type: "Xcm",
         path_data: {
             "path_type": "Xcm",
             "lp_id": null
@@ -565,7 +565,7 @@ export async function createAllocationKusamaToStartPath(relay: Relay, startAsset
         node_key: startAssetKey,
         asset_name: nativeAssetName,
         path_value: pathValue,
-        path_type: pathValue,
+        path_type:"Xcm",
         path_data: {
             "path_type": "Xcm",
             "lp_id": null
@@ -604,7 +604,7 @@ export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPa
     let ksmBalanceToTransfer = ksmBalance.free.toNumber() - 0.01
 
     console.log("Executing Kusama to start allocation")
-    console.log(`${ksmToStartAllocationInstruction[0].assetNodes[0].getChainId()} -> ${ksmToStartAllocationInstruction[0].assetNodes[1].getChainId()} | ${ksmToStartAllocationInstruction[0].assetNodes[0].pathValue} -> ${ksmToStartAllocationInstruction[0].assetNodes[1].pathValue}`)
+    console.log(`${ksmToStartAllocationInstruction![0].assetNodes[0].getChainId()} -> ${ksmToStartAllocationInstruction![0].assetNodes[1].getChainId()} | ${ksmToStartAllocationInstruction![0].assetNodes[0].pathValue} -> ${ksmToStartAllocationInstruction![0].assetNodes[1].pathValue}`)
     //Execute Kusama to start chain
     let ksmTransferInstructions: TransferInstruction[] = ksmToStartAllocationInstruction as TransferInstruction[]
 

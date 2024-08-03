@@ -11,7 +11,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { dexAbis, localRpc, wGlmrContractAddress, routerFees, dexAbiMap, maxTickData, minTickData, q96, wsProvider, xcTokenAbi, glmrLpsPath } from './const.ts';
 import { erc20Abi } from 'viem';
 import bn, { BigNumber } from 'bignumber.js'
-import { GlobalState, MyLp, Slot0, V3CalculationResult } from './types.ts';
+import { DexV2Data, DexV3Data, GlobalState, Slot0, V3CalculationResult } from './types.ts';
 import { TickMath } from '@uniswap/v3-sdk';
 // import { dexAbis, localRpc, routerFees } from './const';
 // const acquireMutex2 = require('mutexify')();
@@ -458,7 +458,7 @@ export async function getTokenContractData(tokenContractAddress: string, walletA
     const tokenContract = new ethers.Contract(tokenContractAddress, tokenAbi, provider)
     const tokenSymbol = await tokenContract.symbol()
     const tokenDecimals = await tokenContract.decimals()
-    let tokenBalance: bigint;
+    let tokenBalance: bigint = BigInt(0);
 
     if(walletAddress){
         tokenBalance = await tokenContract.balanceOf(walletAddress)
@@ -541,15 +541,13 @@ export async function calculateAlgebraSwap(tokenIn: string, tokenOut: string, am
     
 
     // Get pool data from glmr_lps.json
-    let poolData: MyLp[] = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'))
-    let contractData = poolData.find((lp: MyLp) => lp.contractAddress.toLowerCase() == contractAddress.toLowerCase())
+    let poolData = getGlmrPoolData(contractAddress)
+    if(!isV3Pool(poolData)) throw new Error(`Pool ${contractAddress} is not V3`)
 
     // Get CURRENT TICK | ACTIVE LIQUIDITY | FEE RATE | UPPER/LOWER TICKS from pool data
-    let currentTick = new bn(contractData.currentTick)
-    let activeLiquidityBn = new bn(contractData.activeLiquidity)
-    let poolFeeRate = new bn(contractData.feeRate).div(new bn(1).times(new bn(10).pow(6)))
-    let lowerTicks = contractData.lowerTicks
-    let upperTicks = contractData.upperTicks
+    let currentTick = new bn(poolData.currentTick)
+    let activeLiquidityBn = new bn(poolData.activeLiquidity)
+    let poolFeeRate = new bn(poolData.feeRate).div(new bn(1).times(new bn(10).pow(6)))
 
     let inputTokenDecimals, outputTokenDecimals, inputTokenSymbol, outputTokenSymbol, inputTokenIndex
     if(token0 == tokenIn){
@@ -586,8 +584,8 @@ export async function calculateAlgebraSwap(tokenIn: string, tokenOut: string, am
         console.log(`${priceRangeLiquidity} Active Liquidity`)
 
         // Get CURRENT TICK BOUNDARIES
-        let tickLower = lowerTicks[tickRangeIndex]
-        let tickUpper = upperTicks[tickRangeIndex]
+        let tickLower = poolData.lowerTicks[tickRangeIndex]
+        let tickUpper = poolData.upperTicks[tickRangeIndex]
         tickRangeIndex++
 
         // Check LAST TICK
@@ -743,12 +741,11 @@ export async function calculateUni3Swap(tokenIn: string, tokenOut: string, amoun
     // let poolInfo: GlobalState = await pool.globalState();
     let poolInfo: Slot0 = await pool.slot0()
     let currentTick =new bn(poolInfo.tick)
-    let poolData: MyLp[] = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'))
-    // console.log(`Searching for contract: ${contractAddress}`)
-    let contractData = poolData.find((lp: MyLp) => lp.contractAddress.toLowerCase() == contractAddress.toLowerCase())
+    let poolData: DexV3Data | DexV2Data = getGlmrPoolData(contractAddress)
+    if(!isV3Pool(poolData)) throw new Error(`${contractAddress} is not V3`)
 
-    let lowerTicks = contractData.lowerTicks
-    let upperTicks = contractData.upperTicks
+    let lowerTicks = poolData.lowerTicks
+    let upperTicks = poolData.upperTicks
 
     // console.log(`Upper ticks: ${JSON.stringify(upperTicks, null, 2)} ) - Lower ticks: ${JSON.stringify(lowerTicks, null, 2)}`)
     let sqrtPriceX96 = new bn(poolInfo.sqrtPriceX96)
@@ -767,34 +764,23 @@ export async function calculateUni3Swap(tokenIn: string, tokenOut: string, amoun
         outputTokenSymbol = token0Symbol
         inputTokenIndex = 1
     }
-    // console.log(`Input Token: ${inputTokenIndex} ${inputTokenSymbol} - Output Token: ${outputTokenSymbol}`)
     let tickLower = lowerTicks[0]
     let tickUpper = upperTicks[0]
-    // let [tickLower, tickUpper] = await getUpperLowerInitializedTicks(currentTick, tickSpacing, pool)
-    // console.log(`Lower tick: ${tickLower.tick} - Current Tick:  ${currentTick} -Upper tick: ${tickUpper.tick}`)
     let sqrtPriceLowerX96 = TickMath.getSqrtRatioAtTick(tickLower.tick)
     let sqrtPriceUpperX96 = TickMath.getSqrtRatioAtTick(tickUpper.tick)
-    // console.log(`Lower sqrt: ${sqrtPriceLowerX96} - Current sqrt: ${sqrtPriceX96} -Upper sqrt: ${sqrtPriceUpperX96}`)
-
+    
     let totalTokenOut = new bn(0)
     let totalTokenIn = new bn(0)
     let priceRangeLiquidity = activeLiquidity
     let currentSqrtPriceX96 = new bn(sqrtPriceX96)
 
-    // console.log(amountIn)
-    // console.log(inputTokenDecimals)
     let tokenInAmountRemaining = new bn(amountIn).times(new bn(10).pow(new bn(inputTokenDecimals)))
-    // console.log(tokenInAmountRemaining)
-    // console.log(feeRate)
     let feeRatio = feeRate.div(1e6)
     tokenInAmountRemaining = tokenInAmountRemaining.times(new bn(1).minus(feeRatio))
-    // console.log(tokenInAmountRemaining)
-
+    
     let finalTargetPrice;
     let tickRangeIndex = 0
     while(tokenInAmountRemaining.gt(0)){
-        // console.log("******************************************************************")
-        // console.log(`Token In Amount Remaining: ${tokenInAmountRemaining}`)
         let currentSqrtPrice = currentSqrtPriceX96.div(q96)
         
         if(inputTokenIndex == 0){
@@ -803,13 +789,9 @@ export async function calculateUni3Swap(tokenIn: string, tokenOut: string, amoun
             let changeInPrice = new bn(1).div(currentSqrtPrice).plus(changeInPriceRecipricol)
             let targetSqrtPrice = changeInPrice.pow(-1)
             let targetSqrtPriceX96 = targetSqrtPrice.times(q96)
-            // console.log(`Target Sqrt P: ${targetSqrtPriceX96} --- Lower Sqrt Price: ${sqrtPriceLowerX96}`)
-            
-
-            // console.log(`Target Sqrt P: ${targetSqrtPriceX96} --- Lower Sqrt Price: ${sqrtPriceLowerX96}`)
+    
             let priceExceedsRange = targetSqrtPriceX96.lt(sqrtPriceLowerX96.toString())
             finalTargetPrice = new bn(sqrtPriceLowerX96.toString())
-            // console.log("Target Price is less than range: ", priceExceedsRange)
             if(priceExceedsRange){
                 let sqrtPriceLowerX96Bn = new bn(sqrtPriceLowerX96.toString())
                 let amountToken0In = calculateAmount0(priceRangeLiquidity, sqrtPriceLowerX96Bn.div(q96), currentSqrtPrice)
@@ -820,29 +802,18 @@ export async function calculateUni3Swap(tokenIn: string, tokenOut: string, amoun
                 totalTokenIn = totalTokenIn.plus(amountToken0In)
                 totalTokenOut = totalTokenOut.plus(amountToken1Out)
 
-                // console.log(`Amount of token in: ${amountToken0In}`)
-                // console.log(`Amount of token out: ${amountToken1Out}`)
-
-                // console.log(`Queryong tick: ${tickLower.tick}`)
-                // let lowerTickData = await pool.ticks(tickLower)
-
                 let totalLiquidity = new bn(tickLower.liquidityDelta)
                 priceRangeLiquidity = priceRangeLiquidity.plus(totalLiquidity)
 
                 currentSqrtPriceX96 = new bn(sqrtPriceLowerX96Bn)
                 tickRangeIndex++
                 tickLower = lowerTicks[tickRangeIndex]
-                // tickLower = await getNextLowerInitializedTick(tickLower, tickSpacing, pool)
-                // tickLower = new bn(tickLower.minus(tickSpacing))
                 sqrtPriceLowerX96 = TickMath.getSqrtRatioAtTick(tickLower.tick)
                 
             } else {
                 let amountToken0In = calculateAmount0(priceRangeLiquidity, targetSqrtPrice, currentSqrtPrice)
                 let amountToken1Out = calculateAmount1(priceRangeLiquidity, targetSqrtPrice, currentSqrtPrice)
                 
-                // console.log(`Amount of token out: ${amountToken1Out}`)
-
-                // finalTargetPrice = targetSqrtPriceX96
                 tokenInAmountRemaining = new bn(0)
                 totalTokenIn = totalTokenIn.plus(amountToken0In)
                 totalTokenOut = totalTokenOut.plus(amountToken1Out)  
@@ -858,30 +829,21 @@ export async function calculateUni3Swap(tokenIn: string, tokenOut: string, amoun
                 let amountToken1In = calculateAmount1(priceRangeLiquidity, sqrtPriceUpperX96Bn.div(q96), currentSqrtPrice)
                 let amountToken0Out = calculateAmount0(priceRangeLiquidity, sqrtPriceUpperX96Bn.div(q96), currentSqrtPrice)
 
-                // console.log(`Amount of token out: ${amountToken0Out}`)
-                
-                
                 tokenInAmountRemaining = tokenInAmountRemaining.minus(amountToken1In)
                 totalTokenOut = totalTokenOut.plus(amountToken0Out)
                 totalTokenIn = totalTokenIn.plus(amountToken1In)
 
-                // let upperTickData = await pool.ticks(tickUpper.toNumber())
                 let totalLiquidity = new bn(tickUpper.liquidityDelta)
                 priceRangeLiquidity = priceRangeLiquidity.plus(totalLiquidity)
                 currentSqrtPriceX96 = new bn(sqrtPriceUpperX96Bn)
 
                 tickRangeIndex++
                 tickUpper = upperTicks[tickRangeIndex]
-                // tickUpper = await getNextUpperInitializedTick(tickUpper, tickSpacing, pool)
-                // tickUpper = new bn(tickUpper.plus(tickSpacing))
                 sqrtPriceUpperX96 = TickMath.getSqrtRatioAtTick(tickUpper.tick)
             } else {
                 let amountToken1In = calculateAmount1(priceRangeLiquidity, targetSqrtPriceX96.div(q96), currentSqrtPrice)
                 let amountToken0Out = calculateAmount0(priceRangeLiquidity, targetSqrtPriceX96.div(q96), currentSqrtPrice)
 
-                // console.log(`Amount of token out: ${amountToken0Out}`)
-
-                // finalTargetPrice = targetSqrtPriceX96
                 tokenInAmountRemaining = new bn(0)
                 totalTokenOut = totalTokenOut.plus(amountToken0Out)
                 totalTokenIn = totalTokenIn.plus(amountToken1In)
@@ -916,19 +878,33 @@ function calculateAmount1(liq: BigNumber, pa: BigNumber, pb: BigNumber){
     let amount = liq.times(pb.minus(pa))
     return amount
 }
-
 export function getPoolFeeRate(poolAddress: string): number {
-    let poolData: MyLp[] = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'))
-    let contractData = poolData.find((lp: MyLp) => lp.contractAddress.toLowerCase() == poolAddress.toLowerCase())
-    return Number.parseInt(contractData.feeRate)
+
+    const poolData: (DexV3Data | DexV2Data) = getGlmrPoolData(poolAddress)
+    if(isV3Pool(poolData)){
+        return Number.parseInt(poolData.feeRate)
+    }
+    throw new Error(`Can't get fee rate for pool ${poolAddress}. Pool is V2. Fee rates only collected on V3 pools in LP registry`)
 }
 
-export function getGlmrPoolData(poolAddress: string): MyLp {
-    let poolData: MyLp[] = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'))
-    // console.log(JSON.stringify(poolData, null, 2))
-    let contractData = poolData.find((lp: MyLp) => {
-        // console.log(`Database contract address: ${lp.contractAddress.toLowerCase()} --- Input contract address: ${poolAddress}`)
-        return lp.contractAddress.toLowerCase() == poolAddress.toLowerCase()
-    })
-    return contractData
+export function getGlmrPoolData(poolAddress: string): DexV3Data | DexV2Data {
+    const poolData: (DexV3Data | DexV2Data)[] = JSON.parse(fs.readFileSync(glmrLpsPath, 'utf8'));
+    
+    const contractData = poolData.find((lp) => 
+        lp.contractAddress.toLowerCase() === poolAddress.toLowerCase()
+    );
+
+    if (contractData) {
+        if ('currentTick' in contractData) {
+            return contractData as DexV3Data;
+        } else {
+            return contractData as DexV2Data;
+        }
+    }
+
+    throw new Error(`Cant find data for pool with address: ${poolAddress}`)
+}
+
+export function isV3Pool(poolData: DexV3Data | DexV2Data): poolData is DexV3Data{
+    return 'initializedTicks' in poolData;
 }

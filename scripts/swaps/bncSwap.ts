@@ -12,7 +12,7 @@ import { firstValueFrom } from 'rxjs';;
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 import { SmartRouterV2 } from '@zenlink-dex/sdk-router';
 import { FixedPointNumber } from '@acala-network/sdk-core';
-import { IndexObject, PathNodeValues, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
+import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
 import { ModuleBApi, ModuleBChainOption, BifrostConfig } from '@zenlink-dex/sdk-api';
 // const sdkApi = await import('@zenlink-dex/sdk-api');
 // const { ModuleBApi } = sdkApi;
@@ -28,7 +28,7 @@ const bncRpc = "wss://bifrost-parachain.api.onfinality.io/public-ws"
 
 
 export async function getBncSwapExtrinsicDynamic( 
-  swapType: number,
+  swapType: PathType,
   swapInstructions: SwapInstruction[], 
   chopsticks: boolean = true, 
   txIndex: number, 
@@ -97,6 +97,8 @@ export async function getBncSwapExtrinsicDynamic(
   await provider.isReady;
   await dexApi.initApi(); // init the api;
 
+  if (!dexApi.api) throw new Error("bnc dex api npt inititalized");
+
   let accountNonce = await dexApi.api.query.system.account(accountPair.address)
   // let accountNonce = await api.query.system.account(signer.address)
   let nonce = accountNonce.nonce.toNumber()
@@ -127,7 +129,7 @@ export async function getBncSwapExtrinsicDynamic(
   // trade.minimumAmountOut(new Percent(5, 100));
   if (!trade) {
     console.log('There is no match for this trade');
-    return;
+    throw new Error("Cant find trade for bnc kusama swap params")
   }
   
   // Allow for 2% price deviation from expected value,should probably be tighter
@@ -138,7 +140,7 @@ export async function getBncSwapExtrinsicDynamic(
   console.log(`Slip amount: ${slipAmount.toChainData()}`)
 
   const tokenOutAmount = new TokenAmount(tokenOut, amountOutFnMinusSlip.toChainData());
-  if (!dexApi.api) return;
+
 
   const blockNumber = await dexApi.api.query.system.number();
 
@@ -167,7 +169,7 @@ export async function getBncSwapExtrinsicDynamic(
   // if(!reverseTrade){
   //   throw new Error("Cant construct reverse trade BNC")
   // }
-  if (!extrinsics) return;
+  if (!extrinsics) throw new Error("Cant create bnc kusama extrinsic");
 
   let swapTxContainer: SwapExtrinsicContainer = {
     relay: 'kusama',

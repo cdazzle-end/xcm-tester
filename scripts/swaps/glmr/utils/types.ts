@@ -228,32 +228,42 @@ export interface TickData {
     liquidityDelta: string,
     intialized: boolean
 }
-export interface LpV3Data {
+// REVIEW V3 lps dont need the liquidity stats property
+export interface DexV3Data {
+    chainId: number,
+    dexType: string,
     contractAddress: string,
-    token0: string,
-    token1: string,
+    abi: string,
+    poolAssets: string[],
+    liquidityStats: string[],
+    currentTick: string,
     activeLiquidity: string,
-    currentPriceX96: string,
     feeRate: string,
-    currentTick: number,
-    tickSpacing: number,
+    initializedTicks: number[],
     lowerTicks: TickData[],
-    upperTicks: TickData[],
+    upperTicks: TickData[]
+}
+export interface DexV2Data{
+    chainId: number,
+    dexType: string,
+    contractAddress: string,
+    poolAssets: string[],
+    liquidityStats: string[]
 }
 
-export interface MyLp{
-    chainId: number,
-    dexType?: string,
-    contractAddress?: string,
-    abi?: string,
-    poolAssets: any[]
-    liquidityStats: string[],
-    feeRate?: string,
-    currentTick?: number,
-    activeLiquidity?: string,
-    lowerTicks?: TickData[],
-    upperTicks?: TickData[],
-}
+// export interface MyLp{
+//     chainId: number,
+//     dexType?: string,
+//     contractAddress?: string,
+//     abi?: string,
+//     poolAssets: any[]
+//     liquidityStats: string[],
+//     feeRate?: string,
+//     currentTick?: number,
+//     activeLiquidity?: string,
+//     lowerTicks?: TickData[],
+//     upperTicks?: TickData[],
+// }
 
 export interface UniswapV3SwapParams{
     poolAddress: string,

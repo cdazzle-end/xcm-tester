@@ -80,9 +80,10 @@ export const testNets = [
 export const ksmRpc = "wss://kusama-rpc.dwellir.com"
 export const dotRpc = "wss://polkadot-rpc.dwellir.com"
 export const alithAddress = "0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac"
-export const alithPk = process.env.ALITH_PK
-export const arb_wallet_kusama = process.env.ARB_WALLET
-export const live_wallet_3 = process.env.LIVE_WALLET_3_PK
+export const alithPk = process.env.ALITH_PK!
+export const arb_wallet_kusama = process.env.ARB_WALLET!
+export const live_wallet_3 = process.env.LIVE_WALLET_3_PK!
+// if(!alithPk || !arb_wallet_kusama || !live_wallet_3) throw new Error("Error loading MOVR env variables")
 export const mainWalletAddress = "GXeHEVY5SSJFQqcFmANaY3mTsRpcE9EUVzDcGpowbbe41ZZ"
 export const mainWalletEthAddress = '0xAe8Da4A9792503f1eC97eD035e35133A9E65a61f'
 export const ksmTargetNode = '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"KSM\\"}}"'
