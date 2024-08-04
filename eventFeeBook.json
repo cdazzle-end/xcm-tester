@@ -64,7 +64,7 @@
         }
       },
       "{\"NativeAssetId\":{\"Token\":\"AUSD\"}}": {
-        "transferAmount": "6610744857240",
+        "transferAmount": "6612109234840",
         "transferDecimals": "12",
         "transferAssetSymbol": "aUSD",
         "transferAssetId": {
@@ -94,7 +94,7 @@
         "feeAssetId": "GLMR"
       },
       "\"224821240862170613278369189818311486111\"": {
-        "transferAmount": "103327715575780",
+        "transferAmount": "108084194790710",
         "transferDecimals": "12",
         "transferAssetSymbol": "ACA",
         "transferAssetId": "224821240862170613278369189818311486111",
@@ -295,7 +295,7 @@
     },
     "2000": {
       "{\"NativeAssetId\":{\"Token\":\"ACA\"}}": {
-        "depositAmount": "103321285975780",
+        "depositAmount": "108077765190710",
         "feeAmount": "6429600000",
         "feeDecimals": "12",
         "feeAssetSymbol": "ACA",
@@ -358,7 +358,7 @@
         "feeAssetId": "120637696315203257380661607956669368914"
       },
       "\"110021739665376159354538090254163045594\"": {
-        "depositAmount": "6606508597981",
+        "depositAmount": "6607872975581",
         "feeAmount": "4236259259",
         "feeDecimals": "12",
         "feeAssetSymbol": "xcaUSD",
