@@ -103,6 +103,8 @@ export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks
         };
     })
 }
+
+// Used in executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
 export async function watchTokenBalance(relay: Relay, paraId: number, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, assetObject: MyAssetRegistryObject, node: string, accountAddress: string){
     // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
     let tokenSymbol;
