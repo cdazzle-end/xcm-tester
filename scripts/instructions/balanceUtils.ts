@@ -17,7 +17,7 @@ import {BigNumber as bn } from "bignumber.js"
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
 
 export type BalanceAdapter = StatemintAdapter | StatemineAdapter | AcalaAdapter | KaruraAdapter | AstarAdapter | ShidenAdapter | BifrostAdapter | BifrostPolkadotAdapter | CrabAdapter | DarwiniaAdapter | AltairAdapter | CentrifugeAdapter | ShadowAdapter | CrustAdapter | BasiliskAdapter | HydraDxAdapter | PolkadotAdapter | KusamaAdapter | IntegriteeAdapter | InterlayAdapter | KintsugiAdapter | KicoAdapter | PichiuAdapter | ListenAdapter | MangataAdapter | CalamariAdapter | MantaAdapter | MoonbeamAdapter | MoonriverAdapter | KhalaAdapter | PhalaAdapter | TuringAdapter | OakAdapter | HeikoAdapter | ParallelAdapter | RobonomicsAdapter | TinkernetAdapter | InvarchAdapter | QuartzAdapter | UniqueAdapter | ZeitgeistAdapter | SubsocialAdapter | NodleAdapter | PendulumAdapter | KiltAdapter;
-
+// ***
 // Used in executeSingleTransferExtrinsic
 export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks: boolean, destChainApi: ApiPromise, transferrableAssetObject: TransferrableAssetObject, depositAddress: string){
     let tokenSymbol: string;
@@ -103,7 +103,7 @@ export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks
         };
     })
 }
-
+// ***
 // Used in executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
 export async function watchTokenBalance(relay: Relay, paraId: number, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, assetObject: MyAssetRegistryObject, node: string, accountAddress: string){
     // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
@@ -200,6 +200,7 @@ export async function watchTokenBalance(relay: Relay, paraId: number, chopsticks
     
 }
 
+// Used  on balance adapter observable
 // Used in executeSingleTransferExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
 export async function getBalanceChange(
     balanceObservable$: Observable<BalanceData>,
@@ -278,6 +279,8 @@ export async function getBalanceChange(
     });
     return balanceChangePromise
 }
+
+// Used in getRelayTokenBalanceAcrossChains, getRelayTokenBalances, allocateKsmFromPreTransferPaths
 export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, node: TNode | "Kusama" | "Polkadot", chainId: number, assetSymbol: string): Promise<BalanceData>{
     let evm = node == "Moonbeam" || node == "Moonriver" ? true : false
     let account = await getSigner(chopsticks, evm)
