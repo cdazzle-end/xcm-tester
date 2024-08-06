@@ -27,7 +27,7 @@ import { formatMovrTx, getMovrSwapTx, testXcTokensMoonriver } from './../swaps/m
 import '@galacticcouncil/api-augment/basilisk';
 import { getApiForNode } from './apiUtils.ts';
 import { setLastExtrinsicSet, getLastExecutionState, setExecutionSuccess } from './globalStateUtils.ts';
-import { getBalanceChainAsset, getBalanceChange, getRelayTokenBalances, watchTokenBalance } from './balanceUtils.ts';
+import { getBalanceChainAsset, getBalanceChange, getBalanceFromId, getRelayTokenBalances, watchTokenBalance } from './balanceUtils.ts';
 import bn, { BigNumber } from 'bignumber.js'
 import { ManagerSwapParams } from './../swaps/glmr/utils/types.ts';
 import { executeSingleGlmrSwap, testGlmrRpc } from './../swaps/glmr/glmrSwap.ts';
@@ -73,647 +73,647 @@ export let globalState: ExecutionState = {
 }
 
 
-async function buildTest(){
-    let relay: Relay = 'polkadot'
+// async function buildTest(){
+//     let relay: Relay = 'polkadot'
 
-    let latestFile = './testAcaPath.json'
-    let arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
-    let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
+//     let latestFile = './testAcaPath.json'
+//     let arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
+//     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
 
-    assetPath.forEach(asset => {
-        console.log(`Chain: ${asset.getChainId()}, Node: ${asset.paraspellChain}, Asset: ${asset.getAssetRegistrySymbol()}, Amount: ${asset.pathValue}`)
-    })
+//     assetPath.forEach(asset => {
+//         console.log(`Chain: ${asset.getChainId()}, Node: ${asset.paraspellChain}, Asset: ${asset.getAssetRegistrySymbol()}, Amount: ${asset.pathValue}`)
+//     })
 
-    let instructionSet = await buildInstructionSet(relay, assetPath)
-    await printInstructionSet(instructionSet)
+//     let instructionSet = await buildInstructionSet(relay, assetPath)
+//     await printInstructionSet(instructionSet)
 
-    // await buildPolkadotExtrinsics(relay, instructionSet, false, false, 20)
-    await buildAndExecuteExtrinsics(relay, instructionSet, true, false, 20)
-}
-
-// Use instructions to build and execute tx's one by one. Main execution flow happens here
-async function buildPolkadotExtrinsics(relay: Relay, instructionSet: (SwapInstruction | TransferInstruction)[], chopsticks: boolean, executeMovr: boolean, testLoops: number): Promise<ExtrinsicSetResultDynamic> {
-    let swapInstructions: SwapInstruction[] = [];
-    let extrinsicIndex: IndexObject = {i: 0}
-    let allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) [] = [];
-
-    let nodeEndKeys = relay === 'kusama' ? kusamaNodeKeys : dotNodeKeys
-
-    if(globalState.extrinsicSetResults != null){
-        console.log("********************************************************")
-        console.log("Using global state extrinsic set results")
-        allExtrinsicResultData = globalState.extrinsicSetResults.allExtrinsicResults
-    } else {
-        console.log("********************************************************")
-        console.log("Extrinsic set is null")
-    }
-    let chainNonces: ChainNonces = relay === 'kusama' ? 
-    {
-        2000: 0,
-        2023: 0,
-        2001: 0,
-        2090: 0,
-        2110: 0,
-        2085: 0
-    } : {
-        2000: 0,
-        2023: 0,
-        2001: 0,
-        2090: 0,
-        2110: 0,
-        2085: 0
-    }
-    let nextInputValue: number = 0;
-    let testLoopIndex = 0;
-    // let lastNode: LastNode;
-    console.log("Instruction set length: ", instructionSet.length)
-    try{
-        for (const instruction of instructionSet) {
-            // console.log("Instruction: ", instruction)
-            // If last successful node is a KSM node, we can finish
-            if(globalState.lastNode != null && nodeEndKeys.includes(globalState.lastNode.assetKey)){
-                let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                    success: true,
-                    allExtrinsicResults: allExtrinsicResultData,
-                    lastSuccessfulNode: globalState.lastNode,
-                }
-                return extrinsicSetResults
-            }
-            if(testLoopIndex > testLoops){
-                console.log("Breaking out of loop")
-                break;
-            }
-            testLoopIndex += 1;
-            switch (instruction.type) {
-                case InstructionType.Swap:
-                    //If MOVR, SKIP and set next to 0
-                    // if(chopsticks == true && instruction.assetNodes[0].getChainId() == 2023){
-                    //     nextInputValue = 0
-                    //     break;
-                    // }
-                    // If swap is of the same type, accumulate
-                    if(swapInstructions.length == 0 || swapInstructions[swapInstructions.length - 1].pathType == instruction.pathType){
-                        swapInstructions.push(instruction);
-
-                    // If swap is of a different type, build extrinsic for the so far accumulated swap instructions
-                    } else {
-                        let instructionsToExecute = swapInstructions
-
-                        while(instructionsToExecute.length > 0){
-                            if(nextInputValue > 0){
-                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
-                            }
-
-                            console.log("Building swap extrinsic: ")
-
-                            let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
-                            let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
-
-                            console.log(JSON.stringify(swapExtrinsicContainer.extrinsic))
-                            instructionsToExecute = remainingInstructions
-                            // let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
-                            // if(extrinsicResultData.success == false){
-                            //     console.log("Extrinsic failed")
-                            //     console.log(extrinsicResultData.arbExecutionResult)
-                                
-                                
-                            //     allExtrinsicResultData.push(extrinsicResultData)
-                            //     printExtrinsicSetResults(allExtrinsicResultData)
-                            //     // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-                            //     let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                            //         success: false,
-                            //         extrinsicData: allExtrinsicResultData,
-                            //         lastSuccessfulNode: globalState.lastNode,
-                            //     }
-                            //     setLastExtrinsicSet(extrinsicSetResults)
-                            //     return extrinsicSetResults
-                            // }
-
-                            // // MOVR swaps return undefined in test, not error just skip
-                            // if(!extrinsicResultData){
-                            //     nextInputValue = 0
-                            //     break;
-                            // }
-                            // allExtrinsicResultData.push(extrinsicResultData)
-                            // let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                            //     success: true,
-                            //     extrinsicData: allExtrinsicResultData,
-                            //     lastSuccessfulNode: globalState.lastNode,
-                            // }
-                            // setLastExtrinsicSet(extrinsicSetResults)
-                            // nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
-                            // instructionsToExecute = remainingInstructions
-
-
-                        }
-                        swapInstructions = [instruction];
-                    }
-                    break;
-                default:
-                    // For other types of instructions
-                    // First execute any queued up swap instructions
-                    if (swapInstructions.length > 0) {
-                        let instructionsToExecute = swapInstructions
-                        while(instructionsToExecute.length > 0){
-                            if( nextInputValue > 0){
-                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
-                            }
-                            console.log("Building swap extrinsic: ")
-                            let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
-
-                            console.log(JSON.stringify(swapExtrinsicContainer.extrinsic))
-                            instructionsToExecute = remainingInstructions
-                            // let extrinsicObj: ExtrinsicObject = {
-                            //     type: "Swap",
-                            //     instructionIndex: swapExtrinsicContainer.instructionIndex,
-                            //     extrinsicIndex: swapExtrinsicContainer.extrinsicIndex,
-                            //     swapExtrinsicContainer: swapExtrinsicContainer
-                            // }
-                            // let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
-                            // // If undefined, not error just skip
-                            // if(!extrinsicResultData){
-                            //     nextInputValue = 0
-                            //     break;
-                            // }
-                            // if(extrinsicResultData.success == false){
-                            //     console.log("Extrinsic failed")
-                            //     console.log(extrinsicResultData.arbExecutionResult)
-                            //     allExtrinsicResultData.push(extrinsicResultData)
-                            //     printExtrinsicSetResults(allExtrinsicResultData)
-                            //     // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-                            //     let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                            //         success: false,
-                            //         extrinsicData: allExtrinsicResultData,
-                            //         lastSuccessfulNode: globalState.lastNode,
-                            //     }
-                            //     setLastExtrinsicSet(extrinsicSetResults)
-                            //     return extrinsicSetResults
-                            // }
-                            // allExtrinsicResultData.push(extrinsicResultData)
-                            // let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                            //     success: true,
-                            //     extrinsicData: allExtrinsicResultData,
-                            //     lastSuccessfulNode: globalState.lastNode,
-                            // }
-                            // setLastExtrinsicSet(extrinsicSetResults)
-                            // nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
-                            // instructionsToExecute = remainingInstructions
-                        }
-                        swapInstructions = [];   
-                    }
-                    // Then execute transfer instructions
-                    let instructionsToExecute = [instruction]
-                    while(instructionsToExecute.length > 0){
-                        if(nextInputValue > 0){
-                            instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
-                        }
-                        console.log("Building transfer extrinsic: ")
-                        let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionsToExecute[0], extrinsicIndex, chopsticks);
-                        instructionsToExecute = remainingInstructions
-                        console.log(JSON.stringify(transferExtrinsic.extrinsic))
-                        // let extrinsicObj: ExtrinsicObject = {
-                        //     type: "Transfer",
-                        //     instructionIndex: transferExtrinsic.instructionIndex,
-                        //     extrinsicIndex: transferExtrinsic.extrinsicIndex,
-                        //     transferExtrinsicContainer: transferExtrinsic
-                        // }
-    
-                        // let transferExtrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
-                        // // If undefined and running test, either start or dest chain not running in chopsticks. not error just skip
-                        // if(chopsticks && !transferExtrinsicResultData){
-                        //     nextInputValue = 0
-                        //     break;
-                        // }
-                        // if(transferExtrinsicResultData.success == false){
-                        //     console.log("Extrinsic failed")
-                        //     console.log(transferExtrinsicResultData.arbExecutionResult)
-                        //     allExtrinsicResultData.push(transferExtrinsicResultData)
-                        //     printExtrinsicSetResults(allExtrinsicResultData)
-                        //     // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-                        //     let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                        //         success: false,
-                        //         extrinsicData: allExtrinsicResultData,
-                        //         lastSuccessfulNode: globalState.lastNode,
-                        //     }
-                        //     setLastExtrinsicSet(extrinsicSetResults)
-                        //     return extrinsicSetResults
-                        // }
-                        
-                        // nextInputValue = Number.parseFloat(transferExtrinsicResultData.lastNode.assetValue)
-                        // allExtrinsicResultData.push(transferExtrinsicResultData)
-                        // instructionsToExecute = remainingInstructions
-                        // let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                        //     success: true,
-                        //     extrinsicData: allExtrinsicResultData,
-                        //     lastSuccessfulNode: globalState.lastNode,
-                        // }
-                        // setLastExtrinsicSet(extrinsicSetResults)
-                    }
-                    break;
-
-            }
-        }
-        // Handle any remaining swap instructions at the end of the instruction set
-        // let instructionsToExecute = swapInstructions
-        // while(instructionsToExecute.length > 0 && testLoopIndex < testLoops){
-        //     let [extrinsicResultData, remainingInstructions] = await buildAndExecuteSwapExtrinsic(relay, instructionsToExecute, chopsticks, executeMovr, nextInputValue, chainNonces, extrinsicIndex)
-        //     if(extrinsicResultData.success == false){
-        //         console.log("Extrinsic failed")
-        //         console.log(extrinsicResultData.arbExecutionResult)
-        //         allExtrinsicResultData.push(extrinsicResultData)
-        //         printExtrinsicSetResults(allExtrinsicResultData)
-        //         // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-        //         let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-        //             success: false,
-        //             extrinsicData: allExtrinsicResultData,
-        //             lastSuccessfulNode: globalState.lastNode,
-        //         }
-        //         setLastExtrinsicSet(extrinsicSetResults)
-        //         return extrinsicSetResults
-        //     }
-        //     // If undefined, not error just skip
-        //     if(!extrinsicResultData){
-        //         nextInputValue = 0
-        //         break;
-        //     }
-        //     allExtrinsicResultData.push(extrinsicResultData)
-        //     let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-        //         success: true,
-        //         extrinsicData: allExtrinsicResultData,
-        //         lastSuccessfulNode: globalState.lastNode,
-        //     }
-        //     setLastExtrinsicSet(extrinsicSetResults)
-        //     nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
-        //     instructionsToExecute = remainingInstructions
-        // }
-        swapInstructions = [];   
-    } catch(e){
-        // Need to properly handle this. Error should be extrinsicResultData
-        // console.log(e)
-        // printExtrinsicSetResults(allExtrinsicResultData)
-        // // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-        // let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-        //     success: false,
-        //     extrinsicData: allExtrinsicResultData,
-        //     lastSuccessfulNode: globalState.lastNode,
-        // }
-        // setLastExtrinsicSet(extrinsicSetResults)
-        // return extrinsicSetResults
-
-    }
-    // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-    // let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-    //     success: true,
-    //     extrinsicData: allExtrinsicResultData,
-    //     lastSuccessfulNode: globalState.lastNode,
-    // }
-    // setLastExtrinsicSet(extrinsicSetResults)
-    // return extrinsicSetResults;
-}
+//     // await buildPolkadotExtrinsics(relay, instructionSet, false, false, 20)
+//     await buildAndExecuteExtrinsics(relay, instructionSet, true, false, 20)
+// }
 
 // Use instructions to build and execute tx's one by one. Main execution flow happens here
-async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInstruction | TransferInstruction)[], chopsticks: boolean, executeMovr: boolean, testLoops: number): Promise<ExtrinsicSetResultDynamic> {
-    let swapInstructions: SwapInstruction[] = [];
-    let extrinsicIndex: IndexObject = {i: 0}
-    let allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) [] = [];
+// async function buildPolkadotExtrinsics(relay: Relay, instructionSet: (SwapInstruction | TransferInstruction)[], chopsticks: boolean, executeMovr: boolean, testLoops: number): Promise<ExtrinsicSetResultDynamic> {
+//     let swapInstructions: SwapInstruction[] = [];
+//     let extrinsicIndex: IndexObject = {i: 0}
+//     let allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) [] = [];
 
-    let nodeEndKeys = relay === 'kusama' ? kusamaNodeKeys : dotNodeKeys
+//     let nodeEndKeys = relay === 'kusama' ? kusamaNodeKeys : dotNodeKeys
 
-    if(globalState.extrinsicSetResults != null){
-        console.log("********************************************************")
-        console.log("Using global state extrinsic set results")
-        allExtrinsicResultData = globalState.extrinsicSetResults.allExtrinsicResults
-    } else {
-        console.log("********************************************************")
-        console.log("Extrinsic set is null")
-    }
-    let chainNonces: ChainNonces = relay === 'kusama' ? 
-    {
-        2000: 0,
-        2023: 0,
-        2001: 0,
-        2090: 0,
-        2110: 0,
-        2085: 0
-    } : {
-        2000: 0,
-        2023: 0,
-        2001: 0,
-        2090: 0,
-        2110: 0,
-        2085: 0
-    }
-    let nextInputValue: string = "0";
-    let testLoopIndex = 0;
-    // let lastNode: LastNode;
-    try{
-        for (const instruction of instructionSet) {
+//     if(globalState.extrinsicSetResults != null){
+//         console.log("********************************************************")
+//         console.log("Using global state extrinsic set results")
+//         allExtrinsicResultData = globalState.extrinsicSetResults.allExtrinsicResults
+//     } else {
+//         console.log("********************************************************")
+//         console.log("Extrinsic set is null")
+//     }
+//     let chainNonces: ChainNonces = relay === 'kusama' ? 
+//     {
+//         2000: 0,
+//         2023: 0,
+//         2001: 0,
+//         2090: 0,
+//         2110: 0,
+//         2085: 0
+//     } : {
+//         2000: 0,
+//         2023: 0,
+//         2001: 0,
+//         2090: 0,
+//         2110: 0,
+//         2085: 0
+//     }
+//     let nextInputValue: number = 0;
+//     let testLoopIndex = 0;
+//     // let lastNode: LastNode;
+//     console.log("Instruction set length: ", instructionSet.length)
+//     try{
+//         for (const instruction of instructionSet) {
+//             // console.log("Instruction: ", instruction)
+//             // If last successful node is a KSM node, we can finish
+//             if(globalState.lastNode != null && nodeEndKeys.includes(globalState.lastNode.assetKey)){
+//                 let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                     success: true,
+//                     allExtrinsicResults: allExtrinsicResultData,
+//                     lastSuccessfulNode: globalState.lastNode,
+//                 }
+//                 return extrinsicSetResults
+//             }
+//             if(testLoopIndex > testLoops){
+//                 console.log("Breaking out of loop")
+//                 break;
+//             }
+//             testLoopIndex += 1;
+//             switch (instruction.type) {
+//                 case InstructionType.Swap:
+//                     //If MOVR, SKIP and set next to 0
+//                     // if(chopsticks == true && instruction.assetNodes[0].getChainId() == 2023){
+//                     //     nextInputValue = 0
+//                     //     break;
+//                     // }
+//                     // If swap is of the same type, accumulate
+//                     if(swapInstructions.length == 0 || swapInstructions[swapInstructions.length - 1].pathType == instruction.pathType){
+//                         swapInstructions.push(instruction);
 
-            // If last successful node is a KSM node, we can finish
-            if(globalState.lastNode != null && nodeEndKeys.includes(globalState.lastNode.assetKey)){
-                let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                    success: true,
-                    allExtrinsicResults: allExtrinsicResultData,
-                    lastSuccessfulNode: globalState.lastNode,
-                }
-                return extrinsicSetResults
-            }
-            if(testLoopIndex > testLoops){
-                break;
-            }
-            testLoopIndex += 1;
-            switch (instruction.type) {
-                case InstructionType.Swap:
-                    //If EVM, SKIP and set next to 0
-                    if(
-                        chopsticks == true && relay == 'kusama' && instruction.assetNodes[0].getChainId() == 2023 ||
-                        chopsticks == true && relay == 'polkadot' && instruction.assetNodes[0].getChainId() == 2004
-                    ){
-                        nextInputValue = "0"
-                        break;
-                    }
-                    // If swap is of the same type, accumulate
-                    if(swapInstructions.length == 0 || swapInstructions[swapInstructions.length - 1].pathType == instruction.pathType){
-                        swapInstructions.push(instruction);
+//                     // If swap is of a different type, build extrinsic for the so far accumulated swap instructions
+//                     } else {
+//                         let instructionsToExecute = swapInstructions
 
-                    // If swap is of a different type, build extrinsic for the so far accumulated swap instructions
-                    } else {
-                        let instructionsToExecute = swapInstructions
+//                         while(instructionsToExecute.length > 0){
+//                             if(nextInputValue > 0){
+//                                 instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
+//                             }
 
-                        while(instructionsToExecute.length > 0){
-                            if(Number.parseFloat(nextInputValue) > 0){
-                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
-                            }
-                            let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
-                            let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
-                            
-                            let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
-                            // MOVR swaps return undefined in test, not error just skip
-                            if(!extrinsicResultData){
-                                nextInputValue = "0"
-                                break;
-                            }
-                            
-                            if(extrinsicResultData.success == false){
-                                console.log("Extrinsic failed")
-                                console.log(extrinsicResultData.arbExecutionResult)
+//                             console.log("Building swap extrinsic: ")
+
+//                             let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
+//                             let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
+
+//                             console.log(JSON.stringify(swapExtrinsicContainer.extrinsic))
+//                             instructionsToExecute = remainingInstructions
+//                             // let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+//                             // if(extrinsicResultData.success == false){
+//                             //     console.log("Extrinsic failed")
+//                             //     console.log(extrinsicResultData.arbExecutionResult)
                                 
                                 
-                                allExtrinsicResultData.push(extrinsicResultData)
-                                printExtrinsicSetResults(allExtrinsicResultData)
-                                // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-                                let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                                    success: false,
-                                    allExtrinsicResults: allExtrinsicResultData,
-                                    lastSuccessfulNode: globalState.lastNode,
-                                }
-                                setLastExtrinsicSet(extrinsicSetResults, relay)
-                                return extrinsicSetResults
-                            }
+//                             //     allExtrinsicResultData.push(extrinsicResultData)
+//                             //     printExtrinsicSetResults(allExtrinsicResultData)
+//                             //     // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//                             //     let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                             //         success: false,
+//                             //         extrinsicData: allExtrinsicResultData,
+//                             //         lastSuccessfulNode: globalState.lastNode,
+//                             //     }
+//                             //     setLastExtrinsicSet(extrinsicSetResults)
+//                             //     return extrinsicSetResults
+//                             // }
 
-                            
-                            allExtrinsicResultData.push(extrinsicResultData)
-                            let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                                success: true,
-                                allExtrinsicResults: allExtrinsicResultData,
-                                lastSuccessfulNode: globalState.lastNode,
-                            }
-                            setLastExtrinsicSet(extrinsicSetResults, relay)
-                            nextInputValue = extrinsicResultData.lastNode.assetValue
-                            instructionsToExecute = remainingInstructions
+//                             // // MOVR swaps return undefined in test, not error just skip
+//                             // if(!extrinsicResultData){
+//                             //     nextInputValue = 0
+//                             //     break;
+//                             // }
+//                             // allExtrinsicResultData.push(extrinsicResultData)
+//                             // let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                             //     success: true,
+//                             //     extrinsicData: allExtrinsicResultData,
+//                             //     lastSuccessfulNode: globalState.lastNode,
+//                             // }
+//                             // setLastExtrinsicSet(extrinsicSetResults)
+//                             // nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
+//                             // instructionsToExecute = remainingInstructions
 
-                        }
-                        swapInstructions = [instruction];
-                    }
-                    break;
-                default:
-                    // For other types of instructions
-                    // First execute any queued up swap instructions
-                    if (swapInstructions.length > 0) {
-                        let instructionsToExecute = swapInstructions
-                        while(instructionsToExecute.length > 0){
-                            if( Number.parseFloat(nextInputValue) > 0){
-                                instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
-                            }
-                            let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
-                            let extrinsicObj: ExtrinsicObject = {
-                                type: "Swap",
-                                instructionIndex: swapExtrinsicContainer.instructionIndex,
-                                extrinsicIndex: swapExtrinsicContainer.extrinsicIndex,
-                                swapExtrinsicContainer: swapExtrinsicContainer
-                            }
-                            let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
-                            // If undefined, not error just skip
-                            if(!extrinsicResultData){
-                                nextInputValue = "0"
-                                break;
-                            }
-                            if(extrinsicResultData.success == false){
-                                console.log("Extrinsic failed")
-                                console.log(extrinsicResultData.arbExecutionResult)
-                                allExtrinsicResultData.push(extrinsicResultData)
-                                printExtrinsicSetResults(allExtrinsicResultData)
-                                // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-                                let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                                    success: false,
-                                    allExtrinsicResults: allExtrinsicResultData,
-                                    lastSuccessfulNode: globalState.lastNode,
-                                }
-                                setLastExtrinsicSet(extrinsicSetResults, relay)
-                                return extrinsicSetResults
-                            }
-                            allExtrinsicResultData.push(extrinsicResultData)
-                            let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                                success: true,
-                                allExtrinsicResults: allExtrinsicResultData,
-                                lastSuccessfulNode: globalState.lastNode,
-                            }
-                            setLastExtrinsicSet(extrinsicSetResults, relay)
-                            nextInputValue = extrinsicResultData.lastNode.assetValue
-                            instructionsToExecute = remainingInstructions
-                        }
-                        swapInstructions = [];   
-                    }
-                    // Then execute transfer instructions
-                    let instructionsToExecute = [instruction]
-                    while(instructionsToExecute.length > 0){
-                        if(Number.parseFloat(nextInputValue) > 0){
-                            instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
-                        }
-                        let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionsToExecute[0], extrinsicIndex, chopsticks);
-                        let extrinsicObj: ExtrinsicObject = {
-                            type: "Transfer",
-                            instructionIndex: transferExtrinsic.instructionIndex,
-                            extrinsicIndex: transferExtrinsic.extrinsicIndex,
-                            transferExtrinsicContainer: transferExtrinsic
-                        }
+
+//                         }
+//                         swapInstructions = [instruction];
+//                     }
+//                     break;
+//                 default:
+//                     // For other types of instructions
+//                     // First execute any queued up swap instructions
+//                     if (swapInstructions.length > 0) {
+//                         let instructionsToExecute = swapInstructions
+//                         while(instructionsToExecute.length > 0){
+//                             if( nextInputValue > 0){
+//                                 instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
+//                             }
+//                             console.log("Building swap extrinsic: ")
+//                             let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
+
+//                             console.log(JSON.stringify(swapExtrinsicContainer.extrinsic))
+//                             instructionsToExecute = remainingInstructions
+//                             // let extrinsicObj: ExtrinsicObject = {
+//                             //     type: "Swap",
+//                             //     instructionIndex: swapExtrinsicContainer.instructionIndex,
+//                             //     extrinsicIndex: swapExtrinsicContainer.extrinsicIndex,
+//                             //     swapExtrinsicContainer: swapExtrinsicContainer
+//                             // }
+//                             // let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+//                             // // If undefined, not error just skip
+//                             // if(!extrinsicResultData){
+//                             //     nextInputValue = 0
+//                             //     break;
+//                             // }
+//                             // if(extrinsicResultData.success == false){
+//                             //     console.log("Extrinsic failed")
+//                             //     console.log(extrinsicResultData.arbExecutionResult)
+//                             //     allExtrinsicResultData.push(extrinsicResultData)
+//                             //     printExtrinsicSetResults(allExtrinsicResultData)
+//                             //     // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//                             //     let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                             //         success: false,
+//                             //         extrinsicData: allExtrinsicResultData,
+//                             //         lastSuccessfulNode: globalState.lastNode,
+//                             //     }
+//                             //     setLastExtrinsicSet(extrinsicSetResults)
+//                             //     return extrinsicSetResults
+//                             // }
+//                             // allExtrinsicResultData.push(extrinsicResultData)
+//                             // let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                             //     success: true,
+//                             //     extrinsicData: allExtrinsicResultData,
+//                             //     lastSuccessfulNode: globalState.lastNode,
+//                             // }
+//                             // setLastExtrinsicSet(extrinsicSetResults)
+//                             // nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
+//                             // instructionsToExecute = remainingInstructions
+//                         }
+//                         swapInstructions = [];   
+//                     }
+//                     // Then execute transfer instructions
+//                     let instructionsToExecute = [instruction]
+//                     while(instructionsToExecute.length > 0){
+//                         if(nextInputValue > 0){
+//                             instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
+//                         }
+//                         console.log("Building transfer extrinsic: ")
+//                         let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionsToExecute[0], extrinsicIndex, chopsticks);
+//                         instructionsToExecute = remainingInstructions
+//                         console.log(JSON.stringify(transferExtrinsic.extrinsic))
+//                         // let extrinsicObj: ExtrinsicObject = {
+//                         //     type: "Transfer",
+//                         //     instructionIndex: transferExtrinsic.instructionIndex,
+//                         //     extrinsicIndex: transferExtrinsic.extrinsicIndex,
+//                         //     transferExtrinsicContainer: transferExtrinsic
+//                         // }
     
-                        let transferExtrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
-                        // If undefined and running test, either start or dest chain not running in chopsticks. not error just skip
-                        if(chopsticks && !transferExtrinsicResultData){
-                            nextInputValue = "0"
-                            break;
-                        }
-                        if(transferExtrinsicResultData.success == false){
-                            console.log("Extrinsic failed")
-                            console.log(transferExtrinsicResultData.arbExecutionResult)
-                            allExtrinsicResultData.push(transferExtrinsicResultData)
-                            printExtrinsicSetResults(allExtrinsicResultData)
-                            // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-                            let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                                success: false,
-                                allExtrinsicResults: allExtrinsicResultData,
-                                lastSuccessfulNode: globalState.lastNode,
-                            }
-                            setLastExtrinsicSet(extrinsicSetResults, relay)
-                            return extrinsicSetResults
-                        }
+//                         // let transferExtrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+//                         // // If undefined and running test, either start or dest chain not running in chopsticks. not error just skip
+//                         // if(chopsticks && !transferExtrinsicResultData){
+//                         //     nextInputValue = 0
+//                         //     break;
+//                         // }
+//                         // if(transferExtrinsicResultData.success == false){
+//                         //     console.log("Extrinsic failed")
+//                         //     console.log(transferExtrinsicResultData.arbExecutionResult)
+//                         //     allExtrinsicResultData.push(transferExtrinsicResultData)
+//                         //     printExtrinsicSetResults(allExtrinsicResultData)
+//                         //     // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//                         //     let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                         //         success: false,
+//                         //         extrinsicData: allExtrinsicResultData,
+//                         //         lastSuccessfulNode: globalState.lastNode,
+//                         //     }
+//                         //     setLastExtrinsicSet(extrinsicSetResults)
+//                         //     return extrinsicSetResults
+//                         // }
                         
-                        nextInputValue = transferExtrinsicResultData.lastNode.assetValue
-                        allExtrinsicResultData.push(transferExtrinsicResultData)
-                        instructionsToExecute = remainingInstructions
-                        let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                            success: true,
-                            allExtrinsicResults: allExtrinsicResultData,
-                            lastSuccessfulNode: globalState.lastNode,
-                        }
-                        setLastExtrinsicSet(extrinsicSetResults, relay)
-                    }
-                    break;
+//                         // nextInputValue = Number.parseFloat(transferExtrinsicResultData.lastNode.assetValue)
+//                         // allExtrinsicResultData.push(transferExtrinsicResultData)
+//                         // instructionsToExecute = remainingInstructions
+//                         // let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                         //     success: true,
+//                         //     extrinsicData: allExtrinsicResultData,
+//                         //     lastSuccessfulNode: globalState.lastNode,
+//                         // }
+//                         // setLastExtrinsicSet(extrinsicSetResults)
+//                     }
+//                     break;
 
-            }
-        }
-        // Handle any remaining swap instructions at the end of the instruction set
-        let instructionsToExecute = swapInstructions
-        while(instructionsToExecute.length > 0 && testLoopIndex < testLoops){
-            let [extrinsicResultData, remainingInstructions] = await buildAndExecuteSwapExtrinsic(relay, instructionsToExecute, chopsticks, executeMovr, nextInputValue, chainNonces, extrinsicIndex)
-            if(extrinsicResultData.success == false){
-                console.log("Extrinsic failed")
-                console.log(extrinsicResultData.arbExecutionResult)
-                allExtrinsicResultData.push(extrinsicResultData)
-                printExtrinsicSetResults(allExtrinsicResultData)
-                // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-                let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                    success: false,
-                    allExtrinsicResults: allExtrinsicResultData,
-                    lastSuccessfulNode: globalState.lastNode,
-                }
-                setLastExtrinsicSet(extrinsicSetResults, relay)
-                return extrinsicSetResults
-            }
-            // If undefined, not error just skip
-            if(!extrinsicResultData){
-                nextInputValue = "0"
-                break;
-            }
-            allExtrinsicResultData.push(extrinsicResultData)
-            let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-                success: true,
-                allExtrinsicResults: allExtrinsicResultData,
-                lastSuccessfulNode: globalState.lastNode,
-            }
-            setLastExtrinsicSet(extrinsicSetResults, relay)
-            nextInputValue = extrinsicResultData.lastNode.assetValue
-            instructionsToExecute = remainingInstructions
-        }
-        swapInstructions = [];   
-    } catch(e){
-        // Need to properly handle this. Error should be extrinsicResultData
-        console.log(e)
-        printExtrinsicSetResults(allExtrinsicResultData)
-        // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-        let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-            success: false,
-            allExtrinsicResults: allExtrinsicResultData,
-            lastSuccessfulNode: globalState.lastNode,
-        }
-        setLastExtrinsicSet(extrinsicSetResults, relay)
-        return extrinsicSetResults
+//             }
+//         }
+//         // Handle any remaining swap instructions at the end of the instruction set
+//         // let instructionsToExecute = swapInstructions
+//         // while(instructionsToExecute.length > 0 && testLoopIndex < testLoops){
+//         //     let [extrinsicResultData, remainingInstructions] = await buildAndExecuteSwapExtrinsic(relay, instructionsToExecute, chopsticks, executeMovr, nextInputValue, chainNonces, extrinsicIndex)
+//         //     if(extrinsicResultData.success == false){
+//         //         console.log("Extrinsic failed")
+//         //         console.log(extrinsicResultData.arbExecutionResult)
+//         //         allExtrinsicResultData.push(extrinsicResultData)
+//         //         printExtrinsicSetResults(allExtrinsicResultData)
+//         //         // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//         //         let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//         //             success: false,
+//         //             extrinsicData: allExtrinsicResultData,
+//         //             lastSuccessfulNode: globalState.lastNode,
+//         //         }
+//         //         setLastExtrinsicSet(extrinsicSetResults)
+//         //         return extrinsicSetResults
+//         //     }
+//         //     // If undefined, not error just skip
+//         //     if(!extrinsicResultData){
+//         //         nextInputValue = 0
+//         //         break;
+//         //     }
+//         //     allExtrinsicResultData.push(extrinsicResultData)
+//         //     let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//         //         success: true,
+//         //         extrinsicData: allExtrinsicResultData,
+//         //         lastSuccessfulNode: globalState.lastNode,
+//         //     }
+//         //     setLastExtrinsicSet(extrinsicSetResults)
+//         //     nextInputValue = Number.parseFloat(extrinsicResultData.lastNode.assetValue)
+//         //     instructionsToExecute = remainingInstructions
+//         // }
+//         swapInstructions = [];   
+//     } catch(e){
+//         // Need to properly handle this. Error should be extrinsicResultData
+//         // console.log(e)
+//         // printExtrinsicSetResults(allExtrinsicResultData)
+//         // // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//         // let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//         //     success: false,
+//         //     extrinsicData: allExtrinsicResultData,
+//         //     lastSuccessfulNode: globalState.lastNode,
+//         // }
+//         // setLastExtrinsicSet(extrinsicSetResults)
+//         // return extrinsicSetResults
 
-    }
-    // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
-    let extrinsicSetResults: ExtrinsicSetResultDynamic = {
-        success: true,
-        allExtrinsicResults: allExtrinsicResultData,
-        lastSuccessfulNode: globalState.lastNode,
-    }
-    setLastExtrinsicSet(extrinsicSetResults, relay)
-    return extrinsicSetResults;
-}
-async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: boolean, customInput: number = 0){
-    globalState = getLastExecutionState(relay)
-    let lastTransactionState: TransactionState = globalState.transactionState
+//     }
+//     // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//     // let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//     //     success: true,
+//     //     extrinsicData: allExtrinsicResultData,
+//     //     lastSuccessfulNode: globalState.lastNode,
+//     // }
+//     // setLastExtrinsicSet(extrinsicSetResults)
+//     // return extrinsicSetResults;
+// }
 
-    // If last transaction has been submitted but not finalized, we need to query the balances to see if it completed successfully or not
-    if(globalState.transactionState == TransactionState.Broadcasted){
-        await confirmLastTransactionSuccess(globalState.transactionProperties)
-        globalState.transactionState = TransactionState.PreSubmission
-    }
+// Use instructions to build and execute tx's one by one. Main execution flow happens here
+// async function buildAndExecuteExtrinsics(relay: Relay, instructionSet: (SwapInstruction | TransferInstruction)[], chopsticks: boolean, executeMovr: boolean, testLoops: number): Promise<ExtrinsicSetResultDynamic> {
+//     let swapInstructions: SwapInstruction[] = [];
+//     let extrinsicIndex: IndexObject = {i: 0}
+//     let allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) [] = [];
 
-    globalState.extrinsicSetResults.allExtrinsicResults.forEach((extrinsicData) => {
-        console.log(JSON.stringify(extrinsicData.arbExecutionResult, null, 2))
-    })
-    // globalState = executionState
+//     let nodeEndKeys = relay === 'kusama' ? kusamaNodeKeys : dotNodeKeys
 
-    if(!globalState.lastNode){
-        console.log("Last node is undefined. No extrinsics executed successfully. Exiting")
-        return;
-    }
+//     if(globalState.extrinsicSetResults != null){
+//         console.log("********************************************************")
+//         console.log("Using global state extrinsic set results")
+//         allExtrinsicResultData = globalState.extrinsicSetResults.allExtrinsicResults
+//     } else {
+//         console.log("********************************************************")
+//         console.log("Extrinsic set is null")
+//     }
+//     let chainNonces: ChainNonces = relay === 'kusama' ? 
+//     {
+//         2000: 0,
+//         2023: 0,
+//         2001: 0,
+//         2090: 0,
+//         2110: 0,
+//         2085: 0
+//     } : {
+//         2000: 0,
+//         2023: 0,
+//         2001: 0,
+//         2090: 0,
+//         2110: 0,
+//         2085: 0
+//     }
+//     let nextInputValue: string = "0";
+//     let testLoopIndex = 0;
+//     // let lastNode: LastNode;
+//     try{
+//         for (const instruction of instructionSet) {
+
+//             // If last successful node is a KSM node, we can finish
+//             if(globalState.lastNode != null && nodeEndKeys.includes(globalState.lastNode.assetKey)){
+//                 let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                     success: true,
+//                     allExtrinsicResults: allExtrinsicResultData,
+//                     lastSuccessfulNode: globalState.lastNode,
+//                 }
+//                 return extrinsicSetResults
+//             }
+//             if(testLoopIndex > testLoops){
+//                 break;
+//             }
+//             testLoopIndex += 1;
+//             switch (instruction.type) {
+//                 case InstructionType.Swap:
+//                     //If EVM, SKIP and set next to 0
+//                     if(
+//                         chopsticks == true && relay == 'kusama' && instruction.assetNodes[0].getChainId() == 2023 ||
+//                         chopsticks == true && relay == 'polkadot' && instruction.assetNodes[0].getChainId() == 2004
+//                     ){
+//                         nextInputValue = "0"
+//                         break;
+//                     }
+//                     // If swap is of the same type, accumulate
+//                     if(swapInstructions.length == 0 || swapInstructions[swapInstructions.length - 1].pathType == instruction.pathType){
+//                         swapInstructions.push(instruction);
+
+//                     // If swap is of a different type, build extrinsic for the so far accumulated swap instructions
+//                     } else {
+//                         let instructionsToExecute = swapInstructions
+
+//                         while(instructionsToExecute.length > 0){
+//                             if(Number.parseFloat(nextInputValue) > 0){
+//                                 instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
+//                             }
+//                             let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
+//                             let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
+                            
+//                             let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+//                             // MOVR swaps return undefined in test, not error just skip
+//                             if(!extrinsicResultData){
+//                                 nextInputValue = "0"
+//                                 break;
+//                             }
+                            
+//                             if(extrinsicResultData.success == false){
+//                                 console.log("Extrinsic failed")
+//                                 console.log(extrinsicResultData.arbExecutionResult)
+                                
+                                
+//                                 allExtrinsicResultData.push(extrinsicResultData)
+//                                 printExtrinsicSetResults(allExtrinsicResultData)
+//                                 // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//                                 let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                                     success: false,
+//                                     allExtrinsicResults: allExtrinsicResultData,
+//                                     lastSuccessfulNode: globalState.lastNode,
+//                                 }
+//                                 setLastExtrinsicSet(extrinsicSetResults, relay)
+//                                 return extrinsicSetResults
+//                             }
+
+                            
+//                             allExtrinsicResultData.push(extrinsicResultData)
+//                             let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                                 success: true,
+//                                 allExtrinsicResults: allExtrinsicResultData,
+//                                 lastSuccessfulNode: globalState.lastNode,
+//                             }
+//                             setLastExtrinsicSet(extrinsicSetResults, relay)
+//                             nextInputValue = extrinsicResultData.lastNode.assetValue
+//                             instructionsToExecute = remainingInstructions
+
+//                         }
+//                         swapInstructions = [instruction];
+//                     }
+//                     break;
+//                 default:
+//                     // For other types of instructions
+//                     // First execute any queued up swap instructions
+//                     if (swapInstructions.length > 0) {
+//                         let instructionsToExecute = swapInstructions
+//                         while(instructionsToExecute.length > 0){
+//                             if( Number.parseFloat(nextInputValue) > 0){
+//                                 instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
+//                             }
+//                             let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chainNonces, extrinsicIndex, chopsticks);
+//                             let extrinsicObj: ExtrinsicObject = {
+//                                 type: "Swap",
+//                                 instructionIndex: swapExtrinsicContainer.instructionIndex,
+//                                 extrinsicIndex: swapExtrinsicContainer.extrinsicIndex,
+//                                 swapExtrinsicContainer: swapExtrinsicContainer
+//                             }
+//                             let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+//                             // If undefined, not error just skip
+//                             if(!extrinsicResultData){
+//                                 nextInputValue = "0"
+//                                 break;
+//                             }
+//                             if(extrinsicResultData.success == false){
+//                                 console.log("Extrinsic failed")
+//                                 console.log(extrinsicResultData.arbExecutionResult)
+//                                 allExtrinsicResultData.push(extrinsicResultData)
+//                                 printExtrinsicSetResults(allExtrinsicResultData)
+//                                 // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//                                 let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                                     success: false,
+//                                     allExtrinsicResults: allExtrinsicResultData,
+//                                     lastSuccessfulNode: globalState.lastNode,
+//                                 }
+//                                 setLastExtrinsicSet(extrinsicSetResults, relay)
+//                                 return extrinsicSetResults
+//                             }
+//                             allExtrinsicResultData.push(extrinsicResultData)
+//                             let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                                 success: true,
+//                                 allExtrinsicResults: allExtrinsicResultData,
+//                                 lastSuccessfulNode: globalState.lastNode,
+//                             }
+//                             setLastExtrinsicSet(extrinsicSetResults, relay)
+//                             nextInputValue = extrinsicResultData.lastNode.assetValue
+//                             instructionsToExecute = remainingInstructions
+//                         }
+//                         swapInstructions = [];   
+//                     }
+//                     // Then execute transfer instructions
+//                     let instructionsToExecute = [instruction]
+//                     while(instructionsToExecute.length > 0){
+//                         if(Number.parseFloat(nextInputValue) > 0){
+//                             instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
+//                         }
+//                         let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionsToExecute[0], extrinsicIndex, chopsticks);
+//                         let extrinsicObj: ExtrinsicObject = {
+//                             type: "Transfer",
+//                             instructionIndex: transferExtrinsic.instructionIndex,
+//                             extrinsicIndex: transferExtrinsic.extrinsicIndex,
+//                             transferExtrinsicContainer: transferExtrinsic
+//                         }
     
-    const currentDateTime = new Date().toString();
+//                         let transferExtrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+//                         // If undefined and running test, either start or dest chain not running in chopsticks. not error just skip
+//                         if(chopsticks && !transferExtrinsicResultData){
+//                             nextInputValue = "0"
+//                             break;
+//                         }
+//                         if(transferExtrinsicResultData.success == false){
+//                             console.log("Extrinsic failed")
+//                             console.log(transferExtrinsicResultData.arbExecutionResult)
+//                             allExtrinsicResultData.push(transferExtrinsicResultData)
+//                             printExtrinsicSetResults(allExtrinsicResultData)
+//                             // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//                             let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                                 success: false,
+//                                 allExtrinsicResults: allExtrinsicResultData,
+//                                 lastSuccessfulNode: globalState.lastNode,
+//                             }
+//                             setLastExtrinsicSet(extrinsicSetResults, relay)
+//                             return extrinsicSetResults
+//                         }
+                        
+//                         nextInputValue = transferExtrinsicResultData.lastNode.assetValue
+//                         allExtrinsicResultData.push(transferExtrinsicResultData)
+//                         instructionsToExecute = remainingInstructions
+//                         let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                             success: true,
+//                             allExtrinsicResults: allExtrinsicResultData,
+//                             lastSuccessfulNode: globalState.lastNode,
+//                         }
+//                         setLastExtrinsicSet(extrinsicSetResults, relay)
+//                     }
+//                     break;
 
-    console.log(currentDateTime);
+//             }
+//         }
+//         // Handle any remaining swap instructions at the end of the instruction set
+//         let instructionsToExecute = swapInstructions
+//         while(instructionsToExecute.length > 0 && testLoopIndex < testLoops){
+//             let [extrinsicResultData, remainingInstructions] = await buildAndExecuteSwapExtrinsic(relay, instructionsToExecute, chopsticks, executeMovr, nextInputValue, chainNonces, extrinsicIndex)
+//             if(extrinsicResultData.success == false){
+//                 console.log("Extrinsic failed")
+//                 console.log(extrinsicResultData.arbExecutionResult)
+//                 allExtrinsicResultData.push(extrinsicResultData)
+//                 printExtrinsicSetResults(allExtrinsicResultData)
+//                 // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//                 let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                     success: false,
+//                     allExtrinsicResults: allExtrinsicResultData,
+//                     lastSuccessfulNode: globalState.lastNode,
+//                 }
+//                 setLastExtrinsicSet(extrinsicSetResults, relay)
+//                 return extrinsicSetResults
+//             }
+//             // If undefined, not error just skip
+//             if(!extrinsicResultData){
+//                 nextInputValue = "0"
+//                 break;
+//             }
+//             allExtrinsicResultData.push(extrinsicResultData)
+//             let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//                 success: true,
+//                 allExtrinsicResults: allExtrinsicResultData,
+//                 lastSuccessfulNode: globalState.lastNode,
+//             }
+//             setLastExtrinsicSet(extrinsicSetResults, relay)
+//             nextInputValue = extrinsicResultData.lastNode.assetValue
+//             instructionsToExecute = remainingInstructions
+//         }
+//         swapInstructions = [];   
+//     } catch(e){
+//         // Need to properly handle this. Error should be extrinsicResultData
+//         console.log(e)
+//         printExtrinsicSetResults(allExtrinsicResultData)
+//         // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//         let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//             success: false,
+//             allExtrinsicResults: allExtrinsicResultData,
+//             lastSuccessfulNode: globalState.lastNode,
+//         }
+//         setLastExtrinsicSet(extrinsicSetResults, relay)
+//         return extrinsicSetResults
 
-    let arbLoops = 0
-    let arbSuccess = false
+//     }
+//     // let lastSuccessfulNode = await getLastSuccessfulNodeFromResultData(allExtrinsicResultData)
+//     let extrinsicSetResults: ExtrinsicSetResultDynamic = {
+//         success: true,
+//         allExtrinsicResults: allExtrinsicResultData,
+//         lastSuccessfulNode: globalState.lastNode,
+//     }
+//     setLastExtrinsicSet(extrinsicSetResults, relay)
+//     return extrinsicSetResults;
+// }
+// async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: boolean, customInput: number = 0){
+//     globalState = getLastExecutionState(relay)
+//     let lastTransactionState: TransactionState = globalState.transactionState
 
-    //Rerun arb until success or last node is Kusama
-    while(!arbSuccess && globalState.lastNode.chainId != 0 && arbLoops < 1){
-        arbLoops += 1
+//     // If last transaction has been submitted but not finalized, we need to query the balances to see if it completed successfully or not
+//     if(globalState.transactionState == TransactionState.Broadcasted){
+//         await confirmLastTransactionSuccess(globalState.transactionProperties)
+//         globalState.transactionState = TransactionState.PreSubmission
+//     }
 
-        if(lastTransactionState == TransactionState.Broadcasted){
-            let transactionSuccess = await confirmLastTransactionSuccess(globalState.transactionProperties)
-            globalState.transactionState = TransactionState.PreSubmission
-            // lastNode = globalState.lastNode
-        }
-        // let lastNodeValueTemp = '40.00'
-        let arbInput = customInput > 0 ? customInput : globalState.lastNode.assetValue
-        let targetNode = relay === 'kusama' ? ksmTargetNode : dotTargetNode
-        let functionArgs = `${globalState.lastNode.assetKey} ${targetNode} ${arbInput}`
-        customInput = 0
-        console.log("Executing Arb Fallback with args: " + functionArgs)
+//     globalState.extrinsicSetResults.allExtrinsicResults.forEach((extrinsicData) => {
+//         console.log(JSON.stringify(extrinsicData.arbExecutionResult, null, 2))
+//     })
+//     // globalState = executionState
+
+//     if(!globalState.lastNode){
+//         console.log("Last node is undefined. No extrinsics executed successfully. Exiting")
+//         return;
+//     }
+    
+//     const currentDateTime = new Date().toString();
+
+//     console.log(currentDateTime);
+
+//     let arbLoops = 0
+//     let arbSuccess = false
+
+//     //Rerun arb until success or last node is Kusama
+//     while(!arbSuccess && globalState.lastNode.chainId != 0 && arbLoops < 1){
+//         arbLoops += 1
+
+//         if(lastTransactionState == TransactionState.Broadcasted){
+//             let transactionSuccess = await confirmLastTransactionSuccess(globalState.transactionProperties)
+//             globalState.transactionState = TransactionState.PreSubmission
+//             // lastNode = globalState.lastNode
+//         }
+//         // let lastNodeValueTemp = '40.00'
+//         let arbInput = customInput > 0 ? customInput : globalState.lastNode.assetValue
+//         let targetNode = relay === 'kusama' ? ksmTargetNode : dotTargetNode
+//         let functionArgs = `${globalState.lastNode.assetKey} ${targetNode} ${arbInput}`
+//         customInput = 0
+//         console.log("Executing Arb Fallback with args: " + functionArgs)
         
 
-        let arbResults: JsonPathNode[];
-        try{
-            arbResults = await runAndReturnFallbackArb(functionArgs, chopsticks, relay)
-        } catch {
-            console.log("Failed to run fallback arb")
-            continue;
-        }
-        let assetPath: AssetNode[] = arbResults.map(result => readLogData(result, relay))
-        let instructions = await buildInstructionSet(relay, assetPath)
-        await printInstructionSet(instructions)
-        let extrinsicSetResults = await buildAndExecuteExtrinsics(relay, instructions, chopsticks, executeMovr, 100)
+//         let arbResults: JsonPathNode[];
+//         try{
+//             arbResults = await runAndReturnFallbackArb(functionArgs, chopsticks, relay)
+//         } catch {
+//             console.log("Failed to run fallback arb")
+//             continue;
+//         }
+//         let assetPath: AssetNode[] = arbResults.map(result => readLogData(result, relay))
+//         let instructions = await buildInstructionSet(relay, assetPath)
+//         await printInstructionSet(instructions)
+//         let extrinsicSetResults = await buildAndExecuteExtrinsics(relay, instructions, chopsticks, executeMovr, 100)
 
-        await logAllResultsDynamic(relay, globalState.lastFilePath, true)
-        // logAllArbAttempts(relay, globalState.lastFilePath, chopsticks)
-        if(extrinsicSetResults.success){
-            arbSuccess = true
-        }
+//         await logAllResultsDynamic(relay, globalState.lastFilePath, true)
+//         // logAllArbAttempts(relay, globalState.lastFilePath, chopsticks)
+//         if(extrinsicSetResults.success){
+//             arbSuccess = true
+//         }
 
-        globalState.lastNode = globalState.lastNode
-        if(!globalState.lastNode){
-            console.log("Last node undefined. ERROR: some extrinsics have executed successfully")
-            throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
-        }
-    }
-    if(arbSuccess){
-        setExecutionSuccess(true, relay)
-    }
-    // let arbAmountOut = await getTotalArbResultAmount(relay, globalState.lastNode)
-    // await logProfits(relay, arbAmountOut, globalState.lastFilePath, chopsticks )
-}
+//         globalState.lastNode = globalState.lastNode
+//         if(!globalState.lastNode){
+//             console.log("Last node undefined. ERROR: some extrinsics have executed successfully")
+//             throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
+//         }
+//     }
+//     if(arbSuccess){
+//         setExecutionSuccess(true, relay)
+//     }
+//     // let arbAmountOut = await getTotalArbResultAmount(relay, globalState.lastNode)
+//     // await logProfits(relay, arbAmountOut, globalState.lastFilePath, chopsticks )
+// }
 
 
 async function testXcm(){
@@ -1077,6 +1077,25 @@ async function testLogger(){
 
 }
 
+async function testBalanceAdapters(){
+    let relay: Relay = 'polkadot'
+    let paraId = 2034
+    let assetSymbol = 'PINK'
+    let assetObject = await getAssetRegistryObjectBySymbol(paraId, assetSymbol, relay)
+    let assetId = assetObject.tokenData.localId
+
+    let chopsticks = true
+    let eth = false
+    let signer = await getSigner(chopsticks, eth);
+
+    let node: TNode = 'HydraDX'
+    let api = await getApiForNode(node, chopsticks)
+
+    let balance = await getBalanceFromId(paraId, relay, chopsticks, api, assetObject, node, signer.address)
+
+    console.log(`Balance for ${assetSymbol} on ${node} for ${signer.address}: ${JSON.stringify(balance)}`)
+}
+
 async function main(){
     // let wallet = await getSigner(false, false)
     // let ethWallet = await getSigner(false, true)
@@ -1091,10 +1110,11 @@ async function main(){
     // await testCheckAndAllocate();
     // await testCheckAndAllocate();
     // await testCheckAndAllocate();
-    await testLogger()
+    // await testLogger()
+    await testBalanceAdapters()
     // await newBlock('HydraDX')
     // await testChopsticks()
-    // process.exit(0)
+    process.exit(0)
 }
 
-// main()
+main()

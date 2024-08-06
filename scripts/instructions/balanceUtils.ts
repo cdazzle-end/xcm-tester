@@ -595,7 +595,8 @@ export async function getBalance(paraId: number, relay: Relay, chopsticks: boole
 }
 
 // Call this where ever calling getBalance()
-export async function getBalanceFromId(paraId: number, 
+export async function getBalanceFromId(
+    paraId: number, 
     relay: Relay, 
     chopsticks: boolean, 
     chainApi: ApiPromise,
@@ -619,6 +620,7 @@ export async function getBalanceFromId(paraId: number,
         console.log("Get Token Balance: API connected: " + chainApi.isConnected)
     }
 
+    // Acala/Karura have unique balance utils
     if(relay == 'kusama' && paraId == 2000){
         let rpcEndpoint = chopsticks ? localRpcs[node] : karRpc
         let walletConfigs: WalletConfigs = {
@@ -660,7 +662,7 @@ export async function getBalanceFromId(paraId: number,
     }
 
     let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, assetObject, relay)
-    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress);
+    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress, assetId);
     console.log("Get Token Balance: Subscribed to balance")
     let balance = await firstValueFrom(balanceObservable)
     console.log("Balance: " + JSON.stringify(balance.available.toNumber()))

@@ -79,8 +79,8 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
     let tokenInBalanceStart = await getBalance(chainId, relay, chopsticks, api, assetInSymbol, startAssetRegistryObject, chain, signer.address)
     let tokenOutBalanceStart = await getBalance(chainId, relay, chopsticks, api, assetOutSymbol, destAssetRegistryObject, chain, signer.address)
 
-    let inBalanceStartNew = await getBalanceFromId()
-    let outBalanceStartNew
+    // let inBalanceStartNew = await getBalanceFromId()
+    // let outBalanceStartNew
 
     // ***************************
 
