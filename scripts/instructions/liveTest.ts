@@ -27,7 +27,7 @@ import { formatMovrTx, getMovrSwapTx, testXcTokensMoonriver } from './../swaps/m
 import '@galacticcouncil/api-augment/basilisk';
 import { closeApis, getApiForNode } from './apiUtils.ts';
 import { getLastExecutionState, resetExecutionState, setExecutionRelay, setExecutionSuccess, setLastExtrinsicSet, setLastFile, setLastNode } from './globalStateUtils.ts';
-import { getRelayTokenBalanceAcrossChains, BalanceAdapter } from './balanceUtils.ts';
+import { BalanceAdapter } from './balanceUtils.ts';
 import { pathLogger, nodeLogger } from './logger.ts'
 
 const __filename = fileURLToPath(import.meta.url);

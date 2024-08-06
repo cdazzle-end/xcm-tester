@@ -6,7 +6,7 @@ import fs from 'fs'
 import path from 'path'
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { fileURLToPath } from 'url';
-import { getBalance, getBalanceChainAsset, getRelayTokenBalanceAcrossChains } from "./balanceUtils.ts";
+import { getBalance, getBalanceChainAsset} from "./balanceUtils.ts";
 import { getApiForNode } from "./apiUtils.ts";
 import BigNumber from "bignumber.js";
 

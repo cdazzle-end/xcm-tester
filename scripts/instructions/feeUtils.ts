@@ -27,7 +27,7 @@ import { formatMovrTx, getMovrSwapTx, testXcTokensMoonriver } from './../swaps/m
 import '@galacticcouncil/api-augment/basilisk';
 import { getApiForNode } from './apiUtils.ts';
 import { setLastExtrinsicSet, getLastExecutionState, setExecutionSuccess } from './globalStateUtils.ts';
-import { getBalanceChange, getRelayTokenBalanceAcrossChains, watchTokenBalance } from './balanceUtils.ts';
+import { getBalanceChange, watchTokenBalance } from './balanceUtils.ts';
 import bn, { BigNumber } from 'bignumber.js'
 import { ManagerSwapParams } from './../swaps/glmr/utils/types.ts';
 import { executeSingleGlmrSwap } from './../swaps/glmr/glmrSwap.ts';

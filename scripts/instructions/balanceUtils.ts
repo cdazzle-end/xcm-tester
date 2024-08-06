@@ -353,6 +353,7 @@ export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, no
 
 }
 
+// *** Not used
 export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, relay: Relay){
     let nativeBalances: NativeBalancesType = relay === 'kusama' ? 
     {
@@ -456,6 +457,7 @@ export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, rela
 
 }
 
+// Used in checkAndAllocateRelayToken, allocateFundsForSwap
 export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay){
     console.log("Getting native balances")
     let nativeBalances: NativeBalancesType = relay === 'kusama' ? 
@@ -491,6 +493,7 @@ export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay){
         
 }
 
+// Used in getBalanceChainAsset
 export async function getRelayChainBalance(chopsticks: boolean, relay: Relay){
     let relayNode = getNodeFromChainId(0, relay)
     let relayApi = await getApiForNode(relayNode, chopsticks)
@@ -505,6 +508,7 @@ export async function getRelayChainBalance(chopsticks: boolean, relay: Relay){
     return balanceFormatted
 }
 
+// *** Not used
 export async function getBalanceAdapter(relay: Relay, api: ApiPromise, chainId: number, node: TNode | "Kusama" | "Polkadot"){
     let map = balanceAdapterMap
     if(map.has(node)){
@@ -519,9 +523,88 @@ export async function getBalanceAdapter(relay: Relay, api: ApiPromise, chainId: 
     return chainAdapter
 }
 
+// Gets current balance
+// Used in executeSingleTransferExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
 export async function getBalance(paraId: number, relay: Relay, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, assetObject: MyAssetRegistryObject, node: string, accountAddress: string): Promise<BalanceData>{
 
 
+    console.log(`Get Token Balance for chain ${node} | Token ${assetSymbol}`)
+
+    let destAdapter = getAdapter(relay, paraId)
+    console.log('Para ID: ', paraId)
+    let currentBalance: BalanceData;
+    
+    // Make sure api is connected
+    console.log(`Get Token Balance: API connected: ${chainApi.isConnected}`)
+    if(!chainApi.isConnected){
+        console.log("Get Token Balance: API not connected. Connecting...")
+        await chainApi.connect()
+        console.log("Get Token Balance: API connected: " + chainApi.isConnected)
+    }
+
+    if(relay == 'kusama' && paraId == 2000){
+        let rpcEndpoint = chopsticks ? localRpcs[node] : karRpc
+        let walletConfigs: WalletConfigs = {
+            evmProvider: EvmRpcProvider.from(rpcEndpoint),
+            wsProvider: new WsProvider(rpcEndpoint)
+        }
+        let adapterWallet = new Wallet(chainApi, walletConfigs);
+        await destAdapter.init(chainApi, adapterWallet);
+    } else if(relay == 'polkadot' && paraId == 2000){
+        let rpcEndpoint = chopsticks ? localRpcs[node] : acaRpc
+        let walletConfigs: WalletConfigs = {
+            evmProvider: EvmRpcProvider.from(rpcEndpoint),
+            wsProvider: new WsProvider(rpcEndpoint)
+        }
+        let adapterWallet = new Wallet(chainApi, walletConfigs);
+        await destAdapter.init(chainApi, adapterWallet);
+    } else {
+        await destAdapter.init(chainApi);
+    }
+    
+    let tokenSymbol;
+    if(paraId == 0){
+        tokenSymbol = relay === 'kusama' ? "KSM" : "DOT"
+    } else {
+        tokenSymbol = assetSymbol
+    }
+
+    let tokenLookupId;
+
+    console.log(`Get Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
+
+    if(relay == "kusama" && paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"
+    || relay == "polkadot" && paraId == 2004 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "GLMR"){
+        // console.log("Adding XC from token symbol")
+        tokenSymbol = "xc" + tokenSymbol
+    // if chain isnt movr, no prefix
+    } else if(relay == 'kusama' && paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")
+    || relay == 'polkadot' && paraId != 2004 && tokenSymbol.toUpperCase().startsWith("XC")){
+        // console.log("Removing XC from token symbol")
+        tokenSymbol = tokenSymbol.slice(2)
+    }
+
+    let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, assetObject, relay)
+    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress);
+    console.log("Get Token Balance: Subscribed to balance")
+    let balance = await firstValueFrom(balanceObservable)
+    console.log("Balance: " + JSON.stringify(balance.available.toNumber()))
+
+    // await destAdapter.getApi().disconnect()
+    return balance
+}
+
+// Call this where ever calling getBalance()
+export async function getBalanceFromId(paraId: number, 
+    relay: Relay, 
+    chopsticks: boolean, 
+    chainApi: ApiPromise,
+    assetObject: MyAssetRegistryObject, 
+    node: string, 
+    accountAddress: string
+){
+    let assetSymbol = assetObject.tokenData.symbol
+    let assetId = assetObject.tokenData.localId
     console.log(`Get Token Balance for chain ${node} | Token ${assetSymbol}`)
 
     let destAdapter = getAdapter(relay, paraId)

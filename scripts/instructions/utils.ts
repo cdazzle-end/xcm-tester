@@ -109,9 +109,6 @@ export const getAssetBySymbolOrId = (
 }
 
 export function getAssetRegistryObject(chainId: number, localId: string, relay: Relay): MyAssetRegistryObject{
-    // console.log("Getting asset registry object: " + chainId + " --- " + localId)
-    // let assetRegistry: MyAssetRegistryObject[] = relay === 'kusama' ? JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8')) : JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssetsPolkadot.json'), 'utf8'));
-    // let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
     let assetRegistry = getAssetRegistry(relay)
     let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
         if(chainId == 0 && assetRegistryObject.tokenData.chain == 0){

@@ -12,7 +12,7 @@ import { BalanceData } from "src/types.ts"
 import * as paraspell from '@paraspell/sdk'
 import {KeyringPair} from '@polkadot/keyring/types'
 import { allocateKsmFromPreTransferPaths, buildInstructionSet, collectKsmToRelayPaths, getFundingPath, getPreTransferPath } from "./instructionUtils.ts"
-import { getBalance, getBalanceChange, getDisplayBalance, getRelayTokenBalanceAcrossChains, getRelayTokenBalances, watchTokenBalance, watchTokenDeposit } from "./balanceUtils.ts"
+import { getBalance, getBalanceChange, getBalanceFromId, getDisplayBalance, getRelayTokenBalances, watchTokenBalance, watchTokenDeposit } from "./balanceUtils.ts"
 import { setLastNode, setResultData, setTransactionState, setTransctionProperties, updateAccumulatedFeeData, updateXcmFeeReserves } from "./globalStateUtils.ts"
 import {BigNumber as bn } from "bignumber.js"
 import { swapManagerContractLive } from "./../swaps/glmr/utils/const.ts"
@@ -74,8 +74,16 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
     let assetOutDecimals = assetNodes[assetNodes.length - 1].assetRegistryObject.tokenData.decimals
     let destinationAssetKey = JSON.stringify(destAssetRegistryObject.tokenData.chain.toString() + JSON.stringify(destAssetRegistryObject.tokenData.localId))
     let signer = await getSigner(chopsticks, false)
+
+    //***************************
     let tokenInBalanceStart = await getBalance(chainId, relay, chopsticks, api, assetInSymbol, startAssetRegistryObject, chain, signer.address)
     let tokenOutBalanceStart = await getBalance(chainId, relay, chopsticks, api, assetOutSymbol, destAssetRegistryObject, chain, signer.address)
+
+    let inBalanceStartNew = await getBalanceFromId()
+    let outBalanceStartNew
+
+    // ***************************
+
     let swapProperties: SwapProperties = {
         type: 'Swap',
         relay: relay,
