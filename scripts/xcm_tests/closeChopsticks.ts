@@ -8,17 +8,8 @@ import { u8aToHex } from '@polkadot/util'
 import { EventRecord, Phase, Event, Hash } from '@polkadot/types/interfaces'
 import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
-// import { getAssetBySymbolOrId } from './test'
-// import * as bridge from '@polkawallet/bridge'
-// import * as adapters from '@polkawallet/bridge/adapters/index'
-import {BifrostAdapter} from '@polkawallet/bridge/adapters/bifrost'
 import { BalanceData } from '@polkawallet/bridge'
 import { exec, execSync, spawn, ChildProcess } from 'child_process';
-import path from 'path';
-import { getAdapter } from '../adapters'
-import { RegistryError } from '@polkadot/types/types/registry';
-// import * as s from 'json-stringify-safe';
-import flatted from 'flatted';
 
 async function killProcess(pid: number){
     try{
