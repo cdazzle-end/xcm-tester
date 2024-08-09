@@ -8801,7 +8801,7 @@
     "tokenData": {
       "network": "kusama",
       "chain": 2012,
-      "localId": "0",
+      "localId": "CSM",
       "name": "CSM",
       "symbol": "CSM",
       "decimals": "12",
