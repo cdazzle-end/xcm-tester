@@ -1131,8 +1131,8 @@ async function testParaspellReworked(){
 
     console.log(JSON.stringify(xcmTx, null, 2))
 
-    // let result = await xcmTx.s
-    // console.log(`Tx hash: ${result}`)
+    let result = await xcmTx.signAndSend(signer)
+    console.log(`Tx hash: ${result}`)
     // let txDetails = await executeXcmTransfer(xcmTx, signer);
 
     // console.log(`Transfer succes: ${txDetails.success}`)
