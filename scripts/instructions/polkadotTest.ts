@@ -24,7 +24,7 @@ import { FixedPointNumber } from '@acala-network/sdk-core';
 import { movrContractAddress, xcKarContractAddress, xcXrtContractAddress } from './../swaps/movr/utils/const.ts';
 import { formatMovrTx, getMovrSwapTx, testXcTokensMoonriver } from './../swaps/movr/movrSwap.ts';
 // import { getBsxSwapExtrinsic, testBsxSwap } from './../swaps/bsxSwap.ts';
-import '@galacticcouncil/api-augment/basilisk';
+
 import { getApiForNode } from './apiUtils.ts';
 import { setLastExtrinsicSet, getLastExecutionState, setExecutionSuccess } from './globalStateUtils.ts';
 import { getBalanceChainAsset, getBalanceChange, getBalanceFromId, getRelayTokenBalances, watchTokenBalance } from './balanceUtils.ts';
@@ -40,6 +40,7 @@ import { listenForXcmpEventHydra, getHydraDepositFees, listenForXcmpEventAcala, 
 import { blake2AsU8a } from '@polkadot/util-crypto';
 import { u8aToHex, stringToU8a, numberToU8a } from '@polkadot/util';
 import * as Chopsticks from '@acala-network/chopsticks';
+import '@galacticcouncil/api-augment/basilisk';
 import '@galacticcouncil/api-augment/hydradx';
 
 import {mainLogger, dbLogger, apiLogger} from './logger.ts'
