@@ -1120,7 +1120,7 @@ async function testParaspellReworked(){
     let signer = await getSigner(chopsticks, eth);
 
     let startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
-    let destNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
+    let destNodeBalance = await getBalanceFromId(destParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
 
     console.log(`Balance for ${assetSymbol} on ${startNode} for ${signer.address}: ${JSON.stringify(startNodeBalance)}`)
     console.log(`Balance for ${assetSymbol} on ${destNode} for ${signer.address}: ${JSON.stringify(destNodeBalance)}`)
