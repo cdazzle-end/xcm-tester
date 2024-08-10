@@ -1108,25 +1108,25 @@ async function testParaspellReworked(){
     let startParaId = getChainIdFromNode(startNode)
     let startApi = await getApiForNode(startNode, chopsticks)
     let destApi = await getApiForNode(destNode, chopsticks)
-    let destParaId = getChainIdFromNode(destNode)
+    // let destParaId = getChainIdFromNode(destNode)
 
     let assetSymbol = 'PINK'
-    let startNodeAsset = await getAssetRegistryObjectBySymbol(startParaId, assetSymbol, relay)
-    let destNodeAsset = await getAssetRegistryObjectBySymbol(destParaId, assetSymbol, relay)
+    // let startNodeAsset = await getAssetRegistryObjectBySymbol(startParaId, assetSymbol, relay)
+    // let destNodeAsset = await getAssetRegistryObjectBySymbol(destParaId, assetSymbol, relay)
 
-    let startAssetId = startNodeAsset.tokenData.localId
-    let destAssetId = destNodeAsset.tokenData.localId
+    // let startAssetId = startNodeAsset.tokenData.localId
+    // let destAssetId = destNodeAsset.tokenData.localId
 
     let signer = await getSigner(chopsticks, eth);
 
-    let startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
-    let destNodeBalance = await getBalanceFromId(destParaId, relay, chopsticks, destApi, destNodeAsset, destNode, signer.address)
+    // let startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
+    // let destNodeBalance = await getBalanceFromId(destParaId, relay, chopsticks, destApi, destNodeAsset, destNode, signer.address)
 
-    console.log(`Balance for ${assetSymbol} on ${startNode} for ${signer.address}: ${JSON.stringify(startNodeBalance)}`)
-    console.log(`Balance for ${assetSymbol} on ${destNode} for ${signer.address}: ${JSON.stringify(destNodeBalance)}`)
+    // console.log(`Balance for ${assetSymbol} on ${startNode} for ${signer.address}: ${JSON.stringify(startNodeBalance)}`)
+    // console.log(`Balance for ${assetSymbol} on ${destNode} for ${signer.address}: ${JSON.stringify(destNodeBalance)}`)
 
 
-    let xcmTx = paraspell.Builder(startApi).from(startNode).to(destNode).currency(startAssetId).amount(transferAmount.toString()).address(signer.address).build()
+    // let xcmTx = paraspell.Builder(startApi).from(startNode).to(destNode).currency(startAssetId).amount(transferAmount.toString()).address(signer.address).build()
     // console.log(`Executing xcm tx: ${JSON.stringify(xcmTx.toHuman(), null, 2)}`)
 
     // console.log(JSON.stringify(xcmTx, null, 2))
@@ -1135,6 +1135,9 @@ async function testParaspellReworked(){
     // console.log(`Tx hash: ${result}`)
 
     // Basic transfer test
+    const aliceBalance = await startApi.query.system.account(signer.address)
+    console.log(aliceBalance.toHuman())
+
     const BOB_ADDRESS = "7Lpe5LRa2Ntx9KGDk77xzoBPYTCAvj7QqaBx4Nz2TFqL3sLw"
     const transfer = startApi.tx.balances.transferKeepAlive(BOB_ADDRESS, transferAmount.toString());
 
