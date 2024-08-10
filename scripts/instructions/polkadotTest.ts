@@ -1139,7 +1139,7 @@ async function testParaspellReworked(){
     console.log(aliceBalance.toHuman())
 
     const BOB_ADDRESS = "7Lpe5LRa2Ntx9KGDk77xzoBPYTCAvj7QqaBx4Nz2TFqL3sLw"
-    const transfer = startApi.tx.balances.transferKeepAlive(BOB_ADDRESS, transferAmount.toString());
+    const transfer = startApi.tx.balances.transferKeepAlive(BOB_ADDRESS, 1000000000000);
 
     // Sign and send the transaction
     const hash = await transfer.signAndSend(signer);
