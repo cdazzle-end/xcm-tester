@@ -1126,7 +1126,7 @@ async function testParaspellReworked(){
     console.log(`Balance for ${assetSymbol} on ${destNode} for ${signer.address}: ${JSON.stringify(destNodeBalance)}`)
 
 
-    const xcmTx = paraspell.Builder(startApi).from(startNode).to(destNode).currency(startAssetId).amount(transferAmount.toString()).address(signer.address).build()
+    let xcmTx = paraspell.Builder(startApi).from(startNode).to(destNode).currency(startAssetId).amount(transferAmount.toString()).address(signer.address).build()
     console.log(`Executing xcm tx: ${JSON.stringify(xcmTx.toHuman(), null, 2)}`)
 
     let txDetails = await executeXcmTransfer(xcmTx, signer);
