@@ -1103,7 +1103,7 @@ async function testParaspellReworked(){
     let relay: Relay = 'polkadot'
     let startNode: TNode = 'HydraDX'
     let destNode: TNode = 'AssetHubPolkadot'
-    let transferAmount: bn = new bn(10000000000000)
+    let transferAmount: bn = new bn(100000000000)
 
     let startParaId = getChainIdFromNode(startNode)
     let startApi = await getApiForNode(startNode, chopsticks)
@@ -1131,8 +1131,17 @@ async function testParaspellReworked(){
 
     console.log(JSON.stringify(xcmTx, null, 2))
 
-    let result = await xcmTx.signAndSend(signer)
-    console.log(`Tx hash: ${result}`)
+    // let result = await xcmTx.signAndSend(signer)
+    // console.log(`Tx hash: ${result}`)
+
+    // Basic transfer test
+    const BOB_ADDRESS = "7Lpe5LRa2Ntx9KGDk77xzoBPYTCAvj7QqaBx4Nz2TFqL3sLw"
+    const transfer = startApi.tx.balances.transfer(BOB_ADDRESS, transferAmount);
+
+    // Sign and send the transaction
+    const hash = await transfer.signAndSend(signer);
+
+    console.log('Transfer sent with hash', hash.toHex());
     // let txDetails = await executeXcmTransfer(xcmTx, signer);
 
     // console.log(`Transfer succes: ${txDetails.success}`)
