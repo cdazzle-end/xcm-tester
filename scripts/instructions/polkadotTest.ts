@@ -40,7 +40,7 @@ import { listenForXcmpEventHydra, getHydraDepositFees, listenForXcmpEventAcala, 
 import { blake2AsU8a } from '@polkadot/util-crypto';
 import { u8aToHex, stringToU8a, numberToU8a } from '@polkadot/util';
 import * as Chopsticks from '@acala-network/chopsticks';
-import '@galacticcouncil/api-augment/hydr';
+import '@galacticcouncil/api-augment/hydradx';
 
 import {mainLogger, dbLogger, apiLogger} from './logger.ts'
 
