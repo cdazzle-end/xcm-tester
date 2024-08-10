@@ -1096,6 +1096,51 @@ async function testBalanceAdapters(){
     console.log(`Balance for ${assetSymbol} on ${node} for ${signer.address}: ${JSON.stringify(balance)}`)
 }
 
+async function testParaspellReworked(){
+    let chopsticks = true
+    let eth = false
+
+    let relay: Relay = 'polkadot'
+    let startNode: TNode = 'HydraDX'
+    let destNode: TNode = 'AssetHubPolkadot'
+    let transferAmount: bn = new bn(10000000000000)
+
+    let startParaId = getChainIdFromNode(startNode)
+    let startApi = await getApiForNode(startNode, chopsticks)
+    let destApi = await getApiForNode(destNode, chopsticks)
+    let destParaId = getChainIdFromNode(destNode)
+
+    let assetSymbol = 'PINK'
+    let startNodeAsset = await getAssetRegistryObjectBySymbol(startParaId, assetSymbol, relay)
+    let destNodeAsset = await getAssetRegistryObjectBySymbol(destParaId, assetSymbol, relay)
+
+    let startAssetId = startNodeAsset.tokenData.localId
+    let destAssetId = destNodeAsset.tokenData.localId
+
+    let signer = await getSigner(chopsticks, eth);
+
+    let startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
+    let destNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
+
+    console.log(`Balance for ${assetSymbol} on ${startNode} for ${signer.address}: ${JSON.stringify(startNodeBalance)}`)
+    console.log(`Balance for ${assetSymbol} on ${destNode} for ${signer.address}: ${JSON.stringify(destNodeBalance)}`)
+
+
+    const xcmTx = paraspell.Builder(startApi).from(startNode).to(destNode).currency(startAssetId).amount(transferAmount.toString()).address(signer.address).build()
+    console.log(`Executing xcm tx: ${JSON.stringify(xcmTx.toHuman(), null, 2)}`)
+
+    let txDetails = await executeXcmTransfer(xcmTx, signer);
+
+    console.log(`Transfer succes: ${txDetails.success}`)
+
+    startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
+    destNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
+
+    console.log(`Balance for ${assetSymbol} on ${startNode} for ${signer.address}: ${JSON.stringify(startNodeBalance)}`)
+    console.log(`Balance for ${assetSymbol} on ${destNode} for ${signer.address}: ${JSON.stringify(destNodeBalance)}`)
+
+}
+
 async function main(){
     // let wallet = await getSigner(false, false)
     // let ethWallet = await getSigner(false, true)
@@ -1111,7 +1156,8 @@ async function main(){
     // await testCheckAndAllocate();
     // await testCheckAndAllocate();
     // await testLogger()
-    await testBalanceAdapters()
+    // await testBalanceAdapters()
+    await testParaspellReworked()
     // await newBlock('HydraDX')
     // await testChopsticks()
     process.exit(0)
