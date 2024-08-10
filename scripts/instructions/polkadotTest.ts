@@ -1129,9 +1129,11 @@ async function testParaspellReworked(){
     let xcmTx = paraspell.Builder(startApi).from(startNode).to(destNode).currency(startAssetId).amount(transferAmount.toString()).address(signer.address).build()
     console.log(`Executing xcm tx: ${JSON.stringify(xcmTx.toHuman(), null, 2)}`)
 
-    let txDetails = await executeXcmTransfer(xcmTx, signer);
+    let result = await xcmTx.signAndSend(signer)
+    console.log(`Tx hash: ${result}`)
+    // let txDetails = await executeXcmTransfer(xcmTx, signer);
 
-    console.log(`Transfer succes: ${txDetails.success}`)
+    // console.log(`Transfer succes: ${txDetails.success}`)
 
     startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
     destNodeBalance = await getBalanceFromId(destParaId, relay, chopsticks, destApi, destNodeAsset, destNode, signer.address)
