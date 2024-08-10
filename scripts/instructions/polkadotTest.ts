@@ -1127,16 +1127,16 @@ async function testParaspellReworked(){
 
 
     let xcmTx = paraspell.Builder(startApi).from(startNode).to(destNode).currency(startAssetId).amount(transferAmount.toString()).address(signer.address).build()
-    console.log(`Executing xcm tx: ${JSON.stringify(xcmTx.toHuman(), null, 2)}`)
+    // console.log(`Executing xcm tx: ${JSON.stringify(xcmTx.toHuman(), null, 2)}`)
 
-    console.log(JSON.stringify(xcmTx, null, 2))
+    // console.log(JSON.stringify(xcmTx, null, 2))
 
     // let result = await xcmTx.signAndSend(signer)
     // console.log(`Tx hash: ${result}`)
 
     // Basic transfer test
     const BOB_ADDRESS = "7Lpe5LRa2Ntx9KGDk77xzoBPYTCAvj7QqaBx4Nz2TFqL3sLw"
-    const transfer = startApi.tx.balances.transfer(BOB_ADDRESS, transferAmount);
+    const transfer = startApi.tx.balances.transferKeepAlive(BOB_ADDRESS, transferAmount.toString());
 
     // Sign and send the transaction
     const hash = await transfer.signAndSend(signer);
