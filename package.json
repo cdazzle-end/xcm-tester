@@ -30,11 +30,11 @@
     "@moonbeam-network/api-augment": "^0.2600.0",
     "@parallel-finance/api": "^2.0.1",
     "@paraspell/sdk": "file:../xcm-sdk",
-    "@polkadot/api": "10.10.1",
+    "@polkadot/api": "12.1.1",
     "@polkadot/api-base": "^10.11.1",
-    "@polkadot/types": "^10.11.1",
     "@polkadot/apps-config": "^0.133.1",
     "@polkadot/keyring": "^12.6.2",
+    "@polkadot/types": "^10.11.1",
     "@polkadot/util": "^12.6.1",
     "@polkadot/util-crypto": "^12.6.2",
     "@polkawallet/bridge": "file:../bridge",
@@ -58,7 +58,7 @@
     "winston": "^3.13.1"
   },
   "resolutions": {
-    "@polkadot/api": "10.10.1",
+    "@polkadot/api": "12.1.1",
     "@polkadot/api-base": "10.10.1",
     "@polkadot/rpc-core": "10.10.1",
     "@polkadot/types": "10.10.1",
