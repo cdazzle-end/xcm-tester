@@ -764,7 +764,15 @@ async function buildTest(){
     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
 
     assetPath.forEach(asset => {
-        console.log(`Chain: ${asset.getChainId()}, Node: ${asset.paraspellChain}, Asset: ${asset.getAssetRegistrySymbol()}, Amount: ${asset.pathValue}`)
+        console.log(`Asset Node path data main: ${JSON.stringify(asset.pathData)}`)
+        console.log(
+            `Chain: ${asset.getChainId()}, 
+            Node: ${asset.paraspellChain}, 
+            Asset: ${asset.getAssetRegistrySymbol()}, 
+            Amount: ${asset.pathValue}, 
+            Fee Amounts: ${JSON.stringify(asset.pathData.xcmDepositFeeAmounts)}, 
+            Reserve Amounts: ${JSON.stringify(asset.pathData.xcmDepositReserveAmounts)}`
+        )
     })
     console.log("Building instructions")
 

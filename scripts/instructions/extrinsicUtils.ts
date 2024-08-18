@@ -74,9 +74,10 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
    
 
     
-    let startTransferrable = getTransferrableAssetObject(relay, instruction.startAssetNode)
-    let destinationTransferrable = getTransferrableAssetObject(relay, instruction.destinationAssetNode)
-    let currencyInput = startTransferrable.paraspellAsset.assetId? startTransferrable.paraspellAsset.assetId : startTransferrable.paraspellAsset.symbol
+    const startTransferrable = getTransferrableAssetObject(relay, instruction.startAssetNode)
+    const destinationTransferrable = getTransferrableAssetObject(relay, instruction.destinationAssetNode)
+    const currencyInput = startTransferrable.assetRegistryObject.tokenData.localId
+    const assetSymbol = startTransferrable.assetRegistryObject.tokenData.symbol
 
     if(!currencyInput){
         throw new Error("Transfer Tx: currencyInput undefined")
@@ -166,15 +167,12 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     // console.log(`xcmTx ${JSON.stringify(xcmTx, null, 2)}`)
 
     let instructionIndex = instruction.instructionIndex
-    let paraspellAssetSymbol = startTransferrable.paraspellAsset.symbol
-    if(!paraspellAssetSymbol){
-        throw new Error("Transfer Tx: paraspell Asset Symbol undefined")
-    } 
+
     let txContainer: TransferExtrinsicContainer = {
         relay: relay,
         firstNode: instruction.startNode,
         secondNode: instruction.destinationNode,
-        assetSymbol: paraspellAssetSymbol,
+        assetSymbol: assetSymbol,
         assetIdStart: instruction.startAssetNode.getAssetLocalId(),
         assetIdEnd: instruction.destinationAssetNode.getAssetLocalId(),
         extrinsic: xcmTx,

@@ -170,6 +170,7 @@ export async function listenForXcmpDepositEvent(
         if(node !== "AssetHubPolkadot") throw new Error(`Not configured for transferMultiassets deposit events for node ${node}`)
         console.log(`TRUE`)
         const eventDataRegistry = multiassetsDepositEventDictionary["AssetHubPolkadot"]
+        console.log(`AssetHub tranfserMultiAsset Event Data Registry: ${JSON.stringify(eventDataRegistry)}`)
         let depositEvent = events.filter((event) => event.event.section === eventDataRegistry.deposit.section && event.event.method === eventDataRegistry.deposit.method)[eventDataRegistry.deposit.index]
         let depositAmount = depositEvent.event.data[eventDataRegistry.deposit.amountIndex]
         
@@ -250,7 +251,7 @@ async function createDepositEventListener(
     tokenType: TokenType,
     transferType: TransferType,
     depositAddress: string,
-    balanceDepositTracker: PromiseTracker,
+    manualBalanceDepositTracker: PromiseTracker,
     xcmpMessageId?: string, 
     xcmpMessageHash?: string
 ): Promise<FrameSystemEventRecord[]>{
@@ -259,10 +260,11 @@ async function createDepositEventListener(
         let xcmEventSection = nodeEventData.xcm.section
         let eventRecords: FrameSystemEventRecord[] = []
         const unsubscribe = await api.query.system.events((events) => {
-            
+            console.log(`Looking for xcmp event section method ${xcmEventSection}`)
             events.forEach((record) => {
                 eventRecords.push(record)
                 const { event, phase } = record;
+                console.log(`Section: ${event.section} | Method: ${event.method}`)
 
                 if(event.section === "common"){
                     // console.log(`COMMON EVENT: ${JSON.stringify(event, null, 2)}`)
@@ -308,9 +310,9 @@ async function createDepositEventListener(
                     }
                 }
             });
-            let balanceDepositResolve = balanceDepositTracker.isResolved()
+            let balanceDepositResolve = manualBalanceDepositTracker.isResolved()
             console.log("Reached end of deposit events, no xcm event found")
-            console.log(`BALANCE DEPOSIT RESOLVED: ${balanceDepositResolve}`)
+            console.log(`MANUAL BALANCE DEPOSIT RESOLVED: ${balanceDepositResolve}`)
             // events.forEach((event) => {
             //     console.log(`Event: ${event.event.section} | ${event.event.method} | ${event.phase.toString()}`)
             // })

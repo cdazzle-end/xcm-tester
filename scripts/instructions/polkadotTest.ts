@@ -7,7 +7,7 @@ import { cryptoWaitReady } from "@polkadot/util-crypto"
 import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, getChainIdFromNode, getAssetKey, getAssetRegistry, getAssetsAtLocation } from './utils.ts'
 import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode, FeeBook, NewFeeBook} from './types.ts'
 import { AssetNode } from './AssetNode.ts'
-import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
+import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructionSetTest, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
 import { arb_wallet_kusama, dotNodeKeys, dotTargetNode, ksmRpc, ksmTargetNode, kusamaNodeKeys, live_wallet_3, localRpcs, mainWalletAddress, mainWalletEthAddress, testBncNode, testNets, testZlkNode } from './txConsts.ts';
 import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, buildTransferExtrinsicReworked, buildTransferKsmToChain, buildTransferToKsm, createSwapExtrinsicObject, createTransferExtrinsicObject } from './extrinsicUtils.ts';
@@ -1259,6 +1259,31 @@ async function rewriteFeeBook(){
     fs.writeFileSync(newnewFeeBookPath, JSON.stringify(newNewFeeBook, null, 2));
     console.log('FeeBook updated successfully!');
 }
+
+// async function buildTest(){
+//     let relay: Relay = 'polkadot'
+//     let chopsticks: boolean = true
+//     let executeMovr: boolean = false
+//     // let latestFiles = getLatestAsyncFilesPolkadot()
+//     // let latestFile = latestFiles[1][1] // latest file with 1 amount input
+//     // console.log(`Latest file: ${latestFile}`)
+//     // setLastFile(latestFile, relay)
+//     let latestFile = './tests/testXcmPath.json'
+//     let arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
+//     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
+
+//     assetPath.forEach(asset => {
+//         console.log(`Chain: ${asset.getChainId()}, Node: ${asset.paraspellChain}, Asset: ${asset.getAssetRegistrySymbol()}, Amount: ${asset.pathValue}`)
+//     })
+//     console.log("Building instructions")
+
+//     let instructionSet = buildInstructionSetTest(relay, assetPath)
+//     printInstructionSet(instructionSet)
+
+//     // await buildPolkadotExtrinsics(relay, instructionSet, false, false, 20)
+//     let results = await buildAndExecuteExtrinsics(relay, instructionSet, chopsticks, executeMovr, 20, true)
+//     console.log(`Results: ${JSON.stringify(results.success)}`)
+// }
 
 async function main(){
     // let wallet = await getSigner(false, false)

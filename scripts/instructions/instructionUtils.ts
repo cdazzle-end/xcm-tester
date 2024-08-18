@@ -252,45 +252,28 @@ function buildTransferInstruction(relay: Relay, assetNodes: AssetNode[], transfe
 
 export function getTransferrableAssetObject(relay: Relay, assetNode: AssetNode): TransferrableAssetObject {
     let sourceChainParaspell = getParaspellChainName(relay, assetNode.getChainId())
-    let assetParaspell;
-    if(sourceChainParaspell == "Kusama"){
-        assetParaspell = "KSM"
-    } else if (sourceChainParaspell == "Polkadot") {
-        assetParaspell = "DOT"
-    } else {
-        let assetId = JSON.stringify(assetNode.assetRegistryObject.tokenData.localId).replace(/\\|"/g, "")
-        assetParaspell = getAssetBySymbolOrId(sourceChainParaspell, assetId, assetNode.getAssetRegistrySymbol())
-    }
-    if(!assetParaspell){
-        throw new Error("Can't find asset paraspell object for asset node: " + JSON.stringify(assetNode, null, 2))
-    }
+    // let assetParaspell;
+    // if(sourceChainParaspell == "Kusama"){
+    //     assetParaspell = "KSM"
+    // } else if (sourceChainParaspell == "Polkadot") {
+    //     assetParaspell = "DOT"
+    // } else {
+    //     let assetId = JSON.stringify(assetNode.assetRegistryObject.tokenData.localId).replace(/\\|"/g, "")
+    //     assetParaspell = getAssetBySymbolOrId(sourceChainParaspell, assetId, assetNode.getAssetRegistrySymbol())
+    // }
+    // if(!assetParaspell){
+    //     throw new Error("Can't find asset paraspell object for asset node: " + JSON.stringify(assetNode, null, 2))
+    // }
     let originChainParaspell = getParaspellChainName(relay, assetNode.getAssetOriginChainId())
 
     let transferrableAssetObject: TransferrableAssetObject = {
         sourceParaspellChainName: sourceChainParaspell,
         assetRegistryObject: assetNode.assetRegistryObject,
-        paraspellAsset: assetParaspell,
+        // paraspellAsset: assetParaspell,
         originChainParaId: assetNode.getAssetOriginChainId(),
         originParaspellChainName: originChainParaspell
     }
     return transferrableAssetObject
-}
-
-export function getTransferParams(transferrableAssetObject: TransferrableAssetObject, transferInstruction: TransferInstruction){
-    if(!transferrableAssetObject.paraspellAsset.symbol){
-        console.log("Transferrable Asset Object: " + JSON.stringify(transferrableAssetObject))
-        throw new Error("Asset symbol is null. Cant find asset registry object from allAssets in paraspell assets list")
-    }
-    let assetDecimals;
-    if(transferrableAssetObject.sourceParaspellChainName == "Kusama"){
-        assetDecimals = 12
-    } else if (transferrableAssetObject.sourceParaspellChainName == "Polkadot") {
-        assetDecimals = 10
-    } else {
-        assetDecimals = paraspell.getAssetDecimals(transferrableAssetObject.sourceParaspellChainName, transferrableAssetObject.paraspellAsset.symbol)
-    }
-    let transferAmount = transferInstruction.assetNodes[0].pathValue
-    let transferAmountFormatted = new FixedPointNumber(transferInstruction.assetNodes[0].pathValue, assetDecimals).toChainData()
 }
 
 export function getParaspellKsmChainNameByParaId(chainId: number): paraspell.TNode{
@@ -613,7 +596,7 @@ export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPa
         console.log(JSON.stringify(result.arbExecutionResult, null, 2))
     })
 
-    let ksmBalance = await getBalanceChainAsset(chopsticks, relay, "Kusama", 0, "KSM")
+    let ksmBalance = await getBalanceChainAsset(chopsticks, relay, "Kusama", 0, "KSM", "KSM")
     let ksmBalanceToTransfer = ksmBalance.free.toNumber() - 0.01
 
     console.log("Executing Kusama to start allocation")

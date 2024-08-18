@@ -179,7 +179,7 @@ export interface ParaspellAsset {
 export interface TransferrableAssetObject {
     sourceParaspellChainName: TNode | "Kusama" | "Polkadot";
     assetRegistryObject: MyAssetRegistryObject;
-    paraspellAsset: ParaspellAsset;
+    // paraspellAsset: ParaspellAsset;
     originChainParaId: number;
     originParaspellChainName: TNode | "Kusama" | "Polkadot";
 }

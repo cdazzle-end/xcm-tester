@@ -187,6 +187,8 @@ export function parseJsonNodePathData(jsonObject: JsonPathNode): PathData{
         lpId: data.lp_id,
         xcmFeeAmounts: data.xcm_fee_amounts,
         xcmReserveValues: data.xcm_reserve_values,
+        xcmDepositFeeAmounts: data.xcm_deposit_fee_amounts,
+        xcmDepositReserveAmounts: data.xcm_deposit_reserve_amounts
     }
     return pathDataFormatted
 }
@@ -194,6 +196,7 @@ export function parseJsonNodePathData(jsonObject: JsonPathNode): PathData{
 // Reads a json object from the arbitrage result log and returns the corresponding paraspell asset and amount
 export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Relay ){
     // console.log("Reading log data: " + JSON.stringify(jsonObject))
+    console.log(`Json Node Data: ${JSON.stringify(jsonObject, null, 2)}`)
     let [chainId, assetLocalId] = parsePathNodeKey(jsonObject.node_key)
 
     let assetRegistryObject = getAssetRegistryObject(chainId, assetLocalId, relay)
@@ -202,6 +205,8 @@ export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Rela
 
     let paraspellChainName = getParaspellChainName(relay, chainId)
     let pathDataFormatted = parseJsonNodePathData(jsonObject)
+
+    console.log(`Parsed Path Data: ${JSON.stringify(pathDataFormatted, null, 2)}`)
 
     let pathType: PathType = jsonObject.path_type as PathType
 
@@ -213,6 +218,9 @@ export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Rela
         pathType: pathType,
         pathData: pathDataFormatted
     });
+    
+    console.log(`Asset Node path data: ${JSON.stringify(assetNode.pathData)}`)
+
     return assetNode
 
     // if(paraspellChainName == "Kusama" || paraspellChainName == "Polkadot"){

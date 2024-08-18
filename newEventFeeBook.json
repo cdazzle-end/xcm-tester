@@ -276,6 +276,17 @@
         "feeAssetSymbol": "HDX",
         "feeAssetId": "0",
         "node": ""
+      },
+      "\"1000021\"": {
+        "xcmAmount": "180000",
+        "xcmAssetSymbol": "PINK",
+        "xcmAssetId": "1000021",
+        "xcmAssetDecimals": "10",
+        "feeAmount": "492560282604",
+        "feeAssetSymbol": "HDX",
+        "feeAssetId": "0",
+        "feeAssetDecimals": "12",
+        "node": "HydraDX"
       }
     },
     "2035": {
@@ -317,6 +328,17 @@
         "feeAssetSymbol": "USDt",
         "feeAssetId": "1984",
         "node": ""
+      },
+      "\"23\"": {
+        "xcmAmount": "99999999998",
+        "xcmAssetSymbol": "PINK",
+        "xcmAssetId": "23",
+        "xcmAssetDecimals": "10",
+        "feeAmount": "62767",
+        "feeAssetSymbol": "USDt",
+        "feeAssetId": "1984",
+        "feeAssetDecimals": "6",
+        "node": "AssetHubPolkadot"
       }
     },
     "2000": {

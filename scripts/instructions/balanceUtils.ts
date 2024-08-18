@@ -10,7 +10,7 @@ import { acaRpc, karRpc, localRpcs } from './txConsts.ts';
 import {EvmRpcProvider} from '@acala-network/eth-providers';
 import { Wallet } from '@acala-network/sdk/wallet/wallet.js';
 import { WalletConfigs } from '@acala-network/sdk/wallet/index.js';
-import { getSigner, getNodeFromChainId, delay } from './utils.ts';
+import { getSigner, getNodeFromChainId, delay, getAssetRegistryObjectBySymbol } from './utils.ts';
 import { getApiForNode } from './apiUtils.ts';
 import { balanceAdapterMap } from './liveTest.ts';
 import {BigNumber as bn } from "bignumber.js"
@@ -20,15 +20,16 @@ export type BalanceAdapter = StatemintAdapter | StatemineAdapter | AcalaAdapter 
 // ***
 // Used in executeSingleTransferExtrinsic
 export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks: boolean, destChainApi: ApiPromise, transferrableAssetObject: TransferrableAssetObject, depositAddress: string){
-    let tokenSymbol: string;
-    if(paraId == 0){
-        tokenSymbol = relay == 'kusama' ? "KSM" : "DOT"
-    } else if(!transferrableAssetObject.paraspellAsset.symbol){
-        // throw logError(new Error("Asset symbol is null. Cant subscribe to token balance"))
-        throw Error("Asset symbol is null. Cant subscribe to token balance")
-    } else {
-        tokenSymbol = transferrableAssetObject.paraspellAsset.symbol;
-    }
+    let tokenSymbol: string = transferrableAssetObject.assetRegistryObject.tokenData.symbol 
+
+    // if(paraId == 0){
+    //     tokenSymbol = relay == 'kusama' ? "KSM" : "DOT"
+    // } else if(!transferrableAssetObject.paraspellAsset.symbol){
+    //     // throw logError(new Error("Asset symbol is null. Cant subscribe to token balance"))
+    //     throw Error("Asset symbol is null. Cant subscribe to token balance")
+    // } else {
+    //     tokenSymbol = transferrableAssetObject.paraspellAsset.symbol;
+    // }
 
     console.log(`Watch Token Deposit: Source Chain Name ${transferrableAssetObject.sourceParaspellChainName} | Token Symbol ${tokenSymbol} | Deposit Address ${depositAddress} `)
 
@@ -72,7 +73,8 @@ export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks
     }
 
     let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, transferrableAssetObject.assetRegistryObject, relay)
-    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, depositAddress);
+    const assetId = transferrableAssetObject.assetRegistryObject.tokenData.localId
+    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, depositAddress, assetId);
     console.log("Watch Token Deposit: Subscribed to balance")
     return new Observable<BalanceData>((subscriber) => {
         const subscription = balanceObservable.subscribe({
@@ -164,7 +166,8 @@ export async function watchTokenBalance(relay: Relay, paraId: number, chopsticks
     }
 
     let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, assetObject, relay)
-    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress);
+    const assetId = assetObject.tokenData.localId
+    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress, assetId);
     console.log("Watch Token Balance: Subscribed to balance")
     // console.log(chainApi.registry.chainTokens)
     // console.log(destAdapter.getTokens())
@@ -281,7 +284,7 @@ export async function getBalanceChange(
 }
 
 // Used in getRelayTokenBalanceAcrossChains, getRelayTokenBalances, allocateKsmFromPreTransferPaths
-export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, node: TNode | "Kusama" | "Polkadot", chainId: number, assetSymbol: string): Promise<BalanceData>{
+export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, node: TNode | "Kusama" | "Polkadot", chainId: number, assetSymbol: string, assetId: string): Promise<BalanceData>{
     let evm = node == "Moonbeam" || node == "Moonriver" ? true : false
     let account = await getSigner(chopsticks, evm)
 
@@ -345,7 +348,7 @@ export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, no
         console.log("Removing XC from token symbol")
         tokenSymbol = tokenSymbol.slice(2)
     }
-    const balanceObservable = chainAdapter.subscribeTokenBalance(tokenSymbol, account.address);
+    const balanceObservable = chainAdapter.subscribeTokenBalance(tokenSymbol, account.address, assetId);
     let balance = await firstValueFrom(balanceObservable)
 
     
@@ -429,8 +432,9 @@ export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, rela
                 tokenSymbol = "xc" + tokenSymbol
             }
     
-    
-            const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, account.address);
+            // REVIEW Getting relay asset object by symbol, might cause issues? Chains like moonbeam might have other assets w the symbol of DOT or KSM
+            const assetId = getAssetRegistryObjectBySymbol(chainId, tokenSymbol, relay).tokenData.localId
+            const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, account.address, assetId);
             console.log("Delaying for 5")
             await delay(5000)
             let balance = await firstValueFrom(balanceObservable)
@@ -449,7 +453,9 @@ export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, rela
     // await delay(10000)
     await Promise.all(nativeBalancesPromise)
 
-    let dotBalance = await getBalanceChainAsset(chopsticks, relay, "Polkadot", 0, "DOT")
+    // REVIEW Getting relay asset 
+
+    let dotBalance = await getBalanceChainAsset(chopsticks, relay, "Polkadot", 0, "DOT", "DOT")
     console.log("relay chain dot balance: " + dotBalance.available.toString())
     nativeBalances[0] = dotBalance.available.toString()
 
@@ -479,12 +485,17 @@ export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay){
     }
 
     let relayToken = relay === 'kusama' ? "KSM" : "DOT"
+
+
+
     let chainIds = Object.keys(nativeBalances)
     let nativeBalancesPromise = chainIds.map(async (chainKey) => {
         let chainId = Number.parseInt(chainKey)
         // if (chainId != 0){
             let node = getNodeFromChainId(Number.parseInt(chainKey), relay)
-            let chainBalance = await getBalanceChainAsset(chopsticks, relay, node, chainId, relayToken)
+            // REVIEW Getting asset object by symbol, might cause issues? Chains like moonbeam might have other assets w the symbol of DOT or KSM
+            let relayAssetId = getAssetRegistryObjectBySymbol(chainId, relayToken, relay).tokenData.localId
+            let chainBalance = await getBalanceChainAsset(chopsticks, relay, node, chainId, relayToken, relayAssetId)
             nativeBalances[chainId] = chainBalance.available.toString()    
         // }
     })
@@ -585,7 +596,8 @@ export async function getBalance(paraId: number, relay: Relay, chopsticks: boole
     }
 
     let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, assetObject, relay)
-    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress);
+    const tokenId = assetObject.tokenData.localId
+    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress, tokenId);
     console.log("Get Token Balance: Subscribed to balance")
     let balance = await firstValueFrom(balanceObservable)
     console.log("Balance: " + JSON.stringify(balance.available.toNumber()))
