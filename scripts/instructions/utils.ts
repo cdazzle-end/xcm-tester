@@ -205,49 +205,59 @@ export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Rela
 
     let pathType: PathType = jsonObject.path_type as PathType
 
-    if(paraspellChainName == "Kusama" || paraspellChainName == "Polkadot"){
-        let assetNode = new AssetNode({
-            // paraspellAsset: {symbol: assetSymbol},
-            paraspellChain: paraspellChainName,
-            assetRegistryObject: assetRegistryObject,
-            pathValue: jsonObject.path_value.toString(),
-            pathType: pathType,
-            pathData: pathDataFormatted
-        });
-        return assetNode
-    } else {
+    let assetNode = new AssetNode({
+        // paraspellAsset: paraspellAsset,
+        paraspellChain: paraspellChainName,
+        assetRegistryObject: assetRegistryObject,
+        pathValue: jsonObject.path_value.toString(),
+        pathType: pathType,
+        pathData: pathDataFormatted
+    });
+    return assetNode
 
-        // If asset has location, get paraspell asset. Else, shouldn't need to worry about paraspell xcm asset
-        let hasLocation = assetRegistryObject.hasLocation;
-        let paraspellAsset 
-        if (hasLocation){
-            paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetSymbol)
+    // if(paraspellChainName == "Kusama" || paraspellChainName == "Polkadot"){
+    //     let assetNode = new AssetNode({
+    //         // paraspellAsset: {symbol: assetSymbol},
+    //         paraspellChain: paraspellChainName,
+    //         assetRegistryObject: assetRegistryObject,
+    //         pathValue: jsonObject.path_value.toString(),
+    //         pathType: pathType,
+    //         pathData: pathDataFormatted
+    //     });
+    //     return assetNode
+    // } else {
 
-            if(paraspellChainName == undefined){
-                throw new Error("Paraspell chain name not found for chain id " + chainId)
-            }
-            if(paraspellAsset == null){
-                paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetLocalId) // Should probably search by local ID first instead of symbol
-                if (paraspellAsset == null){
-                    throw new Error("Paraspell asset not found for chain " + paraspellChainName + " and asset id " + assetLocalId)
-                }
-            }
-        } else {
-            paraspellAsset = null
-        }
+    //     // If asset has location, get paraspell asset. Else, shouldn't need to worry about paraspell xcm asset
+    //     let hasLocation = assetRegistryObject.hasLocation;
+    //     let paraspellAsset 
+    //     if (hasLocation){
+    //         paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetSymbol)
+
+    //         if(paraspellChainName == undefined){
+    //             throw new Error("Paraspell chain name not found for chain id " + chainId)
+    //         }
+    //         if(paraspellAsset == null){
+    //             paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetLocalId) // Should probably search by local ID first instead of symbol
+    //             if (paraspellAsset == null){
+    //                 throw new Error("Paraspell asset not found for chain " + paraspellChainName + " and asset id " + assetLocalId)
+    //             }
+    //         }
+    //     } else {
+    //         paraspellAsset = null
+    //     }
 
         
-        let assetNode = new AssetNode({
-            // paraspellAsset: paraspellAsset,
-            paraspellChain: paraspellChainName,
-            assetRegistryObject: assetRegistryObject,
-            pathValue: jsonObject.path_value.toString(),
-            pathType: pathType,
-            pathData: pathDataFormatted
-        });
-        // console.log(JSON.stringify(assetNode))
-        return assetNode
-    }
+    //     let assetNode = new AssetNode({
+    //         // paraspellAsset: paraspellAsset,
+    //         paraspellChain: paraspellChainName,
+    //         assetRegistryObject: assetRegistryObject,
+    //         pathValue: jsonObject.path_value.toString(),
+    //         pathType: pathType,
+    //         pathData: pathDataFormatted
+    //     });
+    //     // console.log(JSON.stringify(assetNode))
+    //     return assetNode
+    // }
     
 }
 
