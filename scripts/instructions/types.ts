@@ -107,8 +107,8 @@ export const enum PathType {
 export interface PathData{
     dexType: string, // 0 solar 1 zenlink 2 uni 3 algebra
     lpId: string // pool address
-    xcmFeeAmounts?: string[] // fee amounts
-    xcmReserveValues?: string[] // reserve values
+    xcmTransferFeeAmounts?: string[] // fee amounts
+    xcmTransferReserveAmounts?: string[] // reserve values
     xcmDepositFeeAmounts?: string[],
     xcmDepositReserveAmounts?: string[]
 }

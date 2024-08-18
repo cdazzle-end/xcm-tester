@@ -124,8 +124,8 @@ function createInstructionTransferToHomeThenDestination(relay: Relay, assetNodes
 
     let relayNode: 'Kusama' | 'Polkadot' = relay === 'kusama' ? 'Kusama' : 'Polkadot'
 
-    let xcmTransferReserves = assetNodes[1].pathData.xcmReserveValues
-    let xcmTransferFees = assetNodes[1].pathData.xcmFeeAmounts
+    let xcmTransferReserves = assetNodes[1].pathData.xcmTransferReserveAmounts
+    let xcmTransferFees = assetNodes[1].pathData.xcmTransferFeeAmounts
     let xcmDepositReserves = assetNodes[1].pathData.xcmDepositReserveAmounts
     let xcmDepositFees = assetNodes[1].pathData.xcmDepositFeeAmounts
     
@@ -200,8 +200,8 @@ function createMiddleNode(relay: Relay, startAssetNode: AssetNode, destinationAs
 function createInstructionTransfer(relay: Relay, assetNodes: AssetNode[], transferType: InstructionType.TransferToHomeChain | InstructionType.TransferAwayFromHomeChain, index: IndexObject) {
     let startAssetNode = assetNodes[0]
     let destinationAssetNode = assetNodes[1]
-    let xcmTransferFees = assetNodes[1].pathData.xcmFeeAmounts
-    let xcmTransferReserves = assetNodes[1].pathData.xcmReserveValues
+    let xcmTransferFees = assetNodes[1].pathData.xcmTransferFeeAmounts
+    let xcmTransferReserves = assetNodes[1].pathData.xcmTransferReserveAmounts
     let xcmDepositFees = assetNodes[1].pathData.xcmDepositFeeAmounts
     let xcmDepositReserves = assetNodes[1].pathData.xcmDepositReserveAmounts
     let relayNode: 'Kusama' | 'Polkadot' = relay === 'kusama' ? 'Kusama' : 'Polkadot'

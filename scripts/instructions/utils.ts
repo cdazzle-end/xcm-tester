@@ -185,8 +185,8 @@ export function parseJsonNodePathData(jsonObject: JsonPathNode): PathData{
     let pathDataFormatted: PathData = {
         dexType: data.path_type,
         lpId: data.lp_id,
-        xcmFeeAmounts: data.xcm_fee_amounts,
-        xcmReserveValues: data.xcm_reserve_values,
+        xcmTransferFeeAmounts: data.xcm_transfer_fee_amounts,
+        xcmTransferReserveAmounts: data.xcm_transfer_reserve_amounts,
         xcmDepositFeeAmounts: data.xcm_deposit_fee_amounts,
         xcmDepositReserveAmounts: data.xcm_deposit_reserve_amounts
     }
