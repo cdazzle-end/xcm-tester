@@ -5,7 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url';
 import { FixedPointNumber } from "@acala-network/sdk-core";
-import { deepEqual } from "./utils.ts";
+import { deepEqual, getAssetRegistry } from "./utils.ts";
 
 // Get the __dirname equivalent in ES module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -104,8 +104,9 @@ export class AssetNode implements AssetNodeData{
         // console.log("Searching for asset origin registry object for asset: " + JSON.stringify(this, null, 2))
         let originChainId = this.getAssetOriginChainId()
         let relay = this.assetRegistryObject.tokenData.network;
-        let assetRegistry: MyAssetRegistryObject[] = relay === 'kusama' ? JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8')) : JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssetsPolkadot.json'), 'utf8'));
+        // let assetRegistry: MyAssetRegistryObject[] = relay === 'kusama' ? JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8')) : JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssetsPolkadot.json'), 'utf8'));
         // let assetRegistry: MyAssetRegistryObject[] = JSON.parse(fs.readFileSync(path.join(__dirname, '../../allAssets.json'), 'utf8'));
+        let assetRegistry: MyAssetRegistryObject[] = getAssetRegistry('polkadot')
         let asset = assetRegistry.find((assetRegistryObject: MyAssetRegistryObject) => {
             if(assetRegistryObject.tokenData.chain == originChainId && assetRegistryObject.hasLocation == true){
                 // console.log("Running deep equal check for asset: " + JSON.stringify(assetRegistryObject))

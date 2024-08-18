@@ -3,7 +3,7 @@ import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import { getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, getChainIdFromNode, findValueByKey } from './utils.ts'
-import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode, PromiseTracker, TransferDepositEventData, TransferOrDeposit, ReserveFeeData, FeeData } from './types.ts'
+import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExecutionState, LastFilePath, PreExecutionTransfer, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode, PromiseTracker, TransferDepositEventData, TransferOrDeposit, ReserveFeeData, FeeData } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
@@ -205,7 +205,7 @@ export async function listenForXcmpDepositEvent(
 
     // If ACALA, if deposit is ACA then events are differnt
 
-    console.log(JSON.stringify(nodeEventData))
+    // console.log(JSON.stringify(nodeEventData))
 
     // Get deposit and fee amounts
     let depositEvent = events.filter((event) => event.event.section === nodeEventData!.deposit.section && event.event.method === nodeEventData!.deposit.method)[nodeEventData.deposit.index]
@@ -238,7 +238,7 @@ export async function listenForXcmpDepositEvent(
         feeAssetDecimals: depositAssetDecimals,
         node: node
     }
-    console.log(`DEPOSIT EVENT SUCCESS: Deposit amount: ${depositEventData.xcmAmount.toString()} | Fee amount: ${depositEventData.feeAmount.toString()}`)
+    // console.log(`DEPOSIT EVENT SUCCESS: Deposit amount: ${depositEventData.xcmAmount.toString()} | Fee amount: ${depositEventData.feeAmount.toString()}`)
 
     return depositEventData
 
@@ -260,7 +260,7 @@ async function createDepositEventListener(
         let xcmEventSection = nodeEventData.xcm.section
         let eventRecords: FrameSystemEventRecord[] = []
         const unsubscribe = await api.query.system.events((events) => {
-            console.log(`Looking for xcmp event section method ${xcmEventSection}`)
+            // console.log(`Looking for xcmp event section method ${xcmEventSection}`)
             events.forEach((record) => {
                 eventRecords.push(record)
                 const { event, phase } = record;
@@ -276,7 +276,7 @@ async function createDepositEventListener(
                         try{
                             const messageHash = event.data[nodeEventData.xcm.idIndex].toString();
                             if (messageHash.toString() === xcmpMessageHash || messageHash.toString() === xcmpMessageId) {
-                                console.log("Found xcm event")
+                                // console.log("Found xcm event")
                                 eventPromiseResolved = true
                                 unsubscribe(); // Stop listening for events
                                 resolve(eventRecords);
@@ -311,8 +311,8 @@ async function createDepositEventListener(
                 }
             });
             let balanceDepositResolve = manualBalanceDepositTracker.isResolved()
-            console.log("Reached end of deposit events, no xcm event found")
-            console.log(`MANUAL BALANCE DEPOSIT RESOLVED: ${balanceDepositResolve}`)
+            // console.log("Reached end of deposit events, no xcm event found")
+            // console.log(`MANUAL BALANCE DEPOSIT RESOLVED: ${balanceDepositResolve}`)
             // events.forEach((event) => {
             //     console.log(`Event: ${event.event.section} | ${event.event.method} | ${event.phase.toString()}`)
             // })
@@ -381,23 +381,7 @@ export function getXcmTransferEventData(
     if(!nodeBalanceEvent){
         throw new Error("Cant get Xcm Transfer execution event data from start chain")
     }
-    // if(node == "Acala"){
-    //     if (transferredAssetSymbol === nativeCurrencySymbol){
-    //         nodeBalanceEvent = transferEventDictionary[node].balanceEvents.nativeCurrency
-    //     } else {
-    //         nodeBalanceEvent = assetOriginChainId == chainId ?
-    //         transferEventDictionary[node].balanceEvents.nativeTokens : 
-    //         transferEventDictionary[node].balanceEvents.foreignTokens
-    //     }
 
-    // } else {
-    //     nodeBalanceEvent = transferredAssetSymbol === nativeCurrencySymbol ? 
-    //         transferEventDictionary[node].balanceEvents.native : 
-    //         transferEventDictionary[node].balanceEvents.tokens
-    // }
-
-
-    // console.log(`Node balance event: ${JSON.stringify(nodeBalanceEvent, null, 2)}`)
     // let nodeBalanceEvent: TransferEvent = transferEventDictionary[node].balanceEvents.native
     let balanceEvents = eventRecords.filter((event) => {
         // console.log(`Checking event: ${event.event.section} | ${event.event.method}`)

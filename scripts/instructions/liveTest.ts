@@ -2,7 +2,7 @@ import fs from 'fs'
 import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, truncateAssetPath, getArbExecutionPath } from './utils.ts'
+import { getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, truncateAssetPath, getArbExecutionPath, getAssetRegistry } from './utils.ts'
 import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructionSetTest, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
@@ -27,7 +27,7 @@ import { formatMovrTx, getMovrSwapTx, testXcTokensMoonriver } from './../swaps/m
 import '@galacticcouncil/api-augment/basilisk';
 import { closeApis, getApiForNode } from './apiUtils.ts';
 import { getLastExecutionState, resetExecutionState, setExecutionRelay, setExecutionSuccess, setLastExtrinsicSet, setLastFile, setLastNode } from './globalStateUtils.ts';
-import { BalanceAdapter } from './balanceUtils.ts';
+import { BalanceAdapter, getRelayTokenBalances } from './balanceUtils.ts';
 import { pathLogger, nodeLogger } from './logger.ts'
 
 const __filename = fileURLToPath(import.meta.url);
@@ -442,7 +442,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
     if(arbSuccess){
         await setExecutionSuccess(true, relay)
     }
-    await logAllResultsDynamic(relay, logFilePath, chopsticks)
+    // await logAllResultsDynamic(relay, logFilePath, chopsticks)
     // await logAllArbAttempts(relay, logFilePath, chopsticks)
     let arbAmountOut = await getTotalArbResultAmount(relay, globalState.lastNode!, chopsticks)
     await logProfits(relay, arbAmountOut, logFilePath, chopsticks )
@@ -796,6 +796,33 @@ async function testAca(){
     console.log("Block number: ", number.toNumber())
 }
 
+async function testApi(){
+    // const api = await getApiForNode('HydraDX', true)
+
+    // let block = await api.query.system.number()
+
+    // console.log('block: ' + block)
+    await getRelayTokenBalances(true, 'polkadot')
+}
+
+async function testAssetLookup(){
+    const key = {"NativeAssetId":{"Token":"AUSD"}}
+    // let assetObject = getAssetRegistryObject(2000, key, 'polkadot')
+    let asset = getAssetRegistryObjectBySymbol(2000, 'ACA', 'polkadot')
+    const id = asset.tokenData.localId
+    console.log(id)
+    console.log(JSON.stringify(id))
+    console.log('-------------')
+    let assetObject = getAssetRegistryObject(2000, JSON.stringify(id).replace(/\\|"/g, ""), 'polkadot')
+    console.log(assetObject.tokenData.localId)
+
+    const registry = getAssetRegistry('polkadot').filter((assetFilter) => assetFilter.tokenData.chain === 2000)
+    registry.forEach((assetR) => {
+        console.log(JSON.stringify(assetR.tokenData.localId).replace(/\\|"/g, ""))
+    })
+
+}
+
 // Run with arg kusama
 async function run() {
     let chopsticks = true
@@ -813,11 +840,14 @@ async function run() {
     // await executeLatestArb(relay, chopsticks, executeMovr)
     let customInput = 0
     // await runFromLastNode(relay, chopsticks, executeMovr)  
+    // await testAssetLookup()
     await runDynamicArbTargetRelay(relay, chopsticks, executeMovr, 0.50, useLatestTarget)
     // await executeTestPath(relay, chopsticks, executeMovr)
     // await getLatest()
     // await testAca()
     // await buildTest()
+
+    // await testApi()
     process.exit(0)
 }
 

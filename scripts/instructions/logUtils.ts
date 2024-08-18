@@ -141,7 +141,7 @@ export async function logSubmittableExtrinsics(extrinsicSet: ExtrinsicObject[], 
     // }
     fs.writeFileSync(filePath, logFileData);
 
-    console.log(`Data written to file: ${filePath}`);
+    // console.log(`Data written to file: ${filePath}`);
 }
 export async function logInstructions(instructions: (SwapInstruction | TransferInstruction)[], logFilePath: string,reverse: boolean = false) {
     // let logData = JSON.parse(fs.readFileSync(logFilePath, 'utf8'));
@@ -180,9 +180,9 @@ export async function logInstructions(instructions: (SwapInstruction | TransferI
         fs.appendFileSync(filePath, logFileData);
     }
 
-    console.log(`Data written to file: ${filePath}`);
+    // console.log(`Data written to file: ${filePath}`);
 }
-export function logArbExecutionResults(relay: Relay, arbResults: any[], logFilePath: string, chopsticks: boolean){
+export function logArbExecutionResults(relay: Relay, arbResults: ArbExecutionResult[], logFilePath: string, chopsticks: boolean){
     // Get day and time for file name
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
@@ -218,7 +218,7 @@ export function logArbExecutionResults(relay: Relay, arbResults: any[], logFileP
     const latestAttemptPathFile = path.join(latestDirectoryPath, 'arbExecutionResults.json')
     fs.writeFileSync(latestAttemptPathFile, swapData);
 
-    console.log(`Data written to file: ${mainFilePath}`);
+    // console.log(`Data written to file: ${mainFilePath}`);
 }
 export async function logSwapTxResults(relay: Relay, txResults: any, logFilePath: string, chopsticks: boolean) {
     // let logData = JSON.parse(fs.readFileSync(logFilePath, 'utf8'));
@@ -256,7 +256,7 @@ export async function logSwapTxResults(relay: Relay, txResults: any, logFilePath
     const latestAttemptPathFile = path.join(latestDirectoryPath, 'swapExecutionStats.json')
     fs.writeFileSync(latestAttemptPathFile, logFileData);
 
-    console.log(`Data written to file: ${mainFilePath}`);
+    // console.log(`Data written to file: ${mainFilePath}`);
 }
 export function logTransferTxStats(relay: Relay, transferTxStats: TransferTxStats[], logFilePath: string, chopsticks: boolean){
     // Get day and time for file name
@@ -294,7 +294,7 @@ export function logTransferTxStats(relay: Relay, transferTxStats: TransferTxStat
     const latestAttemptPathFile = path.join(latestDirectoryPath, 'transferExecutionResults.json')
     fs.writeFileSync(latestAttemptPathFile, swapData);
 
-    console.log(`Data written to file: ${mainFilePath}`);
+    // console.log(`Data written to file: ${mainFilePath}`);
 }
 export function logSwapTxStats(relay: Relay, swapTxStats: SwapTxStats[], logFilePath: string, chopsticks: boolean){
     // Get day and time for file name
@@ -332,8 +332,13 @@ export function logSwapTxStats(relay: Relay, swapTxStats: SwapTxStats[], logFile
     const latestAttemptPathFile = path.join(latestDirectoryPath, 'swapExecutionStats.json')
     fs.writeFileSync(latestAttemptPathFile, swapData);
 
-    console.log(`Data written to file: ${mainFilePath}`);
+    // console.log(`Data written to file: ${mainFilePath}`);
 }
+/**
+ * Main logging function containing all the execution data in one place
+ * 
+ * 
+ */
 export function logExtrinsicSetResults(relay: Relay, extrinsicSetResults: ExtrinsicSetResultDynamic, logFilePath: string, chopsticks: boolean){
     // Get day and time for file name
     let logFileStrings = logFilePath.split("\\");
@@ -370,7 +375,7 @@ export function logExtrinsicSetResults(relay: Relay, extrinsicSetResults: Extrin
     const latestAttemptPathFile = path.join(latestDirectoryPath, 'extrinsicSetResults.json')
     fs.writeFileSync(latestAttemptPathFile, swapData);
 
-    console.log(`Data written to file: ${mainFilePath}`);
+    // console.log(`Data written to file: ${mainFilePath}`);
 }
 /**
  * Log accumulated fees from global state for the run
@@ -423,7 +428,7 @@ export function logAccumulatedFees(relay: Relay, accumulatedFees: AccumulatedFee
     const latestAttemptPathFile = path.join(latestDirectoryPath, 'accumulatedFees.json')
     fs.writeFileSync(latestAttemptPathFile, swapData);
 
-    console.log(`Data written to file: ${mainFilePath}`);
+    // console.log(`Data written to file: ${mainFilePath}`);
 }
 
 /**
@@ -468,7 +473,7 @@ export async function logXcmFeeReserves(relay: Relay, feeReserveData: ReserveFee
     const latestAttemptPathFile = path.join(latestDirectoryPath, 'xcmReserveFees.json')
     fs.writeFileSync(latestAttemptPathFile, feeData);
 
-    console.log(`Data written to file: ${mainFilePath}`);
+    // console.log(`Data written to file: ${mainFilePath}`);
 }
 
 /**
@@ -519,14 +524,17 @@ export async function logAllResultsDynamic(relay: Relay, logFilePath: string, ch
     xcmReserveFees = globalState.xcmFeeReserves!
 
     // REVIEW Consolidate log info. What is used/needed.
+    // --- these 4 are just taken from allExtrinsicsSet and written to their own file for visual clarity. Can change this
     await logSwapTxStats(relay, swapTxStats, logFilePath, chopsticks)
     await logSwapTxResults(relay, swapTxResults, logFilePath, chopsticks)
     await logTransferTxStats(relay, transferTxStats, logFilePath, chopsticks)
     await logArbExecutionResults(relay, arbResults, logFilePath, chopsticks)
+    // --- logExtrinsicSetResults contains all the data 
     await logExtrinsicSetResults(relay, allExtrinsicsSet, logFilePath, chopsticks)
     // await logAccumulatedFees(relay, accumulatedFees, logFilePath, chopsticks)
     await logXcmFeeReserves(relay, xcmReserveFees, logFilePath, chopsticks)
     // await updateFeeBook();
+    console.log(`Logged results: SwapTxStats, SwapTxResults, TransferTxStats, ArbExecutionResults, XcmFeeReserve`)
 
 }
 // log the latest file path so we can re run the arb from the last node and connect it to the previous attempt via latestFilePath

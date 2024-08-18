@@ -3,7 +3,7 @@ import { BN } from "@polkadot/util/bn"
 import { checkAndApproveToken } from "./../swaps/movr/utils/utils.ts"
 import { AssetNode } from "./AssetNode.ts"
 import { testNets, localRpcs } from "./txConsts.ts"
-import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ExtrinsicSetResultDynamic, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, NativeBalancesType, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, TransferDepositEventData } from "./types.ts"
+import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, NativeBalancesType, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, TransferDepositEventData } from "./types.ts"
 import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject, getAssetDecimalsFromLocation, getWalletAddressFormatted, isTxDetails } from "./utils.ts"
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { buildSwapExtrinsicDynamic, createSwapExtrinsicObject } from "./extrinsicUtils.ts"
@@ -523,19 +523,22 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     let relay = swapTxContainer.relay
     let chain = swapTxContainer.chain
     let chainId = swapTxContainer.chainId
-    let assetInSymbol = swapTxContainer.assetSymbolIn
-    let assetOutSymbol = swapTxContainer.assetSymbolOut
+
 
     let expectedAmountIn = swapTxContainer.assetAmountIn
     let expectedAmountOut = swapTxContainer.expectedAmountOut
     let blockHash = ""
 
-    let assetNodes = swapTxContainer.assetNodes
     let startAssetRegistryObject = swapTxContainer.assetNodes[0].assetRegistryObject;
     let destAssetRegistryObject = swapTxContainer.assetNodes[swapTxContainer.assetNodes.length - 1].assetRegistryObject;
 
-    let assetInDecimals = assetNodes[0].assetRegistryObject.tokenData.decimals
-    let assetOutDecimals = assetNodes[assetNodes.length - 1].assetRegistryObject.tokenData.decimals
+    let assetOutSymbol = destAssetRegistryObject.tokenData.symbol
+    let assetOutLocalId = destAssetRegistryObject.tokenData.localId
+    let assetOutDecimals = destAssetRegistryObject.tokenData.decimals
+    let assetInSymbol = startAssetRegistryObject.tokenData.symbol
+    let assetInLocalId = startAssetRegistryObject.tokenData.localId
+    let assetInDecimals = startAssetRegistryObject.tokenData.decimals
+
     let destinationAssetKey = JSON.stringify(destAssetRegistryObject.tokenData.chain.toString() + JSON.stringify(destAssetRegistryObject.tokenData.localId))
 
     let signer = await getSigner(chopsticks, false)
@@ -550,11 +553,11 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         paraId: chainId,
         address: signer.address,
         assetInSymbol: assetInSymbol,
-        assetInLocalId: startAssetRegistryObject.tokenData.localId,
+        assetInLocalId: assetInLocalId,
+        assetOutSymbol: assetOutSymbol,
+        assetOutLocalId: assetOutLocalId,
         assetInStartBalance: tokenInBalanceStart,
         assetInStartBalanceString: tokenInBalanceStart.free.toString(),
-        assetOutSymbol: assetOutSymbol,
-        assetOutLocalId: destAssetRegistryObject.tokenData.localId,
         assetOutStartBalance: tokenOutBalanceStart,
         assetOutStartBalanceString: tokenOutBalanceStart.free.toString(),
         inputAmount: expectedAmountIn.toChainData(),
@@ -1699,10 +1702,6 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
         let assetInMinimumBalanceChange = new FixedPointNumber(swapProperties.inputAmount, Number.parseInt(swapProperties.assetInDecimals)).times(new FixedPointNumber(0.90))
         console.log("Asset in minimum balance change: " + assetInMinimumBalanceChange.toChainData())
 
-        // let assetInChangeSufficient = assetInBalanceChangeBn.minus(assetInMinimumBalanceChange)
-        // console.log("Asset in change sufficient: " + assetInChangeSufficient.toChainData())
-
-        // let assetInBalanceChangeBn = new bn(assetInBalanceChange.toChainData())
         let assetInBalanceChangeMinimumBn = new bn(swapProperties.inputAmount).times(new bn(0.90))
         let assetInChangeSufficientBn = assetInBalanceChangeBn.gte(assetInBalanceChangeMinimumBn)
         console.log(`As BigNumber: Asset In Balance Change: ${assetInBalanceChangeBn} | Asset In Minimum Balance Change: ${assetInBalanceChangeMinimumBn} | Asset In Change Sufficient: ${assetInChangeSufficientBn}`)
@@ -1898,9 +1897,9 @@ export async function executeXcmTransfer(xcmTx: paraspell.Extrinsic, signer: Key
                     // console.log(JSON.stringify(eventObj.toHuman(), null, 2))
                     eventLogs.push(eventObj.toHuman())
 
-                    console.log("********************************************")
-                    console.log("XCM Transfer execution event data. LOOKING for xcm ID and HASH")
-                    console.log(JSON.stringify(eventObj.event.data.toHuman(), null, 2))
+                    // console.log("********************************************")
+                    // console.log("XCM Transfer execution event data. LOOKING for xcm ID and HASH")
+                    // console.log(JSON.stringify(eventObj.event.data.toHuman(), null, 2))
 
                     // XTokens Transfer event
                     if (eventObj.event.section === 'xcmpQueue' && eventObj.event.method === 'XcmpMessageSent') {

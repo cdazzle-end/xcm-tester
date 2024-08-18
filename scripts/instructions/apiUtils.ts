@@ -97,6 +97,12 @@ import { apiMap } from "./liveTest.ts";
 export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsticks: boolean): Promise<ApiPromise>{
     let map = apiMap
 
+    // console.log(`Searching ApiMap for ${node}`)
+    // console.log(`All ApiMap keys:`)
+    // for(const key of apiMap.keys()){
+    //     console.log(key)
+    // }
+
     console.log("**********************************************")
     console.log("Checking for existing api for node: ", node)
     if(map.has(node)){

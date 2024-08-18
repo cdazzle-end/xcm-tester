@@ -44,14 +44,7 @@ export interface MyAsset {
     contractAddress?: string;
 }
 
-// // Type for JSON objects stored in result data files
-// export interface JsonPathNode {
-//     node_key: string,
-//     asset_name: string,
-//     path_value: number,
-//     path_type: number,
-//     path_data: any
-// }
+
 
 export interface AssetNodeData {
     paraspellAsset: { symbol?: string; assetId?: string },
@@ -193,9 +186,7 @@ export interface TransferParams {
     address?: string;
     transferrableAssetObject: TransferrableAssetObject;
 }
-// export interface TransferFeeData{
-//     originFeeAsset:
-// }
+
 export interface TransferTxStats {
     startChain: string,
     startParaId: number,
@@ -256,7 +247,16 @@ export interface ExecutionState{
 export type Relay = "kusama" | "polkadot"
 
 export type TransferOrDeposit = "Transfer" | "Deposit"
-
+/**
+ * Global state value that tracks state of extrinsic execution.
+ * - PreSubmssion
+ * - Broadcasted
+ * - Finalized (Can probalby remove this)
+ * 
+ * Used when resuming a previous arb execution attempt. 
+ * If state is Broadcasted, need to check the chain and see if it has succeeded or failed.
+ *
+ */
 export enum TransactionState {
     PreSubmission = "PreSubmission",
     Broadcasted = "Broadcasted",
@@ -265,6 +265,12 @@ export enum TransactionState {
 export type NativeBalancesType = {
     [key: number]: string;
   };
+
+/**
+ * Tracks swap properties before executing
+ * 
+ * Used to confirm previous attempt success
+ */
 export interface SwapProperties{
     type: 'Swap',
     relay: Relay,
@@ -287,6 +293,12 @@ export interface SwapProperties{
     
 
 }
+
+/**
+ * Tracks transfer properties before executing
+ * 
+ * Used to confirm previous attempt success
+ */
 export interface TransferProperties{
     type: 'Transfer',
     chopsticks: boolean,
@@ -376,8 +388,6 @@ export interface SwapExtrinsicContainer{
     assetAmountIn: FixedPointNumber,
     assetSymbolIn: string,
     
-    // pathInLocalId: string,
-    // pathOutLocalId: string,
     pathType: PathType,
     pathAmount: string,
 
@@ -389,6 +399,8 @@ export interface SwapExtrinsicContainer{
     movrBatchSwapParams?: BatchSwapParams,
     glmrSwapParams?: ManagerSwapParams[]
 }
+
+// TODO Remove from all structures
 export interface PathNodeValues {
     // pathInLocalId: string,
     // pathInSymbol: string,
@@ -399,85 +411,6 @@ export interface PathNodeValues {
     // pathValueNext?: number,
 
 }
-
-// export interface ReverseSwapExtrinsicParams{
-//     chainId: number,
-//     chain?: TNode,
-//     type?: number,
-//     module?: string,
-//     call?: string,
-//     supply?: FixedPointNumber | TokenAmount | BN,
-//     target: FixedPointNumber | TokenAmount | BN,
-//     supplyFn?: FixedPointNumber,
-//     targetFn?: FixedPointNumber,
-//     poolIndex?: any,
-//     path?: any[],
-//     supplyAssetId: any,
-//     supplySymbol?: any,
-//     targetAssetId: any,
-//     targetSymbol?: any,
-//     assetLength?: any,
-//     recipient?: any,
-//     deadline?: any,
-//     moduleBApi?: ModuleBApi,
-//     mangataInstance?: MangataInstance,
-//     movrBatchSwapParams?: BatchSwapParams
-//     assetSymbolIn?: string,
-//     assetSymbolOut?: string,
-//     assetAmountIn?: FixedPointNumber,
-//     assetAmountOut?: FixedPointNumber,
-//     startAssetIndex?: number,
-//     endAssetIndex?: number,
-// }
-
-// export interface ReverseKarSwapParams {
-//     chainId: number,
-//     chain: TNode,
-//     type: number,
-//     module: string,
-//     call: string,
-//     supplyAssetId: any,
-//     targetAssetId: any,
-//     supply: FixedPointNumber,
-//     target: FixedPointNumber,
-//     // *****
-//     path?: any[],
-//     // *****
-//     poolIndex?: any,
-//     startAssetIndex?: number,
-//     endAssetIndex?: number,
-//     assetLength?: any,
-// }
-
-// export interface ReverseBncSwapParams {
-//     chainId: number,
-//     chain: TNode,
-//     path: MultiPath[],
-//     supply: TokenAmount,
-//     supplyFn: FixedPointNumber,
-//     target: TokenAmount,
-//     targetFn: FixedPointNumber,
-//     recipient: string,
-//     deadline: number,
-//     call: string,
-//     moduleBApi: ModuleBApi,
-//     supplyAssetId: string,
-//     targetAssetId: string
-// }
-
-// export interface ReverseBsxSwapParams {
-//     chainId: 2090,
-//     chain: string,
-//     // supplyAssetId: reverseIn.id,
-//     // targetAssetId: reverseOut.id,
-//     // supplySymbol: destAssetSymbol,
-//     // targetSymbol: startAssetSymbol,
-//     // supply: reverseSupply,
-//     // target: reverseTarget,
-//     // module: "router",
-//     // call: "sell",
-//     // path: route,
-// }
 
 export interface SwapResultObject {
     txString?: string,
@@ -494,6 +427,11 @@ export interface ExtrinsicSetResult {
     lastNode: LastNode,
     extrinsicIndex: number,
 }
+/**
+ * Type that is returned by buildAndExecuteExtrinsic function. Stored in global state and logged
+ * 
+ * This contains all the info for the various logging functions
+ */
 export interface ExtrinsicSetResultDynamic {
     success: boolean,
     allExtrinsicResults: (SingleTransferResultData | SingleSwapResultData)[],
@@ -538,6 +476,14 @@ export interface SingleSwapResultData {
     extrinsicIndex: number,
 }
 // Last node contains info for the last node we successfully reached in the extrinsic path, and we can use this info to start another arb path
+/**
+ * Last successful node in execution path. Used to resume previous attempt
+ * 
+ * @field assetKey - chainId + localId
+ * @field assetValue - token amount at last node
+ * @field chainId
+ * @field assetSymbol
+ */
 export interface LastNode{
     assetKey: string,
     assetValue: string,
@@ -606,90 +552,8 @@ export interface ReserveFeeData {
     reserveAssetId: string,
     reserveAssetAmount: string
 }
-// REVIEW these 2 types (EventData AND LogData) are redundant and adding complexity. Can combine into one, need to adjust event fee book and arb-finder structs
-// export interface TransferEventData {
-//     transferAmount: bn,
-//     transferAssetSymbol: string,
-//     transferAssetId: string,
-//     transferAssetDecimals: number,
-//     feeAmount: bn,
-//     feeAssetSymbol: string,
-//     feeAssetId: string,
-//     feeAssetDecimals: number,
-//     node: TNode | "Polkadot" | "Kusama"
-// }
-// export interface DepositEventData {
-//     depositAmount: bn
-//     depositAssetSymbol: string,
-//     depositAssetId: string,
-//     depositAssetDecimals: number,
-//     feeAmount: bn,
-//     feeAssetSymbol: string,
-//     feeAssetId: string,
-//     feeAssetDecimals: number,
-//     node: TNode | "Polkadot" | "Kusama"
-// }
 
 
-
-// export interface FeeBook {
-//     "polkadot-transfer": {
-//         [chainId: string]: ChainTransferData;
-//     };
-//     "polkadot-deposit": {
-//         [chainId: string]: ChainDepositData;
-//     };
-// }
-
-
-
-// export interface ChainTransferData {
-//     [assetKey: string]: TransferLogData;
-// }
-
-// export interface ChainDepositData {
-//   [assetKey: string]: DepositLogData;
-// }
-
-  
-// TODO Merge TransferLogData and DepositLogData into one interface, change eventFeeBook data structure, modify Rust struct
-//   export interface TransferLogData {
-//     transferAmount: string,
-//     transferDecimals: string,
-//     transferAssetSymbol: string,
-//     transferAssetId: string,
-//     feeAmount: string,
-//     feeDecimals: string
-//     feeAssetSymbol: string,
-//     feeAssetId: string,
-// }
-// export interface DepositLogData {
-//     depositAmount: string,
-//     feeAmount: string,
-//     feeDecimals: string
-//     feeAssetSymbol: string,
-//     feeAssetId: string
-// }
-// export interface TransferLogDataReworked {
-//     xcmAmount: string,
-//     xcmDecimals: string,
-//     xcmAssetSymbol: string,
-//     xcmAssetId: string,
-//     feeAmount: string,
-//     feeDecimals: string
-//     feeAssetSymbol: string,
-//     feeAssetId: string,
-// }
-// export interface DepositLogDataReworked {
-//     xcmAmount: string,
-//     xcmDecimals?: string,
-//     xcmAssetSymbol?: string,
-//     xcmAssetId?: string,
-//     feeAmount: string,
-//     feeDecimals: string
-//     feeAssetSymbol: string,
-//     feeAssetId: string
-// }
 export interface FeeBook {
     "polkadot-transfer": {
         [chainId: string]: ChainTransferDepositData;
@@ -713,17 +577,7 @@ export interface TransferDepositEventData {
     feeAssetDecimals: number,
     node: TNode | "Polkadot" | "Kusama"
 }
-// export interface TransferDepositLogData {
-//     xcmAmount: string,
-//     xcmDecimals: string,
-//     xcmAssetSymbol: string,
-//     xcmAssetId: string,
-//     feeAmount: string,
-//     feeDecimals: string
-//     feeAssetSymbol: string,
-//     feeAssetId: string,
-//     node: string,
-// }
+
 
 // A utility type to convert all properties to string
 export type StringifyProperties<T> = {

@@ -288,6 +288,8 @@ export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, no
     let evm = node == "Moonbeam" || node == "Moonriver" ? true : false
     let account = await getSigner(chopsticks, evm)
 
+    console.log(`Get balance chain asset: ${chainId} ${assetSymbol} ${assetSymbol}`)
+
     if(chainId == 0){
         let relayBalance = await getRelayChainBalance(chopsticks, relay)
         let tokenDecimals = relay == 'kusama' ? 12 : 10
@@ -326,6 +328,7 @@ export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, no
         let adapterWallet = new Wallet(karApi, walletConfigs);
         await chainAdapter.init(karApi, adapterWallet);
     } else {
+        console.log(`Get Balance Chain Asset -- getApiForNode ${chainNode} -- ${chopsticks}`)
         let api = await getApiForNode(chainNode, chopsticks)
         await chainAdapter.init(api);
     }

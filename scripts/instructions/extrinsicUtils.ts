@@ -76,7 +76,7 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     
     const startTransferrable = getTransferrableAssetObject(relay, instruction.startAssetNode)
     const destinationTransferrable = getTransferrableAssetObject(relay, instruction.destinationAssetNode)
-    const currencyInput = startTransferrable.assetRegistryObject.tokenData.localId
+    const currencyInput = JSON.stringify(startTransferrable.assetRegistryObject.tokenData.localId).replace(/\\|"/g, "")
     const assetSymbol = startTransferrable.assetRegistryObject.tokenData.symbol
 
     if(!currencyInput){
