@@ -813,11 +813,11 @@ async function run() {
     // await executeLatestArb(relay, chopsticks, executeMovr)
     let customInput = 0
     // await runFromLastNode(relay, chopsticks, executeMovr)  
-    // await runDynamicArbTargetRelay(relay, chopsticks, executeMovr, 0.50, useLatestTarget)
+    await runDynamicArbTargetRelay(relay, chopsticks, executeMovr, 0.50, useLatestTarget)
     // await executeTestPath(relay, chopsticks, executeMovr)
     // await getLatest()
     // await testAca()
-    await buildTest()
+    // await buildTest()
     process.exit(0)
 }
 
