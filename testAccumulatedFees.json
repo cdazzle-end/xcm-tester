@@ -1,0 +1,62 @@
+{
+  "{\"X2\":[{\"Parachain\":\"2000\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0000000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "ACA",
+    "assetDecimals": 12,
+    "feeAmount": "15399202411"
+  },
+  "{\"X2\":[{\"Parachain\":\"2032\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0001000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "ACA",
+    "assetDecimals": 12,
+    "feeAmount": "105"
+  },
+  "{\"X1\":{\"Parachain\":\"2035\"}}": {
+    "assetSymbol": "HDX",
+    "assetDecimals": 12,
+    "feeAmount": "75154417435"
+  },
+  "{\"X2\":[{\"Parachain\":\"2004\"},{\"PalletInstance\":\"10\"}]}": {
+    "assetSymbol": "PARA",
+    "assetDecimals": 12,
+    "feeAmount": "16943350948326400"
+  },
+  "{\"X3\":[{\"Parachain\":\"1000\"},{\"PalletInstance\":\"50\"},{\"GeneralIndex\":\"1984\"}]}": {
+    "assetSymbol": "GLMR",
+    "assetDecimals": 18,
+    "feeAmount": "176101782471"
+  },
+  "{\"X2\":[{\"Parachain\":\"2032\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0002000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "ACA",
+    "assetDecimals": 12,
+    "feeAmount": "225172800"
+  },
+  "{\"X2\":[{\"Parachain\":\"2000\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0001000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "ACA",
+    "assetDecimals": 12,
+    "feeAmount": "8472518518"
+  },
+  "{\"X2\":[{\"Parachain\":\"2030\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0900000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "HDX",
+    "assetDecimals": 12,
+    "feeAmount": "1284"
+  },
+  "{\"X2\":[{\"Parachain\":\"2012\"},{\"GeneralKey\":{\"length\":\"4\",\"data\":\"0x5041524100000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "PARA",
+    "assetDecimals": 12,
+    "feeAmount": "351533076922"
+  },
+  "{\"X2\":[{\"Parachain\":\"2034\"},{\"GeneralIndex\":\"0\"}]}": {
+    "assetSymbol": "HDX",
+    "assetDecimals": 12,
+    "feeAmount": "885120565208"
+  },
+  "{\"X1\":{\"Parachain\":\"2037\"}}": {
+    "assetSymbol": "UNQ",
+    "assetDecimals": 18,
+    "feeAmount": "219589054087666009"
+  },
+  "{\"X2\":[{\"Parachain\":\"2030\"},{\"GeneralKey\":{\"length\":\"2\",\"data\":\"0x0001000000000000000000000000000000000000000000000000000000000000\"}}]}": {
+    "assetSymbol": "BNC",
+    "assetDecimals": 12,
+    "feeAmount": "119965023413"
+  }
+}

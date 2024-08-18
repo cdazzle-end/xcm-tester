@@ -207,7 +207,7 @@ export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Rela
 
     if(paraspellChainName == "Kusama" || paraspellChainName == "Polkadot"){
         let assetNode = new AssetNode({
-            paraspellAsset: {symbol: assetSymbol},
+            // paraspellAsset: {symbol: assetSymbol},
             paraspellChain: paraspellChainName,
             assetRegistryObject: assetRegistryObject,
             pathValue: jsonObject.path_value.toString(),
@@ -238,7 +238,7 @@ export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Rela
 
         
         let assetNode = new AssetNode({
-            paraspellAsset: paraspellAsset,
+            // paraspellAsset: paraspellAsset,
             paraspellChain: paraspellChainName,
             assetRegistryObject: assetRegistryObject,
             pathValue: jsonObject.path_value.toString(),

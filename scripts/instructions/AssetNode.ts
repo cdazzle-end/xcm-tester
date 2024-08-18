@@ -28,7 +28,7 @@ function findValueByKey(obj: any, targetKey: any): any {
 }
 
 export interface AssetNodeData {
-    paraspellAsset: { symbol?: string; assetId?: string } | null,
+    // paraspellAsset: { symbol?: string; assetId?: string } | null,
     paraspellChain: TNode | "Kusama" | "Polkadot",
     assetRegistryObject: MyAssetRegistryObject,
     pathValue: string, // asset amount display
@@ -39,7 +39,7 @@ export interface AssetNodeData {
 }
 
 export class AssetNode implements AssetNodeData{
-    paraspellAsset: { symbol?: string; assetId?: string } | null;
+    // paraspellAsset: { symbol?: string; assetId?: string } | null;
     paraspellChain: TNode | "Kusama" | "Polkadot";
     assetRegistryObject: MyAssetRegistryObject;
     pathValue: string; 
@@ -49,7 +49,7 @@ export class AssetNode implements AssetNodeData{
     
 
     constructor(data: AssetNodeData) {
-        this.paraspellAsset = data.paraspellAsset;
+        // this.paraspellAsset = data.paraspellAsset;
         this.paraspellChain = data.paraspellChain;
         this.assetRegistryObject = data.assetRegistryObject;
         this.pathValue = data.pathValue;

@@ -181,7 +181,8 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
     pathType: swapType,
     pathAmount: amountIn,
     expectedAmountOut: tokenOutAmountFn,
-    api: dexApi.api,
+    // REVIEW api
+    api: dexApi.api as unknown as ApiPromise,
     // reverseTx: reverseExtrinsic
   }
 

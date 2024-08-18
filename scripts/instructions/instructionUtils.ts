@@ -125,32 +125,41 @@ function createInstructionTransferToHomeThenDestination(relay: Relay, assetNodes
     let relayNode: 'Kusama' | 'Polkadot' = relay === 'kusama' ? 'Kusama' : 'Polkadot'
 
     let xcmTransferReserves = assetNodes[1].pathData.xcmReserveValues
-    let xcmFeeAmounts = assetNodes[1].pathData.xcmFeeAmounts
-    
+    let xcmTransferFees = assetNodes[1].pathData.xcmFeeAmounts
+    let xcmDepositReserves = assetNodes[1].pathData.xcmDepositReserveAmounts
+    let xcmDepositFees = assetNodes[1].pathData.xcmDepositFeeAmounts
     
 
     let transferInstruction: TransferToHomeThenDestInstruction = {
         type: InstructionType.TransferToHomeThenDestination,
         instructionIndex: instructionIndexOne,
         secondInstructionIndex: instructionIndexTwo,
+        toChainId: destinationAssetNode.getChainId(),
         fromChainId: startAssetNode.getChainId(),
+        
         startNode: getParaspellChainNameByParaId(relay, startAssetNode.getChainId()) || relayNode,
         startNodeLocalId: startAssetNode.assetRegistryObject.tokenData.localId,
         startAssetNode,
-        startTransferFee: xcmFeeAmounts![0],
+        startTransferFee: xcmTransferFees![0],
         startTransferReserve: xcmTransferReserves![0],
-        toChainId: destinationAssetNode.getChainId(),
-        destinationNode: getParaspellChainNameByParaId(relay, destinationAssetNode.getChainId()) || relayNode,
-        destinationNodeLocalId: destinationAssetNode.assetRegistryObject.tokenData.localId,
-        destinationAssetNode,
+
         middleNode: getParaspellChainNameByParaId(relay, middleAssetNode.getChainId()) || relayNode,
         middleNodeLocalId: middleAssetNode.assetRegistryObject.tokenData.localId,
         middleAssetNode,
-        middleTransferFee: xcmFeeAmounts![1],
+        middleTransferFee: xcmTransferFees![1],
         middleTransferReserve: xcmTransferReserves![1],
+        middleDepositFee: xcmDepositFees![0],
+        middleDepositReserve: xcmDepositReserves![0],
+
+        destinationNode: getParaspellChainNameByParaId(relay, destinationAssetNode.getChainId()) || relayNode,
+        destinationNodeLocalId: destinationAssetNode.assetRegistryObject.tokenData.localId,
+        destinationAssetNode,
+        destinationDepositFee: xcmDepositFees![1],
+        destinationDepositReserve: xcmDepositReserves![1],
+
         assetNodes,
     };
-    console.log(`New Transfer Instruction ${transferInstruction.startNode} -> ${transferInstruction.destinationNode} (${assetNodes[0].getAssetRegistrySymbol()}) Xcm Fee: ${xcmFeeAmounts}`)
+    console.log(`New Transfer Instruction ${transferInstruction.startNode} -> ${transferInstruction.destinationNode} (${assetNodes[0].getAssetRegistrySymbol()}) Xcm Fee: ${xcmTransferFees}`)
     increaseIndex(index)
     return transferInstruction
 }
@@ -178,7 +187,7 @@ function createMiddleNode(relay: Relay, startAssetNode: AssetNode, destinationAs
     }
     let middleAssetNode = new AssetNode({
         paraspellChain: middleNode, 
-        paraspellAsset: paraspellAsset,
+        // paraspellAsset: paraspellAsset,
         assetRegistryObject: assetRegistryObject,
         pathValue: startAssetNode.pathValue, 
         pathType: startAssetNode.pathType,
@@ -193,6 +202,8 @@ function createInstructionTransfer(relay: Relay, assetNodes: AssetNode[], transf
     let destinationAssetNode = assetNodes[1]
     let xcmTransferFees = assetNodes[1].pathData.xcmFeeAmounts
     let xcmTransferReserves = assetNodes[1].pathData.xcmReserveValues
+    let xcmDepositFees = assetNodes[1].pathData.xcmDepositFeeAmounts
+    let xcmDepositReserves = assetNodes[1].pathData.xcmDepositReserveAmounts
     let relayNode: 'Kusama' | 'Polkadot' = relay === 'kusama' ? 'Kusama' : 'Polkadot'
     let transferInstruction: TransferInstruction = {
         type: transferType,
@@ -207,6 +218,8 @@ function createInstructionTransfer(relay: Relay, assetNodes: AssetNode[], transf
         destinationNode: getParaspellChainNameByParaId(relay, destinationAssetNode.getChainId()) || relayNode,
         destinationNodeLocalId: destinationAssetNode.assetRegistryObject.tokenData.localId,
         destinationAssetNode,
+        destinationDepositFee: xcmDepositFees![0],
+        destinationDepositReserve: xcmDepositReserves![0],
         assetNodes,
     };
 

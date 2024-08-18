@@ -758,3 +758,225 @@
 //     }
 //     return extrinsicSetResults
 // }
+/**
+ * Old fee book
+ * @deprecated
+ */
+// export function updateFeeBook(){
+//     console.log("UPDATING FEE BOOK")
+//     let polkadotDirectory = path.join(__dirname, "./logResults/polkadot/transferExecutionResults/")
+//     let kusamaDirectory = path.join(__dirname, './logResults/kusama/transferExecutionResults/')
+
+//     let oldDirectory = path.join(__dirname, './deprecated/transferExecutionResults/')
+//     let chopsticksPolkadotDirectory = path.join(__dirname, "./logResults/chopsticks/polkadot/transferExecutionResults/")
+//     let chopsticksKusamaDirectory = path.join(__dirname, './logResults/chopsticks/kusama/transferExecutionResults/')
+
+
+//     const polkadotDayDirs = fs.readdirSync(polkadotDirectory, { withFileTypes: true })
+//         .filter(dirent => dirent.isDirectory())
+//         .map(dirent => dirent.name);
+
+//     const kusamaDayDirs = fs.readdirSync(kusamaDirectory, { withFileTypes: true })
+//         .filter(dirent => dirent.isDirectory())
+//         .map(dirent => dirent.name);
+
+//     // chopsticks files
+//     const chopstickPolkadotDirs = fs.readdirSync(chopsticksPolkadotDirectory, { withFileTypes: true })
+//         .filter(dirent => dirent.isDirectory())
+//         .map(dirent => dirent.name);
+
+//     const chopsticksKusamaDirs = fs.readdirSync(chopsticksKusamaDirectory, { withFileTypes: true })
+//         .filter(dirent => dirent.isDirectory())
+//         .map(dirent => dirent.name);
+//         // .forEach(dirent => kusamaDayDirs.push(dirent.name));
+
+//     const oldDayDirs = fs.readdirSync(oldDirectory, { withFileTypes: true })
+//         .filter(dirent => dirent.isDirectory())
+//         .map(dirent => dirent.name);
+
+
+//     const polkadotData: TransferTxStats[] = [];
+//     const polkadotDataChopsticks: TransferTxStats[] = [];
+//     const kusamaData: TransferTxStats[] = [];
+//     const kusamaDataChopsticks: TransferTxStats[] = [];
+
+//     for (const dayDir of polkadotDayDirs) {
+//         const dayDirPath = path.join(polkadotDirectory, dayDir);
+
+//         // Read the list of JSON files in the day directory
+//         const jsonFiles = fs.readdirSync(dayDirPath, { withFileTypes: true })
+//                             .filter(dirent => dirent.isFile() && dirent.name.endsWith('.json'))
+//                             .map(dirent => dirent.name);
+
+//         for (const jsonFile of jsonFiles) {
+//             const jsonFilePath = path.join(dayDirPath, jsonFile);
+//             const fileContent = fs.readFileSync(jsonFilePath, 'utf-8');
+//             const jsonData: TransferTxStats[] = JSON.parse(fileContent);
+//             jsonData.forEach((txData) => {
+//                 polkadotData.push(txData)
+//             })
+//         }
+//     }
+
+//     for (const dayDir of chopstickPolkadotDirs) {
+//         const dayDirPath = path.join(chopsticksPolkadotDirectory, dayDir);
+
+//         // Read the list of JSON files in the day directory
+//         const jsonFiles = fs.readdirSync(dayDirPath, { withFileTypes: true })
+//                             .filter(dirent => dirent.isFile() && dirent.name.endsWith('.json'))
+//                             .map(dirent => dirent.name);
+
+//         for (const jsonFile of jsonFiles) {
+//             const jsonFilePath = path.join(dayDirPath, jsonFile);
+//             const fileContent = fs.readFileSync(jsonFilePath, 'utf-8');
+//             const jsonData: TransferTxStats[] = JSON.parse(fileContent);
+//             jsonData.forEach((txData) => {
+//                 polkadotDataChopsticks.push(txData)
+//             })
+//         }
+//     }
+
+//     for (const dayDir of kusamaDayDirs) {
+//         const dayDirPath = path.join(kusamaDirectory, dayDir);
+//         const jsonFiles = fs.readdirSync(dayDirPath, { withFileTypes: true })
+//                             .filter(dirent => dirent.isFile() && dirent.name.endsWith('.json'))
+//                             .map(dirent => dirent.name);
+
+//         for (const jsonFile of jsonFiles) {
+//             const jsonFilePath = path.join(dayDirPath, jsonFile);
+//             const fileContent = fs.readFileSync(jsonFilePath, 'utf-8');
+//             const jsonData: TransferTxStats[] = JSON.parse(fileContent);
+//             jsonData.forEach((txData) => {
+//                 kusamaData.push(txData)
+//             })
+//         }
+//     }
+
+//     for (const dayDir of chopsticksKusamaDirs) {
+//         const dayDirPath = path.join(chopsticksKusamaDirectory, dayDir);
+
+//         // Read the list of JSON files in the day directory
+//         const jsonFiles = fs.readdirSync(dayDirPath, { withFileTypes: true })
+//                             .filter(dirent => dirent.isFile() && dirent.name.endsWith('.json'))
+//                             .map(dirent => dirent.name);
+
+//         for (const jsonFile of jsonFiles) {
+//             const jsonFilePath = path.join(dayDirPath, jsonFile);
+//             const fileContent = fs.readFileSync(jsonFilePath, 'utf-8');
+//             const jsonData: TransferTxStats[] = JSON.parse(fileContent);
+//             jsonData.forEach((txData) => {
+//                 kusamaDataChopsticks.push(txData)
+//             })
+//         }
+//     }
+
+//     for (const dayDir of oldDayDirs) {
+//         const dayDirPath = path.join(oldDirectory, dayDir);
+//         const jsonFiles = fs.readdirSync(dayDirPath, { withFileTypes: true })
+//                             .filter(dirent => dirent.isFile() && dirent.name.endsWith('.json'))
+//                             .map(dirent => {
+//                                 // let relay = dirent.name
+//                                 return dirent.name
+//                             });
+
+//         for (const jsonFile of jsonFiles) {
+//             let relay = jsonFile.startsWith("Polkadot") ? "Polkadot" : "Kusama"
+//             const jsonFilePath = path.join(dayDirPath, jsonFile);
+//             const fileContent = fs.readFileSync(jsonFilePath, 'utf-8');
+//             const jsonData: TransferTxStats[] = JSON.parse(fileContent);
+
+//             jsonData.forEach((txData) => {
+//                 if(relay == "Polkadot"){
+//                     // console.log("Polkadot data entry")
+//                     // console.log(JSON.stringify(txData, null,2))
+//                     polkadotData.push(txData)
+//                 } else {
+//                     // console.log("Kusama data entry")
+//                     // console.log(JSON.stringify(txData, null,2))
+//                     kusamaData.push(txData)
+//                 }
+//                 // oldData.push(txData)
+//             })
+//         }
+//     }
+
+//     let feeBook = {}
+//     polkadotData.map((txData) => {
+//         if(txData){
+//             let originChain = txData.startParaId
+//             let assetSymbol = txData.currency
+//             let destChain = txData.destParaId
+//             let transferKey = `polkadot-${originChain}-${assetSymbol}-${destChain}`
+//             if (!feeBook[transferKey]){
+//                 feeBook[transferKey] = []
+//             }
+//             feeBook[transferKey].push(txData.feesAndGasAmount)
+//         }  
+//     })
+
+//     polkadotDataChopsticks.map((txData) => {
+//         if(txData){
+//             let originChain = txData.startParaId
+//             let assetSymbol = txData.currency
+//             let destChain = txData.destParaId
+//             let transferKey = `polkadot-${originChain}-${assetSymbol}-${destChain}`
+//             if (!feeBook[transferKey]){
+//                 feeBook[transferKey] = []
+//             }
+//             feeBook[transferKey].push(txData.feesAndGasAmount)
+//         }  
+//     })
+
+//     kusamaData.map((txData) => {
+//         if(txData){
+//             let originChain = txData.startParaId
+//             let assetSymbol = txData.currency
+//             let destChain = txData.destParaId
+//             let transferKey = `kusama-${originChain}-${assetSymbol}-${destChain}`
+//             if (!feeBook[transferKey]){
+//                 feeBook[transferKey] = []
+//             }
+//             feeBook[transferKey].push(txData.feesAndGasAmount)
+//         }
+        
+//     })
+
+//     kusamaDataChopsticks.map((txData) => {
+//         if(txData){
+//             let originChain = txData.startParaId
+//             let assetSymbol = txData.currency
+//             let destChain = txData.destParaId
+//             let transferKey = `kusama-${originChain}-${assetSymbol}-${destChain}`
+//             if (!feeBook[transferKey]){
+//                 feeBook[transferKey] = []
+//             }
+//             feeBook[transferKey].push(txData.feesAndGasAmount)
+//         }
+        
+//     })
+
+
+//     let feeBookFinal = {}
+//     Object.entries(feeBook).forEach(([key, entry]: [string, any]) => {
+//         let firstNonZeroEntry = (entry as any[]).find((feeData: any) => {
+//             feeData = feeData as any
+//             let value = new bn(feeData.inner)
+//             if(value.abs() > new bn(0)){
+//                 return true
+//             }
+//         })
+//         if(firstNonZeroEntry){
+//             let feeValue = new bn(firstNonZeroEntry.inner).abs()
+//             let feeDecimals = new bn(firstNonZeroEntry.precision)
+//             feeBookFinal[key] = {
+//                 'fee': feeValue.toFixed(),
+//                 'decimals': feeDecimals.toFixed()
+//             }
+//         }
+//     })
+
+//     let feeBookPath = path.join(__dirname, './../../feeBook.json')
+//     fs.writeFileSync(feeBookPath, JSON.stringify(feeBookFinal, null, 2))
+//     console.log("DONE UPDATING FEE BOOK")
+// }
+

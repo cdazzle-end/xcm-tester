@@ -3,7 +3,7 @@ import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import { getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, getChainIdFromNode, findValueByKey } from './utils.ts'
-import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode, TransferEventData, DepositEventData, PromiseTracker } from './types.ts'
+import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode, PromiseTracker, TransferDepositEventData, TransferOrDeposit, ReserveFeeData, FeeData } from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
@@ -12,13 +12,13 @@ import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, buildTransfer
 import { EventRecord } from "@polkadot/types/interfaces"
 import { fileURLToPath } from 'url';
 // import { BalanceChangeStatue } from 'src/types.ts';
-import { logSwapTxStats, logSwapTxResults, logTransferTxStats, logArbExecutionResults, logInstructions, logSubmittableExtrinsics, logAllResultsDynamic, logProfits, logLastFilePath, updateFeeBook } from './logUtils.ts';
+import { logSwapTxStats, logSwapTxResults, logTransferTxStats, logArbExecutionResults, logInstructions, logSubmittableExtrinsics, logProfits, logLastFilePath } from './logUtils.ts';
 import { runAndReturnFallbackArb, runAndReturnTargetArb, runArbFallback } from './executeArbFallback.ts';
 import { Mangata, MangataInstance } from '@mangata-finance/sdk';
 import { reverse } from 'dns';
 import { buildAndExecuteSwapExtrinsic, checkAndAllocateRelayToken, confirmLastTransactionSuccess, executeAndReturnExtrinsic, executeSingleSwapExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleTransferExtrinsic, executeTransferTx } from './executionUtils.ts';
 // import { liveWallet3Pk } from 'scripts/swaps/movr/utils/const.ts';
-import { TNode, getParaId } from '@paraspell/sdk';
+import { TNode, getParaId, getRelayChainSymbol } from '@paraspell/sdk';
 import { BN } from '@polkadot/util/bn/bn';
 import { FixedPointNumber } from '@acala-network/sdk-core';
 import { movrContractAddress, xcKarContractAddress, xcXrtContractAddress } from './../swaps/movr/utils/const.ts';
@@ -34,7 +34,7 @@ import { executeSingleGlmrSwap } from './../swaps/glmr/glmrSwap.ts';
 import { getAdapter } from '@polkawallet/bridge';
 import { firstValueFrom, Observable, timeout } from "rxjs";
 import { FrameSystemEventRecord } from '@polkadot/types/lookup';
-import { depositEventDictionary, transferEventDictionary, TransferEventDictionary, TransferEvent } from './feeConsts.ts';
+import { depositEventDictionary, transferEventDictionary, TransferEventDictionary, TransferEvent, TokenType, TransferType, XcmDepositEventData, multiassetsDepositEventDictionary } from './feeConsts.ts';
 
 
 
@@ -72,33 +72,192 @@ import { depositEventDictionary, transferEventDictionary, TransferEventDictionar
 // -- Create database/dictionary that stores the section/method/position of the deposit and fee events for each chain (Both DMP and HRMP)
 // -- Filter events by specified section, method, and position. Get deposit and fee amounts 
 
+// *** When transferring assets from hydra to statemint, will send token and 180000 usdt to cover fees. Fee will be deducted from usdt sent from hydra, and deposit the rest to dest account
+// *** STATEMINT DEPOSIT for multiasset transfer
+// SYSTEM EVENTS
+// assets.Burned [assetId, owner, balance] (pink)
+// assets.Burned [assetId, owner, balance] (usdt)
+// balances.Withdraw [who, amount] (dot)
+// assetConversion.SwapCreditExecuted [amountIn, amountOut, path] (usdt -> dot)
+// assets.Issued [assetId, owner, amount] (pink)
+// assets.Issued [assetId, owner, amount] (usdt minus fee) 
+// balances.Issued [amount]
+// balances.Deposit [who, amount] (dot)
+// messageQueue.Processed
 
+// *** HYDRA TRANSFER for multassets to statemint
+// xTokens.transferMultiassets
+// balances.Upgraded
+// balances.Withdraw [who, amount] (hdx)
+// currencies.Withdrawn [currencyId, who, amount] (hdx)
+// tokens.Withdrawn [currencyId, who, amount] (pink)
+// currencies.Withdrawn [currencyId, who, amount] (pink)
+// tokens.Withdrawn [currencyId, who, amount] (usdt)
+// currencies.Withdrawn [currencyId, who, amount] (usdt)
+// xcmpQueue.XcmpMessageSent
+// xTokens.TransferredAssets
+// balances.Deposit [who, amount] (hdx)
+// currencies.Deposited [currencyId, who, amount]
+// transactionPayment.TransactionFeePaid
+// system.ExtrinsicSuccess
 
 // listens for deposit events and gets the deposit and fee amounts
-export async function listenForXcmpEventForNode(api: ApiPromise, node: TNode | "Polkadot" | "Kusama", transferType: "dmp" | "hrmp" | "ump", assetSymbol: string, assetDecimals: number, assetObject: MyAssetRegistryObject, depositAddress: string, balanceDepositTracker: PromiseTracker, xcmpMessageHash?: string, xcmpMessageId?: string): Promise<DepositEventData> {
+export async function listenForXcmpDepositEvent(
+    api: ApiPromise, 
+    node: TNode | "Polkadot" | "Kusama", 
+    transferType: TransferType,
+    depositAssetSymbol: string, 
+    depositAssetDecimals: number, 
+    depositAssetObject: MyAssetRegistryObject, 
+    depositAddress: string, 
+    balanceDepositTracker: PromiseTracker, 
+    xcmTxProperties: any, // Use for further info. To distinguish between transfer and transferMultiassets
+    xcmpMessageHash?: string, 
+    xcmpMessageId?: string
+): Promise<TransferDepositEventData> {
+    const txParams = xcmTxProperties.method
+    const section = txParams.section
+    const method = txParams.method
+
+
     if(transferType === "hrmp" && !xcmpMessageHash && !xcmpMessageId){
         throw new Error("HRMP transfers require XCMP message hash")
     }
     let nativeChainToken = api.registry.chainTokens[0]
-    let tokenType = assetSymbol.toUpperCase() == nativeChainToken.toUpperCase() ? "native" : "tokens" 
+    let tokenType: TokenType = depositAssetSymbol.toUpperCase() == nativeChainToken.toUpperCase() ? "native" : "tokens" 
 
     // let nodeEventData = depositEventDictionary[node][transferType][tokenType]
-    let nodeEventData
+    let nodeEventData: XcmDepositEventData | null
     if(transferType === "hrmp"){
         nodeEventData = depositEventDictionary[node]?.[transferType]?.[tokenType] ?? null;
     } else {
         nodeEventData = depositEventDictionary[node][transferType] ?? null
     }
-    if(!nodeEventData){
+    if(nodeEventData === null){
         console.log(`Deposit type ${transferType} not avaiable for ${node}`)
         throw new Error("Invalid node or transfer type")
     }
+    nodeEventData = nodeEventData as XcmDepositEventData
 
-    let xcmEventSection = nodeEventData.xcm.section
+    let eventListener: Promise<FrameSystemEventRecord[]> = createDepositEventListener(
+        api, 
+        nodeEventData, 
+        node, 
+        tokenType, 
+        transferType, 
+        depositAddress, 
+        balanceDepositTracker, 
+        xcmpMessageId, 
+        xcmpMessageHash
+    )
 
-    let eventRecords: FrameSystemEventRecord[] = []
-    let eventListener: Promise<FrameSystemEventRecord[]> = new Promise(async (resolve, reject) => {
+    let events;
+    try {
+        events = await eventListener;
+    } catch (error) {
+        console.error("Error listening for XCMP event:", error);
+        throw new Error("Failed to listen for XCMP event");
+    }
+
+    if(!events){
+        throw new Error("No events found");
+    }
+
+    events = events.reverse()
+
+    // REVIEW Asset Hub deposit when xTokens.transferMultiassets. Currently only from Hydra
+    if(method === 'transferMultiassets'){
+        if(node !== "AssetHubPolkadot") throw new Error(`Not configured for transferMultiassets deposit events for node ${node}`)
+        console.log(`TRUE`)
+        const eventDataRegistry = multiassetsDepositEventDictionary["AssetHubPolkadot"]
+        let depositEvent = events.filter((event) => event.event.section === eventDataRegistry.deposit.section && event.event.method === eventDataRegistry.deposit.method)[eventDataRegistry.deposit.index]
+        let depositAmount = depositEvent.event.data[eventDataRegistry.deposit.amountIndex]
+        
+        let feeEvent = events.filter((event) => event.event.section === eventDataRegistry.fee.section && event.event.method === eventDataRegistry.fee.method)[eventDataRegistry.fee.index]
+        let feeAmount = new bn(feeEvent.event.data[eventDataRegistry.fee.amountIndex].toString())
+        
+        let feeAssetIdEvent = events.filter((event) => event.event.section === eventDataRegistry.feeAssetId.section && event.event.method === eventDataRegistry.feeAssetId.method)[eventDataRegistry.feeAssetId.index]
+        //REVIEW Will this return commas in the asset ID?
+        let feeAssetId = new bn(feeAssetIdEvent.event.data[eventDataRegistry.feeAssetId.assetIdIndex].toString())
+
+        const nodeChainId = getParaId(node)
+        const relay: Relay = getRelayChainSymbol(node) === 'DOT' ? 'polkadot' : 'kusama'
+        const feeAssetObject = getAssetRegistryObject(nodeChainId, feeAssetId.toString(), relay)
+
+        let depositEventData: TransferDepositEventData = {
+            xcmAmount: new bn(depositAmount.toString()),
+            xcmAssetSymbol: depositAssetSymbol,
+            xcmAssetId: depositAssetObject.tokenData.localId,
+            xcmAssetDecimals: depositAssetDecimals,
+            feeAmount: feeAmount,
+            feeAssetSymbol: feeAssetObject.tokenData.symbol,
+            feeAssetId: feeAssetId.toString(),
+            feeAssetDecimals: Number.parseInt(feeAssetObject.tokenData.decimals),
+            node: node
+        }
+        console.log(`*** transferMultiassets Deposit Event success: ${JSON.stringify(depositEventData, null, 2)}`)
+        // console.log(`DEPOSIT EVENT SUCCESS: Deposit amount: ${eventDataRegistry.depositAmount.toString()} | Fee amount: ${eventDataRegistry.feeAmount.toString()}`)
+    
+        return depositEventData
+    }
+
+
+    // If ACALA, if deposit is ACA then events are differnt
+
+    console.log(JSON.stringify(nodeEventData))
+
+    // Get deposit and fee amounts
+    let depositEvent = events.filter((event) => event.event.section === nodeEventData!.deposit.section && event.event.method === nodeEventData!.deposit.method)[nodeEventData.deposit.index]
+    let depositAmount = depositEvent.event.data[nodeEventData.deposit.amountIndex]
+
+    // CRUST/NODLE withdraws full transfer amount from sibling reserve account, then deposits the amount minus fee to the wallet. There is no fee event, so we need to handle this case
+    let feeAmount
+    if(nodeEventData.fee.index === -1){
+        console.log("No fee event detected")
+        feeAmount = new BN(0)
+    } else {
+        let feeEvent = events.filter((event) => event.event.section === nodeEventData!.fee.section && event.event.method === nodeEventData!.fee.method)[nodeEventData.fee.index]
+        feeAmount = new bn(feeEvent.event.data[nodeEventData.fee.amountIndex].toString())
+
+        // CRUST/NODLE fee amount will be the full amount, thus larger than the deposit amount
+        if(feeAmount.gt(depositAmount)){
+            // console.log("Fee amount is larger than deposit amount. Fee amount will be the full deposit amount")
+            feeAmount = new bn(feeAmount).minus(new bn(depositAmount.toString()))
+        }
+    }
+
+    let depositEventData: TransferDepositEventData = {
+        xcmAmount: new bn(depositAmount.toString()),
+        xcmAssetSymbol: depositAssetSymbol,
+        xcmAssetId: depositAssetObject.tokenData.localId,
+        xcmAssetDecimals: depositAssetDecimals,
+        feeAmount: feeAmount,
+        feeAssetSymbol: depositAssetSymbol,
+        feeAssetId: depositAssetObject.tokenData.localId,
+        feeAssetDecimals: depositAssetDecimals,
+        node: node
+    }
+    console.log(`DEPOSIT EVENT SUCCESS: Deposit amount: ${depositEventData.xcmAmount.toString()} | Fee amount: ${depositEventData.feeAmount.toString()}`)
+
+    return depositEventData
+
+}
+
+async function createDepositEventListener(
+    api: ApiPromise, 
+    nodeEventData: XcmDepositEventData,
+    node: TNode | 'Kusama' | 'Polkadot',
+    tokenType: TokenType,
+    transferType: TransferType,
+    depositAddress: string,
+    balanceDepositTracker: PromiseTracker,
+    xcmpMessageId?: string, 
+    xcmpMessageHash?: string
+): Promise<FrameSystemEventRecord[]>{
+    return new Promise(async (resolve, reject) => {
         let eventPromiseResolved;
+        let xcmEventSection = nodeEventData.xcm.section
+        let eventRecords: FrameSystemEventRecord[] = []
         const unsubscribe = await api.query.system.events((events) => {
             
             events.forEach((record) => {
@@ -166,59 +325,18 @@ export async function listenForXcmpEventForNode(api: ApiPromise, node: TNode | "
                 }
             }
         });
-    });
-
-    let events;
-    try {
-        events = await eventListener;
-    } catch (error) {
-        console.error("Error listening for XCMP event:", error);
-        throw new Error("Failed to listen for XCMP event");
-    }
-
-    if(!events){
-        throw new Error("No events found");
-    }
-
-    events = events.reverse()
-
-    // If ACALA, if deposit is ACA then events are differnt
-
-    // Get deposit and fee amounts
-    let depositEvent = events.filter((event) => event.event.section === nodeEventData.deposit.section && event.event.method === nodeEventData.deposit.method)[nodeEventData.deposit.index]
-    let depositAmount = depositEvent.event.data[nodeEventData.deposit.amountIndex]
-
-    // CRUST/NODLE withdraws full transfer amount from sibling reserve account, then deposits the amount minus fee to the wallet. There is no fee event, so we need to handle this case
-    let feeAmount
-    if(nodeEventData.fee.index === -1){
-        console.log("No fee event detected")
-        feeAmount = new BN(0)
-    } else {
-        let feeEvent = events.filter((event) => event.event.section === nodeEventData.fee.section && event.event.method === nodeEventData.fee.method)[nodeEventData.fee.index]
-        feeAmount = new bn(feeEvent.event.data[nodeEventData.fee.amountIndex].toString())
-
-        // CRUST/NODLE fee amount will be the full amount, thus larger than the deposit amount
-        if(feeAmount.gt(depositAmount)){
-            // console.log("Fee amount is larger than deposit amount. Fee amount will be the full deposit amount")
-            feeAmount = new bn(feeAmount).minus(new bn(depositAmount.toString()))
-        }
-    }
-
-    let depositEventData: DepositEventData = {
-        depositAmount: new bn(depositAmount.toString()),
-        feeAmount: feeAmount,
-        assetSymbol: assetSymbol,
-        assetId: assetObject.tokenData.localId,
-        assetDecimals: assetDecimals,
-        node: node
-    }
-    console.log(`DEPOSIT EVENT SUCCESS: Deposit amount: ${depositEventData.depositAmount.toString()} | Fee amount: ${depositEventData.feeAmount.toString()}`)
-
-    return depositEventData
-
+    })
 }
 
-export function getXcmTransferEventData(node: TNode | "Polkadot" | "Kusama", transferredAssetSymbol: string, transferredAssetObject: MyAssetRegistryObject, nativeCurrencySymbol: string, events: EventRecord[], relay: Relay): TransferEventData{
+export function getXcmTransferEventData(
+    node: TNode | "Polkadot" | "Kusama", 
+    transferredAssetSymbol: string, 
+    transferredAssetObject: MyAssetRegistryObject, 
+    nativeCurrencySymbol: string, 
+    events: EventRecord[], 
+    relay: Relay,
+    xcmTxProperties: any // Copy of tx properties to use if needed to distinguish between extrinsics
+): TransferDepositEventData{
     let eventRecords = events.map((event) => event).reverse()
 
     let nodeFeeEvents = transferEventDictionary[node].feeEvents
@@ -299,14 +417,12 @@ export function getXcmTransferEventData(node: TNode | "Polkadot" | "Kusama", tra
 
     let transferAssetDecimals = transferredAssetObject.tokenData.decimals
 
-
-    // console.log("Transfer amount: ", transferAmount.toString())
-    // console.log(`Total fees: ${totalFees}`)
-    let transferFee: TransferEventData = {
-        transferAmount: transferAmount,
-        transferAssetSymbol: transferredAssetSymbol,
-        transferAssetId: transferredAssetObject.tokenData.localId,
-        transferAssetDecimals: Number.parseInt(transferAssetDecimals),
+    // REVIEW This assumes fee asset is alway native asset
+    let transferFee: TransferDepositEventData = {
+        xcmAmount: transferAmount,
+        xcmAssetSymbol: transferredAssetSymbol,
+        xcmAssetId: transferredAssetObject.tokenData.localId,
+        xcmAssetDecimals: Number.parseInt(transferAssetDecimals),
         feeAmount: totalFees,
         feeAssetSymbol: nativeCurrencySymbol,
         feeAssetId: nativeAssetObject.tokenData.localId,
@@ -693,5 +809,32 @@ export function getTransferType(startChain: TNode | "Polkadot" | "Kusama", destC
         return "ump"
     } else {
         return "hrmp"
+    }
+}
+
+export function createReserveFees(txContainer: TransferExtrinsicContainer, xcmEventData: TransferDepositEventData, eventType: TransferOrDeposit): ReserveFeeData {
+    return {
+        chainId: eventType === 'Transfer' ? txContainer.startChainId : txContainer.destinationChainId,
+        feeAssetId: xcmEventData.feeAssetId,
+        feeAssetAmount: xcmEventData.feeAmount.toString(),
+        reserveAssetId: eventType === 'Transfer' ? txContainer.assetIdStart : txContainer.assetIdEnd,
+        reserveAssetAmount: eventType === 'Transfer' ? txContainer.transferReserveAmount : txContainer.depositReserveAmount
+    }
+}
+
+export function createFeeDatas(txContainer: TransferExtrinsicContainer, xcmEventData: TransferDepositEventData, eventType: TransferOrDeposit): FeeData {
+    const chainId = eventType === 'Transfer' ? txContainer.startChainId : txContainer.destinationChainId
+    const feeAssetObject = getAssetRegistryObjectBySymbol(chainId, xcmEventData.feeAssetSymbol, txContainer.relay)
+    const feeAssetLocation = feeAssetObject.tokenLocation!
+    
+    return {
+        assetLocation: feeAssetLocation,
+        chainId: chainId,
+        feeAssetSymbol: xcmEventData.feeAssetSymbol,
+        feeAssetId: xcmEventData.feeAssetId,
+        feeAssetDecimals: xcmEventData.feeAssetDecimals,
+        feeAmount: xcmEventData.feeAmount.toString(),
+        reserveAssetAmount:eventType === 'Transfer' ? txContainer.transferReserveAmount.toString() : txContainer.depositReserveAmount.toString(),
+        reserveAssetId: eventType === 'Transfer' ? txContainer.assetIdStart : txContainer.assetIdEnd
     }
 }

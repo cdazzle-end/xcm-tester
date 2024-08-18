@@ -759,7 +759,7 @@ async function buildTest(){
     // let latestFile = latestFiles[1][1] // latest file with 1 amount input
     // console.log(`Latest file: ${latestFile}`)
     // setLastFile(latestFile, relay)
-    let latestFile = './tests/testAcaPath.json'
+    let latestFile = './tests/testXcmPath.json'
     let arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
 
@@ -805,13 +805,12 @@ async function run() {
     // await executeLatestArb(relay, chopsticks, executeMovr)
     let customInput = 0
     // await runFromLastNode(relay, chopsticks, executeMovr)  
-    await runDynamicArbTargetRelay(relay, chopsticks, executeMovr, 0.50, useLatestTarget)
+    // await runDynamicArbTargetRelay(relay, chopsticks, executeMovr, 0.50, useLatestTarget)
     // await executeTestPath(relay, chopsticks, executeMovr)
     // await getLatest()
     // await testAca()
-    // await buildTest()
+    await buildTest()
     process.exit(0)
 }
 
-// run()
-
+run()

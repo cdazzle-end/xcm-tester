@@ -5,7 +5,7 @@ import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import path from 'path';
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, getChainIdFromNode, getAssetKey, getAssetRegistry, getAssetsAtLocation } from './utils.ts'
-import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode } from './types.ts'
+import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleExtrinsicResultData, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode, FeeBook, NewFeeBook} from './types.ts'
 import { AssetNode } from './AssetNode.ts'
 import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
@@ -14,7 +14,7 @@ import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, buildTransfer
 import { EventRecord } from "@polkadot/types/interfaces"
 import { fileURLToPath } from 'url';
 // import { BalanceChangeStatue } from 'src/types.ts';
-import { logSwapTxStats, logSwapTxResults, logTransferTxStats, logArbExecutionResults, logInstructions, logSubmittableExtrinsics, logAllResultsDynamic, logProfits, logLastFilePath, updateFeeBook, updateEventFeeBook } from './logUtils.ts';
+import { logSwapTxStats, logSwapTxResults, logTransferTxStats, logArbExecutionResults, logInstructions, logSubmittableExtrinsics, logAllResultsDynamic, logProfits, logLastFilePath, logEventFeeBook } from './logUtils.ts';
 import { runAndReturnFallbackArb, runAndReturnTargetArb, runArbFallback } from './executeArbFallback.ts';
 import { Mangata, MangataInstance } from '@mangata-finance/sdk';
 import { reverse } from 'dns';
@@ -36,7 +36,7 @@ import { executeSingleGlmrSwap, testGlmrRpc } from './../swaps/glmr/glmrSwap.ts'
 import { getAdapter } from '@polkawallet/bridge';
 import { firstValueFrom, Observable, timeout } from "rxjs";
 import { FrameSystemEventRecord } from '@polkadot/types/lookup';
-import { listenForXcmpEventHydra, getHydraDepositFees, listenForXcmpEventAcala, getAcalaDepositFees, getMoonbeamDepositFees, listenForXcmpEventMoonbeam, listenForXcmpTransferPolkadot, listenForXcmpEventThree, listenForXcmpEventForNode as listenForDestinationDepositAmounts, getXcmTransferEventData } from './feeUtils.ts';
+import { listenForXcmpEventHydra, getHydraDepositFees, listenForXcmpEventAcala, getAcalaDepositFees, getMoonbeamDepositFees, listenForXcmpEventMoonbeam, listenForXcmpTransferPolkadot, listenForXcmpEventThree, listenForXcmpDepositEvent as listenForDestinationDepositAmounts, getXcmTransferEventData } from './feeUtils.ts';
 // const { blake2AsU8a } = require('@polkadot/util-crypto');
 // const { u8aToHex } = require('@polkadot/util');
 import { blake2AsU8a } from '@polkadot/util-crypto';
@@ -1114,50 +1114,150 @@ async function testParaspellReworked(){
     // let destParaId = getChainIdFromNode(destNode)
 
     let assetSymbol = 'PINK'
-    // let startNodeAsset = await getAssetRegistryObjectBySymbol(startParaId, assetSymbol, relay)
+    let startNodeAsset = await getAssetRegistryObjectBySymbol(startParaId, assetSymbol, relay)
     // let destNodeAsset = await getAssetRegistryObjectBySymbol(destParaId, assetSymbol, relay)
 
-    // let startAssetId = startNodeAsset.tokenData.localId
+    let startAssetId = startNodeAsset.tokenData.localId
     // let destAssetId = destNodeAsset.tokenData.localId
 
     let signer = await getSigner(chopsticks, eth);
 
-    // let startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
+    let startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
     // let destNodeBalance = await getBalanceFromId(destParaId, relay, chopsticks, destApi, destNodeAsset, destNode, signer.address)
 
-    // console.log(`Balance for ${assetSymbol} on ${startNode} for ${signer.address}: ${JSON.stringify(startNodeBalance)}`)
+    console.log(`Balance for ${assetSymbol} on ${startNode} for ${signer.address}: ${JSON.stringify(startNodeBalance)}`)
     // console.log(`Balance for ${assetSymbol} on ${destNode} for ${signer.address}: ${JSON.stringify(destNodeBalance)}`)
 
 
-    // let xcmTx = paraspell.Builder(startApi).from(startNode).to(destNode).currency(startAssetId).amount(transferAmount.toString()).address(signer.address).build()
-    // console.log(`Executing xcm tx: ${JSON.stringify(xcmTx.toHuman(), null, 2)}`)
+    let xcmTx = paraspell.Builder(startApi).from(startNode).to(destNode).currency(startAssetId).amount(transferAmount.toString()).address(signer.address).build()
+    console.log(`Executing xcm tx: ${JSON.stringify(xcmTx.toHuman(), null, 2)}`)
 
+    let xcmTxProperties = xcmTx.toHuman() as any
+    const txParams = xcmTxProperties.method
+    const section = txParams.section
+    const method = txParams.method
+
+    console.log(`TxParams: ${JSON.stringify(txParams)}`)
+    console.log(`Section: ${JSON.stringify(section)}`)
+    console.log(`Method: ${JSON.stringify(method)}`)
+
+    if(method === 'transferMultiassets'){
+        console.log(`TRUE`)
+    } else {
+        console.log(`FASLE`)
+    }
     // console.log(JSON.stringify(xcmTx, null, 2))
 
     // let result = await xcmTx.signAndSend(signer)
     // console.log(`Tx hash: ${result}`)
 
     // Basic transfer test
-    const aliceBalance = await startApi.query.system.account(signer.address)
-    console.log(aliceBalance.toHuman())
+    // const aliceBalance = await startApi.query.system.account(signer.address)
+    // console.log(aliceBalance.toHuman())
 
-    const BOB_ADDRESS = "7Lpe5LRa2Ntx9KGDk77xzoBPYTCAvj7QqaBx4Nz2TFqL3sLw"
-    const transfer = startApi.tx.balances.transferKeepAlive(BOB_ADDRESS, 1000000000000);
+    // const BOB_ADDRESS = "7Lpe5LRa2Ntx9KGDk77xzoBPYTCAvj7QqaBx4Nz2TFqL3sLw"
+    // const transfer = startApi.tx.balances.transferKeepAlive(BOB_ADDRESS, 1000000000000);
 
-    // Sign and send the transaction
-    const hash = await transfer.signAndSend(signer);
+    // // Sign and send the transaction
+    // const hash = await transfer.signAndSend(signer);
 
-    console.log('Transfer sent with hash', hash.toHex());
+    // console.log('Transfer sent with hash', hash.toHex());
     // let txDetails = await executeXcmTransfer(xcmTx, signer);
 
     // console.log(`Transfer succes: ${txDetails.success}`)
 
-    // startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
+    startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
     // destNodeBalance = await getBalanceFromId(destParaId, relay, chopsticks, destApi, destNodeAsset, destNode, signer.address)
 
-    // console.log(`Balance for ${assetSymbol} on ${startNode} for ${signer.address}: ${JSON.stringify(startNodeBalance)}`)
+    console.log(`Balance for ${assetSymbol} on ${startNode} for ${signer.address}: ${JSON.stringify(startNodeBalance)}`)
     // console.log(`Balance for ${assetSymbol} on ${destNode} for ${signer.address}: ${JSON.stringify(destNodeBalance)}`)
 
+}
+
+async function testHydraTx(){
+
+    // const wsProvider = new WsProvider(localHydraRpc);
+    // const api: ApiPromise = await ApiPromise.create({ provider: wsProvider });
+    const api: ApiPromise = await getApiForNode("HydraDX", true)
+    await api.isReady
+    await cryptoWaitReady()
+
+    let signer = await getSigner(true, false)
+
+    let balance = await api.query.system.account(signer.address)
+    console.log(balance.toHuman())
+
+    const BOB_ADDRESS = "7Lpe5LRa2Ntx9KGDk77xzoBPYTCAvj7QqaBx4Nz2TFqL3sLw"
+    let transfer = await api.tx.balances.transferKeepAlive(BOB_ADDRESS, 1000000000000);
+
+    let hash = await transfer.signAndSend(signer)
+    console.log(hash.toHuman())
+}
+
+async function rewriteFeeBook(){
+    const oldFeeBookPath = path.join(__dirname, './../../eventFeeBook.json')
+    const newFeeBookPath = path.join(__dirname, './../../newEventFeeBook.json')
+    const newnewFeeBookPath = path.join(__dirname, './../../newNewEventFeeBook.json')
+    // const oldFeeBook: OldFeeBook = JSON.parse(fs.readFileSync(oldFeeBookPath, 'utf8'))
+    // console.log(newFeeBookPath)
+    // const newFeeBook: FeeBook = JSON.parse(fs.readFileSync(newFeeBookPath, 'utf8'))
+
+    // console.log(JSON.stringify(newFeeBook, null, 2))
+
+    // Read the JSON file
+    const rawData = fs.readFileSync(newFeeBookPath, 'utf8');
+    const newFeeBook: NewFeeBook = JSON.parse(rawData);
+
+    // Create a new object with the updated structure
+    // const newFeeBook: NewFeeBook = {
+    //     "polkadot-transfer": {},
+    //     "polkadot-deposit": {}
+    // };
+
+    const newNewFeeBook: NewFeeBook = {
+        "polkadot-transfer": {},
+        "polkadot-deposit": {}   
+    }
+
+    // Transform polkadot-transfer data
+    for (const [chainId, chainData] of Object.entries(newFeeBook["polkadot-transfer"])) {
+        newNewFeeBook["polkadot-transfer"][chainId] = {};
+        for (const [assetKey, assetData] of Object.entries(chainData)) {
+            newNewFeeBook["polkadot-transfer"][chainId][assetKey] = {
+                xcmAmount: assetData.xcmAmount,
+                xcmDecimals: assetData.xcmDecimals,
+                xcmAssetSymbol: assetData.xcmAssetSymbol,
+                xcmAssetId: assetData.xcmAssetId,
+                feeAmount: assetData.feeAmount,
+                feeDecimals: assetData.feeDecimals,
+                feeAssetSymbol: assetData.feeAssetSymbol,
+                feeAssetId: assetData.feeAssetId,
+                node: ""
+            };
+        }
+    }
+
+    // Transform polkadot-deposit data
+    for (const [chainId, chainData] of Object.entries(newFeeBook["polkadot-deposit"])) {
+        newNewFeeBook["polkadot-deposit"][chainId] = {};
+        for (const [assetKey, assetData] of Object.entries(chainData)) {
+            newNewFeeBook["polkadot-deposit"][chainId][assetKey] = {
+                xcmAmount: assetData.xcmAmount,
+                xcmDecimals: assetData.xcmDecimals,
+                xcmAssetSymbol: assetData.xcmAssetSymbol,
+                xcmAssetId: assetData.xcmAssetId,
+                feeAmount: assetData.feeAmount,
+                feeDecimals: assetData.feeDecimals,
+                feeAssetSymbol: assetData.feeAssetSymbol,
+                feeAssetId: assetData.feeAssetId,
+                node: ""
+            };
+        }
+    }
+
+    // Write the updated data back to the file
+    fs.writeFileSync(newnewFeeBookPath, JSON.stringify(newNewFeeBook, null, 2));
+    console.log('FeeBook updated successfully!');
 }
 
 async function main(){
@@ -1176,10 +1276,12 @@ async function main(){
     // await testCheckAndAllocate();
     // await testLogger()
     // await testBalanceAdapters()
-    await testParaspellReworked()
+    // await testParaspellReworked()
+    await rewriteFeeBook()
+    // await testHydraTx()
     // await newBlock('HydraDX')
     // await testChopsticks()
     process.exit(0)
 }
 
-main()
+// main()

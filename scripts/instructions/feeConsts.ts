@@ -20,7 +20,7 @@ interface DepositEvent {
     section: string,
     method: string,
     amountIndex: number,
-    addressIndex?: number,
+    addressIndex: number,
     index: number
 }
 interface FeeEvent {
@@ -37,31 +37,22 @@ export interface TransferEvent {
     eventIndex?: number
 }
 
+export interface XcmDepositEventData {
+    xcm: XcmEvent,
+    deposit: DepositEvent,
+    fee: FeeEvent
+}
 
+export type TokenType = 'tokens' | 'native' 
+export type TransferType = 'hrmp' | 'ump' | 'dmp'
 
-interface DepositEventDictionary {
+export interface DepositEventDictionary {
     [key: string]: {
-        ump?: {
-            xcm: XcmEvent,
-            deposit: DepositEvent,
-            fee: FeeEvent
-        },
-        dmp?: {
-            xcm: XcmEvent,
-            deposit: DepositEvent,
-            fee: FeeEvent
-        },
+        ump?: XcmDepositEventData,
+        dmp?: XcmDepositEventData,
         hrmp?: {
-            tokens: {
-                xcm: XcmEvent,
-                deposit: DepositEvent,
-                fee: FeeEvent
-            },
-            native?: {
-                xcm: XcmEvent,
-                deposit: DepositEvent,
-                fee: FeeEvent
-            }
+            tokens: XcmDepositEventData,
+            native?: XcmDepositEventData
             
         },
     }
@@ -76,6 +67,35 @@ export interface TransferEventDictionary {
         }
         feeEvents: TransferEvent[]
     }
+}
+
+// REVIEW Temporary values until can create a better system. Only needed at the moment for Hydra -> Asset Hub when sending via xTokens.transferMultiassets
+// Can find the relevant xcmp deposit events with normal dictionary. Then just need to filter for different event indexes with this 
+// Also use this to get fee asset ID
+export const multiassetsDepositEventDictionary = {
+    "AssetHubPolkadot": {
+        deposit: {
+            section: "assets",
+            method: "Issued", // returns assetId, owner, amount
+            amountIndex: 2,
+            addressIndex: 1,
+            index: 1 // fee asset will be first asset event and deposit asset will be second asset event 
+        },
+        fee: {
+            section: "assetConversion",
+            method: "SwapCreditExecuted", // returns *amountIn, amountOut, path
+            amountIndex: 0, // actual fee amount in USDT, which is converted to DOT
+            index: 0   
+        },
+        feeAssetId: {
+            section: "assets",
+            method: "Issued",
+            amountIndex: 2, // unused (total amount sent - actual fee amount)
+            addressIndex: 1, // unused
+            assetIdIndex: 0, // this is all we need for this event
+            index: 0, // When transfer multiassets, fee asset will be first asset event and deposit asset will be second asset event 
+        }
+    },  
 }
 
 // Events related to the transfer on the receiving chain
@@ -355,6 +375,7 @@ export const depositEventDictionary: DepositEventDictionary = {
                 section: "balances",
                 method: "Minted", // returns who, amount
                 amountIndex: 1,
+                addressIndex: -1, // REVIEW Setting to -1 temporary. Does polkadot deposit need address index?
                 index: 0
             },
             fee: {

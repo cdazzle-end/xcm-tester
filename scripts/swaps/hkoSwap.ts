@@ -1,5 +1,7 @@
 import { FixedPointNumber } from "@acala-network/sdk-core"
-import { ApiPromise, options, WsProvider, Keyring } from "@parallel-finance/api" 
+// import { ApiPromise, options, WsProvider, Keyring } from "@parallel-finance/api" 
+import { ApiPromise, WsProvider, Keyring } from "@polkadot/api"
+import { options } from "@parallel-finance/api"
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import fs from 'fs'
 import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer } from "./../instructions/types"
@@ -25,11 +27,15 @@ export async function getHkoSwapExtrinsic(
   instructionIndex: number[],
   priceDeviationPercent: number = 2
   ) {
-  let rpc = chopsticks ? wsLocalChain : hkoWs  
-  const api = await ApiPromise.create(options({
-        provider: new WsProvider(rpc)
-      }))
+    let rpc = chopsticks ? wsLocalChain : hkoWs  
+    
+    // REVIEW Changing api. Create without options, use getApiForNode()
 
+    // const api = await ApiPromise.create(options({
+    //       provider: new WsProvider(rpc)
+    //     }))
+
+    const api = await getApiForNode('ParallelHeiko', chopsticks)
       let assetNodes = [swapInstructions[0].assetNodes[0]]
     swapInstructions.forEach((instruction) => {
       assetNodes.push(instruction.assetNodes[1])
@@ -99,9 +105,11 @@ export async function getHkoSwapExtrinsic(
 }
 
 const main = async () => {
-  const api = await ApiPromise.create(options({
-    provider: new WsProvider(wsLocalChain)
-  }))
+  // const api = await ApiPromise.create(options({
+  //   provider: new WsProvider(wsLocalChain)
+  // }))
+  const chopsticks = true
+  const api = await getApiForNode('ParallelHeiko', chopsticks) 
 
   const lpEntries = await api.query.amm.pools.entries();
   lpEntries.forEach(([assetData, lpData]) => {

@@ -179,7 +179,16 @@ export function getLastExecutionState(relay: Relay){
 
 }
 
-export async function updateXcmFeeReserves(feeData: ReserveFeeData, relay: Relay){
+/**
+ * Updates globalState.xcmFeeReserves: ReserveFeeData[]
+ * - Adds ReserveFeeData fom latest xcm transfer
+ * 
+ * NOT USED YET Need to implement function to pay back reserves
+ * 
+ * @param reserveFees - ReserveFeeData
+ * @param relay Which relay to use
+ */
+export async function updateXcmFeeReserves(reserveFees: ReserveFeeData[], relay: Relay){
     const { globalState } = await import("./liveTest.ts");
     console.log("******** WRITE XCM FEE RESERVES *********")
     // console.log(`Fee data: ${JSON.stringify(feeData, null, 2)}`)
@@ -188,7 +197,7 @@ export async function updateXcmFeeReserves(feeData: ReserveFeeData, relay: Relay
         globalState.xcmFeeReserves = []
     }
 
-    globalState.xcmFeeReserves.push(feeData)
+    reserveFees.forEach((reserveFeeData) => globalState.xcmFeeReserves!.push(reserveFeeData))
 
     if(globalState.tracking == true){
         if(relay == 'kusama'){
@@ -200,42 +209,56 @@ export async function updateXcmFeeReserves(feeData: ReserveFeeData, relay: Relay
 
 }
 
+// REVIEW This may be unecessary and could be removed. Replace with fee reserve structure
+/**
+ * NOT USED. DATA IS JUST COLLECTED
+ * 
+ * Tracks fees by asset location
+ * - Updates globalState.accumulatedFees - tracks all fees for execution run
+ * - Updates accumulatedFees.json file (test file) - tracks all fees for every run accumulated
+ * - Updates feeTracker.json/chopsticksFeeTracker.json - tracks every fee for each run as a new entry with FeeData and payment status. Also tracks total unpaid fees
+ * 
+ * globalState.accumulatedFees used in logAccumulatedFees()
+ * - Tracks total fees accrued for each run, Transfer and Deposit (FeeData objects)
+ * - FEE AMOUNT ADDED TO EXISTING ASSET ENTRY
+ * - Fees are tracked according to the asset location of the fee asset
+ * 
+ * @param transferFeeData - FeeData from transfer event listener
+ * @param depositFeeData - FeeData from deposit event listener
+ * @param relay - Which relay to run on
+ * @param chopsticks - True if running on chopsticks testnet
+ */
 export async function updateAccumulatedFeeData(transferFeeData: FeeData, depositFeeData: FeeData, relay: Relay, chopsticks: boolean){
     const { globalState } = await import("./liveTest.ts");
     console.log("******** WRITE ACCUMULATED FEE DATA *********")
-    // console.log(`Transfer fee data: ${JSON.stringify(transferFeeData, null, 2)}`)
-    // console.log(`Deposit fee data: ${JSON.stringify(depositFeeData, null, 2)}`)
     let transferFeeAssetLocationkey = JSON.stringify(transferFeeData.assetLocation)
     let depositFeeAssetLocationKey = JSON.stringify(depositFeeData.assetLocation)
 
+    // ************** Update globalState accumulatedFeeData **************
     if(globalState.accumulatedFeeData == null){
         globalState.accumulatedFeeData = {}
     }
-    // console.log(`Transfer fee asset location: ${transferFeeAssetLocationkey}`)
+
+    // Create new entry for transfer fee asset, or add to existing amount
     if(!globalState.accumulatedFeeData[transferFeeAssetLocationkey]){
         globalState.accumulatedFeeData[transferFeeAssetLocationkey] = {
-            assetSymbol: transferFeeData.assetSymbol,
-            assetDecimals: transferFeeData.assetDecimals,
+            assetSymbol: transferFeeData.feeAssetSymbol,
+            assetDecimals: transferFeeData.feeAssetDecimals,
             feeAmount: transferFeeData.feeAmount
         }
     } else {
-        let transferFeeAmount: bn = new bn(transferFeeData.feeAmount)
-        let currentFeeAmount: bn = new bn(globalState.accumulatedFeeData[transferFeeAssetLocationkey].feeAmount)
-        let totalFeeAmount: bn = transferFeeAmount.plus(currentFeeAmount)
-        globalState.accumulatedFeeData[transferFeeAssetLocationkey].feeAmount = totalFeeAmount.toString()
+        globalState.accumulatedFeeData[transferFeeAssetLocationkey].feeAmount = new bn(transferFeeData.feeAmount).plus(new bn(globalState.accumulatedFeeData[transferFeeAssetLocationkey].feeAmount)).toString()
     }
 
+    // Create new entry for deposit fee asset, or add to existing amount
     if(!globalState.accumulatedFeeData[depositFeeAssetLocationKey]){
         globalState.accumulatedFeeData[depositFeeAssetLocationKey] = {
-            assetSymbol: depositFeeData.assetSymbol,
-            assetDecimals: depositFeeData.assetDecimals,
+            assetSymbol: depositFeeData.feeAssetSymbol,
+            assetDecimals: depositFeeData.feeAssetDecimals,
             feeAmount: depositFeeData.feeAmount
         }
     } else {
-        let depositFee: bn = new bn(depositFeeData.feeAmount)
-        let currentFeeAmount: bn = new bn(globalState.accumulatedFeeData[depositFeeAssetLocationKey].feeAmount)
-        let totalFeeAmount: bn = depositFee.plus(currentFeeAmount)
-        globalState.accumulatedFeeData[depositFeeAssetLocationKey].feeAmount = totalFeeAmount.toString()
+        globalState.accumulatedFeeData[depositFeeAssetLocationKey].feeAmount = new bn(depositFeeData.feeAmount).plus(new bn(globalState.accumulatedFeeData[depositFeeAssetLocationKey].feeAmount)).toString()
     }
 
     if(globalState.tracking == true){
@@ -245,36 +268,31 @@ export async function updateAccumulatedFeeData(transferFeeData: FeeData, deposit
             fs.writeFileSync(path.join(__dirname, './executionState/polkadot.json'), JSON.stringify(globalState, null, 2), 'utf8')
         }
     }
+    // ************** Update accumulatedFees.json accumulatedFeeData **************
+    // Same as previous section
 
-    
-    let testFile = path.join(__dirname, './../../accumulatedFees.json')
+    let testFile = path.join(__dirname, './../../testAccumulatedFees.json')
     if (fs.existsSync(testFile)) {
         // File exists, read the data
         let accumulatedFeeData = JSON.parse(fs.readFileSync(testFile, 'utf8'))
         if(!accumulatedFeeData[transferFeeAssetLocationkey]){
             accumulatedFeeData[transferFeeAssetLocationkey] = {
-                assetSymbol: transferFeeData.assetSymbol,
-                assetDecimals: transferFeeData.assetDecimals,
+                assetSymbol: transferFeeData.feeAssetSymbol,
+                assetDecimals: transferFeeData.feeAssetDecimals,
                 feeAmount: transferFeeData.feeAmount
             }
         } else {
-            let transferFeeAmount: bn = new bn(transferFeeData.feeAmount)
-            let currentFeeAmount: bn = new bn(globalState.accumulatedFeeData[transferFeeAssetLocationkey].feeAmount)
-            let totalFeeAmount: bn = transferFeeAmount.plus(currentFeeAmount)
-            accumulatedFeeData[transferFeeAssetLocationkey].feeAmount = totalFeeAmount.toString()
+            accumulatedFeeData[transferFeeAssetLocationkey].feeAmount = new bn(transferFeeData.feeAmount).plus(new bn(globalState.accumulatedFeeData[transferFeeAssetLocationkey].feeAmount)).toString()
         }
     
         if(!accumulatedFeeData[depositFeeAssetLocationKey]){
             accumulatedFeeData[depositFeeAssetLocationKey] = {
-                assetSymbol: depositFeeData.assetSymbol,
-                assetDecimals: depositFeeData.assetDecimals,
+                assetSymbol: depositFeeData.feeAssetSymbol,
+                assetDecimals: depositFeeData.feeAssetDecimals,
                 feeAmount: depositFeeData.feeAmount
             }
         } else {
-            let depositFee: bn = new bn(depositFeeData.feeAmount)
-            let currentFeeAmount: bn = new bn(globalState.accumulatedFeeData[depositFeeAssetLocationKey].feeAmount)
-            let totalFeeAmount: bn = depositFee.plus(currentFeeAmount)
-            accumulatedFeeData[depositFeeAssetLocationKey].feeAmount = totalFeeAmount.toString()
+            accumulatedFeeData[depositFeeAssetLocationKey].feeAmount = new bn(depositFeeData.feeAmount).plus(new bn(globalState.accumulatedFeeData[depositFeeAssetLocationKey].feeAmount)).toString()
         }
     
         // Write the updated data back to the file
@@ -284,6 +302,24 @@ export async function updateAccumulatedFeeData(transferFeeData: FeeData, deposit
         fs.writeFileSync(testFile, JSON.stringify(globalState.accumulatedFeeData, null, 2), 'utf8');
     }
 
+
+}
+
+/**
+ * NOT FULLY IMPLEMENTED YET
+ * 
+ * Need to rework to use ReserveFeeData
+ * 
+ * Updates FeeTracker with new FeeEntries
+ * 
+ * @param transferFeeData 
+ * @param depositFeeData 
+ * @param relay 
+ * @param chopsticks 
+ */
+async function logFeeEntries(transferFeeData: FeeData, depositFeeData: FeeData, relay: Relay, chopsticks: boolean) {
+    // ************** Update feeTracker.json/chopsticksFeeTracker.json **************
+
     // FEE TRACKER. Will be used to track fees that are not taken from the swap inputs.
     // 1. An array of each transfer fee. FeeData object (chain, symbol, id, amount, decimals, asset location, paid: boolean)
     // 2. (TODO) An array of something tracking reimbursements
@@ -292,13 +328,16 @@ export async function updateAccumulatedFeeData(transferFeeData: FeeData, deposit
     // -- Look up the asset location of the new fee in the unpaidFees dictionary. Add it to the total amount.
     // 4. When reimbursing fees, will go through the the array of fees, and pay the ones that have not been marked as paid 
     // DEPOSIT FEES ARE ALREADY PAID FOR, because they are taken from the swap inputs
-    // TRANSFER FEES need to be paid for \
+    // TRANSFER FEES need to be paid for 
+
+    let transferFeeAssetLocationkey = JSON.stringify(transferFeeData.assetLocation)
+    let depositFeeAssetLocationKey = JSON.stringify(depositFeeData.assetLocation)
+
     console.log("WRITING TO FEE TRACKER")
     let feeTrackerFile = chopsticks ? 
     path.join(__dirname, './../../chopsticksFeeTracker.json') :
     path.join(__dirname, './../../feeTracker.json')
-    // if(!chopsticks){
-        // Create a new fee tracker file
+    // Create a new fee tracker file
     if (!fs.existsSync(feeTrackerFile)){
         // File does not exist, write new data
         let emptyFeeTracker: FeeTracker = {
@@ -319,20 +358,15 @@ export async function updateAccumulatedFeeData(transferFeeData: FeeData, deposit
     // Check if the asset location is already in the unpaidFees dictionary. Create new entry or add to it
     if(!feeTrackerData.unpaidFees[transferFeeAssetLocationkey]){
         feeTrackerData.unpaidFees[transferFeeAssetLocationkey] = {
-            assetSymbol: transferFeeData.assetSymbol,
-            assetDecimals: transferFeeData.assetDecimals,
+            assetSymbol: transferFeeData.feeAssetSymbol,
+            assetDecimals: transferFeeData.feeAssetDecimals,
             feeAmount: transferFeeData.feeAmount
         }
     } else {
-        let transferFeeAmount: bn = new bn(transferFeeData.feeAmount)
-        let currentFeeAmount: bn = new bn(feeTrackerData.unpaidFees[transferFeeAssetLocationkey].feeAmount)
-        let totalFeeAmount: bn = transferFeeAmount.plus(currentFeeAmount)
-        feeTrackerData.unpaidFees[transferFeeAssetLocationkey].feeAmount = totalFeeAmount.toString()
+        feeTrackerData.unpaidFees[transferFeeAssetLocationkey].feeAmount = new bn(transferFeeData.feeAmount).plus(new bn(feeTrackerData.unpaidFees[transferFeeAssetLocationkey].feeAmount)).toString()
     }
 
     // Write the updated data back to the file
     fs.writeFileSync(feeTrackerFile, JSON.stringify(feeTrackerData, null, 2), 'utf8');
-        
-
-
+    
 }

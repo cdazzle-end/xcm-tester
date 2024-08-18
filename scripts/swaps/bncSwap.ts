@@ -190,7 +190,8 @@ export async function getBncSwapExtrinsicDynamic(
     pathType: swapType,
     pathAmount: amountIn,
     expectedAmountOut: tokenOutAmountFn,
-    api: dexApi.api,
+    // REVIEW does api conversion from 10.10 to 12.1 work properly
+    api: dexApi.api as unknown as ApiPromise,
     // reverseTx: reverseExtrinsic
   }
 

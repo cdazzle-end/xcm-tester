@@ -3,7 +3,7 @@ import { BN } from "@polkadot/util/bn"
 import { checkAndApproveToken } from "./../swaps/movr/utils/utils.ts"
 import { AssetNode } from "./AssetNode.ts"
 import { testNets, localRpcs } from "./txConsts.ts"
-import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ExtrinsicSetResultDynamic, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, NativeBalancesType, TransferEventData, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, DepositEventData } from "./types.ts"
+import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ExtrinsicSetResultDynamic, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, NativeBalancesType, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, TransferDepositEventData } from "./types.ts"
 import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject, getAssetDecimalsFromLocation, getWalletAddressFormatted, isTxDetails } from "./utils.ts"
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { buildSwapExtrinsicDynamic, createSwapExtrinsicObject } from "./extrinsicUtils.ts"
@@ -16,9 +16,9 @@ import { getBalance, getBalanceChange, getBalanceFromId, getDisplayBalance, getR
 import { setLastNode, setResultData, setTransactionState, setTransctionProperties, updateAccumulatedFeeData, updateXcmFeeReserves } from "./globalStateUtils.ts"
 import {BigNumber as bn } from "bignumber.js"
 import { swapManagerContractLive } from "./../swaps/glmr/utils/const.ts"
-import { getTransferType, getXcmTransferEventData, listenForXcmpEventForNode } from "./feeUtils.ts"
+import { createFeeDatas, createReserveFees, getTransferType, getXcmTransferEventData, listenForXcmpDepositEvent } from "./feeUtils.ts"
 import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
-import { updateEventFeeBook } from "./logUtils.ts"
+import { logEventFeeBook } from "./logUtils.ts"
 // import { H256 } from '@polkadot/types/primitive';
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
 
@@ -827,30 +827,33 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     setTransactionState(TransactionState.PreSubmission, relay)
 
     let extrinsic = transferTxContainer.extrinsic
-    let startChain = transferTxContainer.firstNode
-    let destChain = transferTxContainer.secondNode
-    let startApi = transferTxContainer.startApi
-    let destApi = transferTxContainer.destinationApi
-    let startParaId = transferTxContainer.startChainId
-    let destParaId = transferTxContainer.destinationChainId
-    let startTransferrable = transferTxContainer.startTransferrable
-    let startAssetRegistryObject = startTransferrable.assetRegistryObject
-    let destTransferrable = transferTxContainer.destinationTransferrable
-    let destAssetRegistryObject = destTransferrable.assetRegistryObject
+    const xcmTxProperties = extrinsic.toHuman() as any
+
+    const startChain = transferTxContainer.firstNode
+    const destChain = transferTxContainer.secondNode
+    const startApi = transferTxContainer.startApi
+    const destApi = transferTxContainer.destinationApi
+    const startParaId = transferTxContainer.startChainId
+    const destParaId = transferTxContainer.destinationChainId
+    const startTransferrable = transferTxContainer.startTransferrable
+    const startAssetRegistryObject = startTransferrable.assetRegistryObject
+    const destTransferrable = transferTxContainer.destinationTransferrable
+    const destAssetRegistryObject = destTransferrable.assetRegistryObject
 
     //TODO reformat paraspell asset symbol
     let currency = transferTxContainer.destinationTransferrable.paraspellAsset.symbol!
-    let assetInSymbol = transferTxContainer.startTransferrable.assetRegistryObject.tokenData.symbol
-    let assetOutSymbol = transferTxContainer.destinationTransferrable.assetRegistryObject.tokenData.symbol
-    let inputAmount = transferTxContainer.pathAmount
-    let reserveAmount = transferTxContainer.reserveAmount
-    let reserveAssetId = transferTxContainer.assetIdStart
-    let assetDecimals =  transferTxContainer.startTransferrable.assetRegistryObject.tokenData.decimals
+    const assetInSymbol = transferTxContainer.startTransferrable.assetRegistryObject.tokenData.symbol
+    const assetOutSymbol = transferTxContainer.destinationTransferrable.assetRegistryObject.tokenData.symbol
+    const inputAmount = transferTxContainer.pathAmount
+    const transferReserveAmount = transferTxContainer.transferReserveAmount
+    const transferReserveAssetId = transferTxContainer.assetIdStart
+    const depositReserveAmount = transferTxContainer.depositReserveAmount
+    const depositReserveAssetId = transferTxContainer.assetIdEnd
+    const assetDecimals =  transferTxContainer.startTransferrable.assetRegistryObject.tokenData.decimals
     let blockHash = ""
     if(startChain == "Kusama" || destChain == "Kusama"){
         currency = "KSM"
     }
-
 
     let startSigner: KeyringPair, destSigner: KeyringPair;
     startSigner = relay == 'kusama' ?
@@ -912,7 +915,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             destNodeStartBalanceString: destinationStartBalance.free.toString(),
             destAddress: destSigner.address,
             inputAmount: inputAmount,
-            reserveAmount: reserveAmount,
+            reserveAmount: transferReserveAmount,
             assetDecimals: assetDecimals,
             destAssetKey: destinationAssetKey
             
@@ -938,7 +941,8 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
         let trackedDestinationBalancePromise = balanceDepositTracker.trackedPromise
         let tokenDepositResolved = balanceDepositTracker.isResolved
         let xcmTransferId
-        let originTransferData: TransferEventData
+        let startTransferEventData: TransferDepositEventData
+        let destDepositEventData: TransferDepositEventData
         let txDetails: TxDetails;
         try{
             // **************************************************************************************
@@ -956,8 +960,8 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
 
             xcmTransferId = txDetails.xcmMessageHash
             blockHash = txDetails.blockHash!
-            let originNativeChainToken = startApi.registry.chainTokens[0]
-            originTransferData = getXcmTransferEventData(startChain, currency, startAssetRegistryObject, originNativeChainToken, txDetails.finalized!, relay)
+            let startChainNativeToken = startApi.registry.chainTokens[0]
+            startTransferEventData = getXcmTransferEventData(startChain, currency, startAssetRegistryObject, startChainNativeToken, txDetails.finalized!, relay, xcmTxProperties)
         } catch(e) {
             console.log("ERROR: " + e)
             // txPromise = e
@@ -1008,10 +1012,21 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
         console.log("***** LISTENING FOR DEPOSIT EVENTS ************")
         let transferType = getTransferType(startChain, destChain)
         let destWalletFormatted = getWalletAddressFormatted(destSigner, keyring, destChain, ss58FormatDest)
-        let destinationAssetDecimals = Number.parseInt(assetRegistryObject.tokenData.decimals)
+        const destinationAssetDecimals = Number.parseInt(assetRegistryObject.tokenData.decimals)
 
         console.log("Execute TRANSFER: Initiating deposit event listener")
-        let depositEventPromise = listenForXcmpEventForNode(destApi, destChain, transferType, assetOutSymbol, destinationAssetDecimals, destAssetRegistryObject, destWalletFormatted, balanceDepositTracker, xcmTransferId) 
+        let depositEventPromise = listenForXcmpDepositEvent(
+            destApi, 
+            destChain, 
+            transferType, 
+            assetOutSymbol, 
+            destinationAssetDecimals, 
+            destAssetRegistryObject, 
+            destWalletFormatted, 
+            balanceDepositTracker, 
+            xcmTxProperties, 
+            xcmTransferId
+        ) 
         let depositEventTracker = trackPromise(depositEventPromise)
         
         console.log("Execute TRANSFER: AWAIT startBalanceChangePromise")
@@ -1076,82 +1091,38 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
 
         }
 
-
-
-
-        // Can get by symbol because no chain should have multiple assets with the same symbol as the native token
-        let originAssetObject = startAssetRegistryObject
-        let originAssetLocation = originAssetObject.tokenLocation
-
-        let originFeeAssetObject = getAssetRegistryObjectBySymbol(startParaId, originTransferData.feeAssetSymbol, relay)
-        let originFeeAssetLocation = originFeeAssetObject.tokenLocation!
-
-        let destAssetObject = destTransferrable.assetRegistryObject
-        let destAssetLocation = destAssetObject.tokenLocation!
-
-        let originFeeAssetDecimals = originTransferData.feeAssetDecimals
+        let originFeeAssetDecimals = startTransferEventData.feeAssetDecimals
         if(!originFeeAssetDecimals){
             console.log("GETTING ORIGIN ASSET DECIMALS BY LOCATION ********")
             originFeeAssetDecimals = Number.parseInt(startAssetRegistryObject.tokenData.decimals)
         }
         
         console.log("*********** WAITING ON DEPOSIT EVENTS **************")
-        // let 
-
-        let depositEventStats: DepositEventData
-        let transferFeeOrReserves
-        let transferFee
-        // let reserveAmount
-        let depositFee
-        let totalXcmFees
-        let reserveTransferData: ReserveFeeData
-        let originFeeData: FeeData = {} as FeeData
-        let destinationFeeData: FeeData = {} as FeeData
+        let transferFeeData: FeeData = {} as FeeData
+        let depositFeeData: FeeData = {} as FeeData
         
+        let reserveFees: ReserveFeeData[] = []
+
         // If fail to detect deposit events, dont update fee book
         try {
-            depositEventStats = await depositEventPromise
-            if(!depositEventStats.assetDecimals){
-                depositEventStats.assetDecimals = Number.parseInt(destAssetObject.tokenData.decimals)
+            destDepositEventData = await depositEventPromise
+            if(!destDepositEventData.xcmAssetDecimals){
+                destDepositEventData.xcmAssetDecimals = Number.parseInt(destAssetRegistryObject.tokenData.decimals)
             }
-            reserveTransferData = {
-                chainId: startParaId,
-                feeAssetId: originTransferData.feeAssetId,
-                feeAssetAmount: originTransferData.feeAmount.toString(),
-                reserveAssetId: reserveAssetId,
-                reserveAssetAmount: reserveAmount
-            }
-    
-            originFeeData = {
-                assetLocation: originFeeAssetLocation,
-                chainId: startParaId,
-                assetSymbol: originTransferData.feeAssetSymbol,
-                assetId: originTransferData.feeAssetId,
-                assetDecimals: originFeeAssetDecimals,
-                feeAmount: originTransferData.feeAmount.toString(),
-                reserveAssetAmount: reserveAmount.toString(),
-                reserveAssetId: reserveAssetId
-            }
-            destinationFeeData = {
-                assetLocation: destAssetLocation,
-                chainId: destParaId,
-                assetSymbol: depositEventStats.assetSymbol,
-                assetId: depositEventStats.assetId,
-                assetDecimals: Number.parseInt(destAssetObject.tokenData.decimals),
-                feeAmount: depositEventStats.feeAmount.toString(),
-            }
-            console.log(`Transfer fees: ${originFeeData.feeAmount} | Deposit fees: ${depositEventStats.feeAmount}`)
-            updateEventFeeBook(originTransferData, depositEventStats, relay)
-            await updateAccumulatedFeeData(originFeeData, destinationFeeData, relay, chopsticks)
-            await updateXcmFeeReserves(reserveTransferData, relay)
 
-            transferFee = originFeeData.feeAmount
+            // Track Transfer and Deposit reserve fees
+            reserveFees.push(createReserveFees(transferTxContainer, startTransferEventData, 'Transfer'))
+            if(new bn(transferTxContainer.depositReserveAmount).isGreaterThan(new bn(0))){
+                reserveFees.push(createReserveFees(transferTxContainer, destDepositEventData, 'Deposit'))
+            }
 
-            //REVIEW is this necessary?
-            reserveAmount = originFeeData.reserveAssetAmount!
-            transferFeeOrReserves = originFeeData.reserveAssetAmount == "0" ? originFeeData.feeAmount : originFeeData.reserveAssetAmount
-            depositFee = destinationFeeData.feeAmount
-            totalXcmFees = new bn(transferFeeOrReserves).plus(new bn(depositFee))
+            transferFeeData = createFeeDatas(transferTxContainer, startTransferEventData, 'Transfer')
+            depositFeeData = createFeeDatas(transferTxContainer, destDepositEventData, 'Deposit')
+
+            console.log(`Transfer fees: ${transferFeeData.feeAmount} | Deposit fees: ${destDepositEventData.feeAmount}`)
+            logEventFeeBook(startTransferEventData, destDepositEventData, relay)
+            // await updateAccumulatedFeeData(startFeeData, destinationFeeData, relay, chopsticks)
+            await updateXcmFeeReserves(reserveFees, relay)
         } catch (error) {
             console.error("ERROR: " + error)
             console.error("Failed to detect deposit events")
@@ -1201,9 +1172,9 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             startAssetId: startAssetRegistryObject.tokenData.localId,
             startBalanceStats: startBalanceChangeStats,
             destBalanceStats: destBalanceChangeStats,
-            feesAndGasAmount: feesAndGasAmount,
-            originFee: originFeeData,
-            destinationFee: destinationFeeData,
+            // feesAndGasAmount: feesAndGasAmount, 
+            originFee: transferFeeData,
+            destinationFee: depositFeeData,
         }
         
         arbExecutionResult = {
@@ -1213,11 +1184,8 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             assetAmountOut: destBalanceChangeStats.changeInBalanceDisplay,
             blockHash: blockHash,
             result: `SUCCESS: ${txDetails.success} - TRANSFER: (${startChain} ${startParaId} ${currency} ${startBalanceChangeStats.changeInBalance} -> ${destChain} ${destParaId} ${currency} ${destBalanceChangeStats.changeInBalance}) |
-            Old FEES: ${feesAndGasAmount.toString()} |
-            XCM FEES: ${totalXcmFees.toString()} |
-            Transfer Fee: ${transferFee} |
-            Reserve: ${reserveAmount} |
-            Deposit Fee: ${depositFee} |
+            Transfer Fee: ${transferFeeData.feeAssetSymbol} ${transferFeeData.feeAmount} | Transfer Reserve: ${transferFeeData.reserveAssetAmount!} |
+            Deposit Fee: ${depositFeeData.feeAssetSymbol} ${depositFeeData.feeAmount} | Deposit Reserve ${depositFeeData.reserveAssetAmount} |
             START: ${startBalanceChangeStats.changeInBalanceDisplay} -> DEST: ${destBalanceChangeStats.changeInBalanceDisplay}`
         }
         

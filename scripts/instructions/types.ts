@@ -109,6 +109,8 @@ export interface PathData{
     lpId: string // pool address
     xcmFeeAmounts?: string[] // fee amounts
     xcmReserveValues?: string[] // reserve values
+    xcmDepositFeeAmounts?: string[],
+    xcmDepositReserveAmounts?: string[]
 }
 export interface SwapInstruction {
     type: InstructionType.Swap;
@@ -146,6 +148,9 @@ export interface BasicTransferInstructionInterface {
     startTransferReserve: string,
     startTransferFee: string,
 
+    destinationDepositFee: string,
+    destinationDepositReserve: string,
+
     assetNodes: AssetNode[]
 
 }
@@ -163,6 +168,8 @@ export interface TransferToHomeThenDestInstruction extends BasicTransferInstruct
     middleNodeLocalId: string;
     middleTransferReserve: string, 
     middleTransferFee: string,
+    middleDepositReserve: string, 
+    middleDepositFee: string
 }
 export interface ParaspellAsset {
     symbol?: string;
@@ -198,7 +205,7 @@ export interface TransferTxStats {
     startAssetId: string,
     startBalanceStats: BalanceChangeStatsBn,
     destBalanceStats: BalanceChangeStatsBn,
-    feesAndGasAmount: bn,
+    feesAndGasAmount?: bn, // Remove this as we have new fee structure
     originFee: FeeData,
     destinationFee: FeeData
 }
@@ -247,6 +254,8 @@ export interface ExecutionState{
 }
 
 export type Relay = "kusama" | "polkadot"
+
+export type TransferOrDeposit = "Transfer" | "Deposit"
 
 export enum TransactionState {
     PreSubmission = "PreSubmission",
@@ -330,7 +339,8 @@ export interface TransferExtrinsicContainer{
     pathOutLocalId: string,
     pathSwapType: number,
     pathAmount: string,
-    reserveAmount: string,
+    transferReserveAmount: string,
+    depositReserveAmount: string,
 }
 export interface SwapTxStats {
     txHash: Hash,
@@ -573,21 +583,18 @@ export interface ExecutionSuccess {
 }
 
 
-
-export interface DepositEventData {
-    depositAmount: bn
-    assetSymbol: string,
-    assetId: string,
-    assetDecimals: number,
-    feeAmount: bn,
-    node: TNode | "Polkadot" | "Kusama"
-}
+// REVIEW reserves for FeeData
+/**
+ * Used in FeeTracker and accumulatedFees data
+ * 
+ * NEED TO GO THROUGH OLD DATA AND MAKE SURE ENTRIES HAVE values for reserveAssetId and reserveAssetAmount
+ */
 export interface FeeData{
     assetLocation: string,
     chainId: number,
-    assetSymbol: string,
-    assetId: string,
-    assetDecimals: number,
+    feeAssetSymbol: string,
+    feeAssetId: string,
+    feeAssetDecimals: number,
     feeAmount: string,
     reserveAssetId?: string,
     reserveAssetAmount?: string,
@@ -599,42 +606,268 @@ export interface ReserveFeeData {
     reserveAssetId: string,
     reserveAssetAmount: string
 }
-export interface TransferEventData {
-    transferAmount: bn,
-    transferAssetSymbol: string,
-    transferAssetId: string,
-    transferAssetDecimals: number,
+// REVIEW these 2 types (EventData AND LogData) are redundant and adding complexity. Can combine into one, need to adjust event fee book and arb-finder structs
+// export interface TransferEventData {
+//     transferAmount: bn,
+//     transferAssetSymbol: string,
+//     transferAssetId: string,
+//     transferAssetDecimals: number,
+//     feeAmount: bn,
+//     feeAssetSymbol: string,
+//     feeAssetId: string,
+//     feeAssetDecimals: number,
+//     node: TNode | "Polkadot" | "Kusama"
+// }
+// export interface DepositEventData {
+//     depositAmount: bn
+//     depositAssetSymbol: string,
+//     depositAssetId: string,
+//     depositAssetDecimals: number,
+//     feeAmount: bn,
+//     feeAssetSymbol: string,
+//     feeAssetId: string,
+//     feeAssetDecimals: number,
+//     node: TNode | "Polkadot" | "Kusama"
+// }
+
+
+
+// export interface FeeBook {
+//     "polkadot-transfer": {
+//         [chainId: string]: ChainTransferData;
+//     };
+//     "polkadot-deposit": {
+//         [chainId: string]: ChainDepositData;
+//     };
+// }
+
+
+
+// export interface ChainTransferData {
+//     [assetKey: string]: TransferLogData;
+// }
+
+// export interface ChainDepositData {
+//   [assetKey: string]: DepositLogData;
+// }
+
+  
+// TODO Merge TransferLogData and DepositLogData into one interface, change eventFeeBook data structure, modify Rust struct
+//   export interface TransferLogData {
+//     transferAmount: string,
+//     transferDecimals: string,
+//     transferAssetSymbol: string,
+//     transferAssetId: string,
+//     feeAmount: string,
+//     feeDecimals: string
+//     feeAssetSymbol: string,
+//     feeAssetId: string,
+// }
+// export interface DepositLogData {
+//     depositAmount: string,
+//     feeAmount: string,
+//     feeDecimals: string
+//     feeAssetSymbol: string,
+//     feeAssetId: string
+// }
+// export interface TransferLogDataReworked {
+//     xcmAmount: string,
+//     xcmDecimals: string,
+//     xcmAssetSymbol: string,
+//     xcmAssetId: string,
+//     feeAmount: string,
+//     feeDecimals: string
+//     feeAssetSymbol: string,
+//     feeAssetId: string,
+// }
+// export interface DepositLogDataReworked {
+//     xcmAmount: string,
+//     xcmDecimals?: string,
+//     xcmAssetSymbol?: string,
+//     xcmAssetId?: string,
+//     feeAmount: string,
+//     feeDecimals: string
+//     feeAssetSymbol: string,
+//     feeAssetId: string
+// }
+export interface FeeBook {
+    "polkadot-transfer": {
+        [chainId: string]: ChainTransferDepositData;
+    };
+    "polkadot-deposit": {
+        [chainId: string]: ChainTransferDepositData;
+    };
+}
+export interface ChainTransferDepositData {
+    [assetKey: string]: TransferDepositJsonData;
+  }
+
+export interface TransferDepositEventData {
+    xcmAmount: bn
+    xcmAssetSymbol: string,
+    xcmAssetId: string,
+    xcmAssetDecimals: number,
     feeAmount: bn,
     feeAssetSymbol: string,
     feeAssetId: string,
     feeAssetDecimals: number,
     node: TNode | "Polkadot" | "Kusama"
 }
-export interface TransferLogData {
-    transferAmount: string,
-    transferDecimals: string,
-    transferAssetSymbol: string,
-    transferAssetId: string,
-    feeAmount: string,
-    feeDecimals: string
-    feeAssetSymbol: string,
-    feeAssetId: string,
-}
-export interface DepositLogData {
-    depositAmount: string,
-    feeAmount: string,
-    feeDecimals: string
-    feeAssetSymbol: string,
-    feeAssetId: string
+// export interface TransferDepositLogData {
+//     xcmAmount: string,
+//     xcmDecimals: string,
+//     xcmAssetSymbol: string,
+//     xcmAssetId: string,
+//     feeAmount: string,
+//     feeDecimals: string
+//     feeAssetSymbol: string,
+//     feeAssetId: string,
+//     node: string,
+// }
 
+// A utility type to convert all properties to string
+export type StringifyProperties<T> = {
+    [K in keyof T]: string;
+};
+// The type for JSON data, derived from TransferDepositEventData
+export type TransferDepositJsonData = StringifyProperties<TransferDepositEventData>;
+
+// export interface OldFeeBook {
+//     "polkadot-transfer": {
+//         [chainId: string]: {
+//             [assetKey: string]: {
+//                 transferAmount: string,
+//                 transferDecimals: string,
+//                 transferAssetSymbol: string,
+//                 transferAssetId: string,
+//                 feeAmount: string,
+//                 feeDecimals: string,
+//                 feeAssetSymbol: string,
+//                 feeAssetId: string,
+//             }
+//         }
+//     };
+//     "polkadot-deposit": {
+//         [chainId: string]: {
+//             [assetKey: string]: {
+//                 depositAmount: string,
+//                 feeAmount: string,
+//                 feeDecimals: string,
+//                 feeAssetSymbol: string,
+//                 feeAssetId: string,
+//             }
+//         }
+//     };
+// }
+
+// export interface NewFeeBook {
+//     "polkadot-transfer": {
+//         [chainId: string]: {
+//             [assetKey: string]: {
+//                 xcmAmount: string,
+//                 xcmDecimals: string,
+//                 xcmAssetSymbol: string,
+//                 xcmAssetId: string,
+//                 feeAmount: string,
+//                 feeDecimals: string,
+//                 feeAssetSymbol: string,
+//                 feeAssetId: string,
+//             }
+//         }
+//     };
+//     "polkadot-deposit": {
+//         [chainId: string]: {
+//             [assetKey: string]: {
+//                 xcmAmount: string,
+//                 xcmDecimals: string,
+//                 xcmAssetSymbol: string,
+//                 xcmAssetId: string,
+//                 feeAmount: string,
+//                 feeDecimals: string,
+//                 feeAssetSymbol: string,
+//                 feeAssetId: string,
+//             }
+//         }
+//     };
+// }
+
+
+
+export interface NewFeeBook {
+    "polkadot-transfer": {
+        [chainId: string]: {
+            [assetKey: string]: {
+                xcmAmount: string,
+                xcmDecimals: string,
+                xcmAssetSymbol: string,
+                xcmAssetId: string,
+                feeAmount: string,
+                feeDecimals: string,
+                feeAssetSymbol: string,
+                feeAssetId: string,
+                node: string
+            }
+        }
+    };
+    "polkadot-deposit": {
+        [chainId: string]: {
+            [assetKey: string]: {
+                xcmAmount: string,
+                xcmDecimals: string,
+                xcmAssetSymbol: string,
+                xcmAssetId: string,
+                feeAmount: string,
+                feeDecimals: string,
+                feeAssetSymbol: string,
+                feeAssetId: string,
+                node: string
+            }
+        }
+    };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Used for FeeTracker. Each fee is formatted as a FeeTrackerEntry and added to FeeTracker.allFees
+ */
 export interface FeeTrackerEntry {
     feeData: FeeData,
     paid: boolean
 }
+
+/**
+ * Used to track fees and payments
+ * 
+ * Tracks each fee, tracks each fee payment, and stores the remaining amount of fees to be paid for each asset
+ * 
+ * NOT FULLY IMPLEMENTED YET
+ * 
+ * @property {FeeTrackerEntry[]} allFees - Every fee entry
+ * @property {any} feePayments - Every fee entry
+ * @property {any} unpaidFees - Dictionary of asset locations and amounts
+ */
 export interface FeeTracker {
+    /** Every fee entry */
     allFees: FeeTrackerEntry[],
+    /** Fee payments that have been made */
     feePayments: any,
+    /** Total amounts of fees that still need to be paid, according to each asset location of the fee asset */
     unpaidFees: {
         [assetLocation: string]: {
             assetSymbol: string,

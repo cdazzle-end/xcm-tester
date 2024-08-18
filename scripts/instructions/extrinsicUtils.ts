@@ -88,10 +88,12 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
 
     let startParaId = getParaIdFromAssetNode(instruction.startNode, instruction.startAssetNode)
     let destinationParaId = getParaIdFromAssetNode(instruction.destinationNode, instruction.destinationAssetNode)
-    let transferAmount = new FixedPointNumber(instruction.assetNodes[0].pathValue, Number.parseInt(assetDecimals.toString())).toChainData()
-    let transferAmountBn = new bn(transferAmount)
-    let feeAmountBn = new bn(instruction.startTransferFee)
-    let reserveAmountBn = new bn(instruction.startTransferReserve)
+    let transferAmountString = new FixedPointNumber(instruction.assetNodes[0].pathValue, Number.parseInt(assetDecimals.toString())).toChainData()
+    let transferAmount = new bn(transferAmountString)
+    let transferFeeAmount = new bn(instruction.startTransferFee)
+    let transferReserveAmount = new bn(instruction.startTransferReserve)
+    let depositFeeAmount = new bn(instruction.destinationDepositFee)
+    let depositReserveAmount = new bn(instruction.destinationDepositReserve)
     // If transfer native token and there are no reserves, deduct the estimated fee from the input
 
 
@@ -99,25 +101,45 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
     let destinationApi = await getApiForNode(instruction.destinationNode, chopsticks)
 
     console.log("**************************************")
-    console.log(`${instruction.startNode} -> ${instruction.destinationNode} (${startTransferrable.assetRegistryObject.tokenData.symbol}) | Currency: ${currencyInput}  | Amount: ${transferAmount.toString()})`)
+    console.log(`${instruction.startNode} -> ${instruction.destinationNode} (${startTransferrable.assetRegistryObject.tokenData.symbol}) | Currency: ${currencyInput}  | Amount: ${transferAmountString.toString()})`)
     console.log("**************************************")
-    console.log(`Transfer Amount: ${transferAmountBn.toString()}`)
-    console.log(`Reserve amount: ${reserveAmountBn.toString()}`)
-    console.log(`Fee amount: ${feeAmountBn.toString()}`)
-    if(!reserveAmountBn.isZero() && feeAmountBn.isZero()){
+    console.log(`Transfer Amount: ${transferAmount.toString()}`)
+    console.log(`Reserve amount: ${transferReserveAmount.toString()}`)
+    console.log(`Fee amount: ${transferFeeAmount.toString()}`)
+    if(!transferReserveAmount.isZero() && transferFeeAmount.isZero()){
         console.log(`*** Reserve amount but not fee should be an ERROR`)
         throw new Error("Reserve amount but no fee")
     }
-    if(reserveAmountBn.isZero() && feeAmountBn.isZero()){
+    //
+    // Transfer currency asset A -> B
+    // Remove transfer fee from input on A | Remove reserve fee from input on A
+    // Is deposit fee from native token?
+    // 
+
+    if(transferReserveAmount.isZero() && transferFeeAmount.isZero()){
         console.log(`*** No fee or reserve amount | Fee book not updated`)
-    } else if(reserveAmountBn.isZero() && !feeAmountBn.isZero()){
-        console.log(`*** Should be transferring native token so need need to convert fee to reserve`)
-        transferAmountBn = transferAmountBn.minus(feeAmountBn)
+    } else if(transferReserveAmount.isZero() && !transferFeeAmount.isZero()){
+        // REVIEW Subtracting estimated fee amount from transfer amount. Why? Because transfer fee is deducted from account seperately, not from the transfer amount. So we deduct it from our transfer amount to cover it on the sending chain.
+        // Can consider fee paid for in our execution once we deduct it from transfer amount
+        console.log(`*** Should be transferring native token so dont need to convert fee to reserve`)
+        transferAmount = transferAmount.minus(transferFeeAmount)
     } else {
+        // REVIEW Subtracting reserve amount from transfer amount. Transfer fee is paid seperately, and we need to reserve an amount of the transferred token in order to cover the fee at a later point.
         console.log(`*** Fee amount and reserve amount detected. | Fee amount converted to reserve. Reserve amount deducted from transfer amount`)
-        transferAmountBn = transferAmountBn.minus(reserveAmountBn)
+        transferAmount = transferAmount.minus(transferReserveAmount)
     }
-    console.log(`Adjusted transfer amount: ${transferAmountBn.toString()}`)
+
+    // If deposit reserves > 0, deduct that from transfer amount as well to cover fees
+    // Else deposit fees are taken out of deposited amount
+    if(depositFeeAmount.isZero() && depositReserveAmount.isGreaterThan(new bn(0))){
+        throw new Error(`Deposit reserve amount > 0 but deposit fee amount == 0`)
+    } else if(depositReserveAmount.isGreaterThan(new bn(0))){
+        // REVIEW Does it matter if we deduct from start node transfer amount vs destination node deposit amount? Assuming no for now
+        console.log(`*** Removing deposit reserve amount from transfer amount`)
+        transferAmount = transferAmount.minus(depositReserveAmount)
+    }
+
+    console.log(`Adjusted transfer amount: ${transferAmount.toString()}`)
 
     let signer;
 
@@ -130,13 +152,13 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
 
     let xcmTx: paraspell.Extrinsic;
     if((instruction.startNode == "Kusama" || instruction.startNode == "Polkadot")  && (instruction.destinationNode != "Kusama" && instruction.destinationNode != "Polkadot")) {
-        xcmTx = paraspell.Builder(startApi).to(instruction.destinationNode).amount(transferAmountBn.toString()).address(destinationAddress).build()
+        xcmTx = paraspell.Builder(startApi).to(instruction.destinationNode).amount(transferAmount.toString()).address(destinationAddress).build()
     } else if((instruction.destinationNode == "Kusama" || instruction.destinationNode == "Polkadot") && (instruction.startNode != "Kusama" && instruction.startNode != "Polkadot")) {
         // console.log("Transfer to relay chain")
-        xcmTx = paraspell.Builder(startApi).from(instruction.startNode).amount(transferAmountBn.toString()).address(destinationAddress).build()
+        xcmTx = paraspell.Builder(startApi).from(instruction.startNode).amount(transferAmount.toString()).address(destinationAddress).build()
     } else if((instruction.startNode != "Kusama" && instruction.startNode != "Polkadot") && (instruction.destinationNode != "Kusama" && instruction.destinationNode != "Polkadot")) {
         // console.log("Transfer between parachains")
-        xcmTx = paraspell.Builder(startApi).from(instruction.startNode).to(instruction.destinationNode).currency(currencyInput).amount(transferAmountBn.toString()).address(destinationAddress).build()
+        xcmTx = paraspell.Builder(startApi).from(instruction.startNode).to(instruction.destinationNode).currency(currencyInput).amount(transferAmount.toString()).address(destinationAddress).build()
     } else {
         throw new Error("Invalid transfer instruction")
     }
@@ -167,8 +189,9 @@ export async function buildTransferExtrinsicFromInstruction(relay: Relay, instru
         pathInLocalId: instruction.startNodeLocalId,
         pathOutLocalId: instruction.destinationNodeLocalId,
         pathSwapType: 0,
-        pathAmount: transferAmountBn.toString(),
-        reserveAmount: reserveAmountBn.toString()
+        pathAmount: transferAmount.toString(),
+        transferReserveAmount: transferReserveAmount.toString(),
+        depositReserveAmount: depositReserveAmount.toString(),
     }
     console.log(`Transfer tx container pathAmount set to final input transfer amount: ${txContainer.pathAmount}`)
     increaseIndex(extrinsicIndex)
@@ -204,6 +227,9 @@ function splitDoubleTransferInstruction(instruction: TransferToHomeThenDestInstr
         startTransferFee: instruction.startTransferFee,
         startTransferReserve: instruction.startTransferReserve,
 
+        destinationDepositFee: instruction.middleDepositFee,
+        destinationDepositReserve: instruction.middleDepositReserve,
+
         assetNodes: instruction.assetNodes.slice(0,2)
     }
     let destinationInstruction: TransferInstruction = {
@@ -224,6 +250,9 @@ function splitDoubleTransferInstruction(instruction: TransferToHomeThenDestInstr
         startTransferFee: instruction.middleTransferFee,
         startTransferReserve: instruction.middleTransferReserve,
 
+        destinationDepositFee: instruction.destinationDepositFee,
+        destinationDepositReserve: instruction.destinationDepositReserve,
+        
         assetNodes: instruction.assetNodes.slice(1)
     }
     console.log("**************************************")
