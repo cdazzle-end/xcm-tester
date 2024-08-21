@@ -12,7 +12,7 @@ import { firstValueFrom } from 'rxjs';;
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 import { SmartRouterV2 } from '@zenlink-dex/sdk-router';
 import { FixedPointNumber } from '@acala-network/sdk-core';
-import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
+import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
 import { ModuleBApi, ModuleBChainOption, BifrostConfig } from '@zenlink-dex/sdk-api';
 // const sdkApi = await import('@zenlink-dex/sdk-api');
 // const { ModuleBApi } = sdkApi;

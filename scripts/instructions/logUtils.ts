@@ -1,13 +1,13 @@
-import { ExtrinsicObject, SwapInstruction, TransferInstruction, InstructionType, TransferTxStats, SwapTxStats, ArbExecutionResult, ExtrinsicSetResultDynamic, LastFilePath, Relay, AccumulatedFeeData, ReserveFeeData, TransferDepositEventData, TransferDepositJsonData } from "./types.ts";
-import path from 'path';
-import fs from 'fs';
 import bn from 'bignumber.js';
+import fs from 'fs';
+import path from 'path';
+import { AccumulatedFeeData, ArbExecutionResult, ExtrinsicObject, ExtrinsicSetResultDynamic, InstructionType, LastFilePath, Relay, ReserveFeeData, SwapInstruction, SwapTxStats, TransferDepositEventData, TransferDepositJsonData, TransferInstruction, TransferTxStats } from "./types.ts";
 // import { globalState } from "./liveTest.ts";
 declare const fetch: any;
 
-import { fileURLToPath } from 'url';
 import { getParaId } from "@paraspell/sdk";
-import { getAssetRegistryObject, isSwapResult, isTransferResult } from "./utils.ts";
+import { fileURLToPath } from 'url';
+import { isSwapResult, isTransferResult } from "./utils.ts";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -529,11 +529,11 @@ export async function logAllResultsDynamic(relay: Relay, logFilePath: string, ch
     await logSwapTxResults(relay, swapTxResults, logFilePath, chopsticks)
     await logTransferTxStats(relay, transferTxStats, logFilePath, chopsticks)
     await logArbExecutionResults(relay, arbResults, logFilePath, chopsticks)
+
     // --- logExtrinsicSetResults contains all the data 
     await logExtrinsicSetResults(relay, allExtrinsicsSet, logFilePath, chopsticks)
     // await logAccumulatedFees(relay, accumulatedFees, logFilePath, chopsticks)
     await logXcmFeeReserves(relay, xcmReserveFees, logFilePath, chopsticks)
-    // await updateFeeBook();
     console.log(`Logged results: SwapTxStats, SwapTxResults, TransferTxStats, ArbExecutionResults, XcmFeeReserve`)
 
 }

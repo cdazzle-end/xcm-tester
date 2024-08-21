@@ -1,50 +1,32 @@
 import '@galacticcouncil/api-augment/basilisk';
 import '@galacticcouncil/api-augment/hydradx';
-import fs from 'fs'
-import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
-import path from 'path';
-import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { getAssetBySymbolOrId, getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, getChainIdFromNode, getAssetKey, getAssetRegistry, getAssetsAtLocation } from './utils.ts'
-import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode, FeeBook, NewFeeBook} from './types.ts'
-import { AssetNode } from './AssetNode.ts'
-import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructionSetTest, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
 import * as paraspell from '@paraspell/sdk';
-import { arb_wallet_kusama, dotNodeKeys, dotTargetNode, ksmRpc, ksmTargetNode, kusamaNodeKeys, live_wallet_3, localRpcs, mainWalletAddress, mainWalletEthAddress, testBncNode, testNets, testZlkNode } from './txConsts.ts';
-import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, buildTransferExtrinsicReworked, buildTransferKsmToChain, buildTransferToKsm, createSwapExtrinsicObject, createTransferExtrinsicObject } from './extrinsicUtils.ts';
-import { EventRecord } from "@polkadot/types/interfaces"
+import { ApiPromise, ApiRx, Keyring, WsProvider } from '@polkadot/api';
+import { cryptoWaitReady } from "@polkadot/util-crypto";
+import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
+import { localRpcs } from './txConsts.ts';
+import { ExecutionState, JsonPathNode, NewFeeBook, Relay, TxDetails } from './types.ts';
+import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner } from './utils.ts';
 // import { BalanceChangeStatue } from 'src/types.ts';
-import { logSwapTxStats, logSwapTxResults, logTransferTxStats, logArbExecutionResults, logInstructions, logSubmittableExtrinsics, logAllResultsDynamic, logProfits, logLastFilePath, logEventFeeBook } from './logUtils.ts';
-import { runAndReturnFallbackArb, runAndReturnTargetArb, runArbFallback } from './executeArbFallback.ts';
-import { Mangata, MangataInstance } from '@mangata-finance/sdk';
-import { reverse } from 'dns';
-import { buildAndExecuteSwapExtrinsic, checkAndAllocateRelayToken, confirmLastTransactionSuccess, executeAndReturnExtrinsic, executeSingleSwapExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleTransferExtrinsic, executeTransferTx, executeXcmTransfer } from './executionUtils.ts';
+import { executeXcmTransfer } from './executionUtils.ts';
 // import { liveWallet3Pk } from 'scripts/swaps/movr/utils/const.ts';
-import { TNode, getParaId } from '@paraspell/sdk';
-import { BN } from '@polkadot/util/bn/bn';
-import { FixedPointNumber } from '@acala-network/sdk-core';
-import { movrContractAddress, xcKarContractAddress, xcXrtContractAddress } from './../swaps/movr/utils/const.ts';
-import { formatMovrTx, getMovrSwapTx, testXcTokensMoonriver } from './../swaps/movr/movrSwap.ts';
+import { getParaId, TNode } from '@paraspell/sdk';
 // import { getBsxSwapExtrinsic, testBsxSwap } from './../swaps/bsxSwap.ts';
 
-import { getApiForNode } from './apiUtils.ts';
-import { setLastExtrinsicSet, getLastExecutionState, setExecutionSuccess } from './globalStateUtils.ts';
-import { getBalanceChainAsset, getBalanceChange, getBalanceFromId, getRelayTokenBalances, watchTokenBalance } from './balanceUtils.ts';
-import bn, { BigNumber } from 'bignumber.js'
-import { ManagerSwapParams } from './../swaps/glmr/utils/types.ts';
-import { executeSingleGlmrSwap, testGlmrRpc } from './../swaps/glmr/glmrSwap.ts';
 import { getAdapter } from '@polkawallet/bridge';
-import { firstValueFrom, Observable, timeout } from "rxjs";
-import { FrameSystemEventRecord } from '@polkadot/types/lookup';
-import { listenForXcmpEventHydra, getHydraDepositFees, listenForXcmpEventAcala, getAcalaDepositFees, getMoonbeamDepositFees, listenForXcmpEventMoonbeam, listenForXcmpTransferPolkadot, listenForXcmpEventThree, listenForXcmpDepositEvent as listenForDestinationDepositAmounts, getXcmTransferEventData } from './feeUtils.ts';
+import bn from 'bignumber.js';
+import { firstValueFrom } from "rxjs";
+import { testGlmrRpc } from './../swaps/glmr/glmrSwap.ts';
+import { getApiForNode } from './apiUtils.ts';
+import { getBalanceFromId, getRelayTokenBalances } from './balanceUtils.ts';
 // const { blake2AsU8a } = require('@polkadot/util-crypto');
 // const { u8aToHex } = require('@polkadot/util');
-import { blake2AsU8a } from '@polkadot/util-crypto';
-import { u8aToHex, stringToU8a, numberToU8a } from '@polkadot/util';
 import * as Chopsticks from '@acala-network/chopsticks';
 
 
-import {mainLogger, dbLogger, apiLogger} from './logger.ts'
+import { apiLogger, mainLogger } from './logger.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

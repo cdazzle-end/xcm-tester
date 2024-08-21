@@ -1,17 +1,16 @@
-import fs from 'fs'
-import * as paraspell from '@paraspell/sdk'
-import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
+import * as paraspell from '@paraspell/sdk';
+import { TNode, getAssetsObject } from '@paraspell/sdk';
+import { Keyring } from '@polkadot/api';
+import { KeyringPair } from '@polkadot/keyring/types';
+import { cryptoWaitReady } from "@polkadot/util-crypto";
+import bn from 'bignumber.js';
+import fs from 'fs';
 import path from 'path';
-import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { MyAssetRegistryObject, IndexObject, SingleSwapResultData, SingleTransferResultData, ExtrinsicSetResultDynamic, LastNode, ArbExecutionResult, Relay, JsonPathNode, PathData, PathType, TxDetails, SwapTxStats, TransferTxStats } from './types.ts'
-import { AssetNode } from './AssetNode.ts'
 import { fileURLToPath } from 'url';
-import { Keyring } from '@polkadot/api'
-import {KeyringPair} from '@polkadot/keyring/types'
-import { InstructionType, SwapInstruction, TransferInstruction } from './types.ts'
-import { arb_wallet_kusama, dotTargetNode, ksmTargetNode, live_wallet_3 } from './txConsts.ts';
+import { AssetNode } from './AssetNode.ts';
 import { runAndReturnTargetArb } from './executeArbFallback.ts';
-import bn from 'bignumber.js'
+import { arb_wallet_kusama, dotTargetNode, ksmTargetNode, live_wallet_3 } from './txConsts.ts';
+import { ArbExecutionResult, ExtrinsicSetResultDynamic, IndexObject, InstructionType, JsonPathNode, LastNode, MyAssetRegistryObject, PathData, PathType, Relay, SingleSwapResultData, SingleTransferResultData, SwapInstruction, SwapTxStats, TransferInstruction, TransferTxStats, TxDetails } from './types.ts';
 
 // import { buildTransferExtrinsic } from './extrinsicUtils.ts';
 // Get the __dirname equivalent in ES module

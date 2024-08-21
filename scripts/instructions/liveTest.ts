@@ -1,34 +1,25 @@
-import fs from 'fs'
-import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
+import { ApiPromise, ApiRx } from '@polkadot/api';
+import fs from 'fs';
 import path from 'path';
-import { cryptoWaitReady } from "@polkadot/util-crypto"
-import { getParaspellChainName, getAssetRegistryObject, readLogData, getAssetRegistryObjectBySymbol, getSigner, printInstruction, increaseIndex, getLastSuccessfulNodeFromResultData, printExtrinsicSetResults, getLatestFileFromLatestDay, constructRouteFromFile, getLastSuccessfulNodeFromAllExtrinsics, getNodeFromChainId, getTotalArbResultAmount, getLatestTargetFileKusama, getLatestAsyncFilesKusama, getLatestTargetFilePolkadot, getLatestAsyncFilesPolkadot, constructRouteFromJson, printAllocations, printInstructionSet, truncateAssetPath, getArbExecutionPath, getAssetRegistry } from './utils.ts'
-import { MyAssetRegistryObject, MyAsset, AssetNodeData, InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, TxDetails, TransferToHomeChainInstruction, TransferParams, TransferAwayFromHomeChainInstruction, TransferrableAssetObject, TransferTxStats, BalanceChangeStats, SwapTxStats, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, SwapResultObject, ExtrinsicSetResult, IndexObject, ArbExecutionResult, PathNodeValues, LastNode, SingleTransferResultData, SingleSwapResultData, ExtrinsicSetResultDynamic, ExecutionState, LastFilePath, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, AsyncFileData, Relay, JsonPathNode } from './types.ts'
-import { AssetNode } from './AssetNode.ts'
-import { allocateKsmFromPreTransferPaths, buildInstructionSet, buildInstructionSetTest, buildInstructions, getPreTransferPath, getTransferrableAssetObject } from './instructionUtils.ts';
-import * as paraspell from '@paraspell/sdk';
-import { arb_wallet_kusama, dotNodeKeys, dotTargetNode, ksmRpc, ksmTargetNode, kusamaNodeKeys, live_wallet_3, localRpcs, mainWalletAddress, mainWalletEthAddress, testBncNode, testNets, testZlkNode } from './txConsts.ts';
-import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, buildTransferExtrinsicReworked, buildTransferKsmToChain, buildTransferToKsm, createSwapExtrinsicObject, createTransferExtrinsicObject } from './extrinsicUtils.ts';
-import { EventRecord } from "@polkadot/types/interfaces"
 import { fileURLToPath } from 'url';
+import { AssetNode } from './AssetNode.ts';
+import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, createSwapExtrinsicObject } from './extrinsicUtils.ts';
+import { buildInstructionSet, buildInstructionSetTest } from './instructionUtils.ts';
+import { dotNodeKeys, dotTargetNode, ksmTargetNode, kusamaNodeKeys } from './txConsts.ts';
+import { AsyncFileData, ChainNonces, ExecutionState, ExtrinsicObject, ExtrinsicSetResultDynamic, IndexObject, InstructionType, JsonPathNode, LastNode, Relay, SwapInstruction, SwapProperties, TransactionState, TransferInstruction, TransferProperties } from './types.ts';
+import { getArbExecutionPath, getAssetRegistry, getAssetRegistryObject, getAssetRegistryObjectBySymbol, getLatestAsyncFilesKusama, getLatestAsyncFilesPolkadot, getLatestTargetFileKusama, getLatestTargetFilePolkadot, getTotalArbResultAmount, printExtrinsicSetResults, printInstructionSet, readLogData, truncateAssetPath } from './utils.ts';
 // import { BalanceChangeStatue } from 'src/types.ts';
-import { logSwapTxStats, logSwapTxResults, logTransferTxStats, logArbExecutionResults, logInstructions, logSubmittableExtrinsics, logAllResultsDynamic, logProfits, logLastFilePath } from './logUtils.ts';
-import { runAndReturnFallbackArb, runAndReturnTargetArb, runArbFallback } from './executeArbFallback.ts';
-import { Mangata, MangataInstance } from '@mangata-finance/sdk';
-import { reverse } from 'dns';
-import { allocateFundsForSwap, allocateFundsForSwapFromRelay, buildAndExecuteSwapExtrinsic, checkAndAllocateRelayToken, collectRelayToken, confirmLastTransactionSuccess, executeAndReturnExtrinsic, executeSingleSwapExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleTransferExtrinsic, executeTransferTx } from './executionUtils.ts';
+import { runAndReturnFallbackArb, runAndReturnTargetArb } from './executeArbFallback.ts';
+import { allocateFundsForSwapFromRelay, buildAndExecuteSwapExtrinsic, checkAndAllocateRelayToken, confirmLastTransactionSuccess, executeAndReturnExtrinsic } from './executionUtils.ts';
+import { logAllResultsDynamic, logProfits } from './logUtils.ts';
 // import { liveWallet3Pk } from 'scripts/swaps/movr/utils/const.ts';
 import { TNode } from '@paraspell/sdk';
-import { BN } from '@polkadot/util/bn/bn';
-import { FixedPointNumber } from '@acala-network/sdk-core';
-import { movrContractAddress, xcKarContractAddress, xcXrtContractAddress } from './../swaps/movr/utils/const.ts';
-import { formatMovrTx, getMovrSwapTx, testXcTokensMoonriver } from './../swaps/movr/movrSwap.ts';
 // import { getBsxSwapExtrinsic, testBsxSwap } from './../swaps/bsxSwap.ts';
 import '@galacticcouncil/api-augment/basilisk';
 import { closeApis, getApiForNode } from './apiUtils.ts';
-import { getLastExecutionState, resetExecutionState, setExecutionRelay, setExecutionSuccess, setLastExtrinsicSet, setLastFile, setLastNode } from './globalStateUtils.ts';
 import { BalanceAdapter, getRelayTokenBalances } from './balanceUtils.ts';
-import { pathLogger, nodeLogger } from './logger.ts'
+import { getLastExecutionState, resetExecutionState, setExecutionRelay, setExecutionSuccess, setLastFile, setLastNode } from './globalStateUtils.ts';
+import { nodeLogger, pathLogger } from './logger.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

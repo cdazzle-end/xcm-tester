@@ -17,7 +17,7 @@ import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
 import { MangataInstance, Mangata, MultiswapBuyAsset, MultiswapSellAsset } from "@mangata-finance/sdk"
 import { BN } from '@polkadot/util';
-import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
+import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts';
 import { increaseIndex } from './../instructions/utils.ts';
 import { getSigner } from './../instructions/utils.ts';
 import { getApiForNode } from './../instructions/apiUtils.ts'

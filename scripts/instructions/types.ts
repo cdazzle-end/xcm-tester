@@ -1,19 +1,15 @@
-import { EventRecord, Phase, Event, Hash, BlockNumber, ExtrinsicStatus, DispatchError, DispatchInfo } from '@polkadot/types/interfaces'
-import { ISubmittableResult, IU8a } from '@polkadot/types/types'
-import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
-import { AssetNode } from './AssetNode.ts';
-import { ApiPromise, ApiRx } from '@polkadot/api';
 import { FixedPointNumber } from '@acala-network/sdk-core';
-import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
-import * as paraspell from '@paraspell/sdk'
-import { MultiPath, TokenAmount } from '@zenlink-dex/sdk-core';
-import { ModuleBApi } from '@zenlink-dex/sdk-api';
-import { BN } from '@polkadot/util/bundle';
-import { MangataInstance } from '@mangata-finance/sdk';
-import { BatchSwapParams } from './../swaps/movr/utils/types.ts';
-import { BalanceData, getAdapter } from '@polkawallet/bridge';
+import * as paraspell from '@paraspell/sdk';
+import { TNode } from '@paraspell/sdk';
+import { ApiPromise, ApiRx } from '@polkadot/api';
+import { SubmittableExtrinsic } from '@polkadot/api/submittable/types';
+import { BlockNumber, DispatchError, DispatchInfo, EventRecord, ExtrinsicStatus, Hash } from '@polkadot/types/interfaces';
+import { ISubmittableResult, IU8a } from '@polkadot/types/types';
+import { BalanceData } from '@polkawallet/bridge';
+import bn from 'bignumber.js';
 import { ManagerSwapParams } from 'scripts/swaps/glmr/utils/types.ts';
-import bn, { BigNumber } from 'bignumber.js'
+import { BatchSwapParams } from './../swaps/movr/utils/types.ts';
+import { AssetNode } from './AssetNode.ts';
 // import { BalanceData } from '@polkawallet/bridge';
 // import { ISubmittableResult, IU8a } from '@polkadot/types/types'
 
@@ -230,6 +226,22 @@ export interface ChainNonces{
 // export interface ChainNonces{
 //     [string]: number,
 // }
+/**
+ * Interface for GlobalState execution tracker
+ * 
+ * @feild tracking - Whether we are tracking the execution of extrinsics as arb execution (don't track with allocation extrinsics)
+ * @feild relay - execution on kusama or polkadot
+ * @feild lastNode - last successful node reached in execution
+ * @feild lastFilePath - file path of the results from the arb finder, used so we can correlate the arb being executed to the arb path and log the results accordingly
+ * @feild extrinsicSetResults - ExtrinsicSetResultDynamic - Contains success status of arb, array of swap/transfer tx result data, and last successful node
+ * @feild transactionState - Pre, Broadcasted, or Finalized - used to determine how to pickup from previous execution attempts
+ * @feild transactionProperties - SwapProperties or TransferProperties - The properties of the last extrinsic. Used to retry the previous extrinsic if execution fails
+ * @feild executuionSuccess - Whether arb is success status or not // REDUNDANT
+ * @feild executionAttempts - tracks number of consecutive attempts, use this to determine if we should keep retrying on failure
+ * @feild accumulatedFeeData - accumulated fees for the execution attempt according to asset location, currently not logged
+ * @feild xcmFeeReserves - Tracks fee reserve data, to be logged and used later to pay back fees
+ * 
+ */
 export interface ExecutionState{
     tracking: boolean, // If true, we are currently tracking the execution of a set of extrinsics
     relay: Relay | null,
@@ -401,8 +413,8 @@ export interface SwapExtrinsicContainer{
 }
 
 // TODO Remove from all structures
-export interface PathNodeValues {
-    // pathInLocalId: string,
+// export interface PathNodeValues {
+//     // pathInLocalId: string,
     // pathInSymbol: string,
     // pathOutSymbol: string,
     // pathOutLocalId: string,
@@ -410,7 +422,7 @@ export interface PathNodeValues {
     // pathValue: number,
     // pathValueNext?: number,
 
-}
+// }
 
 export interface SwapResultObject {
     txString?: string,
@@ -420,7 +432,7 @@ export interface SwapResultObject {
 export interface ExtrinsicSetResult {
     success: boolean,
     arbExecutionResult: ArbExecutionResult[],
-    resultPathNodes?: PathNodeValues[],
+    // resultPathNodes?: PathNodeValues[],
     transferTxStats: TransferTxStats[],
     swapTxStats: SwapTxStats[],
     swapTxResults: any[],
@@ -447,7 +459,7 @@ export interface AccumulatedFeeData{
 export interface SingleTransferResultData {
     success: boolean,
     arbExecutionResult: ArbExecutionResult,
-    resultPathNode?: PathNodeValues,
+    // resultPathNode?: PathNodeValues,
     transferTxStats: TransferTxStats | null,
     lastNode: LastNode | null,
     extrinsicIndex: number,
@@ -457,7 +469,7 @@ export interface SingleTransferResultData {
 export interface SingleSwapResultData {
     success: boolean,
     arbExecutionResult: ArbExecutionResult,
-    resultPathNode?: PathNodeValues,
+    // resultPathNode?: PathNodeValues,
     swapTxStats: SwapTxStats | null,
     swapTxResults: any,
     lastNode: LastNode | null,

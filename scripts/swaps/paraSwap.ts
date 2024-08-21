@@ -2,7 +2,7 @@ import { FixedPointNumber } from "@acala-network/sdk-core"
 import { ApiPromise, options, WsProvider, Keyring } from "@parallel-finance/api" 
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import fs from 'fs'
-import { IndexObject, PathNodeValues, PathType, Relay, SwapExtrinsicContainer } from "./../instructions/types"
+import { IndexObject, PathType, Relay, SwapExtrinsicContainer } from "./../instructions/types"
 const wsLocalChain = localRpcs["Parallel"]
 const paraWs = "wss://parallel-rpc.dwellir.com"
 import path from 'path'

@@ -3,7 +3,7 @@ import { BN } from "@polkadot/util/bn"
 import { checkAndApproveToken } from "./../swaps/movr/utils/utils.ts"
 import { AssetNode } from "./AssetNode.ts"
 import { testNets, localRpcs } from "./txConsts.ts"
-import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, PathNodeValues, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, NativeBalancesType, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, TransferDepositEventData } from "./types.ts"
+import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, NativeBalancesType, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, TransferDepositEventData } from "./types.ts"
 import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject, getAssetDecimalsFromLocation, getWalletAddressFormatted, isTxDetails } from "./utils.ts"
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { buildSwapExtrinsicDynamic, createSwapExtrinsicObject } from "./extrinsicUtils.ts"
@@ -184,23 +184,22 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
             txDetails: txDetails
         }
         let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceDisplay)
-        let pathNode: PathNodeValues = {
-            // pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
-            // pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
-            pathInSymbol: assetInSymbol,
-            pathOutSymbol: assetOutSymbol,
-            pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
-            pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
-            pathValueNext: pathValueNext
+        // let pathNode: PathNodeValues = {
+        //     // pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
+        //     // pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
+        //     pathInSymbol: assetInSymbol,
+        //     pathOutSymbol: assetOutSymbol,
+        //     pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
+        //     pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+        //     pathValueNext: pathValueNext
         
-        }
+        // }
 
         
 
         let swapResultData: SingleSwapResultData = {
             success: swapSuccess,
             arbExecutionResult: arbResultString,
-            resultPathNode: pathNode,
             swapTxStats: swapStats,
             swapTxResults: swapTxResult,
             lastNode: lastNode,
@@ -231,20 +230,19 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
             blockHash: blockHash,
             result: `SUCCESS: ${false} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn} -> ${assetOutSymbol} | Dexes: ${JSON.stringify(dexes)}`
         }
-        let pathNode: PathNodeValues = {
-            // pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
-            // pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
-            pathInSymbol: assetInSymbol,
-            pathOutSymbol: assetOutSymbol,
-            pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
-            pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
-            pathValueNext:0
-        }
+        // let pathNode: PathNodeValues = {
+        //     // pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
+        //     // pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
+        //     pathInSymbol: assetInSymbol,
+        //     pathOutSymbol: assetOutSymbol,
+        //     pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
+        //     pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+        //     pathValueNext:0
+        // }
 
         let swapResultData: SingleSwapResultData = {
             success: false,
             arbExecutionResult: arbResultString,
-            resultPathNode: pathNode,
             swapTxStats: null,
             swapTxResults: swapTxResult,
             lastNode: null,
@@ -421,21 +419,20 @@ export async function executeSingleSwapExtrinsicGlmr(extrinsicObj: ExtrinsicObje
             txDetails: txDetails
         }
         let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceDisplay)
-        let pathNode: PathNodeValues = {
-            pathInSymbol: assetInSymbol,
-            pathOutSymbol: assetOutSymbol,
-            pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
-            pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
-            pathValueNext: pathValueNext
+        // let pathNode: PathNodeValues = {
+        //     pathInSymbol: assetInSymbol,
+        //     pathOutSymbol: assetOutSymbol,
+        //     pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
+        //     pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+        //     pathValueNext: pathValueNext
         
-        }
+        // }
 
         
 
         let swapResultData: SingleSwapResultData = {
             success: swapSuccess,
             arbExecutionResult: arbResultString,
-            resultPathNode: pathNode,
             swapTxStats: swapStats,
             swapTxResults: swapTxResult,
             lastNode: lastNode,
@@ -465,20 +462,19 @@ export async function executeSingleSwapExtrinsicGlmr(extrinsicObj: ExtrinsicObje
             blockHash: blockHash,
             result: `SUCCESS: ${false} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${expectedAmountIn} -> ${assetOutSymbol} | Dexes: ${JSON.stringify(dexes)}`
         }
-        let pathNode: PathNodeValues = {
+        // let pathNode: PathNodeValues = {
             // pathInLocalId: extrinsicObj.swapExtrinsicContainer.pathInLocalId,
             // pathOutLocalId: extrinsicObj.swapExtrinsicContainer.pathOutLocalId,
-            pathInSymbol: assetInSymbol,
-            pathOutSymbol: assetOutSymbol,
-            pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
-            pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
-            pathValueNext:0
-        }
+        //     pathInSymbol: assetInSymbol,
+        //     pathOutSymbol: assetOutSymbol,
+        //     pathSwapType: extrinsicObj.swapExtrinsicContainer.pathType,
+        //     pathValue: extrinsicObj.swapExtrinsicContainer.pathAmount,
+        //     pathValueNext:0
+        // }
 
         let swapResultData: SingleSwapResultData = {
             success: false,
             arbExecutionResult: arbResultString,
-            resultPathNode: pathNode,
             swapTxStats: null,
             swapTxResults: swapTxResult,
             lastNode: null,
@@ -625,20 +621,19 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
             txDetails: txDetails
         }
 
-        let pathNode: PathNodeValues = {
+        // let pathNode: PathNodeValues = {
             // pathInLocalId: swapTxContainer.pathInLocalId,
             // pathOutLocalId: swapTxContainer.pathOutLocalId,
-            pathInSymbol: assetInSymbol,
-            pathOutSymbol: assetOutSymbol,
-            pathSwapType: swapTxContainer.pathType,
-            pathValue: swapTxContainer.pathAmount,
-            pathValueNext: 0
-        }
+        //     pathInSymbol: assetInSymbol,
+        //     pathOutSymbol: assetOutSymbol,
+        //     pathSwapType: swapTxContainer.pathType,
+        //     pathValue: swapTxContainer.pathAmount,
+        //     pathValueNext: 0
+        // }
 
         let extrinsicResultData: SingleSwapResultData = {
             success: false,
             arbExecutionResult: arbString,
-            resultPathNode: pathNode,
             swapTxStats: null,
             swapTxResults: swapTxResult,
             lastNode: null,
@@ -771,22 +766,21 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     
     let pathValueNext = Number.parseFloat(tokenOutBalanceStats.changeInBalanceDisplay)
 
-    let pathNode: PathNodeValues = {
+    // let pathNode: PathNodeValues = {
         // pathInLocalId: swapTxContainer.pathInLocalId,
         // pathOutLocalId: swapTxContainer.pathOutLocalId,
-        pathInSymbol: assetInSymbol,
-        pathOutSymbol: assetOutSymbol,
-        pathSwapType: swapTxContainer.pathType,
-        pathValue: swapTxContainer.pathAmount,
-        pathValueNext:pathValueNext
-    }
+    //     pathInSymbol: assetInSymbol,
+    //     pathOutSymbol: assetOutSymbol,
+    //     pathSwapType: swapTxContainer.pathType,
+    //     pathValue: swapTxContainer.pathAmount,
+    //     pathValueNext:pathValueNext
+    // }
 
     let extrinsicResultData: SingleSwapResultData;
     if(tokenOutBalanceStats.changeInBalance.gt(new bn(0))){
         extrinsicResultData = {
             success: true,
             arbExecutionResult: arbResultString,
-            resultPathNode: pathNode,
             swapTxStats: swapStats,
             swapTxResults: swapTxResult,
             lastNode: lastNode,
@@ -797,7 +791,6 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         extrinsicResultData = {
             success: false,
             arbExecutionResult: arbResultString,
-            resultPathNode: pathNode,
             swapTxStats: swapStats,
             swapTxResults: swapTxResult,
             lastNode: lastNode,
@@ -822,7 +815,6 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     console.log("Execute Single Transfer Extrinsic ()")
     let extrinsicResultData: SingleTransferResultData;
     let arbExecutionResult: ArbExecutionResult;
-    let resultPathNode: PathNodeValues;
     let transferTxStats: TransferTxStats;
     let transferTxContainer = extrinsicObj.transferExtrinsicContainer! 
     let relay = transferTxContainer.relay
@@ -984,20 +976,10 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
                 blockHash: blockHash,
                 result: `FAILURE: TRANSFER: (${startChain} ${startParaId} ${assetInSymbol} ${transferAmount}-> ${destChain}) ${destParaId} | ERROR: ${JSON.stringify(decodedError)}` 
             }
-            
-            resultPathNode = {
-                pathInSymbol: assetInSymbol,
-                pathOutSymbol: assetInSymbol,
-                pathSwapType: transferTxContainer.pathSwapType,
-                pathValue: transferTxContainer.pathAmount,
-                pathValueNext: 0
-            
-            }   
 
             extrinsicResultData = {
                 success: false,
                 arbExecutionResult: arbExecutionResult,
-                resultPathNode: resultPathNode,
                 transferTxStats: null,
                 lastNode: null,
                 extrinsicIndex: extrinsicIndex.i,
@@ -1197,19 +1179,9 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             Deposit Fee: ${depositFeeData.feeAssetSymbol} ${depositFeeData.feeAmount} | Deposit Reserve ${depositFeeData.reserveAssetAmount} |
             START: ${startBalanceChangeStats.changeInBalanceDisplay} -> DEST: ${destBalanceChangeStats.changeInBalanceDisplay}`
         }
-        
-        let pathValueNext = Number.parseFloat(destBalanceChangeStats.changeInBalanceDisplay)
-        resultPathNode= {
-            pathInSymbol: assetInSymbol,
-            pathOutSymbol: assetInSymbol,
-            pathValue: transferTxContainer.pathAmount,
-            pathSwapType: transferTxContainer.pathSwapType,
-            pathValueNext: pathValueNext
-        }
         extrinsicResultData = {
             success: txDetails.success,
             arbExecutionResult: arbExecutionResult,
-            resultPathNode: resultPathNode,
             transferTxStats: transferTxStats,
             lastNode: lastNode,
             extrinsicIndex: extrinsicIndex.i,

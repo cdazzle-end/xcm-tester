@@ -25,7 +25,7 @@ import '@galacticcouncil/api-augment/basilisk';
 
 import { SubmittableExtrinsic } from '@polkadot/api/promise/types';
 import { ZERO, INFINITY, ONE, TradeRouter, PoolService, Router, BigNumber, Asset } from '@galacticcouncil/sdk';
-import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer, SwapInstruction } from "./../instructions/types.ts";
+import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from "./../instructions/types.ts";
 import { increaseIndex } from './../instructions/utils.ts';
 import { getSigner } from './../instructions/utils.ts';
 import { getAllNodeProviders } from "@paraspell/sdk";

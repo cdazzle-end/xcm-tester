@@ -23,7 +23,7 @@ import { Wallet } from "@acala-network/sdk/wallet/wallet.js"
 import { AcalaDex, AggregateDex } from "@acala-network/sdk-swap"
 import { AggregateDexSwapParams, TradingPath } from '@acala-network/sdk-swap/types.js'
 // import { AggregateDexSwapParams } from '../../node_modules/.pnpm/@acala-network+sdk-swap@4.1.9-13_@acala-network+api@5.1.2_@acala-network+eth-providers@2.7.19_7m57xuskb5lxcqt46rnn4nnyhe/node_modules/@acala-network/sdk-swap/index.ts'
-import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
+import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
 import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
 import { increaseIndex } from './../instructions/utils.ts'
 import { AssetNode } from './../instructions/AssetNode.ts'

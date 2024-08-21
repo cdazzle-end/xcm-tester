@@ -4,7 +4,7 @@ import { ApiPromise, WsProvider, Keyring } from "@polkadot/api"
 import { options } from "@parallel-finance/api"
 import { cryptoWaitReady } from "@polkadot/util-crypto"
 import fs from 'fs'
-import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer } from "./../instructions/types"
+import { IndexObject, PathType, SwapExtrinsicContainer } from "./../instructions/types"
 const wsLocalChain = "ws://172.26.130.75:8012"
 const hkoWs = "wss://heiko-rpc.parallel.fi"
 import path from 'path'

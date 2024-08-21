@@ -1,51 +1,18 @@
-import fs from 'fs'
-import * as paraspell from '@paraspell/sdk'
-import { Observable, firstValueFrom } from 'rxjs'
-import { timeout } from 'rxjs/operators'
-import { WsProvider, ApiPromise, Keyring } from '@polkadot/api'
-import { History } from '@acala-network/sdk'
-import { BN, u8aToHex } from '@polkadot/util'
-import { EventRecord, Phase, Event, Hash } from '@polkadot/types/interfaces'
-import { ISubmittableResult, IU8a } from '@polkadot/types/types'
-import { TNode, getAssetsObject, getNode } from '@paraspell/sdk'
-import { BalanceData, getAdapter } from '@polkawallet/bridge'
-import { exec, execSync, spawn, ChildProcess } from 'child_process';
-import path from 'path';
+import { ISubmittableResult } from '@polkadot/types/types'
 import bn, { BigNumber } from 'bignumber.js'
-// import { getAdapter } from './adapters'
-
-import { RegistryError } from '@polkadot/types/types/registry';
-// import * as s from 'json-stringify-safe';
-// import flatted from 'flatted';
-// import { encodeAddress, decodeAddress } from "@polkadot/keyring";
-// import { BalanceChangeStatue } from '../../src/types';
-// import {Mangata} from '@mangata-finance/sdk'
-// import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../xcm_tests/testParams'
-// import { u8aToHex } from '@polkadot/util';
-// import { mnemonicToLegacySeed, hdEthereum } from '@polkadot/util-crypto';
-// const { ApiPromise } = require('@polkadot/api');
-// const { WsProvider } = require('@polkadot/rpc-provider');
-import { options } from '@acala-network/api';
-// import { SwapPromise } from "@acala-network/sdk-swap";
-import { WalletPromise } from "@acala-network/sdk-wallet";
-import {cryptoWaitReady} from "@polkadot/util-crypto"
-import { FixedPointNumber, Token } from "@acala-network/sdk-core";
+import fs from 'fs'
+import path from 'path'
+import { FixedPointNumber } from "@acala-network/sdk-core"
 import { Wallet } from "@acala-network/sdk/wallet/wallet.js"
-import { AcalaDex, AggregateDex } from "@acala-network/sdk-swap"
-import { AggregateDexSwapParams, TradingPath } from '@acala-network/sdk-swap/types.js'
-// import { AggregateDexSwapParams } from '../../node_modules/.pnpm/@acala-network+sdk-swap@4.1.9-13_@acala-network+api@5.1.2_@acala-network+eth-providers@2.7.19_7m57xuskb5lxcqt46rnn4nnyhe/node_modules/@acala-network/sdk-swap/index.ts'
-import { IndexObject, PathNodeValues, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
 import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
-import { getAssetRegistry, increaseIndex } from './../instructions/utils.ts'
+import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from '../instructions/types.ts'
 import { AssetNode } from './../instructions/AssetNode.ts'
-// import { SubmittableExtrinsic } from '@polkadot/api/promise/types'
-// const { options } = require('@acala-network/api');
-// import { Fixed18, convertToFixed18, calcSwapTargetAmount } from '@acala-network/api';
+import { getAssetRegistry, increaseIndex } from './../instructions/utils.ts'
 import { getSigner } from '../instructions/utils.ts'
-import { localRpcs } from './../instructions/txConsts.ts'
 import { getApiForNode } from './../instructions/apiUtils.ts'
+import { localRpcs } from './../instructions/txConsts.ts'
 
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const wsLocalChain = localRpcs["Acala"]
