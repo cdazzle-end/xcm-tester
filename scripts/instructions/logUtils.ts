@@ -558,11 +558,7 @@ export async function logProfits(relay: Relay, arbAmountOut: string, logFilePath
     let arbAmountOutUsd = new bn(arbAmountOut).times(new bn(tokenPrice))
     let arbAmountOutUsdString = `${arbAmountOutUsd.toFixed(2)}`
 
-    // let profitLogDatabase = {}
     let result = `${arbAmountOut}|$${arbAmountOutUsdString}`
-    // profitLogDatabase[logEntry] = result
-    // console.log(logEntry)
-    // console.log(arbAmountOut)
     console.log("PROFIT LOG DATABASE")
     console.log(`${logEntry}: ${result}`)
 

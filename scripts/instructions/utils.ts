@@ -17,11 +17,6 @@ import { ArbExecutionResult, ExtrinsicSetResultDynamic, IndexObject, Instruction
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
 
-
-
-
-
-
 // After reading log data, truncate the asset node path to the first swap node. To avoid unnecessary transfers
 export async function truncateAssetPath(nodes: AssetNode[], chopsticks: boolean){ 
     let firstKsmNodeIndex = -1
