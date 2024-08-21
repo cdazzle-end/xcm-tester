@@ -33,8 +33,7 @@ export async function getHdxSwapExtrinsicDynamic(
   assetInAmount: string, 
   assetOutAmount: string, 
   swapInstructions: SwapInstruction[], 
-  chopsticks: boolean = true, 
-  txIndex: number = 0, 
+  chopsticks: boolean = true,
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
   priceDeviationPercent: number = 2
@@ -47,9 +46,6 @@ export async function getHdxSwapExtrinsicDynamic(
     const router = new TradeRouter(poolService);
 
     let signer = await getSigner(chopsticks, false)
-    let accountNonce = await api.query.system.account(signer.address)
-    let nonce = accountNonce.nonce.toNumber()
-    nonce += txIndex
 
     let startAssetId = swapInstructions[0].assetInLocalId
 
@@ -128,7 +124,6 @@ export async function getHdxSwapExtrinsicDynamic(
       extrinsic: txFormatted,
       extrinsicIndex: extrinsicIndex.i,
       instructionIndex: instructionIndex,
-      nonce: nonce,
       assetSymbolIn: startAssetSymbol,
       assetSymbolOut: destAssetSymbolDynamic,
       assetAmountIn: fnInputAmount,
@@ -137,7 +132,6 @@ export async function getHdxSwapExtrinsicDynamic(
       pathAmount: pathAmount,
       api: api,
     }
-    increaseIndex(extrinsicIndex)
     return [swapTxContainer, remainingInstructions]
 }
 

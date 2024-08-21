@@ -32,7 +32,7 @@
         "node": ""
       },
       "{\"NativeAssetId\":{\"Token\":\"ACA\"}}": {
-        "xcmAmount": "106458361250596",
+        "xcmAmount": "52556538789108",
         "xcmAssetSymbol": "ACA",
         "xcmAssetId": {
           "NativeAssetId": {
@@ -68,7 +68,7 @@
         "node": ""
       },
       "{\"NativeAssetId\":{\"Token\":\"AUSD\"}}": {
-        "xcmAmount": "6391894510469",
+        "xcmAmount": "6401330816099",
         "xcmAssetSymbol": "aSEED",
         "xcmAssetId": {
           "NativeAssetId": {
@@ -117,7 +117,7 @@
         "node": ""
       },
       "\"224821240862170613278369189818311486111\"": {
-        "xcmAmount": "106467450853007",
+        "xcmAmount": "52565628391519",
         "xcmAssetSymbol": "xcACA",
         "xcmAssetId": "224821240862170613278369189818311486111",
         "xcmAssetDecimals": "12",
@@ -185,7 +185,7 @@
         "node": ""
       },
       "\"115\"": {
-        "xcmAmount": "31827361000095",
+        "xcmAmount": "31147916765058",
         "xcmAssetSymbol": "PHA",
         "xcmAssetId": "115",
         "xcmAssetDecimals": "12",
@@ -273,7 +273,7 @@
         "node": ""
       },
       "\"25\"": {
-        "xcmAmount": "821191142932940248386",
+        "xcmAmount": "801228564605201397768",
         "xcmAssetSymbol": "UNQ",
         "xcmAssetId": "25",
         "xcmAssetDecimals": "18",
@@ -319,11 +319,11 @@
     },
     "2035": {
       "\"PHA\"": {
-        "xcmAmount": "31763064928815",
+        "xcmAmount": "31083620693778",
         "xcmAssetSymbol": "PHA",
         "xcmAssetId": "PHA",
         "xcmAssetDecimals": "12",
-        "feeAmount": "1680000134",
+        "feeAmount": "1680000131",
         "feeAssetSymbol": "PHA",
         "feeAssetId": "PHA",
         "feeAssetDecimals": "12",
@@ -343,7 +343,7 @@
         "node": ""
       },
       "\"0\"": {
-        "xcmAmount": "543663772467401592356",
+        "xcmAmount": "801169715551113731759",
         "xcmAssetSymbol": "UNQ",
         "xcmAssetId": "0",
         "xcmAssetDecimals": "18",
@@ -382,7 +382,7 @@
     },
     "2000": {
       "{\"NativeAssetId\":{\"Token\":\"ACA\"}}": {
-        "xcmAmount": "106461021253007",
+        "xcmAmount": "52559198791519",
         "xcmAssetSymbol": "ACA",
         "xcmAssetId": {
           "NativeAssetId": {
@@ -429,17 +429,19 @@
         "node": ""
       },
       "{\"ForeignAssetId\":\"10\"}": {
-        "xcmAmount": "980788767982563360517",
-        "xcmDecimals": "",
-        "xcmAssetSymbol": "",
-        "xcmAssetId": "",
+        "xcmAmount": "801089345551113731759",
+        "xcmAssetSymbol": "UNQ",
+        "xcmAssetId": {
+          "ForeignAssetId": "10"
+        },
+        "xcmAssetDecimals": "18",
         "feeAmount": "80370000000000000",
-        "feeDecimals": "18",
         "feeAssetSymbol": "UNQ",
         "feeAssetId": {
           "ForeignAssetId": "10"
         },
-        "node": ""
+        "feeAssetDecimals": "18",
+        "node": "Acala"
       }
     },
     "2004": {
@@ -477,7 +479,7 @@
         "node": ""
       },
       "\"110021739665376159354538090254163045594\"": {
-        "xcmAmount": "6387658251210",
+        "xcmAmount": "6397094556840",
         "xcmAssetSymbol": "xcaUSD",
         "xcmAssetId": "110021739665376159354538090254163045594",
         "xcmAssetDecimals": "12",
@@ -545,7 +547,7 @@
         "node": ""
       },
       "\"108\"": {
-        "xcmAmount": "106340714191773",
+        "xcmAmount": "52438891730285",
         "xcmAssetSymbol": "ACA",
         "xcmAssetId": "108",
         "xcmAssetDecimals": "12",
@@ -669,11 +671,11 @@
         "node": ""
       },
       "\"8\"": {
-        "xcmAmount": "31757982225386",
+        "xcmAmount": "31078457709306",
         "xcmAssetSymbol": "PHA",
         "xcmAssetId": "8",
         "xcmAssetDecimals": "12",
-        "feeAmount": "5082703429",
+        "feeAmount": "5162984472",
         "feeAssetSymbol": "PHA",
         "feeAssetId": "8",
         "feeAssetDecimals": "12",
@@ -693,7 +695,7 @@
     },
     "2035": {
       "\"PHA\"": {
-        "xcmAmount": "31763065000095",
+        "xcmAmount": "31083620765058",
         "xcmAssetSymbol": "PHA",
         "xcmAssetId": "PHA",
         "xcmAssetDecimals": "12",

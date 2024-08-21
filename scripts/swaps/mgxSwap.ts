@@ -33,7 +33,6 @@ export async function getMgxSwapExtrinsic(
   expectedAmountOut: string, 
   swapInstructions: SwapInstruction[], 
   chopsticks: boolean = false,
-  txIndex: number, 
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
   priceDeviationPercent: number = 2
@@ -43,17 +42,12 @@ export async function getMgxSwapExtrinsic(
   console.log(`assetInSymbol: ${assetInSymbol} assetOutSymbol: ${assetOutSymbol} amountIn: ${amountIn} assetOutAmount: ${expectedAmountOut}`)
   let rpc = chopsticks ? wsLocalChain : mgxRpc
   const mangata: MangataInstance = Mangata.instance([rpc]);
-  // const provider = new WsProvider(wsLocalChain);
-  // const apiStandard = await ApiPromise.create({ provider });
   let assetNodes = [swapInstructions[0].assetNodes[0]]
     swapInstructions.forEach((instruction) => {
       assetNodes.push(instruction.assetNodes[1])
     })
   // await apiStandard.isReady;
   let signer = await getSigner(chopsticks, false)
-  let accountNonce = await mangata.query.getNonce(signer.address)
-  let nonce = accountNonce.toNumber()
-  nonce += txIndex
 
   // apiStandard.tx.xyk.
   // mangata.xyk.
@@ -90,15 +84,9 @@ export async function getMgxSwapExtrinsic(
 
     let inputBn = new BN(inputFixedPoint)
     let expectedOutBn = new BN(expectedOutMinusDeviation.toChainData())
-    // let inputAmount = new BN(amountIn).mul(new BN(10).pow(startTokenDecimals))
-    // let expectedOutAmount = new BN(assetOutAmount).mul(new BN(10).pow(endTokenDecimals))
     console.log(`inputAmount: ${inputBn} expectedOutAmount: ${expectedOutBn}`)
     let tokenPathIds = tokenPath.map((token) => token!.id)
-    // const args: MultiswapSellAsset = {
-    //   tokenIds: tokenPathIds,
-    //   amount: inputBn,
-    //   minAmountOut: expectedOutBn,
-    // }
+
     const args = {
       account: signer,
       tokenIds: tokenPathIds,
@@ -106,30 +94,7 @@ export async function getMgxSwapExtrinsic(
       minAmountOut: expectedOutBn,
     }
   let mgxTx = await mangata.submitableExtrinsic.multiswapSellAsset(args)
-  let reversePath = tokenPathSymbols.reverse().map((symbol) => {
-    for(let asset of Object.keys(assets)){
-      if(assets[asset].symbol === symbol){
-        return assets[asset]
-      }
-    } 
-  })
-  let reverseSupply = expectedOutMinusDeviation
-  let reversePriceDev = inputBn.mul(new BN(5)).div(new BN(100))
-  let reverseTarget = inputBn.sub(reversePriceDev)
 
-  // let reverseTxParams: ReverseSwapExtrinsicParams = {
-  //   chainId: 2110,
-  //   chain: "Mangata",
-  //   path: reversePath,
-  //   supply: reverseSupply,
-  //   target: reverseTarget,
-  //   module : "submitableExtrinsic",
-  //   call: "multiswapSellAsset",
-  //   supplyAssetId: assetOutSymbol,
-  //   targetAssetId: assetInSymbol
-
-  // }
-  // console.log(JSON.stringify(mgxTx.toHuman()))
   let mgxTxContainer: SwapExtrinsicContainer = {
     relay: 'kusama',
     chainId: 2110,
@@ -138,17 +103,14 @@ export async function getMgxSwapExtrinsic(
     extrinsic: mgxTx,
     extrinsicIndex: extrinsicIndex.i,
     instructionIndex: instructionIndex,
-    nonce: nonce,
     assetSymbolIn: assetInSymbol,
     assetSymbolOut: assetOutSymbol,
     assetAmountIn: new FixedPointNumber(amountIn, startTokenDecimals),
     expectedAmountOut: expectedOutFixedPoint,
     pathType: swapType,
     pathAmount: amountIn,
-    // reverseTx: reverseTxParams,
     api: await mangata.api()
   }
-  increaseIndex(extrinsicIndex)
   return mgxTxContainer
 }
 async function run(){

@@ -32,8 +32,7 @@ const bncRpc = "wss://hk.p.bifrost-rpc.liebi.com/ws"
 export async function getBncPolkadotSwapExtrinsicDynamic( 
   swapType: PathType,
   swapInstructions: SwapInstruction[], 
-  chopsticks: boolean = true, 
-  txIndex: number, 
+  chopsticks: boolean = true,
   extrinsicIndex: IndexObject, 
   instructionIndex: number[], 
   priceDeviationPercent: number = 2
@@ -103,12 +102,6 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
     throw new Error("BNC Polkadot dexApi.api is undefined")
   }
 
-  let accountNonce = await dexApi.api.query.system.account(accountPair.address)
-  // let accountNonce = await api.query.system.account(signer.address)
-  let nonce = accountNonce.nonce.toNumber()
-  nonce += txIndex
-  // console.log("BNC Nonce: " + nonce)
-
   const account = accountPair.address;
   const standardPairs = await firstValueFrom(dexApi.standardPairOfTokens(tokens));
   const standardPools: any = await firstValueFrom(dexApi.standardPoolOfPairs(standardPairs));
@@ -170,7 +163,6 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
     extrinsic: extrinsics,
     extrinsicIndex: extrinsicIndex.i,
     instructionIndex: instructionIndex,
-    nonce: nonce,
     assetAmountIn: tokenInAmountFN,
     assetSymbolIn: startAsset,
     // pathInLocalId: tokenIn.assetId,

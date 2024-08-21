@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 import { AssetNode } from './AssetNode.ts';
 import { runAndReturnTargetArb } from './executeArbFallback.ts';
 import { arb_wallet_kusama, dotTargetNode, ksmTargetNode, live_wallet_3 } from './txConsts.ts';
-import { ArbExecutionResult, ExtrinsicSetResultDynamic, IndexObject, InstructionType, JsonPathNode, LastNode, MyAssetRegistryObject, PathData, PathType, Relay, SingleSwapResultData, SingleTransferResultData, SwapInstruction, SwapTxStats, TransferInstruction, TransferTxStats, TxDetails } from './types.ts';
+import { ArbExecutionResult, AsyncFileData, ExtrinsicSetResultDynamic, IndexObject, InstructionType, JsonPathNode, LastNode, MyAssetRegistryObject, PathData, PathType, Relay, SingleSwapResultData, SingleTransferResultData, SwapInstruction, SwapTxStats, TransferInstruction, TransferTxStats, TxDetails } from './types.ts';
 
 // import { buildTransferExtrinsic } from './extrinsicUtils.ts';
 // Get the __dirname equivalent in ES module
@@ -188,7 +188,7 @@ export function parseJsonNodePathData(jsonObject: JsonPathNode): PathData{
 // Reads a json object from the arbitrage result log and returns the corresponding paraspell asset and amount
 export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Relay ){
     // console.log("Reading log data: " + JSON.stringify(jsonObject))
-    console.log(`Json Node Data: ${JSON.stringify(jsonObject, null, 2)}`)
+    // console.log(`Json Node Data: ${JSON.stringify(jsonObject, null, 2)}`)
     let [chainId, assetLocalId] = parsePathNodeKey(jsonObject.node_key)
 
     let assetRegistryObject = getAssetRegistryObject(chainId, assetLocalId, relay)
@@ -198,7 +198,7 @@ export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Rela
     let paraspellChainName = getParaspellChainName(relay, chainId)
     let pathDataFormatted = parseJsonNodePathData(jsonObject)
 
-    console.log(`Parsed Path Data: ${JSON.stringify(pathDataFormatted, null, 2)}`)
+    // console.log(`Parsed Path Data: ${JSON.stringify(pathDataFormatted, null, 2)}`)
 
     let pathType: PathType = jsonObject.path_type as PathType
 
@@ -210,55 +210,7 @@ export function readLogData(jsonObject: JsonPathNode | JsonPathNode, relay: Rela
         pathType: pathType,
         pathData: pathDataFormatted
     });
-    
-    console.log(`Asset Node path data: ${JSON.stringify(assetNode.pathData)}`)
-
     return assetNode
-
-    // if(paraspellChainName == "Kusama" || paraspellChainName == "Polkadot"){
-    //     let assetNode = new AssetNode({
-    //         // paraspellAsset: {symbol: assetSymbol},
-    //         paraspellChain: paraspellChainName,
-    //         assetRegistryObject: assetRegistryObject,
-    //         pathValue: jsonObject.path_value.toString(),
-    //         pathType: pathType,
-    //         pathData: pathDataFormatted
-    //     });
-    //     return assetNode
-    // } else {
-
-    //     // If asset has location, get paraspell asset. Else, shouldn't need to worry about paraspell xcm asset
-    //     let hasLocation = assetRegistryObject.hasLocation;
-    //     let paraspellAsset 
-    //     if (hasLocation){
-    //         paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetSymbol)
-
-    //         if(paraspellChainName == undefined){
-    //             throw new Error("Paraspell chain name not found for chain id " + chainId)
-    //         }
-    //         if(paraspellAsset == null){
-    //             paraspellAsset = getAssetBySymbolOrId(paraspellChainName, assetId, assetLocalId) // Should probably search by local ID first instead of symbol
-    //             if (paraspellAsset == null){
-    //                 throw new Error("Paraspell asset not found for chain " + paraspellChainName + " and asset id " + assetLocalId)
-    //             }
-    //         }
-    //     } else {
-    //         paraspellAsset = null
-    //     }
-
-        
-    //     let assetNode = new AssetNode({
-    //         // paraspellAsset: paraspellAsset,
-    //         paraspellChain: paraspellChainName,
-    //         assetRegistryObject: assetRegistryObject,
-    //         pathValue: jsonObject.path_value.toString(),
-    //         pathType: pathType,
-    //         pathData: pathDataFormatted
-    //     });
-    //     // console.log(JSON.stringify(assetNode))
-    //     return assetNode
-    // }
-    
 }
 
 export function findValueByKey(obj: any, targetKey: any): any {
@@ -887,6 +839,68 @@ export function getWalletAddressFormatted(signer: KeyringPair, key: Keyring, cha
         return key.encodeAddress(signer.address, ss58Format.toNumber())
     }
 
+}
+
+export async function getLatestArbResult(relay: Relay): Promise<AsyncFileData>{
+    let latestFile = relay === 'kusama' ? await getLatestAsyncFilesKusama() : await getLatestAsyncFilesPolkadot()
+
+    let small, medium, big, smallMinimum, mediumMinimum, bigMinimum;
+    if (relay === 'kusama'){
+        small = 0.1
+        smallMinimum = 0.005
+        medium = 0.5
+        mediumMinimum = 0.01
+        big = 1
+        bigMinimum = 0.05
+    } else {
+        small = 0.5
+        smallMinimum = 1
+        medium = 2
+        mediumMinimum = 1
+        big = 5
+        bigMinimum = 1
+    }
+
+
+    let estimatedResults = latestFile.map(async ([inputAmount, filePath]) => {
+        let latestFileData: JsonPathNode[] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+
+        let estimatedOutput = latestFileData[latestFileData.length - 1].path_value - inputAmount
+        console.log(`Estimated output for input amount ${inputAmount}: ${estimatedOutput}`)
+        let asyncFileData: AsyncFileData = {
+            inputAmount: inputAmount,
+            estimatedOutput: estimatedOutput,
+            latestFileData: latestFileData
+        }
+        return asyncFileData
+    })
+
+    let results = await Promise.all(estimatedResults)
+
+    let mediumResult = results.find(asyncFileData => {
+        return asyncFileData.inputAmount == medium   
+    })
+    let smallResult = results.find(asyncFileData => {
+        return asyncFileData.inputAmount == small
+    })
+
+    if(!smallResult || !mediumResult){
+        throw new Error("Cant find result for small or medium")
+    }
+
+    if(smallResult.estimatedOutput > mediumResult.estimatedOutput && smallResult.estimatedOutput > mediumMinimum){
+        console.log("returning smale result. estimated output: ", smallResult.estimatedOutput);
+        return smallResult
+    }
+    if(mediumResult.estimatedOutput > mediumMinimum){
+        console.log("Returning medium result. Estimated output: ", mediumResult.estimatedOutput)
+        return mediumResult
+    }
+    if(smallResult.estimatedOutput > smallMinimum){
+        console.log("Returning small result. Estimated output: ", smallResult.estimatedOutput)
+        return smallResult
+    }
+    throw new Error("No suitable result found")
 }
 
 //TODO maybe make own file

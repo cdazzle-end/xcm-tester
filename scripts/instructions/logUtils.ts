@@ -182,6 +182,7 @@ export async function logInstructions(instructions: (SwapInstruction | TransferI
 
     // console.log(`Data written to file: ${filePath}`);
 }
+// REMOVE
 export function logArbExecutionResults(relay: Relay, arbResults: ArbExecutionResult[], logFilePath: string, chopsticks: boolean){
     // Get day and time for file name
     let logFileStrings = logFilePath.split("\\");
@@ -220,6 +221,7 @@ export function logArbExecutionResults(relay: Relay, arbResults: ArbExecutionRes
 
     // console.log(`Data written to file: ${mainFilePath}`);
 }
+// REMOVE
 export async function logSwapTxResults(relay: Relay, txResults: any, logFilePath: string, chopsticks: boolean) {
     // let logData = JSON.parse(fs.readFileSync(logFilePath, 'utf8'));
     let logFileStrings = logFilePath.split("\\");
@@ -258,6 +260,7 @@ export async function logSwapTxResults(relay: Relay, txResults: any, logFilePath
 
     // console.log(`Data written to file: ${mainFilePath}`);
 }
+// REMOVE
 export function logTransferTxStats(relay: Relay, transferTxStats: TransferTxStats[], logFilePath: string, chopsticks: boolean){
     // Get day and time for file name
     let logFileStrings = logFilePath.split("\\");
@@ -296,6 +299,7 @@ export function logTransferTxStats(relay: Relay, transferTxStats: TransferTxStat
 
     // console.log(`Data written to file: ${mainFilePath}`);
 }
+// REMOVE 
 export function logSwapTxStats(relay: Relay, swapTxStats: SwapTxStats[], logFilePath: string, chopsticks: boolean){
     // Get day and time for file name
     let logFileStrings = logFilePath.split("\\");
@@ -344,6 +348,9 @@ export function logExtrinsicSetResults(relay: Relay, extrinsicSetResults: Extrin
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
     let logFileTime = logFileStrings[logFileStrings.length - 1]
+
+    const executionSummary: ArbExecutionResult[] = extrinsicSetResults.allExtrinsicResults.map((extrinsicResult) => extrinsicResult.arbExecutionResult )
+    extrinsicSetResults.executionSummary = executionSummary
 
     // Data to write to file
     let swapData = JSON.stringify(extrinsicSetResults, null, 2)

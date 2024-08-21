@@ -97,6 +97,10 @@ export const multiassetsDepositEventDictionary = {
         }
     },  
 }
+// Transfers where message hash or id dont match up:
+// Hydra -> Unique
+// Interlay -> Phala
+
 
 // Events related to the transfer on the receiving chain
 export const depositEventDictionary: DepositEventDictionary = {
@@ -588,7 +592,7 @@ export const depositEventDictionary: DepositEventDictionary = {
             xcm: {
                 section: "dmpQueue",
                 method: "ExecutedDownward",
-                idIndex: 1, // messageHash, messageId are different
+                idIndex: -1, // messageHash, messageId are different
             },
             deposit: {
                 section: "common",
@@ -655,7 +659,7 @@ export const depositEventDictionary: DepositEventDictionary = {
                 xcm: {
                     section: "xcmpQueue",
                     method: "Success",
-                    idIndex: 1,
+                    idIndex: -1,
                 },
                 deposit: {
                     section: "balances",

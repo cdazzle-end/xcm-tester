@@ -21,19 +21,12 @@ export async function getHkoSwapExtrinsic(
   assetInAmount: string, 
   assetOutAmount: string, 
   swapInstructions: any[], 
-  chopsticks: boolean = true, 
-  txIndex: number, 
+  chopsticks: boolean = true,
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
   priceDeviationPercent: number = 2
   ) {
-    let rpc = chopsticks ? wsLocalChain : hkoWs  
-    
     // REVIEW Changing api. Create without options, use getApiForNode()
-
-    // const api = await ApiPromise.create(options({
-    //       provider: new WsProvider(rpc)
-    //     }))
 
     const api = await getApiForNode('ParallelHeiko', chopsticks)
       let assetNodes = [swapInstructions[0].assetNodes[0]]
@@ -41,19 +34,11 @@ export async function getHkoSwapExtrinsic(
       assetNodes.push(instruction.assetNodes[1])
     })
 
-      let signer = await getSigner(chopsticks, false)
-
-      let accountNonce = await api.query.system.account(signer.address)
-      let nonce = accountNonce.nonce.toNumber()
-      nonce += txIndex
-
       let assetIn = getAssetBySymbol(startAssetSymbol)
-      let assetInLocalId = assetIn.tokenData.localId
       let assetInDecimals = assetIn.tokenData.decimals
       let assetInAmountFn = new FixedPointNumber(assetInAmount, Number.parseInt(assetInDecimals))
 
       let assetOut = getAssetBySymbol(destAssetSymbol)
-      let assetOutLocalId = assetOut.tokenData.localId
       let assetOutDecimals = assetOut.tokenData.decimals
       let assetOutAmountFn = new FixedPointNumber(assetOutAmount, Number.parseInt(assetOutDecimals))
 
@@ -69,17 +54,7 @@ export async function getHkoSwapExtrinsic(
         let asset = getAssetBySymbol(symbol)
         return Number.parseInt(asset.tokenData.localId)
       })
-      // const route = [119, 0, 100]
-      // const amount = 840868780473
       let swapTx = await api.tx.ammRoute.swapExactTokensForTokens(tokenPathIds,assetInAmountFn.toChainData(), expectedOutMinusDeviation.toChainData())
-
-      let reverseTokenPathIds = tokenPathSymbols.reverse().map((symbol) => {
-        let asset = getAssetBySymbol(symbol)
-        return Number.parseInt(asset.tokenData.localId)
-      })
-      let reverseSupply = expectedOutMinusDeviation
-      let reversePriceDev = assetInAmountFn.mul(new FixedPointNumber(5)).div(new FixedPointNumber(100))
-      let reverseTarget = assetInAmountFn.sub(reversePriceDev)
 
       let swapTxContainer: SwapExtrinsicContainer = {
         relay: 'kusama',
@@ -91,7 +66,6 @@ export async function getHkoSwapExtrinsic(
         extrinsic: swapTx,
         extrinsicIndex: extrinsicIndex.i,
         instructionIndex: instructionIndex,
-        nonce: nonce,
         assetSymbolIn: startAssetSymbol,
         assetSymbolOut: destAssetSymbol,
         assetAmountIn: assetInAmountFn,
@@ -99,8 +73,6 @@ export async function getHkoSwapExtrinsic(
         api: api,
 
       }
-      // return [swapTx, nonce]
-      increaseIndex(extrinsicIndex)
       return swapTxContainer
 }
 

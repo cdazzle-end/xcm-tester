@@ -46,28 +46,16 @@ export async function getBsxSwapExtrinsicDynamic(
   assetInAmount: string, 
   assetOutAmount: string, 
   swapInstructions: any[], 
-  chopsticks: boolean = true, 
-  txIndex: number = 0, 
+  chopsticks: boolean = true,
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
   priceDeviationPercent: number = 2
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
-    // console.log(`BSX (${startAssetSymbol}) -> (${destAssetSymbol}) assetInAmount: ${assetInAmount} assetOutAmount: ${assetOutAmount}`)
-    // let endpoints = getAllNodeProviders("Basilisk");
-    // let rpc = chopsticks ? wsLocalChain : endpoints[0]
-
-    // const provider = new WsProvider(rpc);
-    // const api = new ApiPromise({ provider });
 
     const api = await getApiForNode("Basilisk", chopsticks)
     await api.isReady;
     const poolService = new PoolService(api);
     const router = new TradeRouter(poolService);
-    let signer = await getSigner(chopsticks, false)
-    let accountNonce = await api.query.system.account(signer.address)
-    let nonce = accountNonce.nonce.toNumber()
-    nonce += txIndex
-
 
     let allAssets: Asset[] = await router.getAllAssets()
 
@@ -135,7 +123,6 @@ export async function getBsxSwapExtrinsicDynamic(
       extrinsic: txFormatted,
       extrinsicIndex: extrinsicIndex.i,
       instructionIndex: instructionIndex,
-      nonce: nonce,
       assetSymbolIn: startAssetSymbol,
       assetSymbolOut: destAssetSymbolDynamic,
       assetAmountIn: fnInputAmount,
@@ -144,7 +131,6 @@ export async function getBsxSwapExtrinsicDynamic(
       pathAmount: pathAmount,
       api: api,
     }
-    increaseIndex(extrinsicIndex)
     return [swapTxContainer, remainingInstructions]
 }
 

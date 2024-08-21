@@ -269,7 +269,12 @@ function getParaIdFromAssetNode(node: TNode | "Kusama" | "Polkadot", assetNode: 
 }
 
 
-export async function buildSwapExtrinsicDynamic(relay: Relay, instructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, chopsticks: boolean): Promise<[SwapExtrinsicContainer, SwapInstruction[]]> {
+export async function buildSwapExtrinsicDynamic(
+    relay: Relay, 
+    instructions: SwapInstruction[],
+    extrinsicIndex: IndexObject, 
+    chopsticks: boolean
+): Promise<[SwapExtrinsicContainer, SwapInstruction[]]> {
     let chainId = instructions[0].chain
     let swapType: PathType = instructions[0].pathType
     let swapData = instructions[0].pathData
@@ -287,18 +292,18 @@ export async function buildSwapExtrinsicDynamic(relay: Relay, instructions: Swap
     })
     let swapContainer, remainingInstructions
     if(relay == 'kusama'){
-        [swapContainer, remainingInstructions] = await buildKusamaSwapExtrinsics(instructions, chainId, swapType, startAsset, destAsset, amountIn, expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex)
+        [swapContainer, remainingInstructions] = await buildKusamaSwapExtrinsics(instructions, chainId, swapType, startAsset, destAsset, amountIn, expectedAmountOut, chopsticks, extrinsicIndex, instructionIndex)
     } else if (relay == 'polkadot'){
-        [swapContainer, remainingInstructions] = await buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapData, startAsset, destAsset, amountIn, expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex)
+        [swapContainer, remainingInstructions] = await buildPolkadotSwapExtrinsic(instructions, chainId, swapType, swapData, startAsset, destAsset, amountIn, expectedAmountOut, chopsticks, extrinsicIndex, instructionIndex)
     } else {
         throw new Error("Invalid relay")
     }
     return [swapContainer, remainingInstructions]
 }
 
-async function buildKusamaSwapExtrinsics(instructions, chainId, swapType: PathType, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex){
+async function buildKusamaSwapExtrinsics(instructions, chainId, swapType: PathType, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, extrinsicIndex, instructionIndex){
     if(chainId == 2000){
-        let [swapTxContainer, remainingInstructions] = await getKarSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2000], extrinsicIndex, instructionIndex)
+        let [swapTxContainer, remainingInstructions] = await getKarSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, extrinsicIndex, instructionIndex)
         let swapAssetNodes = swapTxContainer.assetNodes
         let startAssetDynamic = swapAssetNodes[0].getAssetRegistrySymbol()
         let destAssetDynamic = swapAssetNodes[swapAssetNodes.length - 1].getAssetRegistrySymbol()
@@ -314,9 +319,8 @@ async function buildKusamaSwapExtrinsics(instructions, chainId, swapType: PathTy
         console.log("**************************************")
         console.log(descriptorString)
         console.log("**************************************")
-        let [swapTxContainer, remainingInstructions] = await getBncSwapExtrinsicDynamic(swapType, instructions, chopsticks, chainNonces[2001], extrinsicIndex, instructionIndex)
+        let [swapTxContainer, remainingInstructions] = await getBncSwapExtrinsicDynamic(swapType, instructions, chopsticks, extrinsicIndex, instructionIndex)
         swapTxContainer.txString = descriptorString
-        chainNonces[2001]++
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2023){
         const descriptorString = `MOVR ${startAsset} -> ${destAsset}`
@@ -324,10 +328,9 @@ async function buildKusamaSwapExtrinsics(instructions, chainId, swapType: PathTy
         console.log(descriptorString)
         console.log("**************************************")
         let remainingInstructions: SwapInstruction[] = []
-
         let testnet = false
         let movrBatchSwapParams = await getMovrSwapTx(instructions, testnet)
-        let swapTxContainer = await formatMovrTx(movrBatchSwapParams, instructions, chainNonces, extrinsicIndex, instructionIndex, chopsticks)
+        let swapTxContainer = await formatMovrTx(movrBatchSwapParams, instructions, extrinsicIndex, instructionIndex, chopsticks)
         swapTxContainer.txString = descriptorString
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2090){
@@ -335,18 +338,16 @@ async function buildKusamaSwapExtrinsics(instructions, chainId, swapType: PathTy
         console.log("**************************************")
         console.log(descriptorString)
         console.log("**************************************")
-        let [swapTxContainer, remainingInstructions] = await getBsxSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2090], extrinsicIndex, instructionIndex)
+        let [swapTxContainer, remainingInstructions] = await getBsxSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, extrinsicIndex, instructionIndex)
         swapTxContainer.txString = descriptorString
-        chainNonces[2090]++
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2110){
         const descriptorString = `MGX ${startAsset} -> ${destAsset}`
         console.log("**************************************")
         console.log(descriptorString)
         console.log("**************************************")
-        let swapTxContainer = await getMgxSwapExtrinsic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2110], extrinsicIndex,instructionIndex)
+        let swapTxContainer = await getMgxSwapExtrinsic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, extrinsicIndex,instructionIndex)
         swapTxContainer.txString = descriptorString
-        chainNonces[2110]++
         let remainingInstructions: SwapInstruction[] = []
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2085){
@@ -354,9 +355,8 @@ async function buildKusamaSwapExtrinsics(instructions, chainId, swapType: PathTy
         console.log("**************************************")
         console.log(descriptorString)
         console.log("**************************************")
-        let swapTxContainer = await getHkoSwapExtrinsic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2085], extrinsicIndex, instructionIndex)
+        let swapTxContainer = await getHkoSwapExtrinsic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, extrinsicIndex, instructionIndex)
         swapTxContainer.txString = descriptorString
-        chainNonces[2085]++
         let remainingInstructions: SwapInstruction[] = []
         return [swapTxContainer, remainingInstructions]
     } else {
@@ -364,11 +364,11 @@ async function buildKusamaSwapExtrinsics(instructions, chainId, swapType: PathTy
     }
 }
 
-async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType: PathType, swapData, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, chainNonces, extrinsicIndex, instructionIndex){
+async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType: PathType, swapData, startAsset, destAsset, amountIn,expectedAmountOut, chopsticks, extrinsicIndex, instructionIndex){
     console.log("**************************************")
     console.log("Building Polkadot Swap Extrinsic")
     if(chainId == 2000){
-        let [swapTxContainer, remainingInstructions] = await getAcaSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2000], extrinsicIndex, instructionIndex)
+        let [swapTxContainer, remainingInstructions] = await getAcaSwapExtrinsicDynamic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, extrinsicIndex, instructionIndex)
         let swapAssetNodes = swapTxContainer.assetNodes
         let startAssetDynamic = swapAssetNodes[0].getAssetRegistrySymbol()
         let destAssetDynamic = swapAssetNodes[swapAssetNodes.length - 1].getAssetRegistrySymbol()
@@ -385,9 +385,8 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType: PathT
             const descriptorString = `BifrostPolkadot ${startAsset} -> ${destAsset}`
             console.log(descriptorString)
             console.log("**************************************")
-            let [swapTxContainer, remainingInstructions] = await getBncPolkadotSwapExtrinsicDynamic(swapType, instructions, chopsticks, chainNonces[2001], extrinsicIndex, instructionIndex)
+            let [swapTxContainer, remainingInstructions] = await getBncPolkadotSwapExtrinsicDynamic(swapType, instructions, chopsticks, extrinsicIndex, instructionIndex)
             swapTxContainer.txString = descriptorString
-            chainNonces[2001]++
             return [swapTxContainer, remainingInstructions]
 
     }else if (chainId == 2004){
@@ -398,7 +397,7 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType: PathT
         let remainingInstructions: SwapInstruction[] = []
 
         let testnet = false
-        let swapTxContainer = await getGlmrSwapTx(instructions, testnet, chainNonces, extrinsicIndex, instructionIndex)
+        let swapTxContainer = await getGlmrSwapTx(instructions, testnet, extrinsicIndex, instructionIndex)
         swapTxContainer.txString = descriptorString
         return [swapTxContainer, remainingInstructions]
     } else if (chainId == 2012){
@@ -406,9 +405,8 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType: PathT
         const descriptorString = `Parallel ${startAsset} -> ${destAsset}`
         console.log(descriptorString)
         console.log("**************************************")
-        let swapTxContainer = await getParaSwapExtrinsic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2085], extrinsicIndex, instructionIndex)
+        let swapTxContainer = await getParaSwapExtrinsic(swapType, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, extrinsicIndex, instructionIndex)
         swapTxContainer.txString = descriptorString
-        chainNonces[2085]++
         let remainingInstructions: SwapInstruction[] = []
         return [swapTxContainer, remainingInstructions]
     } else if(chainId == 2034){
@@ -416,9 +414,8 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType: PathT
         const descriptorString = `HydraDX ${startAsset} -> ${destAsset}`
         console.log(descriptorString)
         console.log("**************************************")
-        let [swapTxContainer, remainingInstructions] = await getHdxSwapExtrinsicDynamic(swapType, swapData, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, chainNonces[2090], extrinsicIndex, instructionIndex)
+        let [swapTxContainer, remainingInstructions] = await getHdxSwapExtrinsicDynamic(swapType, swapData, startAsset, destAsset, amountIn, expectedAmountOut, instructions, chopsticks, extrinsicIndex, instructionIndex)
         swapTxContainer.txString = descriptorString
-        chainNonces[2090]++
         return [swapTxContainer, remainingInstructions]
     }  else {
         throw new Error("Chain not supported")

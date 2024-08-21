@@ -21,8 +21,7 @@ export async function getParaSwapExtrinsic(
   assetInAmount: string, 
   assetOutAmount: string, 
   swapInstructions: any[], 
-  chopsticks: boolean = true, 
-  txIndex: number, 
+  chopsticks: boolean = true,
   extrinsicIndex: IndexObject, 
   instructionIndex: number[],
   priceDeviationPercent: number = 2
@@ -42,9 +41,6 @@ export async function getParaSwapExtrinsic(
 
       let signer = await getSigner(chopsticks, false)
       console.log("Signer: ", signer.address)
-      let accountNonce = await api.query.system.account(signer.address)
-      let nonce = accountNonce.nonce.toNumber()
-      nonce += txIndex
 
       console.log("Swap instructions: ", swapInstructions.length)
       let assetIn = getAssetBySymbol(relay, startAssetSymbol)
@@ -87,7 +83,6 @@ export async function getParaSwapExtrinsic(
         extrinsic: swapTx,
         extrinsicIndex: extrinsicIndex.i,
         instructionIndex: instructionIndex,
-        nonce: nonce,
         assetSymbolIn: startAssetSymbol,
         assetSymbolOut: destAssetSymbol,
         assetAmountIn: assetInAmountFn,
@@ -96,8 +91,6 @@ export async function getParaSwapExtrinsic(
         // reverseTx: reverseTxParams
 
       }
-      // return [swapTx, nonce]
-      increaseIndex(extrinsicIndex)
       return swapTxContainer
 }
 

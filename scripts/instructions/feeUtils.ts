@@ -240,7 +240,7 @@ async function createDepositEventListener(
             events.forEach((record) => {
                 eventRecords.push(record)
                 const { event, phase } = record;
-                console.log(`Section: ${event.section} | Method: ${event.method}`)
+                // console.log(`Section: ${event.section} | Method: ${event.method}`)
 
                 if(event.section === "common"){
                     // console.log(`COMMON EVENT: ${JSON.stringify(event, null, 2)}`)

@@ -257,8 +257,7 @@ export async function getKarSwapExtrinsicDynamic(
     amountIn: string, 
     expectedAmountOut: number, 
     swapInstructions: SwapInstruction[], 
-    chopsticks: boolean = true, 
-    txIndex: number, 
+    chopsticks: boolean = true,
     extrinsicIndex: IndexObject, 
     instructionIndex: number[], 
     // pathNodeValues: PathNodeValues,
@@ -269,13 +268,6 @@ export async function getKarSwapExtrinsicDynamic(
     // const api = new ApiPromise(options({ provider }));
     const api = await getApiForNode("Karura", chopsticks)
     await api.isReady;
-
-    
-    const signer = await getSigner(chopsticks, false);
-  
-    let accountNonce = await api.query.system.account(signer.address)
-    let nonce = accountNonce.nonce.toNumber()
-    nonce += txIndex
 
     const wallet = new Wallet(api)
     await wallet.isReady
@@ -384,7 +376,6 @@ export async function getKarSwapExtrinsicDynamic(
             extrinsic: swapTx,
             extrinsicIndex: extrinsicIndex.i,
             instructionIndex: instructionIndex,
-            nonce: nonce,
             assetAmountIn: supplyAmount,
             expectedAmountOut: expectedOutAmountFixed,
             assetSymbolIn: startAssetDynamic,
@@ -396,9 +387,6 @@ export async function getKarSwapExtrinsicDynamic(
             api: api,
             // reverseTx: reverseTx
         }
-
-        // extrinsicNodesIndex += 1;
-        increaseIndex(extrinsicIndex)
         return [swapTxContainer, remainingInstructions]
 
 }

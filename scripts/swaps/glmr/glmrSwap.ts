@@ -629,7 +629,12 @@ export function getV3PoolAddress(token0: string, token1: string,  deployer: stri
     return poolAddress
 }
 
-export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsticks: boolean, chainNonces: ChainNonces, extrinsicIndex: IndexObject, instructionIndex: number[]): Promise<SwapExtrinsicContainer>{
+export async function getGlmrSwapTx(
+    swapInstructions: SwapInstruction[], 
+    chopsticks: boolean,
+    extrinsicIndex: IndexObject, 
+    instructionIndex: number[]
+): Promise<SwapExtrinsicContainer>{
     let rpcProvider;
     let wallet;
     let swapManagerContractAddress;
@@ -784,7 +789,6 @@ export async function getGlmrSwapTx(swapInstructions: SwapInstruction[], chopsti
         extrinsicIndex: extrinsicIndex.i,
         instructionIndex: instructionIndex,
         txString: descriptorString,
-        nonce: chainNonces[2004],
         assetSymbolIn: startAsset,
         assetSymbolOut: destAsset,
         assetAmountIn: initialInputAmount,

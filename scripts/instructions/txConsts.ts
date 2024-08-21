@@ -67,15 +67,16 @@ export const testNets = [
     "Acala",
     "BifrostPolkadot",
     "Moonbeam",
-    "Phala",
+    // "Phala",
     "HydraDX",
     "Interlay",
     // "Astar",
     // "Polkadex",
     "AssetHubPolkadot",
     "Parallel",
-    "Unique"
+    // "Unique"
 ]
+// yarn start xcm -r configs/polkadot.yml -p configs/hydradx.yml configs/statemint.yml configs/moonbeam.yml configs/acala.yml configs/bifrost-polkadot.yml configs/parallel.yml configs/interlay.yml 
 
 export const ksmRpc = "wss://kusama-rpc.dwellir.com"
 export const dotRpc = "wss://polkadot-rpc.dwellir.com"

@@ -27,11 +27,9 @@ export async function getAcaSwapExtrinsicDynamic(
     amountIn: string, 
     expectedAmountOut: number, 
     swapInstructions: SwapInstruction[], 
-    chopsticks: boolean = true, 
-    txIndex: number, 
+    chopsticks: boolean = true,
     extrinsicIndex: IndexObject, 
-    instructionIndex: number[], 
-    // pathNodeValues: PathNodeValues,
+    instructionIndex: number[],
     priceDeviationPercent: number = 2
 ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
     // let rpc = chopsticks ? wsLocalChain : acaRpc
@@ -45,10 +43,6 @@ export async function getAcaSwapExtrinsicDynamic(
     console.log("Acala api is ready")
     
     const signer = await getSigner(chopsticks, false);
-  
-    let accountNonce = await api.query.system.account(signer.address)
-    let nonce = accountNonce.nonce.toNumber()
-    nonce += txIndex
 
     const wallet = new Wallet(api)
     await wallet.isReady
@@ -141,19 +135,11 @@ export async function getAcaSwapExtrinsicDynamic(
         let tokenReserves = targetStablePool.liquidityStats.map((stat) => new bn(stat))
         let tokenShares = targetStablePool.tokenShares.map((share) => new bn(share))
 
-        // let inputAmountAsBalance = new FixedPointNumber(supplyAmount.toChainData(), startToken.decimals)
         let inputAmountFormatted = new bn(amountInDynamic).times(new bn(10).pow(new bn(startToken.decimals)))
-        // let outputAmountAsBalance = expectedOutAmountFixed
         let outputAmountFormatted = new bn(expectedAmountOutDynamic).times(new bn(10).pow(new bn(destToken.decimals)))
 
         let extrsinsicInputDx = tokenShares[inputIndex].times(inputAmountFormatted.dividedBy(tokenReserves[inputIndex])).integerValue(BigNumber.ROUND_DOWN)
         let extrinsicOutputDy = tokenShares[outputIndex].times((outputAmountFormatted.div(tokenReserves[outputIndex]))).integerValue(BigNumber.ROUND_DOWN)
-
-        // let feeRate = new bn(targetStablePool.swapFee).div(targetStablePool.feePrecision)
-        // let feeAmountReverse = extrinsicOutputDy.times(feeRate)
-
-        // console.log(`Input ${startAssetDynamic} Amount: ${inputAmountFormatted} | Output ${destAssetDynamic} Amount: ${outputAmountFormatted}`)
-        // console.log(`Input ${startAssetDynamic} Shares: ${extrsinsicInputDx} | Output ${destAssetDynamic} Shares: ${extrinsicOutputDy}`)
 
         swapTx = await api.tx.stableAsset
         .swap(
@@ -174,7 +160,6 @@ export async function getAcaSwapExtrinsicDynamic(
             extrinsic: swapTx,
             extrinsicIndex: extrinsicIndex.i,
             instructionIndex: instructionIndex,
-            nonce: nonce,
             assetAmountIn: supplyAmount,
             expectedAmountOut: expectedOutAmountFixed,
             assetSymbolIn: startAssetDynamic,
@@ -183,8 +168,6 @@ export async function getAcaSwapExtrinsicDynamic(
             pathAmount: amountIn,
             api: api,
         }
-
-        increaseIndex(extrinsicIndex)
         return [swapTxContainer, remainingInstructions]
 
 }

@@ -30,8 +30,7 @@ const bncRpc = "wss://bifrost-parachain.api.onfinality.io/public-ws"
 export async function getBncSwapExtrinsicDynamic( 
   swapType: PathType,
   swapInstructions: SwapInstruction[], 
-  chopsticks: boolean = true, 
-  txIndex: number, 
+  chopsticks: boolean = true,
   extrinsicIndex: IndexObject, 
   instructionIndex: number[], 
   priceDeviationPercent: number = 2
@@ -99,12 +98,6 @@ export async function getBncSwapExtrinsicDynamic(
 
   if (!dexApi.api) throw new Error("bnc dex api npt inititalized");
 
-  let accountNonce = await dexApi.api.query.system.account(accountPair.address)
-  // let accountNonce = await api.query.system.account(signer.address)
-  let nonce = accountNonce.nonce.toNumber()
-  nonce += txIndex
-  // console.log("BNC Nonce: " + nonce)
-
   const account = accountPair.address;
   const standardPairs = await firstValueFrom(dexApi.standardPairOfTokens(tokens));
   const standardPools: any = await firstValueFrom(dexApi.standardPoolOfPairs(standardPairs));
@@ -156,19 +149,6 @@ export async function getBncSwapExtrinsicDynamic(
     account, // recipient
     deadline // deadline
   ); 
-
-  // let reverseInAmount = tokenOutAmount
-  // let reverseTokenOut = tokenIn;
-  // const reverseResult = SmartRouterV2.swapExactTokensForTokens(
-  //   reverseInAmount,
-  //   reverseTokenOut,
-  //   standardPools,
-  //   stablePools
-  // );
-  // const reverseTrade = reverseResult.trade;
-  // if(!reverseTrade){
-  //   throw new Error("Cant construct reverse trade BNC")
-  // }
   if (!extrinsics) throw new Error("Cant create bnc kusama extrinsic");
 
   let swapTxContainer: SwapExtrinsicContainer = {
@@ -179,7 +159,6 @@ export async function getBncSwapExtrinsicDynamic(
     extrinsic: extrinsics,
     extrinsicIndex: extrinsicIndex.i,
     instructionIndex: instructionIndex,
-    nonce: nonce,
     assetAmountIn: tokenInAmountFN,
     assetSymbolIn: startAsset,
     // pathInLocalId: tokenIn.assetId,
@@ -194,8 +173,6 @@ export async function getBncSwapExtrinsicDynamic(
     api: dexApi.api as unknown as ApiPromise,
     // reverseTx: reverseExtrinsic
   }
-
-  increaseIndex(extrinsicIndex)
   let remainingInstructions: SwapInstruction[] = []
   return [swapTxContainer, remainingInstructions]
 

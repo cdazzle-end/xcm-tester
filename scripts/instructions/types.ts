@@ -188,11 +188,12 @@ export interface TransferTxStats {
     startParaId: number,
     destChain: string,
     destParaId: number,
-    currency: string,
+    // currency: string,
+    startAssetSymbol: string,
     startAssetId: string,
     startBalanceStats: BalanceChangeStatsBn,
     destBalanceStats: BalanceChangeStatsBn,
-    feesAndGasAmount?: bn, // Remove this as we have new fee structure
+    // feesAndGasAmount?: bn, // Remove this as we have new fee structure
     originFee: FeeData,
     destinationFee: FeeData
 }
@@ -251,7 +252,7 @@ export interface ExecutionState{
     transactionState: TransactionState | null,
     transactionProperties: SwapProperties | TransferProperties | null,
     executionSuccess: boolean,
-    executionAttempts: number | null,
+    executionAttempts: number,
     accumulatedFeeData: AccumulatedFeeData | null,
     xcmFeeReserves: ReserveFeeData[] | null
 }
@@ -293,17 +294,13 @@ export interface SwapProperties{
     assetInSymbol: string,
     assetInLocalId: string,
     assetInStartBalance: BalanceData,
-    assetInStartBalanceString: string,
     assetInDecimals: string,
     assetOutSymbol: string,
     assetOutLocalId: string,
     assetOutStartBalance: BalanceData,
-    assetOutStartBalanceString: string,
     assetOutDecimals: string,
     inputAmount: string,
     destAssetKey: string
-    
-
 }
 
 /**
@@ -395,7 +392,7 @@ export interface SwapExtrinsicContainer{
     extrinsic: SubmittableExtrinsic<"promise", ISubmittableResult> | SubmittableExtrinsic<"rxjs", ISubmittableResult> | any,
     extrinsicIndex: number,
     instructionIndex: number[],
-    nonce?: number,
+    // nonce?: number,
     txString?: string,
     assetAmountIn: FixedPointNumber,
     assetSymbolIn: string,
@@ -446,6 +443,7 @@ export interface ExtrinsicSetResult {
  */
 export interface ExtrinsicSetResultDynamic {
     success: boolean,
+    executionSummary?: ArbExecutionResult[], // Take ArbExecutionResult from each extrinsic result and combine them here for a visually easy summary.
     allExtrinsicResults: (SingleTransferResultData | SingleSwapResultData)[],
     lastSuccessfulNode: LastNode | null,
 }

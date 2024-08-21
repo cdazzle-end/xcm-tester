@@ -300,7 +300,13 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
     // let swapReceipt = await swapTx.wait()
     // logLiveWalletTransaction(swapReceipt, "Execute Swaps")
 }
-export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapInstructions: SwapInstruction[], chainNonces: ChainNonces, extrinsicIndex: IndexObject, instructionIndex: number[], chopsticks: boolean) {
+export async function formatMovrTx(
+    movrBatchSwapParams: BatchSwapParams, 
+    swapInstructions: SwapInstruction[],
+    extrinsicIndex: IndexObject, 
+    instructionIndex: number[], 
+    chopsticks: boolean
+) {
     let liveWallet = movrBatchSwapParams.wallet;
     let batchContract = movrBatchSwapParams.batchContract;
     let api = await getApiForNode("Moonriver", chopsticks)
@@ -376,7 +382,6 @@ export async function formatMovrTx(movrBatchSwapParams: BatchSwapParams, swapIns
         extrinsicIndex: extrinsicIndex.i,
         instructionIndex: instructionIndex,
         txString: descriptorString,
-        nonce: chainNonces[2023],
         assetSymbolIn: startAsset,
         assetSymbolOut: destAsset,
         assetAmountIn: inputFixedPoint,
