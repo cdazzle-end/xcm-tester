@@ -437,17 +437,6 @@ export interface ExtrinsicSetResultDynamic {
     allExtrinsicResults: (SingleTransferResultData | SingleSwapResultData)[],
     lastSuccessfulNode: LastNode | null,
 }
-
-export interface SingleExtrinsicResultData{
-    success: boolean,
-    arbExecutionResult: ArbExecutionResult,
-    resultPathNode?: PathNodeValues,
-    transferTxStats: TransferTxStats,
-    swapTxStats: SwapTxStats,
-    swapTxResults: any,
-    lastNode: LastNode,
-    extrinsicIndex: number,
-}
 export interface AccumulatedFeeData{
     [key: string]: { // Key is assetLocation string
         assetSymbol: string,
@@ -455,7 +444,6 @@ export interface AccumulatedFeeData{
         feeAmount: string
     }
 }
-
 export interface SingleTransferResultData {
     success: boolean,
     arbExecutionResult: ArbExecutionResult,
