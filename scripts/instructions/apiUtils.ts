@@ -8,7 +8,9 @@ import { options } from '@acala-network/api/dist/index.js';
 import { prodParasKusama, prodParasKusamaCommon, prodRelayKusama } from '@polkadot/apps-config/endpoints';
 import { TNode } from "@paraspell/sdk";
 import { dotRpc, ksmRpc, localRpcs } from "./txConsts.ts";
-import { apiMap } from "./liveTest.ts";
+// import { apiMap } from "./liveTest.ts";
+
+const apiMap: Map<TNode | "Kusama" | "Polkadot", ApiPromise> = new Map<TNode, ApiPromise>();
 
 // Keep a map of all connections. If a connection to a chain already exists, return it
 // POLKADOT_ASSETS HAS THE SAME FUNCTION
