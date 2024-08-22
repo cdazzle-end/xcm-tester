@@ -117,7 +117,17 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
 }
 
 // Main function. Find new arb with specified input amount, or use previous arb path. Execute path and log results
-async function runDynamicArbTargetRelay(relay: Relay, chopsticks: boolean, executeMovr: boolean, inputAmount: number, useLatestTarget: boolean = false){
+/**
+ * Find and Execute arb with specified input amount
+ * 
+ * @param relay - Which relay to use. 'polkadot' or 'kusama'
+ * @param chopsticks - To run on chopsticks testnet set to true. Parachain instances must be running and their ports configured properly
+ * @param executeMovr - To execute swaps on evm, set to true. If running on chopsticks, can't properly execute swaps, so set to false 
+ * @param inputAmount 
+ * @param useLatestTarget 
+ * @returns 
+ */
+async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr: boolean, inputAmount: number, useLatestTarget: boolean = false){
 
     console.log(`Getting global state`)
     let globalState = GlobalState.getInstance('polkadot')
@@ -276,7 +286,7 @@ async function checkAndRunLatest(relay: Relay, chopsticks: boolean, executeMovr:
             return;
         } else {
             console.log("Running arb with input amount: ", latest.inputAmount)
-            await runDynamicArbTargetRelay(relay, chopsticks, executeMovr, latest.inputAmount)
+            await findAndExecuteArb(relay, chopsticks, executeMovr, latest.inputAmount)
         }
     } else {
         console.log("Last execution was not successful. Check total attempts")
@@ -291,7 +301,7 @@ async function checkAndRunLatest(relay: Relay, chopsticks: boolean, executeMovr:
                 return;
             } else {
                 console.log("Running arb with input amount: ", latest.inputAmount)
-                await runDynamicArbTargetRelay(relay, chopsticks, executeMovr, latest.inputAmount)
+                await findAndExecuteArb(relay, chopsticks, executeMovr, latest.inputAmount)
             }
         }
     }
@@ -347,7 +357,7 @@ async function run() {
     // await runFromLastNode(relay, chopsticks, executeMovr)  
     // await testAssetLookup()
     // export const globalState = GlobalState.getInstance(relay);
-    await runDynamicArbTargetRelay(relay, chopsticks, executeMovr, 0.50, useLatestTarget)
+    await findAndExecuteArb(relay, chopsticks, executeMovr, 0.50, useLatestTarget)
     // await executeTestPath(relay, chopsticks, executeMovr)
     // await getLatest()
     // await testAca()
