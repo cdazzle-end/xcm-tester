@@ -9,6 +9,8 @@ import { fileURLToPath } from 'url';
 import { getBalance, getBalanceChainAsset} from "./balanceUtils.ts";
 import { getApiForNode } from "./apiUtils.ts";
 import BigNumber from "bignumber.js";
+import { buildAndExecuteAllocationExtrinsics } from "./arbExecutor.ts";
+import { setTracking } from "./globalStateUtils.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -580,16 +582,16 @@ export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPa
 
     console.log("Executing allocations from chains to Kusama")
     //Turn tracking off for async executions
-    const { globalState } = await import("./liveTest.ts");
-    globalState.tracking = false;
+    // const { globalState } = await import("./liveTest.ts");
+    setTracking(false)
     let allocationExecutionResultsPromise = allocationInstructions.map(async (instructionSet) => {
         let transferInstructions: TransferInstruction[] = instructionSet as TransferInstruction[]
-        const { buildAndExecuteAllocationExtrinsics } = await import("./liveTest.ts");
+        // const { buildAndExecuteAllocationExtrinsics } = await import("./liveTest.ts");
         let allocationExecution = buildAndExecuteAllocationExtrinsics(relay, transferInstructions, chopsticks, executeMovr, 100)
         return allocationExecution
     })
     let allocationExecutionResults = await Promise.all(allocationExecutionResultsPromise)
-    globalState.tracking = true;
+    setTracking(true)
 
     allocationExecutionResults.forEach((result) => {
         console.log("ALLOCATION SUCCESS: " + result.success)
@@ -606,10 +608,26 @@ export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPa
 
     // Set input Amount to full ksm balance
     ksmTransferInstructions[0].assetNodes[0].pathValue = ksmBalanceToTransfer.toString()
-    const { buildAndExecuteAllocationExtrinsics } = await import("./liveTest.ts");
+
     let ksmExecution = await buildAndExecuteAllocationExtrinsics(relay, ksmTransferInstructions, chopsticks, executeMovr, 100)
 
     console.log("ALLOCATION SUCCESS: " + ksmExecution.success)
     console.log(JSON.stringify(ksmExecution.arbExecutionResult, null, 2))
 }
 
+// // Skip route nodes up to ksm node to start from / first swap node
+export async function getFirstSwapNodeFromInstructions(instructions: (SwapInstruction | TransferInstruction)[], chopsticks: boolean){ 
+    let instructionIndex = 0;   
+    let firstInstruction = instructions.find((instruction, index) => {
+        if(instruction.type == InstructionType.Swap){
+            instructionIndex = index
+            return true
+        }   
+    })
+    if(!firstInstruction){
+        throw new Error("No swap instructions found")
+    }
+    let instructionsToExecute = instructions.slice(instructionIndex)
+
+    return instructionsToExecute
+}

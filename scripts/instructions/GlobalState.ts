@@ -138,6 +138,9 @@ export class GlobalState {
     setTransactionState(transactionState: TransactionState) {
         this.updateState({ transactionState });
     }
+    setTracking(tracking: boolean) {
+        this.updateState({ tracking });
+    }
 
     setTransactionProperties(properties: TransferProperties | SwapProperties) {
         this.updateState({ transactionProperties: properties });

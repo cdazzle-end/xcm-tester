@@ -903,6 +903,8 @@ export async function getLatestDefaultArb(relay: Relay): Promise<AsyncFileData>{
     throw new Error("No suitable result found")
 }
 
+
+
 //TODO maybe make own file
 // Type guard function
 export function isTxDetails(error: unknown): error is TxDetails {

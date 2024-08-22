@@ -234,6 +234,11 @@ export async function setTransactionProperties(properties: TransferProperties | 
     const globalState = GlobalState.getInstance();
     globalState.setTransactionProperties(properties)
 }
+export async function setTracking(tracking: boolean){
+    const globalState = GlobalState.getInstance();
+    globalState.setTracking(tracking)
+
+}
 export async function updateXcmFeeReserves(reserveFees: ReserveFeeData[]){
     const globalState = GlobalState.getInstance();
     globalState.updateXcmFeeReserves(reserveFees)
@@ -264,6 +269,10 @@ export function getTransactionProperties(): Readonly<SwapProperties | TransferPr
 export function getExecutionAttempts(): Readonly<number>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().executionAttempts
+}
+export function getTracking(): Readonly<boolean>{
+    const globalState = GlobalState.getInstance();
+    return globalState.getState().tracking
 }
 /**
  * If GlobalState has not been initialized yet, then reads global state file for last used state

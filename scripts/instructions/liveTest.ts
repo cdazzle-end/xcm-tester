@@ -301,22 +301,7 @@ const aliceErc20 = "0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac"
 //     return extrinsicSetResults
 // }
 
-// // Skip route nodes up to ksm node to start from / first swap node
-async function getFirstSwapNodeFromInstructions(instructions: (SwapInstruction | TransferInstruction)[], chopsticks: boolean){ 
-    let instructionIndex = 0;   
-    let firstInstruction = instructions.find((instruction, index) => {
-        if(instruction.type == InstructionType.Swap){
-            instructionIndex = index
-            return true
-        }   
-    })
-    if(!firstInstruction){
-        throw new Error("No swap instructions found")
-    }
-    let instructionsToExecute = instructions.slice(instructionIndex)
 
-    return instructionsToExecute
-}
 
 // REVIEW Over use of getLastNode() here is redundant, could be cleaned up
 async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: boolean, customInput: number = 0){
