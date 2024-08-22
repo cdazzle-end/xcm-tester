@@ -32,7 +32,7 @@ export const allConnections = new Map<string, ApiPromise>();
 export let promiseApis: Record<number, ApiPromise> = {};
 export let observableApis: Record<number, ApiRx> = {};
 
-export let balanceAdapterMap: Map<TNode | "Kusama" | "Polkadot", BalanceAdapter> = new Map<TNode, BalanceAdapter>();
+
 
 const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
 

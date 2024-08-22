@@ -12,9 +12,11 @@ import { Wallet } from '@acala-network/sdk/wallet/wallet.js';
 import { WalletConfigs } from '@acala-network/sdk/wallet/index.js';
 import { getSigner, getNodeFromChainId, delay, getAssetRegistryObjectBySymbol } from './utils.ts';
 import { getApiForNode } from './apiUtils.ts';
-import { balanceAdapterMap } from './liveTest.ts';
+// import { balanceAdapterMap } from './liveTest.ts';
 import {BigNumber as bn } from "bignumber.js"
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
+
+const balanceAdapterMap: Map<TNode | "Kusama" | "Polkadot", BalanceAdapter> = new Map<TNode, BalanceAdapter>();
 
 export type BalanceAdapter = StatemintAdapter | StatemineAdapter | AcalaAdapter | KaruraAdapter | AstarAdapter | ShidenAdapter | BifrostAdapter | BifrostPolkadotAdapter | CrabAdapter | DarwiniaAdapter | AltairAdapter | CentrifugeAdapter | ShadowAdapter | CrustAdapter | BasiliskAdapter | HydraDxAdapter | PolkadotAdapter | KusamaAdapter | IntegriteeAdapter | InterlayAdapter | KintsugiAdapter | KicoAdapter | PichiuAdapter | ListenAdapter | MangataAdapter | CalamariAdapter | MantaAdapter | MoonbeamAdapter | MoonriverAdapter | KhalaAdapter | PhalaAdapter | TuringAdapter | OakAdapter | HeikoAdapter | ParallelAdapter | RobonomicsAdapter | TinkernetAdapter | InvarchAdapter | QuartzAdapter | UniqueAdapter | ZeitgeistAdapter | SubsocialAdapter | NodleAdapter | PendulumAdapter | KiltAdapter;
 // ***
@@ -524,16 +526,16 @@ export async function getRelayChainBalance(chopsticks: boolean, relay: Relay){
 
 // *** Not used
 export async function getBalanceAdapter(relay: Relay, api: ApiPromise, chainId: number, node: TNode | "Kusama" | "Polkadot"){
-    let map = balanceAdapterMap
-    if(map.has(node)){
+    // let map = balanceAdapterMap
+    if(balanceAdapterMap.has(node)){
         console.log(`Adapter for ${node} already exists`)
-        return map.get(node)
+        return balanceAdapterMap.get(node)
     }
 
     console.log(`Creating adapter for ${node}`)
     let chainAdapter = getAdapter(relay, chainId)
     await chainAdapter.init(api)
-    map.set(node, chainAdapter)
+    balanceAdapterMap.set(node, chainAdapter)
     return chainAdapter
 }
 
