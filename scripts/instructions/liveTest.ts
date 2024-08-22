@@ -7,7 +7,7 @@ import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, createSwapExt
 import { buildInstructionSet, buildInstructionSetTest } from './instructionUtils.ts';
 import { dotNodeKeys, dotTargetNode, ksmTargetNode, kusamaNodeKeys } from './txConsts.ts';
 import { AsyncFileData, ChainNonces, ExecutionState, ExtrinsicObject, ExtrinsicSetResultDynamic, IndexObject, InstructionType, JsonPathNode, LastNode, Relay, SwapInstruction, SwapProperties, TransactionState, TransferInstruction, TransferProperties } from './types.ts';
-import { getArbExecutionPath, getAssetRegistry, getAssetRegistryObject, getAssetRegistryObjectBySymbol, getLatestArbResult, getLatestAsyncFilesKusama, getLatestAsyncFilesPolkadot, getLatestTargetFileKusama, getLatestTargetFilePolkadot, getTotalArbResultAmount, printExtrinsicSetResults, printInstructionSet, readLogData, truncateAssetPath } from './utils.ts';
+import { getArbExecutionPath, getAssetRegistry, getAssetRegistryObject, getAssetRegistryObjectBySymbol, getLatestDefaultArb, getLatestAsyncFilesKusama, getLatestAsyncFilesPolkadot, getLatestTargetFileKusama, getLatestTargetFilePolkadot, getTotalArbResultAmount, printExtrinsicSetResults, printInstructionSet, readLogData, truncateAssetPath } from './utils.ts';
 // import { BalanceChangeStatue } from 'src/types.ts';
 import { runAndReturnFallbackArb, runAndReturnTargetArb } from './executeArbFallback.ts';
 import { allocateFundsForSwapFromRelay, buildAndExecuteSwapExtrinsic, checkAndAllocateRelayToken, confirmLastTransactionSuccess, executeAndReturnExtrinsic } from './executionUtils.ts';
@@ -587,7 +587,7 @@ async function checkAndRunLatest(relay: Relay, chopsticks: boolean, executeMovr:
     // console.log("")
     if(getExecutionSuccess()){
         console.log("Last execution was successful. Start new arb")
-        let latest = await getLatestArbResult(relay)
+        let latest = await getLatestDefaultArb(relay)
         if(!latest){
             console.log("No suitable result found")
             return;
@@ -602,7 +602,7 @@ async function checkAndRunLatest(relay: Relay, chopsticks: boolean, executeMovr:
             await runFromLastNode(relay, chopsticks, executeMovr)
         } else {
             console.log("More than 4 attempts. Start new arb")
-            let latest = await getLatestArbResult(relay)
+            let latest = await getLatestDefaultArb(relay)
             if(!latest){
                 console.log("No suitable result found")
                 return;

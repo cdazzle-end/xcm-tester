@@ -841,7 +841,7 @@ export function getWalletAddressFormatted(signer: KeyringPair, key: Keyring, cha
 
 }
 
-export async function getLatestArbResult(relay: Relay): Promise<AsyncFileData>{
+export async function getLatestDefaultArb(relay: Relay): Promise<AsyncFileData>{
     let latestFile = relay === 'kusama' ? await getLatestAsyncFilesKusama() : await getLatestAsyncFilesPolkadot()
 
     let small, medium, big, smallMinimum, mediumMinimum, bigMinimum;
