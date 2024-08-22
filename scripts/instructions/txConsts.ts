@@ -77,6 +77,11 @@ export const testNets = [
     // "Unique"
 ]
 // yarn start xcm -r configs/polkadot.yml -p configs/hydradx.yml configs/statemint.yml configs/moonbeam.yml configs/acala.yml configs/bifrost-polkadot.yml configs/parallel.yml configs/interlay.yml 
+export const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
+
+// export const mgxRpc = 'wss://kusama-rpc.mangata.online'
+export const dazzleMgxAddres = '5G22cv9fT5RNVm2AV4MKgagmKH9aoZL4289UDcYrToP9K6hQ'
+export const aliceErc20 = "0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac"
 
 export const ksmRpc = "wss://kusama-rpc.dwellir.com"
 export const dotRpc = "wss://polkadot-rpc.dwellir.com"

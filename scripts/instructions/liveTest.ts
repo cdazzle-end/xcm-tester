@@ -27,16 +27,6 @@ import { buildAndExecuteAllocationExtrinsics, buildAndExecuteExtrinsics } from '
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
-
-
-
-const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
-
-// const mgxRpc = 'wss://kusama-rpc.mangata.online'
-const dazzleMgxAddres = '5G22cv9fT5RNVm2AV4MKgagmKH9aoZL4289UDcYrToP9K6hQ'
-const aliceErc20 = "0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac"
-
 // REVIEW Over use of getLastNode() here is redundant, could be cleaned up
 async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: boolean, customInput: number = 0){
     // setExecutionSuccess(false, relay)
