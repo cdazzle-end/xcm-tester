@@ -27,10 +27,7 @@ import { buildAndExecuteAllocationExtrinsics, buildAndExecuteExtrinsics } from '
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const allConnectionPromises = new Map<string, Promise<ApiPromise>>();
-export const allConnections = new Map<string, ApiPromise>();
-export let promiseApis: Record<number, ApiPromise> = {};
-export let observableApis: Record<number, ApiRx> = {};
+
 
 
 
