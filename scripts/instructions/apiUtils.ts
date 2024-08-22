@@ -10,98 +10,10 @@ import { TNode } from "@paraspell/sdk";
 import { dotRpc, ksmRpc, localRpcs } from "./txConsts.ts";
 import { apiMap } from "./liveTest.ts";
 
-// export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsticks: boolean){
-
-//     let apiEndpoint: string[];
-//     console.log("Get api for node: ", node)
-//     if(node == "Kusama"){
-//         apiEndpoint = [ksmRpc]
-//         // throw new Error("Trying to transfer kusama away from home chain to kusama")
-//     } else{
-//         apiEndpoint = paraspell.getAllNodeProviders(node)
-//     }
-    
-//     // -- But initialize test endpoints until real
-//     if(chopsticks){
-//         let localRpc = localRpcs[node]
-//         if(localRpc){
-//             apiEndpoint = [localRpc]
-//         }
-//     }
-//     console.log("Node RPC: ", apiEndpoint[0])
-//     let api: ApiPromise;
-//     let apiConnected = false;
-//     if(node == "Mangata"){
-//         try{
-//             const MangataSDK = await import('@mangata-finance/sdk')
-//             api = await MangataSDK.Mangata.instance([apiEndpoint[0]]).api()
-//             await api.isReady
-//             if(api.isConnected) {
-//                 console.log("API is connected: TRUE")
-//             } else {
-//                 console.log("API is connected: FALSE")
-//                 await api.connect()
-//                 console.log("API now connected")
-//             }
-//             apiConnected = true;
-//         } catch(e){
-//             console.log(`Error connecting mangata api ${apiEndpoint[0]}, trying next endpoint`)
-//             const MangataSDK = await import('@mangata-finance/sdk')
-//             api = await MangataSDK.Mangata.instance([apiEndpoint[1]]).api()
-//             await api.isReady
-//             if(api.isConnected) {
-//                 console.log("API is connected: TRUE")
-//             } else {
-//                 console.log("API is connected: FALSE")
-//                 await api.connect()
-//                 console.log("API now connected")
-//             }
-//             apiConnected = true;
-//         }
-//     } else {
-//         let endpointIndex = 0;
-        
-//         while(endpointIndex < apiEndpoint.length && !apiConnected){
-//             console.log("Connecting to api: ", apiEndpoint[endpointIndex])
-//             try{
-//                 let provider = new WsProvider(apiEndpoint[endpointIndex])
-//                 api = await ApiPromise.create({ provider: provider });
-                
-//                 await api.isReady
-//                 console.log("API is ready: TRUE")
-//                 if(api.isConnected) {
-//                     console.log("API is connected: TRUE")
-//                 } else {
-//                     console.log("API is connected: FALSE")
-//                     await api.connect()
-//                     console.log("API now connected")
-//                 }
-//                 apiConnected = true;
-//             } catch (e) {
-//                 console.log(`Error connecting api ${apiEndpoint[endpointIndex]}, trying next endpoint`)  
-//             }
-//             endpointIndex++
-//         }
-//     }
-
-//     if(!apiConnected){
-//         throw new Error("Could not connect to api")
-//     }
-
-//     return api
-// }
-
 // Keep a map of all connections. If a connection to a chain already exists, return it
-
 // POLKADOT_ASSETS HAS THE SAME FUNCTION
 export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsticks: boolean): Promise<ApiPromise>{
     let map = apiMap
-
-    // console.log(`Searching ApiMap for ${node}`)
-    // console.log(`All ApiMap keys:`)
-    // for(const key of apiMap.keys()){
-    //     console.log(key)
-    // }
 
     console.log("**********************************************")
     console.log("Checking for existing api for node: ", node)
