@@ -7,15 +7,15 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { localRpcs } from './txConsts.ts';
-import { ExecutionState, JsonPathNode, NewFeeBook, Relay, TxDetails } from './types.ts';
-import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner } from './utils.ts';
+import { ExecutionState, ExtrinsicSetResultDynamic, JsonPathNode, LastNode, NewFeeBook, Relay, SwapInstruction, TransferInstruction, TxDetails } from './types.ts';
+import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData } from './utils.ts';
 // import { BalanceChangeStatue } from 'src/types.ts';
 import { executeXcmTransfer } from './executionUtils.ts';
 // import { liveWallet3Pk } from 'scripts/swaps/movr/utils/const.ts';
 import { getParaId, TNode } from '@paraspell/sdk';
 // import { getBsxSwapExtrinsic, testBsxSwap } from './../swaps/bsxSwap.ts';
 
-import { getAdapter } from '@polkawallet/bridge';
+import { getAdapter, getAssetRegistry, getAssetRegistryObject } from '@polkawallet/bridge';
 import bn from 'bignumber.js';
 import { firstValueFrom } from "rxjs";
 import { testGlmrRpc } from './../swaps/glmr/glmrSwap.ts';
@@ -27,6 +27,10 @@ import * as Chopsticks from '@acala-network/chopsticks';
 
 
 import { apiLogger, mainLogger } from './logger.ts';
+import { buildAndExecuteExtrinsics } from './arbExecutor.ts';
+import { AssetNode } from './AssetNode.ts';
+import { setExecutionSuccess, setExecutionRelay, setLastNode } from './globalStateUtils.ts';
+import { buildInstructionSet, buildInstructionSetTest } from './instructionUtils.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -700,6 +704,32 @@ const aliceErc20 = "0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac"
 //     // await logProfits(relay, arbAmountOut, globalState.lastFilePath, chopsticks )
 // }
 
+async function executeTestPath(relay: Relay, chopsticks: boolean, executeMovr: boolean){
+    setExecutionSuccess(false)    
+    setExecutionRelay(relay)
+
+    let testFilePath = path.join(__dirname, `./testXcmPath.json`)
+    let arbPathData: JsonPathNode[] = JSON.parse(fs.readFileSync(testFilePath, 'utf8'))
+
+    let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
+
+    let firstNode: LastNode = {
+        assetKey: assetPath[0].getAssetRegistrySymbol(),
+        assetValue: assetPath[0].pathValue,
+        chainId: assetPath[0].getChainId(),
+        assetSymbol: assetPath[0].getAssetRegistrySymbol()
+    }
+    // Set LAST NODE to first node in execution path
+    await setLastNode(firstNode)
+
+    // BUILD instruction set from asset path
+    let instructionsToExecute: (SwapInstruction | TransferInstruction)[] = await buildInstructionSet(relay, assetPath)
+    await printInstructionSet(instructionsToExecute)
+
+    let testLoops = 100
+
+    let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, executeMovr, testLoops, true)
+}
 
 async function testXcm(){
     let chopsticks = true
@@ -731,6 +761,78 @@ async function testXcm(){
     // console.log("Wait for xcmp event")
     // let eventData  = await xcmEventPromise as any
     // console.log("XCM Event Data: " + JSON.stringify(eventData, null, 2))
+}
+
+async function buildTest(){
+    let relay: Relay = 'polkadot'
+    let chopsticks: boolean = true
+    let executeMovr: boolean = false
+    // let latestFiles = getLatestAsyncFilesPolkadot()
+    // let latestFile = latestFiles[1][1] // latest file with 1 amount input
+    // console.log(`Latest file: ${latestFile}`)
+    // setLastFile(latestFile, relay)
+    let latestFile = './tests/testXcmPath.json'
+    let arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
+    let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
+
+    assetPath.forEach(asset => {
+        console.log(`Asset Node path data main: ${JSON.stringify(asset.pathData)}`)
+        console.log(
+            `Chain: ${asset.getChainId()}, 
+            Node: ${asset.paraspellChain}, 
+            Asset: ${asset.getAssetRegistrySymbol()}, 
+            Amount: ${asset.pathValue}, 
+            Fee Amounts: ${JSON.stringify(asset.pathData.xcmDepositFeeAmounts)}, 
+            Reserve Amounts: ${JSON.stringify(asset.pathData.xcmDepositReserveAmounts)}`
+        )
+    })
+    console.log("Building instructions")
+
+    let instructionSet = buildInstructionSetTest(relay, assetPath)
+    printInstructionSet(instructionSet)
+
+    // await buildPolkadotExtrinsics(relay, instructionSet, false, false, 20)
+    let results = await buildAndExecuteExtrinsics(relay, instructionSet, chopsticks, executeMovr, 20, true)
+    console.log(`Results: ${JSON.stringify(results.success)}`)
+}
+
+async function testAca(){
+    let chopsticks = true
+    let executeMovr = false
+    let api = await getApiForNode('Acala', chopsticks)
+    await api.isReady
+
+    console.log("API READY")
+    let number = await api.query.system.number()
+
+    console.log("Block number: ", number.toNumber())
+}
+
+async function testApi(){
+    // const api = await getApiForNode('HydraDX', true)
+
+    // let block = await api.query.system.number()
+
+    // console.log('block: ' + block)
+    await getRelayTokenBalances(true, 'polkadot')
+}
+
+async function testAssetLookup(){
+    const key = {"NativeAssetId":{"Token":"AUSD"}}
+    // let assetObject = getAssetRegistryObject(2000, key, 'polkadot')
+    let asset = getAssetRegistryObjectBySymbol(2000, 'ACA', 'polkadot')
+    const id = asset.tokenData.localId
+    console.log(id)
+    console.log(JSON.stringify(id))
+    console.log('-------------')
+    let assetObject = getAssetRegistryObject(2000, JSON.stringify(id).replace(/\\|"/g, ""), 'polkadot')
+    console.log(assetObject.tokenData.localId)
+
+    const registry = getAssetRegistry('polkadot').filter((assetFilter) => assetFilter.tokenData.chain === 2000)
+    registry.forEach((assetR) => {
+        console.log(JSON.stringify(assetR.tokenData.localId).replace(/\\|"/g, ""))
+    })
+
 }
 
 // async function testMoonXcm(){
