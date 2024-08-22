@@ -13,13 +13,14 @@ import * as paraspell from '@paraspell/sdk'
 import {KeyringPair} from '@polkadot/keyring/types'
 import { allocateKsmFromPreTransferPaths, buildInstructionSet, collectKsmToRelayPaths, getFundingPath, getPreTransferPath } from "./instructionUtils.ts"
 import { getBalance, getBalanceChange, getBalanceFromId, getDisplayBalance, getRelayTokenBalances, watchTokenBalance, watchTokenDeposit } from "./balanceUtils.ts"
-import { setLastNode, setResultData, setTransactionState, setTransctionProperties, updateAccumulatedFeeData, updateXcmFeeReserves } from "./globalStateUtils.ts"
+import { setLastNode, setResultData, setTransactionState, setTransactionProperties, updateXcmFeeReserves, setTracking } from "./globalStateUtils.ts"
 import {BigNumber as bn } from "bignumber.js"
 import { swapManagerContractLive } from "./../swaps/glmr/utils/const.ts"
 import { createFeeDatas, createReserveFees, getTransferType, getXcmTransferEventData, listenForXcmpDepositEvent } from "./feeUtils.ts"
 import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import { logEventFeeBook } from "./logUtils.ts"
 import { TNode } from "@paraspell/sdk"
+import { buildAndExecuteAllocationExtrinsics } from "./arbExecutor.ts"
 // import { H256 } from '@polkadot/types/primitive';
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
 
@@ -114,7 +115,7 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
     // ***************************
 
     let swapProperties: SwapProperties = createSwapProperties(relay, chopsticks, chain, signer.address, startAssetRegistryObject, destAssetRegistryObject, tokenInBalanceStart, tokenOutBalanceStart, expectedAmountIn, destinationAssetKey)
-    setTransctionProperties(swapProperties, relay)
+    setTransactionProperties(swapProperties)
     // ******************************************************
     let unsubscribeOne, unsubscribeTwo;
     let balanceObservableIn$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetInSymbol, startAssetRegistryObject, chain, liveWallet.address)
@@ -128,7 +129,7 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
 
     try{
         // **************************************************************************************
-        setTransactionState(TransactionState.Broadcasted, relay)
+        setTransactionState(TransactionState.Broadcasted)
         let txReceipt = await movrTx()
         let txHash = await txReceipt.wait()
         blockHash = txHash.blockHash
@@ -150,8 +151,8 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
         if(tokenInBalanceStats.changeInBalance.abs().gt(new bn(0)) && tokenOutBalanceStats.changeInBalance.abs().gt(new bn(0))){
             swapSuccess = true
             console.log("Swap MOVR Extrinsic successful. setting last node...")
-            await setLastNode(lastNode, relay)
-            await setTransactionState(TransactionState.Finalized, relay)
+            await setLastNode(lastNode)
+            await setTransactionState(TransactionState.Finalized)
         }
 
         
@@ -215,7 +216,7 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
             lastNode: lastNode,
             extrinsicIndex: extrinsicIndex.i
         }
-        await setResultData(swapResultData, relay)
+        await setResultData(swapResultData)
         return swapResultData
     } catch(e){
         unsubscribeOne()
@@ -259,7 +260,7 @@ export async function executeSingleSwapExtrinsicMovr(extrinsicObj: ExtrinsicObje
             extrinsicIndex: extrinsicIndex.i
         }
 
-        await setResultData(swapResultData, relay)
+        await setResultData(swapResultData)
 
         return swapResultData
     }
@@ -331,7 +332,7 @@ export async function executeSingleSwapExtrinsicGlmr(extrinsicObj: ExtrinsicObje
     let tokenOutBalanceStart = await getBalance(chainId, relay, chopsticks, api, assetOutSymbol, destAssetRegistryObject, chain, signer.address)
     
     let swapProperties: SwapProperties = createSwapProperties(relay, chopsticks, chain, signer.address, startAssetRegistryObject, destAssetRegistryObject, tokenInBalanceStart, tokenOutBalanceStart, expectedAmountIn, destinationAssetKey)
-    setTransctionProperties(swapProperties, relay)
+    setTransactionProperties(swapProperties)
     // ******************************************************
     let unsubscribeOne, unsubscribeTwo;
     let balanceObservableIn$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetInSymbol, startAssetRegistryObject, chain, signer.address)
@@ -345,7 +346,7 @@ export async function executeSingleSwapExtrinsicGlmr(extrinsicObj: ExtrinsicObje
 
     try{
         // **************************************************************************************
-        setTransactionState(TransactionState.Broadcasted, relay)
+        setTransactionState(TransactionState.Broadcasted)
         console.log("Broadcasting GLMR swap...")
         let txReceipt = await glmrTx()
         console.log("GLMR swap tx receipt: " + JSON.stringify(txReceipt))
@@ -369,8 +370,8 @@ export async function executeSingleSwapExtrinsicGlmr(extrinsicObj: ExtrinsicObje
         if(tokenInBalanceStats.changeInBalance.abs().gt(new bn(0)) && tokenOutBalanceStats.changeInBalance.abs().gt(new bn(0))){
             swapSuccess = true
             console.log("Swap MOVR Extrinsic successful. setting last node...")
-            await setLastNode(lastNode, relay)
-            await setTransactionState(TransactionState.Finalized, relay)
+            await setLastNode(lastNode)
+            await setTransactionState(TransactionState.Finalized)
         }
 
         
@@ -430,7 +431,7 @@ export async function executeSingleSwapExtrinsicGlmr(extrinsicObj: ExtrinsicObje
             lastNode: lastNode,
             extrinsicIndex: extrinsicIndex.i
         }
-        await setResultData(swapResultData, relay)
+        await setResultData(swapResultData)
         return swapResultData
     } catch(e){
         unsubscribeOne()
@@ -472,7 +473,7 @@ export async function executeSingleSwapExtrinsicGlmr(extrinsicObj: ExtrinsicObje
             lastNode: null,
             extrinsicIndex: extrinsicIndex.i
         }
-        await setResultData(swapResultData, relay)
+        await setResultData(swapResultData)
 
         return swapResultData
     }
@@ -534,7 +535,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     let tokenOutBalanceStart = await getBalance(chainId, relay, chopsticks, api, assetOutSymbol, destAssetRegistryObject, chain, signer.address)
 
     let swapProperties: SwapProperties = createSwapProperties(relay, chopsticks, chain, signer.address, startAssetRegistryObject, destAssetRegistryObject, tokenInBalanceStart, tokenOutBalanceStart, expectedAmountIn, destinationAssetKey)
-    setTransctionProperties(swapProperties, relay)
+    setTransactionProperties(swapProperties)
 
     let tokenInBalance$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetInSymbol, startAssetRegistryObject, chain, signer.address)
     let tokenOutBalance$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetOutSymbol, destAssetRegistryObject, chain, signer.address)
@@ -613,7 +614,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
             extrinsicIndex: extrinsicIndex.i
         }
         
-        await setResultData(extrinsicResultData, relay)
+        await setResultData(extrinsicResultData)
 
         return extrinsicResultData
     }
@@ -669,7 +670,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
                     endBalanceDisplay: tokenOutBalanceEndBn.div(new bn(10).pow(assetOutDecimals)).toString(),
                     changeInBalanceDisplay: balanceChangeAmount.div(new bn(10).pow(assetOutDecimals)).toString()
                 }
-                setTransactionState(TransactionState.Finalized, relay)
+                setTransactionState(TransactionState.Finalized)
                 tokenOutUnsub()
             } else {
                 console.log("balanceQuery FAILED. Retrying in 10 seconds...")
@@ -690,7 +691,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
     
     if(success){
         console.log("Swap Extrinsic successful. Setting last node...")
-        await setLastNode(lastNode, relay)
+        await setLastNode(lastNode)
     }
     
     
@@ -771,7 +772,7 @@ export async function executeSingleSwapExtrinsic(extrinsicObj: ExtrinsicObject, 
         }
         
     }
-    await setResultData(extrinsicResultData, relay)
+    await setResultData(extrinsicResultData)
 
     console.log(`SUCCESS: ${success} - SWAP: (${chain}) ${chainId} ${assetInSymbol} ${actualAmountIn}-> ${assetOutSymbol} ${actualAmountOut}`)
     console.log("*******************************************************")
@@ -792,7 +793,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
     let transferTxContainer = extrinsicObj.transferExtrinsicContainer! 
     let relay = transferTxContainer.relay
 
-    setTransactionState(TransactionState.PreSubmission, relay)
+    setTransactionState(TransactionState.PreSubmission)
 
     let extrinsic = transferTxContainer.extrinsic
     const xcmTxProperties = extrinsic.toHuman() as any
@@ -885,7 +886,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             destAssetKey: destinationAssetKey
             
         }
-        setTransctionProperties(transferProperties, relay)
+        setTransactionProperties(transferProperties)
 
         let startBalanceUnsub, destBalanceUnsub;
         console.log("Execute Extrinsic Set Loop: Initiating balance adapter for START chain " + startChain)
@@ -958,7 +959,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
                 extrinsicIndex: extrinsicIndex.i,
             }
             increaseIndex(extrinsicIndex)
-            await setResultData(extrinsicResultData, relay)
+            await setResultData(extrinsicResultData)
             console.log("Returning on CATCH from failed Transfer Extrinsic")
             return extrinsicResultData
 
@@ -1079,7 +1080,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             console.log(`Transfer fees: ${transferFeeData.feeAssetId} ${transferFeeData.feeAmount} | Deposit fees: ${destDepositEventData.feeAssetId} ${destDepositEventData.feeAmount}`)
             logEventFeeBook(startTransferEventData, destDepositEventData, relay)
             // await updateAccumulatedFeeData(startFeeData, destinationFeeData, relay, chopsticks)
-            await updateXcmFeeReserves(reserveFees, relay)
+            await updateXcmFeeReserves(reserveFees)
         } catch (error) {
             console.error("ERROR: " + error)
             console.error("Failed to detect deposit events")
@@ -1102,8 +1103,8 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
         if(sufficient.gt(new bn(0))){
             console.log("CHANGE In balance is sufficient")
             console.log("Transfer Extrinsic successful. setting last node...")
-            await setLastNode(lastNode, relay)
-            await setTransactionState(TransactionState.Finalized, relay)
+            await setLastNode(lastNode)
+            await setTransactionState(TransactionState.Finalized)
             txDetails.success = true
         } else {
             console.log("CHANGE In balance is NOT sufficient")
@@ -1155,7 +1156,7 @@ export async function executeSingleTransferExtrinsic(extrinsicObj: ExtrinsicObje
             extrinsicIndex: extrinsicIndex.i,
         }
         increaseIndex(extrinsicIndex)
-        await setResultData(extrinsicResultData, relay)
+        await setResultData(extrinsicResultData)
         console.log(`***** Extrinsic set result LAST NODE PATH VALUE: ${JSON.stringify(lastNode.assetValue)}`)
         return extrinsicResultData
     } else {
@@ -1239,7 +1240,7 @@ export async function executeSwapExtrinsic(txContainer: SwapExtrinsicContainer, 
                 let blockHash: string = "";
                 let dispatchErrorCode;
                 let decodedError;
-                setTransactionState(TransactionState.Broadcasted, relay)
+                setTransactionState(TransactionState.Broadcasted)
                 tx.signAndSend(signer, {nonce: accountNonce}, ({ events = [], status, txHash, txIndex, dispatchError }: {
                     events?: EventRecord[],
                     status: ExtrinsicStatus,
@@ -1621,7 +1622,7 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
                 chainId: transferProperties.destParaId
             }
             console.log("Last Transfer Extrinsic successful. setting last node...")
-            await setLastNode(lastSuccessfulNode, relay)
+            await setLastNode(lastSuccessfulNode)
         } else {
             console.log("LAST TRANSACTION (TRANSFER) WAS NOT SUCCESSFUL")
         }
@@ -1669,7 +1670,7 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
                 chainId: swapProperties.paraId
             }
             console.log("Last Swap Extrinsic successful. setting last node...")
-            await setLastNode(lastSuccessfulNode, relay)
+            await setLastNode(lastSuccessfulNode)
         } else {
             console.log("LAST TRANSACTION (SWAP) WAS NOT SUCCESSFUL")
         }
@@ -1684,12 +1685,12 @@ export async function collectRelayToken(relay: Relay, chopsticks: boolean, execu
     let allocationInstructions = await Promise.all(allocationPaths.map(async (path) => await buildInstructionSet(relay, path)))
 
     console.log("Executing allocations from chains to Kusama")
-    const { globalState } = await import("./liveTest.ts");
-    globalState.tracking = false;
+    // const { globalState } = await import("./liveTest.ts");
+    setTracking(false)
     // Async execution
     let allocationExecutionResultsPromise = allocationInstructions.map(async (instructionSet) => {
         let transferInstructions: TransferInstruction[] = instructionSet as TransferInstruction[]
-        const { buildAndExecuteAllocationExtrinsics } = await import("./liveTest.ts");
+        // const { buildAndExecuteAllocationExtrinsics } = await import("./liveTest.ts");
         let allocationExecution = buildAndExecuteAllocationExtrinsics(relay, transferInstructions, chopsticks, executeMovr, 100)
         return allocationExecution
     })
@@ -1697,7 +1698,7 @@ export async function collectRelayToken(relay: Relay, chopsticks: boolean, execu
     let allocationExecutionResults = await Promise.all(allocationExecutionResultsPromise)
 
     // Turn it back on for the rest of the execution
-    globalState.tracking = true;
+    setTracking(true)
 
     allocationExecutionResults.forEach((result) => {
         console.log("ALLOCATION SUCCESS: " + result.success)
