@@ -1,5 +1,5 @@
 import { TNode } from "@paraspell/sdk";
-import { MyAssetRegistryObject, PathData, PathType } from "./types.ts";
+import { LastNode, MyAssetRegistryObject, PathData, PathType } from "./types.ts";
 // import { findValueByKey } from "./utils.ts";
 import fs from 'fs'
 import path from 'path'
@@ -104,6 +104,14 @@ export class AssetNode implements AssetNodeData{
      */
     getAssetKey(): string{
         return JSON.stringify(this.getChainId().toString() + JSON.stringify(this.getAssetLocalId()))
+    }
+    asLastNode(): LastNode {
+        return {
+            assetKey: this.getAssetKey(),
+            assetValue: this.pathValue,
+            chainId: this.getChainId(),
+            assetSymbol: this.getAssetRegistrySymbol()
+        }
     }
     // Get origin asset object by comparing location on origin chain
     getAssetOriginRegistryObject(): MyAssetRegistryObject {

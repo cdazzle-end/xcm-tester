@@ -172,13 +172,14 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     // GET allocation node from relay -> start chain if needed.
     let executionPath: AssetNode[] = await allocateFundsForSwapFromRelay(relay, assetNodesAbreviated, nativeBalances, chopsticks, executeMovr)
 
-    let firstNode: LastNode = {
-        // assetKey: JSON.stringify(executionPath[0].getChainId().toString() + JSON.stringify(executionPath[0].getAssetLocalId())),
-        assetKey: executionPath[0].getAssetKey(),
-        assetValue: executionPath[0].pathValue,
-        chainId: executionPath[0].getChainId(),
-        assetSymbol: executionPath[0].getAssetRegistrySymbol()
-    }
+    // let firstNode: LastNode = {
+    //     // assetKey: JSON.stringify(executionPath[0].getChainId().toString() + JSON.stringify(executionPath[0].getAssetLocalId())),
+    //     assetKey: executionPath[0].getAssetKey(),
+    //     assetValue: executionPath[0].pathValue,
+    //     chainId: executionPath[0].getChainId(),
+    //     assetSymbol: executionPath[0].getAssetRegistrySymbol()
+    // }
+    let firstNode = executionPath[0].asLastNode()
     // Set LAST NODE to first node in execution path
     await setLastNode(firstNode)
 
