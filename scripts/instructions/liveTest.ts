@@ -173,7 +173,8 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     let executionPath: AssetNode[] = await allocateFundsForSwapFromRelay(relay, assetNodesAbreviated, nativeBalances, chopsticks, executeMovr)
 
     let firstNode: LastNode = {
-        assetKey: JSON.stringify(executionPath[0].getChainId().toString() + JSON.stringify(executionPath[0].getAssetLocalId())),
+        // assetKey: JSON.stringify(executionPath[0].getChainId().toString() + JSON.stringify(executionPath[0].getAssetLocalId())),
+        assetKey: executionPath[0].getAssetKey(),
         assetValue: executionPath[0].pathValue,
         chainId: executionPath[0].getChainId(),
         assetSymbol: executionPath[0].getAssetRegistrySymbol()

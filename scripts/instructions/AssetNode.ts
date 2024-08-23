@@ -99,6 +99,12 @@ export class AssetNode implements AssetNodeData{
         let originAssetRegistryObject = this.getAssetOriginRegistryObject()
         return originAssetRegistryObject.tokenData.localId
     }
+    /**
+     * Get's unique key for asset. (chainId + localId)
+     */
+    getAssetKey(): string{
+        return JSON.stringify(this.getChainId().toString() + JSON.stringify(this.getAssetLocalId()))
+    }
     // Get origin asset object by comparing location on origin chain
     getAssetOriginRegistryObject(): MyAssetRegistryObject {
         // console.log("Searching for asset origin registry object for asset: " + JSON.stringify(this, null, 2))
