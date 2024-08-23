@@ -124,7 +124,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
  * @param chopsticks - To run on chopsticks testnet set to true. Parachain instances must be running and their ports configured properly
  * @param executeMovr - To execute swaps on evm, set to true. If running on chopsticks, can't properly execute swaps, so set to false 
  * @param inputAmount - Specify amount in short notation, (1.0 instead of 10000000000). Will find arb for this amount
- * @param useLatestTarget - To use latest arb found instead of search for a new one
+ * @param useLatestTarget - To use latest arb found instead of searching for a new one
  * @returns 
  */
 async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr: boolean, inputAmount: number, useLatestTarget: boolean = false){
