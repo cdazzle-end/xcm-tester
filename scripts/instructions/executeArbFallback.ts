@@ -255,17 +255,22 @@ export async function runAndReturnFallbackArb(
     chopsticks: boolean,
     relay: Relay
 ): Promise<JsonPathNode[]> {
-    let lpsResult;
+  let assetsResult;  
+  let lpsResult;
     try {
+        let assetsPromise = updateAssets(chopsticks, relay)
         lpsResult = await updateLps(chopsticks, relay);
+        assetsResult = await assetsPromise
     } catch (e) {
-        console.log("Error updating lps. Attempting to update again.");
+        console.log("Error updating assets and lps. Attempting to update again.");
         console.log(e);
         let updateComplete = false;
         let updateAttempts = 0;
         while (!updateComplete && updateAttempts < 3) {
             try {
+                let assetsPromise = updateAssets(chopsticks, relay)
                 lpsResult = await updateLps(chopsticks, relay);
+                assetsResult = await assetsPromise
                 updateComplete = true;
             } catch (e) {
                 console.log("Error updating lps");
@@ -277,6 +282,7 @@ export async function runAndReturnFallbackArb(
         }
     }
     console.log("Lps update complete");
+    console.log(assetsResult)
     console.log(lpsResult);
 
     try {
