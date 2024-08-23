@@ -67,14 +67,14 @@ export const testNets = [
     "Acala",
     "BifrostPolkadot",
     "Moonbeam",
-    // "Phala",
+    "Phala",
     "HydraDX",
     "Interlay",
     // "Astar",
     // "Polkadex",
     "AssetHubPolkadot",
     "Parallel",
-    // "Unique"
+    "Unique"
 ]
 // yarn start xcm -r configs/polkadot.yml -p configs/hydradx.yml configs/statemint.yml configs/moonbeam.yml configs/acala.yml configs/bifrost-polkadot.yml configs/parallel.yml configs/interlay.yml 
 export const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
