@@ -49,6 +49,33 @@ export const localRpcs = {
 
 // This should represent the nodes we are running in chopsticks. Will only execute transfer if the node is in this list
 // Assum that we always execute the swaps because we always run those nodes
+// export const testNets = [
+//     "Kusama", 
+//     "Karura", 
+//     "Moonriver", 
+//     "BifrostKusama", 
+//     "Basilisk", 
+//     "Mangata", 
+//     "ParallelHeiko",
+//     "AssetHubKusama",
+//     "Kintsugi",
+//     // "CrustShadow",
+//     // "Altair",
+//     // "Calamari",
+//     // "InvArchTinker"
+//     "Polkadot",
+//     "Acala",
+//     "BifrostPolkadot",
+//     "Moonbeam",
+//     "Phala",
+//     "HydraDX",
+//     "Interlay",
+//     // "Astar",
+//     // "Polkadex",
+//     "AssetHubPolkadot",
+//     "Parallel",
+//     "Unique"
+// ]
 export const testNets = [
     "Kusama", 
     "Karura", 
@@ -64,17 +91,17 @@ export const testNets = [
     // "Calamari",
     // "InvArchTinker"
     "Polkadot",
-    "Acala",
-    "BifrostPolkadot",
-    "Moonbeam",
-    "Phala",
+    // "Acala",
+    // "BifrostPolkadot",
+    // "Moonbeam",
+    // "Phala",
     "HydraDX",
-    "Interlay",
+    // "Interlay",
     // "Astar",
     // "Polkadex",
     "AssetHubPolkadot",
-    "Parallel",
-    "Unique"
+    // "Parallel",
+    // "Unique"
 ]
 // yarn start xcm -r configs/polkadot.yml -p configs/hydradx.yml configs/statemint.yml configs/moonbeam.yml configs/acala.yml configs/bifrost-polkadot.yml configs/parallel.yml configs/interlay.yml 
 export const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
