@@ -165,10 +165,46 @@ async function findLatestFileInLatestDirectory(baseDir: string) {
         throw new Error(`No directories found in the base directory.`);
     }
 }
-export async function updateAssets(chopsticks: boolean, relay){
-    const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\polkadot_assets\\assets\\ && ts-node assetHandler.ts ${relay} ${chopsticks}`;
+export async function updateAssets(chopsticks: boolean, relay) {
+    // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\polkadot_assets\\assets\\ && ts-node assetHandler.ts ${relay} ${chopsticks}`;
+    return new Promise((resolve, reject) => {
+        // let functionCall = 'search_best_path_a_to_b ' + chop;
+        const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\polkadot_assets\\assets\\ && ts-node assetHandler.ts ${relay} ${chopsticks}`;
 
+        console.log("Updating Assets");
+        let child = exec(command, (error, stdout, stderr) => {
+            // stdio: 'ignore' // This ignores the output
+            if (error) {
+                console.error(`exec error: ${error}`);
+                reject(error); // Reject the promise on execution error, including non-zero exit codes
+                return;
+            }
+            resolve(true); // Resolve with true if execution was successful without errors
+        });
 
+        if (!child.stdout || !child.stderr) {
+            throw new Error("Execute arb fallback std error");
+        }
+        // Ignore package manager warnings
+        child.stdout.on("data", (data) => {
+            if (
+                !data.includes("The following conflicting packages were found:")
+            ) {
+                process.stdout.write(data);
+            }
+        });
+
+        child.stderr.on("data", (data) => {
+            if (
+                !data.includes(
+                    "The following conflicting packages were found:"
+                ) &&
+                !data.includes("API/INIT")
+            ) {
+                process.stderr.write(data);
+            }
+        });
+    });
 }
 export async function updateLps(chop: boolean, relay: Relay) {
     // let relayParameter = relay === "Kusama" ? 'kusama' : 'polkadot'
