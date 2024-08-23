@@ -131,12 +131,12 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
 
     console.log(`Getting global state`)
     let globalState = GlobalState.getInstance('polkadot')
-    console.log(`Current Global State: ${JSON.stringify(globalState)}`)
+    console.log(`Current Global State: ${JSON.stringify(globalState, null, 2)}`)
     // resetExecutionState()
 
     console.log(`Resetting global state`)
     resetGlobalState(relay)
-    console.log(`Global State after ressetting now: ${JSON.stringify(globalState)}`)
+    console.log(`Global State after ressetting now: ${JSON.stringify(globalState, null, 2)}`)
 
 
     setExecutionSuccess(false)    
