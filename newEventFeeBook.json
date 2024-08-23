@@ -32,7 +32,7 @@
         "node": ""
       },
       "{\"NativeAssetId\":{\"Token\":\"ACA\"}}": {
-        "xcmAmount": "52556538789108",
+        "xcmAmount": "35874022395031",
         "xcmAssetSymbol": "ACA",
         "xcmAssetId": {
           "NativeAssetId": {
@@ -40,7 +40,7 @@
           }
         },
         "xcmAssetDecimals": "12",
-        "feeAmount": "2660002411",
+        "feeAmount": "2540002411",
         "feeAssetSymbol": "ACA",
         "feeAssetId": {
           "NativeAssetId": {
@@ -128,15 +128,15 @@
         "node": "Moonbeam"
       },
       "\"GLMR\"": {
-        "xcmAmount": "35782526964617704819",
-        "xcmDecimals": "18",
+        "xcmAmount": "13741142225912199213",
         "xcmAssetSymbol": "GLMR",
         "xcmAssetId": "GLMR",
+        "xcmAssetDecimals": "18",
         "feeAmount": "3265200351180800",
-        "feeDecimals": "18",
         "feeAssetSymbol": "GLMR",
         "feeAssetId": "GLMR",
-        "node": ""
+        "feeAssetDecimals": "18",
+        "node": "Moonbeam"
       },
       "\"110021739665376159354538090254163045594\"": {
         "xcmAmount": "1315254795153",
@@ -532,6 +532,17 @@
         "feeAssetSymbol": "xcBNC",
         "feeAssetId": "165823357460190568952172802245839421906",
         "node": ""
+      },
+      "\"224821240862170613278369189818311486111\"": {
+        "xcmAmount": "35763726192785",
+        "xcmAssetSymbol": "xcACA",
+        "xcmAssetId": "224821240862170613278369189818311486111",
+        "xcmAssetDecimals": "12",
+        "feeAmount": "110296202246",
+        "feeAssetSymbol": "xcACA",
+        "feeAssetId": "224821240862170613278369189818311486111",
+        "feeAssetDecimals": "12",
+        "node": "Moonbeam"
       }
     },
     "2012": {
@@ -638,15 +649,15 @@
         "node": ""
       },
       "\"16\"": {
-        "xcmAmount": "35778836702309189639",
-        "xcmDecimals": "",
-        "xcmAssetSymbol": "",
-        "xcmAssetId": "",
-        "feeAmount": "3690262308515180",
-        "feeDecimals": "18",
+        "xcmAmount": "13738307540287769494",
+        "xcmAssetSymbol": "GLMR",
+        "xcmAssetId": "16",
+        "xcmAssetDecimals": "18",
+        "feeAmount": "2834685624429719",
         "feeAssetSymbol": "GLMR",
         "feeAssetId": "16",
-        "node": ""
+        "feeAssetDecimals": "18",
+        "node": "HydraDX"
       },
       "\"15\"": {
         "xcmAmount": "751491709",
