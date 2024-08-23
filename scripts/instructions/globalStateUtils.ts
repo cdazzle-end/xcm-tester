@@ -1,6 +1,6 @@
 import path from "path";
 import fs from 'fs'
-import { LastNode, Relay, ExtrinsicSetResultDynamic, TransactionState, TransferProperties, SwapProperties, ExecutionSuccess, ExecutionState, SingleSwapResultData, SingleTransferResultData, FeeData, FeeTracker, FeeTrackerEntry, ReserveFeeData } from "./types.ts";
+import { LastNode, Relay, ExtrinsicSetResultDynamic, TransactionState, TransferProperties, SwapProperties, ExecutionSuccess, ExecutionState, SingleSwapResultData, SingleTransferResultData, FeeData, FeeTracker, FeeTrackerEntry, ReserveFeeData, AccumulatedFeeData } from "./types.ts";
 import { fileURLToPath } from 'url';
 import {BigNumber as bn } from "bignumber.js"
 import { GlobalState } from "./GlobalState.ts";
@@ -261,6 +261,14 @@ export function getExecutionSuccess(): Readonly<boolean>{
 export function getExtrinsicSetResults(): Readonly<ExtrinsicSetResultDynamic | null>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().extrinsicSetResults
+}
+export function getAccumulatedFeeData(): Readonly<AccumulatedFeeData | null>{
+    const globalState = GlobalState.getInstance();
+    return globalState.getState().accumulatedFeeData
+}
+export function getXcmFeeReserves(): Readonly<ReserveFeeData[] | null>{
+    const globalState = GlobalState.getInstance();
+    return globalState.getState().xcmFeeReserves
 }
 export function getTransactionProperties(): Readonly<SwapProperties | TransferProperties | null>{
     const globalState = GlobalState.getInstance();

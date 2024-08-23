@@ -3,11 +3,13 @@ import fs from 'fs';
 import path from 'path';
 import { AccumulatedFeeData, ArbExecutionResult, ExtrinsicObject, ExtrinsicSetResultDynamic, InstructionType, LastFilePath, Relay, ReserveFeeData, SwapInstruction, SwapTxStats, TransferDepositEventData, TransferDepositJsonData, TransferInstruction, TransferTxStats } from "./types.ts";
 // import { globalState } from "./liveTest.ts";
+// import 
 declare const fetch: any;
 
 import { getParaId } from "@paraspell/sdk";
 import { fileURLToPath } from 'url';
 import { isSwapResult, isTransferResult } from "./utils.ts";
+import { getAccumulatedFeeData, getExtrinsicSetResults, getXcmFeeReserves } from './globalStateUtils.ts';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -445,7 +447,7 @@ export function logAccumulatedFees(relay: Relay, accumulatedFees: AccumulatedFee
  * @param logFilePath 
  * @param chopsticks 
  */
-export async function logXcmFeeReserves(relay: Relay, feeReserveData: ReserveFeeData[], logFilePath: string, chopsticks: boolean){
+export async function logXcmFeeReserves(relay: Relay, feeReserveData: Readonly<ReserveFeeData[]>, logFilePath: string, chopsticks: boolean){
     // Get day and time for file name
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
@@ -511,11 +513,13 @@ export async function logAllResultsDynamic(relay: Relay, logFilePath: string, ch
     let swapTxStats: SwapTxStats[] = []
     let swapTxResults: any[] = []
     let transferTxStats: TransferTxStats[] = []
-    let accumulatedFees: AccumulatedFeeData;
-    let xcmReserveFees: ReserveFeeData[] = []
+    // let accumulatedFees: AccumulatedFeeData;
+    // let xcmReserveFees: ReserveFeeData[] = []
 
-    const { globalState } = await import("./liveTest.ts");
-    let allExtrinsicsSet = globalState.extrinsicSetResults!
+    // const { globalState } = await import("./liveTest.ts");
+    // let allExtrinsicsSet = globalState.extrinsicSetResults!
+    const allExtrinsicsSet: Readonly<ExtrinsicSetResultDynamic | null> = getExtrinsicSetResults()
+    if(allExtrinsicsSet === null) throw new Error('LogAllResults: Extrinsic Set is null')
     allExtrinsicsSet.allExtrinsicResults.forEach((result) => {
         arbResults.push(result.arbExecutionResult);
     
@@ -527,20 +531,20 @@ export async function logAllResultsDynamic(relay: Relay, logFilePath: string, ch
         }
     })
 
-    accumulatedFees = globalState.accumulatedFeeData!
-    xcmReserveFees = globalState.xcmFeeReserves!
+    const accumulatedFees: Readonly<AccumulatedFeeData> = getAccumulatedFeeData()!
+    const xcmReserveFees: Readonly<ReserveFeeData[]> = getXcmFeeReserves()!
 
     // REVIEW Consolidate log info. What is used/needed.
     // --- these 4 are just taken from allExtrinsicsSet and written to their own file for visual clarity. Can change this
-    await logSwapTxStats(relay, swapTxStats, logFilePath, chopsticks)
-    await logSwapTxResults(relay, swapTxResults, logFilePath, chopsticks)
-    await logTransferTxStats(relay, transferTxStats, logFilePath, chopsticks)
-    await logArbExecutionResults(relay, arbResults, logFilePath, chopsticks)
+    logSwapTxStats(relay, swapTxStats, logFilePath, chopsticks)
+    logSwapTxResults(relay, swapTxResults, logFilePath, chopsticks)
+    logTransferTxStats(relay, transferTxStats, logFilePath, chopsticks)
+    logArbExecutionResults(relay, arbResults, logFilePath, chopsticks)
 
     // --- logExtrinsicSetResults contains all the data 
-    await logExtrinsicSetResults(relay, allExtrinsicsSet, logFilePath, chopsticks)
+    logExtrinsicSetResults(relay, allExtrinsicsSet, logFilePath, chopsticks)
     // await logAccumulatedFees(relay, accumulatedFees, logFilePath, chopsticks)
-    await logXcmFeeReserves(relay, xcmReserveFees, logFilePath, chopsticks)
+    logXcmFeeReserves(relay, xcmReserveFees, logFilePath, chopsticks)
     console.log(`Logged results: SwapTxStats, SwapTxResults, TransferTxStats, ArbExecutionResults, XcmFeeReserve`)
 
 }
