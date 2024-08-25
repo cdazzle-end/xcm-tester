@@ -131,6 +131,47 @@ xcm-test
 │  │  │  ├─ 04ead41fc84fabcdc9f8c39d4e728c5c7a3acd
 │  │  │  ├─ 2d361b65c97f2b0691ebf4148a7a363125816b
 │  │  │  ├─ 5280b82eb86a268db2d431a52053d6f020804a
+│  │  │  ├─ 920ef83b8947d15365098
+```
+xcm-test
+├─ .cursorignore
+├─ .foam
+│  └─ templates
+│     └─ new-template.md
+├─ .git
+│  ├─ COMMIT_EDITMSG
+│  ├─ config
+│  ├─ description
+│  ├─ FETCH_HEAD
+│  ├─ HEAD
+│  ├─ hooks
+│  │  ├─ applypatch-msg.sample
+│  │  ├─ commit-msg.sample
+│  │  ├─ fsmonitor-watchman.sample
+│  │  ├─ post-update.sample
+│  │  ├─ pre-applypatch.sample
+│  │  ├─ pre-commit.sample
+│  │  ├─ pre-merge-commit.sample
+│  │  ├─ pre-push.sample
+│  │  ├─ pre-rebase.sample
+│  │  ├─ pre-receive.sample
+│  │  ├─ prepare-commit-msg.sample
+│  │  ├─ sendemail-validate.sample
+│  │  └─ update.sample
+│  ├─ index
+│  ├─ info
+│  │  └─ exclude
+│  ├─ objects
+│  │  ├─ 00
+│  │  │  ├─ 6fa017614cead616df3080f33227eccfb99e01
+│  │  │  ├─ 9fc4f83e173722a5b142a7e00d9099a76511b4
+│  │  │  ├─ b90a667dbfa426641ef01745c92d350fc37602
+│  │  │  ├─ d78ab3040843b96e7e5f04d5eb94739375eaaf
+│  │  │  └─ dcbb2e43954ebea5ce4d46acd0f4fb049fe8e9
+│  │  ├─ 01
+│  │  │  ├─ 04ead41fc84fabcdc9f8c39d4e728c5c7a3acd
+│  │  │  ├─ 2d361b65c97f2b0691ebf4148a7a363125816b
+│  │  │  ├─ 5280b82eb86a268db2d431a52053d6f020804a
 │  │  │  ├─ 920ef83b8947d15365098e3c4b06e58e311aad
 │  │  │  ├─ 9459b5e5051883d3d76daa227a11b86d3b2939
 │  │  │  ├─ a06f11213c1a363c2eed00d530c706ebfc1005
@@ -688,6 +729,7 @@ xcm-test
 │  │  │  ├─ 10658adf2c28008a6d4e88fa2f07c964e87da8
 │  │  │  ├─ 212b5d625cd3f311885e3ed0903f7d488537fe
 │  │  │  ├─ 781b43dd123cac897a75c4025112cb4b7be34c
+│  │  │  ├─ 7cd3e7527fa5b6297407595ca00e4c13cc64a4
 │  │  │  ├─ ad5570c14e0a7737181fa6eed681b6dc4aa1a5
 │  │  │  ├─ b798f06df24c7cb632f6dfc6edd13de5cc12ad
 │  │  │  ├─ d2605cb9205f861f78f28c348341549a8d3582
@@ -798,7 +840,8 @@ xcm-test
 │  │  │  ├─ 47c405f0808f9921a8498c52c7503d8edd8a47
 │  │  │  ├─ 9220f1d02735ac3408b854a6345cf0c5a066ea
 │  │  │  ├─ 9fd7d48d1a4ff80308e48eb0d3434122ba60ac
-│  │  │  └─ db930edffaf5669aff4d1f78b38fb6f5df290a
+│  │  │  ├─ db930edffaf5669aff4d1f78b38fb6f5df290a
+│  │  │  └─ e9d8dd3d660cac983ba810c0e4291e7e60833a
 │  │  ├─ 46
 │  │  │  ├─ 1631d7bd25c151311925a473eafd3405c78f7e
 │  │  │  ├─ 3525d08a63ffd1ef4cee82c5bec29c5cd68bea
@@ -873,6 +916,7 @@ xcm-test
 │  │  │  ├─ 60c51e71aa756a8f07ecbd169ec3744894543e
 │  │  │  ├─ 666eb1993c2c7114054ae0b2dcb3fc5c778fbd
 │  │  │  ├─ 8d8b1ffd1ebdc863ebf77254589f5292f44ca6
+│  │  │  ├─ b1d41b28d0776867bc2d222915ee4a6885e5fe
 │  │  │  └─ fe99ba02abbcdbeac39baf6d228b2a04e937a5
 │  │  ├─ 4d
 │  │  │  ├─ 28b253569a37782bc83ee8de6c082423e0d38b
@@ -1547,6 +1591,7 @@ xcm-test
 │  │  │  ├─ 68c09b4cd30aa7af55f5a8236d809f289e0df7
 │  │  │  ├─ 7370f1cfceaae3e9b0d85f2b9a8e1e4aa15918
 │  │  │  ├─ 7cbc984289c9d9e0ac89c10edf58e209518275
+│  │  │  ├─ 90e23fa138669524b98530377ffdbe576ad01e
 │  │  │  ├─ 929aa71726e3c500fc337cdeba8a50e02aa1bf
 │  │  │  ├─ a2ca1bfe5d03607da2f1496b213014c9b4fa92
 │  │  │  ├─ b758d97a0f0a3f86713c56fb1d8fca9007fa45
@@ -1587,6 +1632,7 @@ xcm-test
 │  │  │  ├─ 64903adc3aa3536b08ca807d6fb6fe1b5cf2c5
 │  │  │  └─ 9a0d640397b09f23aec0282709ab33d864651a
 │  │  ├─ 91
+│  │  │  ├─ 0e972d80ac0d7fbe74f19caaabd89ade66c02b
 │  │  │  ├─ 1a078de712e6186c537c5538716da8411a16f7
 │  │  │  ├─ 7a2b78cfe659caf123031a323a3202287a46a0
 │  │  │  ├─ 860dda3618be37310efdb1a94c8f35b11e0104
@@ -1856,6 +1902,7 @@ xcm-test
 │  │  │  ├─ f0ff1f726242de8ecf580453c0a85ff7747fc3
 │  │  │  └─ fa4bcbd0ce81932590111d8a3105176ba0dfaf
 │  │  ├─ ae
+│  │  │  ├─ 0533a844e01d3ddb3133229f9e498b66e3b973
 │  │  │  ├─ 087683992c476e9222fe8a69d502b82966ea48
 │  │  │  ├─ 0f8eecb136970c5b7ee6683b3d9ed3f36fa588
 │  │  │  ├─ 5286bb112ac635457b02154e99a032d79fed1d
