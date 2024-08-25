@@ -25,6 +25,10 @@ import { increaseIndex } from './../instructions/utils.ts';
 import { getSigner } from './../instructions/utils.ts';
 import { localRpcs } from './../instructions/txConsts.ts';
 import { getApiForNode } from './../instructions/apiUtils.ts'
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const wsLocalChain = localRpcs["BifrostPolkadot"]
 const bncRpc = "wss://hk.p.bifrost-rpc.liebi.com/ws"
@@ -37,8 +41,10 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   instructionIndex: number[], 
   priceDeviationPercent: number = 2
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]> {
-  const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-list/main/tokens/bifrost-polkadot.json');
-  const tokensMeta = response.data.tokens;
+  // const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-listlist/main/tokens/bifrost-polkadot.json');
+  // const tokensMeta = response.data.tokens;
+  let tokensData: any = JSON.parse(fs.readFileSync(path.join(__dirname, './bnc_polkadot_zen_assets.json'), 'utf8'));
+  const tokensMeta = tokensData.tokens;
   await cryptoWaitReady();
 
   let startAsset = swapInstructions[0].assetNodes[0].getAssetRegistrySymbol()
