@@ -89,6 +89,8 @@ executeSingleTransferExtrinsic
  - logEventFeeBook - (TransferEventData and DepositEventData from transfer event listeners. FeeBook used  by arb finder)
  - updateAccumulatedFeeData - Updates globalState.accumulatedFees (used in logAccumulatedFees()), accumulatedFees.json file (test file), feeTracker.json/chopsticksFeeTracker.json
  - updateXcmFeeReserves - Adds ReserveFeeData from latest transfer to globalState.xcmFeeReserves
+
+
 ```
 xcm-test
 ├─ .cursorignore
