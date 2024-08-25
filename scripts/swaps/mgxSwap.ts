@@ -4,7 +4,7 @@ import { RegistryError } from '@polkadot/types/types/registry';
 // import { encodeAddress, decodeAddress } from "@polkadot/keyring";
 import { BalanceChangeStatue } from '../../src/types.ts';
 // import {Account, Mangata, MultiswapBuyAsset, TokenAmount, TokenId, TxOptions} from '@mangata-finance/sdk'
-import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../xcm_tests/testParams.ts'
+import { wsLocalFrom, wsLocalDestination, assetSymbol, fromChain, toChain } from '../instructions/tests/xcm_tests/testParams.ts'
 // import { u8aToHex } from '@polkadot/util';
 // import { mnemonicToLegacySeed, hdEthereum } from '@polkadot/util-crypto';
 // const { ApiPromise } = require('@polkadot/api');

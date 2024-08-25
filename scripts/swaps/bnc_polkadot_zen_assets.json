@@ -1,0 +1,126 @@
+{
+    "name": "bifrost-polkadot",
+    "tokens": [
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 0,
+        "assetIndex": 0,
+        "symbol": "BNC",
+        "decimals": 12,
+        "name": "Bifrost Native Currency"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2048,
+        "symbol": "DOT",
+        "decimals": 10,
+        "name": "Polkadot"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2304,
+        "symbol": "vDOT",
+        "decimals": 10,
+        "name": "vDOT"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2560,
+        "symbol": "vsDOT",
+        "decimals": 10,
+        "name": "vsDOT"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2050,
+        "symbol": "USDT",
+        "decimals": 6,
+        "name": "USDT"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2056,
+        "symbol": "MANTA",
+        "decimals": 18,
+        "name": "MANTA"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2049,
+        "symbol": "GLMR",
+        "decimals": 18,
+        "name": "GLMR"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2305,
+        "symbol": "VGLMR",
+        "decimals": 18,
+        "name": "VGLMR"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2307,
+        "symbol": "VASTR",
+        "decimals": 18,
+        "name": "VASTR"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2051,
+        "symbol": "ASTR",
+        "decimals": 18,
+        "name": "ASTR"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2052,
+        "symbol": "FIL",
+        "decimals": 18,
+        "name": "FIL"
+      },
+      {
+        "networkId": 300,
+        "address": "",
+        "chainId": 2030,
+        "assetType": 2,
+        "assetIndex": 2308,
+        "symbol": "VFIL",
+        "decimals": 18,
+        "name": "VFIL"
+      }
+
+    ]
+  }
