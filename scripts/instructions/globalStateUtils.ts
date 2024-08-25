@@ -196,45 +196,45 @@ export async function resetGlobalState(relay: Relay) {
     globalState.resetState();
   }
 
-export async function setExecutionRelay(relay: Relay){
+export async function stateSetExecutionRelay(relay: Relay){
     const globalState = GlobalState.getInstance(relay);
     globalState.setExecutionRelay(relay)
 }
-export async function setExecutionSuccess(success: boolean){
+export async function stateSetExecutionSuccess(success: boolean){
     const globalState = GlobalState.getInstance();
     globalState.setExecutionSuccess(success)
 
 }
-export async function setLastNode(node: LastNode) {
+export async function stateSLastNode(node: LastNode) {
     const globalState = GlobalState.getInstance();
     globalState.setLastNode(node)
 }
 
-export async function setLastFile(filePath: string) {
+export async function stateSLastFile(filePath: string) {
     const globalState = GlobalState.getInstance();
     globalState.setLastFile(filePath)
 }
 
-export async function setLastExtrinsicSet(extrinsicSet: ExtrinsicSetResultDynamic) {
+export async function stateSetLastExtrinsicSet(extrinsicSet: ExtrinsicSetResultDynamic) {
     const globalState = GlobalState.getInstance();
     globalState.setLastExtrinsicSet(extrinsicSet)
 }
 
-export async function setResultData(resultData: SingleSwapResultData | SingleTransferResultData) {
+export async function stateSetResultData(resultData: SingleSwapResultData | SingleTransferResultData) {
     const globalState = GlobalState.getInstance();
     globalState.setResultData(resultData)
 }
 
-export async function setTransactionState(transactionState: TransactionState) {
+export async function stateSetTransactionState(transactionState: TransactionState) {
     const globalState = GlobalState.getInstance();
     globalState.setTransactionState(transactionState)
 }
 
-export async function setTransactionProperties(properties: TransferProperties | SwapProperties) {
+export async function stateSetTransactionProperties(properties: TransferProperties | SwapProperties) {
     const globalState = GlobalState.getInstance();
     globalState.setTransactionProperties(properties)
 }
-export async function setTracking(tracking: boolean){
+export async function stateSetTracking(tracking: boolean){
     const globalState = GlobalState.getInstance();
     globalState.setTracking(tracking)
 

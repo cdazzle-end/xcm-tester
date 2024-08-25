@@ -24,15 +24,6 @@ export type BalanceAdapter = StatemintAdapter | StatemineAdapter | AcalaAdapter 
 export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks: boolean, destChainApi: ApiPromise, transferrableAssetObject: TransferrableAssetObject, depositAddress: string){
     let tokenSymbol: string = transferrableAssetObject.assetRegistryObject.tokenData.symbol 
 
-    // if(paraId == 0){
-    //     tokenSymbol = relay == 'kusama' ? "KSM" : "DOT"
-    // } else if(!transferrableAssetObject.paraspellAsset.symbol){
-    //     // throw logError(new Error("Asset symbol is null. Cant subscribe to token balance"))
-    //     throw Error("Asset symbol is null. Cant subscribe to token balance")
-    // } else {
-    //     tokenSymbol = transferrableAssetObject.paraspellAsset.symbol;
-    // }
-
     console.log(`Watch Token Deposit: Source Chain Name ${transferrableAssetObject.sourceParaspellChainName} | Token Symbol ${tokenSymbol} | Deposit Address ${depositAddress} `)
 
     // Make sure api is conencted

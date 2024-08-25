@@ -255,6 +255,35 @@ export async function runAndReturnFallbackArb(
     chopsticks: boolean,
     relay: Relay
 ): Promise<JsonPathNode[]> {
+    await updateAssetsAndLps(chopsticks,relay)
+
+    try {
+        let arbCompleted = await runArbFallback(args, relay);
+        if (arbCompleted) {
+            const fallbackLogFolder = await path.join(
+                __dirname,
+                `/../../../test2/arb-dot-2/arb_handler/fallback_log_data/${relay}/`
+            );
+            const latestFile = await findLatestFileInLatestDirectory(
+                fallbackLogFolder
+            );
+            let latestFileData: JsonPathNode[] = JSON.parse(
+                fs.readFileSync(latestFile, "utf8")
+            );
+            return latestFileData;
+        } else {
+            throw new Error("Arb Fallback failed");
+        }
+    } catch (e) {
+        console.log("Error running and returning fallback arb");
+        console.log(e);
+        throw new Error("Error running and returning fallback arb");
+    }
+
+    // return results;
+}
+
+async function updateAssetsAndLps(chopsticks: boolean, relay: Relay){
   let assetsResult;  
   let lpsResult;
     try {
@@ -284,31 +313,6 @@ export async function runAndReturnFallbackArb(
     console.log("Lps update complete");
     console.log(assetsResult)
     console.log(lpsResult);
-
-    try {
-        let arbCompleted = await runArbFallback(args, relay);
-        if (arbCompleted) {
-            const fallbackLogFolder = await path.join(
-                __dirname,
-                `/../../../test2/arb-dot-2/arb_handler/fallback_log_data/${relay}/`
-            );
-            const latestFile = await findLatestFileInLatestDirectory(
-                fallbackLogFolder
-            );
-            let latestFileData: JsonPathNode[] = JSON.parse(
-                fs.readFileSync(latestFile, "utf8")
-            );
-            return latestFileData;
-        } else {
-            throw new Error("Arb Fallback failed");
-        }
-    } catch (e) {
-        console.log("Error running and returning fallback arb");
-        console.log(e);
-        throw new Error("Error running and returning fallback arb");
-    }
-
-    // return results;
 }
 
 export async function runAndReturnTargetArb(
@@ -316,27 +320,8 @@ export async function runAndReturnTargetArb(
     chopsticks: boolean,
     relay: Relay
 ): Promise<JsonPathNode[]> {
-    let lpsResult;
-    try {
-        lpsResult = await updateLps(chopsticks, relay);
-    } catch (e) {
-        console.log("Error updating lps. Attempting to update again.");
-        console.log(e);
-        let updateComplete = false;
-        let updateAttempts = 0;
-        while (!updateComplete && updateAttempts < 3) {
-            try {
-                lpsResult = await updateLps(chopsticks, relay);
-                updateComplete = true;
-            } catch (e) {
-                console.log("Error updating lps");
-                console.log(e);
-            }
-        }
-        if (!updateComplete) {
-            throw new Error("Error updating lps");
-        }
-    }
+
+  await updateAssetsAndLps(chopsticks,relay)
 
     try {
         let arbCompleted = await runArbTarget(args, relay);

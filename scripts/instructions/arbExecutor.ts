@@ -15,7 +15,7 @@ import { TNode } from '@paraspell/sdk';
 import '@galacticcouncil/api-augment/basilisk';
 import { closeApis, getApiForNode } from './apiUtils.ts';
 import { BalanceAdapter, getRelayTokenBalances } from './balanceUtils.ts';
-import { getExtrinsicSetResults, getLastNode, initializeLastGlobalState, setExecutionRelay, setExecutionSuccess, setLastFile, setLastNode } from './globalStateUtils.ts';
+import { getExtrinsicSetResults, getLastNode, initializeLastGlobalState, stateSetExecutionRelay, stateSetExecutionSuccess, stateSLastFile, stateSLastNode } from './globalStateUtils.ts';
 import { nodeLogger, pathLogger } from './logger.ts';
 
 

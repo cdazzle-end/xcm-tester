@@ -29,7 +29,7 @@ import * as Chopsticks from '@acala-network/chopsticks';
 import { apiLogger, mainLogger } from './logger.ts';
 import { buildAndExecuteExtrinsics } from './arbExecutor.ts';
 import { AssetNode } from './AssetNode.ts';
-import { setExecutionSuccess, setExecutionRelay, setLastNode } from './globalStateUtils.ts';
+import { stateSetExecutionSuccess, stateSetExecutionRelay, stateSLastNode } from './globalStateUtils.ts';
 import { buildInstructionSet, buildInstructionSetTest } from './instructionUtils.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -705,8 +705,8 @@ const aliceErc20 = "0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac"
 // }
 
 async function executeTestPath(relay: Relay, chopsticks: boolean, executeMovr: boolean){
-    setExecutionSuccess(false)    
-    setExecutionRelay(relay)
+    stateSetExecutionSuccess(false)    
+    stateSetExecutionRelay(relay)
 
     let testFilePath = path.join(__dirname, `./testXcmPath.json`)
     let arbPathData: JsonPathNode[] = JSON.parse(fs.readFileSync(testFilePath, 'utf8'))
@@ -720,7 +720,7 @@ async function executeTestPath(relay: Relay, chopsticks: boolean, executeMovr: b
         assetSymbol: assetPath[0].getAssetRegistrySymbol()
     }
     // Set LAST NODE to first node in execution path
-    await setLastNode(firstNode)
+    await stateSLastNode(firstNode)
 
     // BUILD instruction set from asset path
     let instructionsToExecute: (SwapInstruction | TransferInstruction)[] = await buildInstructionSet(relay, assetPath)
@@ -1014,12 +1014,7 @@ async function getNativeTokenBalance(relay: Relay, node: TNode, address: string,
     let balanceAdapter = await getAdapter(relay, paraId)
 
     await balanceAdapter.init(api)
-    
 
-    let balanceObservable = balanceAdapter.subscribeTokenBalance(chainToken, address)
-    let balance = await firstValueFrom(balanceObservable)
-
-    return balance.free
 }
 async function setBlockModeInstant(node: TNode){
     let chopsticks = true
@@ -1162,25 +1157,6 @@ async function testLogger(){
     await apiLogger.info("Api Test Logger")
     await apiLogger.info(JSON.stringify(pathNodes, null, 2))
 
-}
-
-async function testBalanceAdapters(){
-    let relay: Relay = 'polkadot'
-    let paraId = 2034
-    let assetSymbol = 'PINK'
-    let assetObject = await getAssetRegistryObjectBySymbol(paraId, assetSymbol, relay)
-    let assetId = assetObject.tokenData.localId
-
-    let chopsticks = true
-    let eth = false
-    let signer = await getSigner(chopsticks, eth);
-
-    let node: TNode = 'HydraDX'
-    let api = await getApiForNode(node, chopsticks)
-
-    let balance = await getBalanceFromId(paraId, relay, chopsticks, api, assetObject, node, signer.address)
-
-    console.log(`Balance for ${assetSymbol} on ${node} for ${signer.address}: ${JSON.stringify(balance)}`)
 }
 
 async function testParaspellReworked(){
@@ -1369,27 +1345,28 @@ async function rewriteFeeBook(){
 //     console.log(`Results: ${JSON.stringify(results.success)}`)
 // }
 
-async function main(){
-    // let wallet = await getSigner(false, false)
-    // let ethWallet = await getSigner(false, true)
+async function testBalanceAdapters(){
+    let relay: Relay = 'polkadot'
+    let paraId = 2030
+    let assetSymbol = 'vglmr'
+    let assetObject = await getAssetRegistryObjectBySymbol(paraId, assetSymbol, relay)
+    let assetId = assetObject.tokenData.localId
 
-    // await testXcm()
-    // await setBlockModeManual('HydraDX')
-    // await setBlockModeInstant('HydraDX')
-    // await testMoonXcm()
-    // await testAssetLocation()
-    // await testBifrostWallet()
-    // await testGlmrSwap()
-    // await testCheckAndAllocate();
-    // await testCheckAndAllocate();
-    // await testCheckAndAllocate();
-    // await testLogger()
-    // await testBalanceAdapters()
-    // await testParaspellReworked()
-    await rewriteFeeBook()
-    // await testHydraTx()
-    // await newBlock('HydraDX')
-    // await testChopsticks()
+    let chopsticks = true
+    let eth = false
+    let signer = await getSigner(chopsticks, eth);
+
+    let node: TNode = 'BifrostPolkadot'
+    let api = await getApiForNode(node, chopsticks)
+
+    let balance = await getBalanceFromId(paraId, relay, chopsticks, api, assetObject, node, signer.address)
+
+    console.log(`Balance for ${assetSymbol} on ${node} for ${signer.address}: ${JSON.stringify(balance)}`)
+}
+
+async function main(){
+
+    await testBalanceAdapters()
     process.exit(0)
 }
 

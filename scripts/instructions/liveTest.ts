@@ -19,7 +19,7 @@ import '@galacticcouncil/api-augment/basilisk';
 import { closeApis, getApiForNode } from './apiUtils.ts';
 import { BalanceAdapter, getRelayTokenBalances } from './balanceUtils.ts';
 import { GlobalState } from './GlobalState.ts'
-import { getExecutionAttempts, getExecutionState, getExecutionSuccess, getExtrinsicSetResults, getLastNode, getTransactionProperties, getTransactionState, initializeLastGlobalState, resetGlobalState, setExecutionRelay, setExecutionSuccess, setLastFile, setLastNode, setTransactionState } from './globalStateUtils.ts';
+import { getExecutionAttempts, getExecutionState, getExecutionSuccess, getExtrinsicSetResults, getLastNode, getTransactionProperties, getTransactionState, initializeLastGlobalState, resetGlobalState, stateSetExecutionRelay, stateSetExecutionSuccess, stateSLastFile, stateSLastNode, stateSetTransactionState } from './globalStateUtils.ts';
 import { nodeLogger, pathLogger } from './logger.ts';
 import { buildAndExecuteAllocationExtrinsics, buildAndExecuteExtrinsics } from './arbExecutor.ts';
 // import { globalState } from './polkadotTest.ts';
@@ -31,13 +31,16 @@ const __dirname = path.dirname(__filename);
 async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: boolean, customInput: number = 0){
     // setExecutionSuccess(false, relay)
     const executionState: Readonly<ExecutionState> = initializeLastGlobalState(relay)
+
+    console.log(`Last Global State: ${JSON.stringify(executionState.lastNode, null, 2)} | 
+        ${JSON.stringify(executionState.transactionProperties, null, 2)} | 
+        ${JSON.stringify(executionState.transactionState, null, 2)}`)
+    
     let lastNode: LastNode | null = executionState.lastNode
     let logFilePath: string = executionState.lastFilePath!
     let lastExtrinsicSet: ExtrinsicSetResultDynamic = executionState.extrinsicSetResults!
     let lastTransactionState: TransactionState = executionState.transactionState!
     let lastTransactionProperties: TransferProperties | SwapProperties = executionState.transactionProperties!
-
-    console.log("Last transaction properties: ", JSON.stringify(lastTransactionProperties, null, 2))
 
 
     lastExtrinsicSet.allExtrinsicResults.forEach((extrinsicData) => {
@@ -64,8 +67,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
         // If last transaction has been submitted but not finalized, we need to query the balances to see if it completed successfully or not
         if(lastTransactionState == TransactionState.Broadcasted){
             await confirmLastTransactionSuccess(lastTransactionProperties)
-            setTransactionState(TransactionState.PreSubmission)
-            // globalState.transactionState = TransactionState.PreSubmission
+            stateSetTransactionState(TransactionState.PreSubmission)
             lastNode = getLastNode()!
         }
         // let lastNodeValueTemp = '40.00'
@@ -108,7 +110,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
         }
     }
     if(arbSuccess){
-        await setExecutionSuccess(true)
+        await stateSetExecutionSuccess(true)
     }
     // await logAllResultsDynamic(relay, logFilePath, chopsticks)
     // await logAllArbAttempts(relay, logFilePath, chopsticks)
@@ -129,24 +131,18 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
  */
 async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr: boolean, inputAmount: number, useLatestTarget: boolean = false){
 
-    console.log(`Getting global state`)
-    let globalState = GlobalState.getInstance('polkadot')
-    console.log(`Current Global State: ${JSON.stringify(globalState, null, 2)}`)
-    // resetExecutionState()
-
-    console.log(`Resetting global state`)
-    resetGlobalState(relay)
-    console.log(`Global State after ressetting now: ${JSON.stringify(globalState, null, 2)}`)
-
-
-    setExecutionSuccess(false)    
-    setExecutionRelay(relay)
+    GlobalState.initializeAndResetGlobalState(relay)
+        
+    // console.log(`Initialize and reset GlobalState`)
+    // GlobalState.getInstance('polkadot')
+    // resetGlobalState(relay)  
+    // setExecutionRelay(relay)
 
     let latestFile = relay == 'kusama' ? getLatestTargetFileKusama() : getLatestTargetFilePolkadot()
     if(!latestFile){
         throw new Error("Latest File undefined")
     }
-    setLastFile(latestFile) // *** FIGURE out better place for this. Last file is used to track arb execution across multiple attempts
+    stateSLastFile(latestFile) // *** FIGURE out better place for this. Last file is used to track arb execution across multiple attempts
 
     // GET arb execution path data
     let arbPathData: JsonPathNode[] = await getArbExecutionPath(relay, latestFile, inputAmount, useLatestTarget, chopsticks)
@@ -172,16 +168,9 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     // GET allocation node from relay -> start chain if needed.
     let executionPath: AssetNode[] = await allocateFundsForSwapFromRelay(relay, assetNodesAbreviated, nativeBalances, chopsticks, executeMovr)
 
-    // let firstNode: LastNode = {
-    //     // assetKey: JSON.stringify(executionPath[0].getChainId().toString() + JSON.stringify(executionPath[0].getAssetLocalId())),
-    //     assetKey: executionPath[0].getAssetKey(),
-    //     assetValue: executionPath[0].pathValue,
-    //     chainId: executionPath[0].getChainId(),
-    //     assetSymbol: executionPath[0].getAssetRegistrySymbol()
-    // }
     let firstNode = executionPath[0].asLastNode()
     // Set LAST NODE to first node in execution path
-    await setLastNode(firstNode)
+    await stateSLastNode(firstNode)
 
     // BUILD instruction set from asset path
     let instructionsToExecute: (SwapInstruction | TransferInstruction)[] = await buildInstructionSet(relay, executionPath)
@@ -217,14 +206,13 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     //Rerun arb until success or last node is Relay Token
     while(!arbSuccess && lastNode!.chainId != 0 && arbLoops < 1){
         arbLoops += 1
-        // const lastTransactionState = getTransactionState()
         if(getTransactionState() == TransactionState.Broadcasted){
             await confirmLastTransactionSuccess(getTransactionProperties()!)
-            lastNode = getLastNode()
-            setTransactionState(TransactionState.PreSubmission)
+            lastNode = getLastNode()!
+            stateSetTransactionState(TransactionState.PreSubmission)
         }
         let targetNode = relay === 'kusama' ? ksmTargetNode : dotTargetNode
-        let functionArgs = `${lastNode} ${targetNode} ${lastNode}`
+        let functionArgs = `${lastNode.assetKey} ${targetNode} ${lastNode.assetValue}`
         console.log("Executing Arb Fallback with args: " + functionArgs)
 
         let fallbackArbResults: JsonPathNode[];
@@ -251,7 +239,7 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
         }
     }
     if(arbSuccess){
-        setExecutionSuccess(true)
+        stateSetExecutionSuccess(true)
     }
     await logAllResultsDynamic(relay, latestFile, chopsticks)
 
@@ -277,7 +265,7 @@ async function checkAndRunLatest(relay: Relay, chopsticks: boolean, executeMovr:
         console.log("Start new.")
         resetGlobalState(relay)
         console.log("Global State: ", lastExecutionState)
-        setExecutionSuccess(true)
+        stateSetExecutionSuccess(true)
     }
     // console.log("")
     if(getExecutionSuccess()){
@@ -311,8 +299,8 @@ async function checkAndRunLatest(relay: Relay, chopsticks: boolean, executeMovr:
 
 // TEST Execute latest calculated arb for specified relay and input amount.
 async function executeLatestArb(relay: Relay, chopsticks: boolean, executeMovr: boolean){
-    setExecutionSuccess(false)    
-    setExecutionRelay(relay)
+    stateSetExecutionSuccess(false)    
+    stateSetExecutionRelay(relay)
 
     let latestFile = relay == 'kusama' ? getLatestTargetFileKusama() : getLatestTargetFilePolkadot()
     let arbPathData: JsonPathNode[] = JSON.parse(fs.readFileSync(latestFile!, 'utf8'))
@@ -326,7 +314,7 @@ async function executeLatestArb(relay: Relay, chopsticks: boolean, executeMovr: 
         assetSymbol: assetPath[0].getAssetRegistrySymbol()
     }
     // Set LAST NODE to first node in execution path
-    await setLastNode(firstNode)
+    await stateSLastNode(firstNode)
 
     // BUILD instruction set from asset path
     let instructionsToExecute: (SwapInstruction | TransferInstruction)[] = await buildInstructionSet(relay, assetPath)
@@ -342,30 +330,21 @@ async function executeLatestArb(relay: Relay, chopsticks: boolean, executeMovr: 
 
 // Run with arg kusama
 async function run() {
+    const relay = process.argv.slice(2)[0] as Relay
     let chopsticks = true
     let executeMovr = false
-
     let useLatestTarget = false
-    const relay = process.argv.slice(2)[0] as Relay
-
-    // let results = await testCollectKsm(relay, chopsticks, executeMovr)
-    // console.log(results)
-    // console.log("Executing arb on relay: ", relay)
-    // await getLatest()
     let startNew = true
+    let customInput = 0
+
+    // await runFromLastNode(relay, chopsticks, executeMovr)  
+    await findAndExecuteArb(relay, chopsticks, executeMovr, 0.50, useLatestTarget)
+    
+    // await executeTestPath(relay, chopsticks, executeMovr)
+    // await testAssetLookup()
     // await checkAndRunLatest(relay, chopsticks, executeMovr, startNew)
     // await executeLatestArb(relay, chopsticks, executeMovr)
-    let customInput = 0
-    // await runFromLastNode(relay, chopsticks, executeMovr)  
-    // await testAssetLookup()
-    // export const globalState = GlobalState.getInstance(relay);
-    await findAndExecuteArb(relay, chopsticks, executeMovr, 0.50, useLatestTarget)
-    // await executeTestPath(relay, chopsticks, executeMovr)
-    // await getLatest()
-    // await testAca()
-    // await buildTest()
-
-    // await testApi()
+    
     process.exit(0)
 }
 

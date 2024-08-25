@@ -10,7 +10,7 @@ import { getBalance, getBalanceChainAsset} from "./balanceUtils.ts";
 import { getApiForNode } from "./apiUtils.ts";
 import BigNumber from "bignumber.js";
 import { buildAndExecuteAllocationExtrinsics } from "./arbExecutor.ts";
-import { setTracking } from "./globalStateUtils.ts";
+import { stateSetTracking } from "./globalStateUtils.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -583,7 +583,7 @@ export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPa
     console.log("Executing allocations from chains to Kusama")
     //Turn tracking off for async executions
     // const { globalState } = await import("./liveTest.ts");
-    setTracking(false)
+    stateSetTracking(false)
     let allocationExecutionResultsPromise = allocationInstructions.map(async (instructionSet) => {
         let transferInstructions: TransferInstruction[] = instructionSet as TransferInstruction[]
         // const { buildAndExecuteAllocationExtrinsics } = await import("./liveTest.ts");
@@ -591,7 +591,7 @@ export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPa
         return allocationExecution
     })
     let allocationExecutionResults = await Promise.all(allocationExecutionResultsPromise)
-    setTracking(true)
+    stateSetTracking(true)
 
     allocationExecutionResults.forEach((result) => {
         console.log("ALLOCATION SUCCESS: " + result.success)

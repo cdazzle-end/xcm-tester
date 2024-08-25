@@ -234,6 +234,7 @@ async function createDepositEventListener(
     return new Promise(async (resolve, reject) => {
         let eventPromiseResolved;
         let xcmEventSection = nodeEventData.xcm.section
+        let xcmEventMethod
         let eventRecords: FrameSystemEventRecord[] = []
         const unsubscribe = await api.query.system.events((events) => {
             // console.log(`Looking for xcmp event section method ${xcmEventSection}`)
@@ -245,7 +246,8 @@ async function createDepositEventListener(
                 if(event.section === "common"){
                     // console.log(`COMMON EVENT: ${JSON.stringify(event, null, 2)}`)
                 }
-                if (event.section === xcmEventSection) {
+                // REVIEW This will match other events from the same module, xcmpQueue.XcmpMessageSent vs xcmpQueue.Succes
+                if (event.section === xcmEventSection && event.method === xcmEventMethod) {
                     console.log("Found xcm event")
                     if(nodeEventData.xcm.idIndex !== -1){
                         // Comparing message hash of 
@@ -276,13 +278,22 @@ async function createDepositEventListener(
                         // Found xcm event without working message id, so check if the deposit is to the correct address to confirm we have the correct event
 
                         let reversedEventArray = eventRecords.map((event) => event).reverse()
-                        let depositEvent = reversedEventArray.filter((event) => event.event.section === nodeEventData.deposit.section && event.event.method === nodeEventData.deposit.method)[nodeEventData.deposit.index]
-                        let eventDepositAddress = depositEvent.event.data[nodeEventData.deposit.addressIndex].toString()
-                        if(eventDepositAddress === depositAddress){
-                            eventPromiseResolved = true
-                            unsubscribe(); // Stop listening for events
-                            resolve(eventRecords);
+                        try{
+                            let depositEvent = reversedEventArray.filter((event) => event.event.section === nodeEventData.deposit.section && event.event.method === nodeEventData.deposit.method)[nodeEventData.deposit.index]
+                            let eventDepositAddress = depositEvent.event.data[nodeEventData.deposit.addressIndex].toString()
+                            if(eventDepositAddress === depositAddress){
+                                eventPromiseResolved = true
+                                unsubscribe(); // Stop listening for events
+                                resolve(eventRecords);
+                            }
+                        } catch (e){
+                            console.log(`ERROR matching deposit xcm event for ${node}`)
+                            console.log(`Captured events:`)
+                            reversedEventArray.forEach((event) => console.log(`Section: ${event.event.section} | Method: ${event.event.method}`))
+                            console.log('-----------------------------')
+                            console.log(`${node} registry deposit events: Section: ${nodeEventData.deposit.method} | Method: ${nodeEventData.deposit.section} | Event index:${nodeEventData.deposit.index}`)
                         }
+                        
                     }
                 }
             });

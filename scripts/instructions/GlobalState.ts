@@ -27,6 +27,15 @@ export class GlobalState {
     private state: ExecutionState;
     private stateFilePath: string;
 
+    /**
+     * GlobalState data for the current run is stored in a JSON file, one for polkadot and kusama each.
+     * 
+     * Each new run will overwrite the previous data and set GlobalState to default status
+     * 
+     * Constructor reads the state data from file and stores it in GlobalState.state
+     * 
+     * @param relay Which relay that is being used
+     */
     private constructor(relay: "kusama" | "polkadot") {
         this.stateFilePath = path.join(
             __dirname,
@@ -42,6 +51,20 @@ export class GlobalState {
             throw new Error("Relay must be specified when creating the initial instance");
         }
         return GlobalState.instance;
+    }
+    /**
+     * Used at the start of a fresh run. Initializes the GlobalState variable and reset's it. Will overwrite previous GlobalState file
+     * 
+     * @param relay Which relay that is being used
+     * @returns GlobalState instance
+     */
+    public static initializeAndResetGlobalState(relay: "kusama" | "polkadot"): void {
+        if (!GlobalState.instance) {
+            GlobalState.instance = new GlobalState(relay);
+        }
+        
+        GlobalState.instance.resetState();
+        GlobalState.instance.setExecutionRelay(relay);
     }
 
     private getDefaultState(): ExecutionState {
