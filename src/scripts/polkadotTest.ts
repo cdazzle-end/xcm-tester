@@ -6,31 +6,16 @@ import { cryptoWaitReady } from "@polkadot/util-crypto";
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { localRpcs } from './txConsts.ts';
-import { ExecutionState, ExtrinsicSetResultDynamic, JsonPathNode, LastNode, NewFeeBook, Relay, SwapInstruction, TransferInstruction, TxDetails } from './types.ts';
-import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData } from './utils.ts';
-// import { BalanceChangeStatue } from 'src/types.ts';
-import { executeXcmTransfer } from './executionUtils.ts';
-// import { liveWallet3Pk } from 'scripts/swaps/movr/utils/const.ts';
+import { localRpcs } from './../config/txConsts.ts';
+import { ExecutionState, ExtrinsicSetResultDynamic, JsonPathNode, LastNode, NewFeeBook, Relay, SwapInstruction, TransferInstruction, TxDetails } from './../types/types.ts';
+import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, getRelayTokenBalances } from './../utils/index.ts';
 import { getParaId, TNode } from '@paraspell/sdk';
-// import { getBsxSwapExtrinsic, testBsxSwap } from './../swaps/bsxSwap.ts';
-
 import { getAdapter, getAssetRegistry, getAssetRegistryObject } from '@polkawallet/bridge';
 import bn from 'bignumber.js';
-import { firstValueFrom } from "rxjs";
-import { testGlmrRpc } from './../swaps/glmr/glmrSwap.ts';
-import { getApiForNode } from './apiUtils.ts';
-import { getBalanceFromId, getRelayTokenBalances } from './balanceUtils.ts';
-// const { blake2AsU8a } = require('@polkadot/util-crypto');
-// const { u8aToHex } = require('@polkadot/util');
+import { testGlmrRpc } from './../swaps/index.ts';
 import * as Chopsticks from '@acala-network/chopsticks';
-
-
-import { apiLogger, mainLogger } from './logger.ts';
-import { buildAndExecuteExtrinsics } from './arbExecutor.ts';
-import { AssetNode } from './AssetNode.ts';
-import { stateSetExecutionSuccess, stateSetExecutionRelay, stateSLastNode } from './globalStateUtils.ts';
-import { buildInstructionSet, buildInstructionSetTest } from './instructionUtils.ts';
+import { buildAndExecuteExtrinsics, buildInstructionSet, buildInstructionSetTest, executeXcmTransfer } from './../execution/index.ts';
+import { AssetNode } from './../core/index.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -720,7 +705,7 @@ async function executeTestPath(relay: Relay, chopsticks: boolean, executeMovr: b
         assetSymbol: assetPath[0].getAssetRegistrySymbol()
     }
     // Set LAST NODE to first node in execution path
-    await stateSLastNode(firstNode)
+    await stateSetLastNode(firstNode)
 
     // BUILD instruction set from asset path
     let instructionsToExecute: (SwapInstruction | TransferInstruction)[] = await buildInstructionSet(relay, assetPath)

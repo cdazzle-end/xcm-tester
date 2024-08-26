@@ -1,2 +1,0 @@
-# ./allAssets.json
-

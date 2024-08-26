@@ -1,4 +1,25 @@
 #custom ignore folders/files
+/deprecated/
+/logs/
+/data/profitStats.json
+/src/executionState/
+/src/logResults/
+/src/logs/
+/src/scripts/
+/src/testScripts/
+/data/testAccumulatedFees.json
+/data/chopsticksFeeTracker.json
+/src/swaps/movr/batchResults/
+/src/swaps/movr/resultLogs/
+src/swaps/movr/dexInfo.json
+src/swaps/movr/dexInfoCombined.json
+src/swaps/movr/dexInfoOld.json
+src/swaps/movr/dexSwapResults.json
+src/swaps/movr/liveWalletReceipts.json
+src/swaps/movr/lps.json
+src/swaps/movr/lpsCleaned.json
+src/swaps/movr/xcAlphaTokens.json
+
 /scripts/instructions/arbExecutionResults
 /scripts/instructions/instructionResults
 /scripts/instructions/reverse
