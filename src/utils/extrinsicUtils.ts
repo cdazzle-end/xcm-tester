@@ -89,8 +89,6 @@ export async function buildTransferExtrinsicFromInstruction(
         throw new Error("Transfer Tx: currencyInput undefined")
     }
 
-    const startParaId: number = startAsset.getChainId()
-    const destinationParaId: number = destinationAsset.getChainId()
     const transferFeeAmount: bn = new bn(instruction.startTransferFee)
     const transferReserveAmount: bn = new bn(instruction.startTransferReserve)
     const depositFeeAmount: bn = new bn(instruction.destinationDepositFee)
