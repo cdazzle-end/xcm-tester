@@ -17,7 +17,7 @@ import {
     ReserveFeeData,
 } from "./../types/types.ts";
 import { fileURLToPath } from "url";
-import { BigNumber as bn } from "bignumber.js";
+import bn from "bignumber.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

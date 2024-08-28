@@ -1,13 +1,13 @@
 import { FixedPointNumber } from "@acala-network/sdk-core"
 // import { ApiPromise, options, WsProvider, Keyring } from "@parallel-finance/api" 
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api"
-import { IndexObject, PathType, SwapExtrinsicContainer } from "./../types/types"
+import { IMyAsset, IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from "./../types/types"
 const wsLocalChain = "ws://172.26.130.75:8012"
 const hkoWs = "wss://heiko-rpc.parallel.fi"
 import path from 'path'
 import { fileURLToPath } from 'url';
 import { getApiForNode, getAssetRegistry } from './../utils/index.ts'
-import { MyAssetRegistryObject } from "src/types/types.ts"
+// import { MyAsset } from "src/core/index.ts"
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -17,10 +17,8 @@ export async function getHkoSwapExtrinsic(
   destAssetSymbol: string, 
   assetInAmount: string, 
   assetOutAmount: string, 
-  swapInstructions: any[], 
+  swapInstructions: SwapInstruction[], 
   chopsticks: boolean = true,
-  extrinsicIndex: IndexObject, 
-  instructionIndex: number[],
   priceDeviationPercent: number = 2
   ) {
     // REVIEW Changing api. Create without options, use getApiForNode()
@@ -31,20 +29,23 @@ export async function getHkoSwapExtrinsic(
       assetNodes.push(instruction.assetNodes[1])
     })
 
-      let assetIn = getAssetBySymbol(startAssetSymbol)
-      let assetInDecimals = assetIn.tokenData.decimals
-      let assetInAmountFn = new FixedPointNumber(assetInAmount, Number.parseInt(assetInDecimals))
+      const assetIn = assetNodes[0]
+      const assetOut = assetNodes[assetNodes.length - 1]
 
-      let assetOut = getAssetBySymbol(destAssetSymbol)
-      let assetOutDecimals = assetOut.tokenData.decimals
-      let assetOutAmountFn = new FixedPointNumber(assetOutAmount, Number.parseInt(assetOutDecimals))
+      // let assetIn = getAssetBySymbol(startAssetSymbol)
+      let assetInDecimals = assetIn.getDecimals()
+      let assetInAmountFn = new FixedPointNumber(assetInAmount, assetInDecimals)
+
+      // let assetOut = getAssetBySymbol(destAssetSymbol)
+      let assetOutDecimals = assetOut.getDecimals()
+      let assetOutAmountFn = new FixedPointNumber(assetOutAmount,assetOutDecimals)
 
       let priceDeviation = assetOutAmountFn.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
       let expectedOutMinusDeviation = assetOutAmountFn.sub(priceDeviation)
 
       let tokenPathSymbols = [startAssetSymbol]
       swapInstructions.forEach((instruction) => {
-        tokenPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
+        tokenPathSymbols.push(instruction.assetNodes[1].getAssetSymbol())
       })
       
       let tokenPathIds = tokenPathSymbols.map((symbol) => {
@@ -57,14 +58,13 @@ export async function getHkoSwapExtrinsic(
         relay: 'kusama',
         chainId: 2085,
         chain: "ParallelHeiko",
+        type: "Swap",
         assetNodes: assetNodes,
         pathAmount: assetInAmount,
         pathType: swapType,
         extrinsic: swapTx,
-        extrinsicIndex: extrinsicIndex.i,
-        instructionIndex: instructionIndex,
-        assetSymbolIn: startAssetSymbol,
-        assetSymbolOut: destAssetSymbol,
+        assetIn: assetIn,
+        assetOut: assetOut,
         assetAmountIn: assetInAmountFn,
         expectedAmountOut: expectedOutMinusDeviation,
         api: api,
@@ -115,7 +115,7 @@ api.disconnect();
 }
 
 function getAssetBySymbol(symbol: string){
-    let allAssets: MyAssetRegistryObject[] = getAssetRegistry('kusama')
+    let allAssets: IMyAsset[] = getAssetRegistry('kusama')
     // console.log(JSON.stringify(allAssets, null, 2))
     let matchedAsset = allAssets.find((asset: any) => {
         return asset.tokenData.chain == 2085 && asset.tokenData.symbol == symbol
@@ -127,7 +127,7 @@ function getAssetBySymbol(symbol: string){
 }
 
 function getAssetById(id: number){
-  let allAssets: MyAssetRegistryObject[] = getAssetRegistry('kusama')
+  let allAssets: IMyAsset[] = getAssetRegistry('kusama')
     // console.log(JSON.stringify(allAssets, null, 2))
     let matchedAsset = allAssets.find((asset: any) => {
         return asset.tokenData.chain == 2085 && asset.tokenData.localId == id

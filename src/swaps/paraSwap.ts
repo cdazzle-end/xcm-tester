@@ -19,8 +19,6 @@ export async function getParaSwapExtrinsic(
   assetOutAmount: string, 
   swapInstructions: any[], 
   chopsticks: boolean = true,
-  extrinsicIndex: IndexObject, 
-  instructionIndex: number[],
   priceDeviationPercent: number = 2
   ) {
   // let rpc = chopsticks ? wsLocalChain : paraWs  
@@ -36,22 +34,25 @@ export async function getParaSwapExtrinsic(
       assetNodes.push(instruction.assetNodes[1])
     })
 
+  const assetIn = assetNodes[0]
+  const assetOut = assetNodes[assetNodes.length - 1]
+
       let signer = await getSigner(chopsticks, false)
       console.log("Signer: ", signer.address)
 
       console.log("Swap instructions: ", swapInstructions.length)
-      let assetIn = getAssetBySymbol(relay, startAssetSymbol)
+      // let assetIn = getAssetBySymbol(relay, startAssetSymbol)
       console.log("Asset in: ", assetIn)
-      let assetInLocalId = assetIn.tokenData.localId
-      let assetInDecimals = assetIn.tokenData.decimals
-      let assetInAmountFn = new FixedPointNumber(assetInAmount, Number.parseInt(assetInDecimals))
+      let assetInLocalId = assetIn.getLocalId()
+      let assetInDecimals = assetIn.getDecimals()
+      let assetInAmountFn = new FixedPointNumber(assetInAmount, assetInDecimals)
 
-      let assetOut = getAssetBySymbol(relay, destAssetSymbol)
-      let assetOutLocalId = assetOut.tokenData.localId
-      let assetOutDecimals = assetOut.tokenData.decimals
-      let assetOutAmountFn = new FixedPointNumber(assetOutAmount, Number.parseInt(assetOutDecimals))
+      // let assetOut = getAssetBySymbol(relay, destAssetSymbol)
+      let assetOutLocalId = assetOut.getLocalId()
+      let assetOutDecimals = assetOut.getDecimals()
+      let assetOutAmountFn = new FixedPointNumber(assetOutAmount,assetOutDecimals)
 
-      console.log(`Asset in ${assetIn} -- AssetOut ${assetOutLocalId}`)
+      console.log(`Asset in ${assetInLocalId} -- AssetOut ${assetOutLocalId}`)
 
       let priceDeviation = assetOutAmountFn.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
       let expectedOutMinusDeviation = assetOutAmountFn.sub(priceDeviation)
@@ -74,14 +75,13 @@ export async function getParaSwapExtrinsic(
         relay: 'polkadot',
         chainId: 2012,
         chain: "Parallel",
+        type: "Swap",
         assetNodes: assetNodes,
         pathAmount: assetInAmount,
         pathType: swapType,
         extrinsic: swapTx,
-        extrinsicIndex: extrinsicIndex.i,
-        instructionIndex: instructionIndex,
-        assetSymbolIn: startAssetSymbol,
-        assetSymbolOut: destAssetSymbol,
+        assetIn: assetIn,
+        assetOut: assetOut,
         assetAmountIn: assetInAmountFn,
         expectedAmountOut: expectedOutMinusDeviation,
         api: api,

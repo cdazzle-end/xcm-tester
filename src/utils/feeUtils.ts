@@ -1,6 +1,6 @@
 import { ApiPromise } from '@polkadot/api';
 import { EventRecord } from "@polkadot/types/interfaces";
-import { FeeData, MyAssetRegistryObject, PromiseTracker, Relay, ReserveFeeData, TransferDepositEventData, TransferExtrinsicContainer, TransferOrDeposit } from './../types/types.ts';
+import { FeeData, IMyAsset, PNode, PromiseTracker, Relay, ReserveFeeData, TransferDepositEventData, TransferExtrinsicContainer, TransferOrDeposit } from './../types/types.ts';
 import { findValueByKey, getAssetRegistryObject, getAssetRegistryObjectBySymbol, getChainIdFromNode } from './utils.ts';
 // import { BalanceChangeStatue } from 'src/types.ts';
 // import { liveWallet3Pk } from 'scripts/swaps/movr/utils/const.ts';
@@ -11,10 +11,11 @@ import '@galacticcouncil/api-augment/basilisk';
 import { FrameSystemEventRecord } from '@polkadot/types/lookup';
 import bn from 'bignumber.js';
 import { depositEventDictionary, multiassetsDepositEventDictionary, TokenType, transferEventDictionary, TransferType, XcmDepositEventData } from '../config/feeConsts.ts';
+import { MyAsset } from '../core/index.ts';
 
 
 
-// export async function watchDepositEvents(destApi: ApiPromise, xcmpMessageHash: string, chainId: TNode | "Polkadot" | "Kusama") {
+// export async function watchDepositEvents(destApi: ApiPromise, xcmpMessageHash: string, chainId: PNode) {
 //     let eventRecords: FrameSystemEventRecord[] = []
 //     if (chainId === "AssetHubPolkadot") {
 //         eventRecords = await listenForXcmpEventStatemint(destApi, xcmpMessageHash)
@@ -78,13 +79,28 @@ import { depositEventDictionary, multiassetsDepositEventDictionary, TokenType, t
 // system.ExtrinsicSuccess
 
 // listens for deposit events and gets the deposit and fee amounts
+/**
+ * 
+ * @param api 
+ * @param node 
+ * @param transferType 
+ * @param depositAssetSymbol - REMOVE. Used to determine if asset is native chain token 
+ * @param depositAssetDecimals - REMOVE
+ * @param depositAssetObject - Asset object containing all asset properties
+ * @param depositAddress - Deposit address used to check for deposit events, NEEDED for when xcm message id's dont match up
+ * @param balanceDepositTracker - Track balance change on chain to determine if deposit was successful when we can't find xcm deposit event
+ * @param xcmTxProperties 
+ * @param xcmpMessageHash - Match xcm transaction event from sending chain to receiving chain
+ * @param xcmpMessageId 
+ * @returns 
+ */
 export async function listenForXcmpDepositEvent(
     api: ApiPromise, 
-    node: TNode | "Polkadot" | "Kusama", 
+    node: PNode, 
     transferType: TransferType,
-    depositAssetSymbol: string, 
-    depositAssetDecimals: number, 
-    depositAssetObject: MyAssetRegistryObject, 
+    // depositAssetSymbol: string, 
+    // depositAssetDecimals: number, 
+    depositAssetObject: MyAsset, 
     depositAddress: string, 
     balanceDepositTracker: PromiseTracker, 
     xcmTxProperties: any, // Use for further info. To distinguish between transfer and transferMultiassets
@@ -95,6 +111,8 @@ export async function listenForXcmpDepositEvent(
     const section = txParams.section
     const method = txParams.method
 
+    const depositAssetSymbol = depositAssetObject.tokenData.symbol
+    const depositAssetDecimals = Number.parseInt(depositAssetObject.tokenData.decimals)
 
     if(transferType === "hrmp" && !xcmpMessageHash && !xcmpMessageId){
         throw new Error("HRMP transfers require XCMP message hash")
@@ -132,7 +150,7 @@ export async function listenForXcmpDepositEvent(
         events = await eventListener;
     } catch (error) {
         console.error("Error listening for XCMP Deposit event:", error);
-        throw new Error("Failed to listen for XCMP Deposit event");
+        throw new Error(`Failed to listen for XCMP Deposit event. Depositing to -> ${node} ${depositAssetSymbol} `);
     }
 
     if(!events){
@@ -223,7 +241,7 @@ export async function listenForXcmpDepositEvent(
 async function createDepositEventListener(
     api: ApiPromise, 
     nodeEventData: XcmDepositEventData,
-    node: TNode | 'Kusama' | 'Polkadot',
+    node: PNode,
     tokenType: TokenType,
     transferType: TransferType,
     depositAddress: string,
@@ -236,13 +254,13 @@ async function createDepositEventListener(
         let xcmEventSection = nodeEventData.xcm.section
         let xcmEventMethod
         let eventRecords: FrameSystemEventRecord[] = []
-        const unsubscribe = await api.query.system.events((events) => {
+
+        // This will find the event that matches the section and method from registry, and then compare the message hash
+        const unsubscribe = await api.query.system.events(async (events) => {
             // console.log(`Looking for xcmp event section method ${xcmEventSection}`)
             events.forEach((record) => {
                 eventRecords.push(record)
                 const { event, phase } = record;
-                // console.log(`Section: ${event.section} | Method: ${event.method}`)
-
                 if(event.section === "common"){
                     // console.log(`COMMON EVENT: ${JSON.stringify(event, null, 2)}`)
                 }
@@ -297,20 +315,29 @@ async function createDepositEventListener(
                     }
                 }
             });
-            let balanceDepositResolve = manualBalanceDepositTracker.isResolved()
-            // console.log("Reached end of deposit events, no xcm event found")
-            // console.log(`MANUAL BALANCE DEPOSIT RESOLVED: ${balanceDepositResolve}`)
-            // events.forEach((event) => {
-            //     console.log(`Event: ${event.event.section} | ${event.event.method} | ${event.phase.toString()}`)
-            // })
+            // Gone through all the events up to this point and still have not found the xcm event.
+            // Check if balance observable has resolved.
+            // If it has resolved, wait 15 seconds for the events to show and if the events aren't found then throw
 
-            // If balance deposit has resolved true, and we haven't found the xcm event, then reject the promise
+            let balanceDepositResolve = manualBalanceDepositTracker.isResolved()
+
+            // If balance deposit has resolved true, and we haven't found the xcm event, then reject the promise after a wait
             if(balanceDepositResolve){
-                console.log("Balance deposit has resolved")
+                console.log("*** Balance deposit promise has resolved, but xcm events not found yet. WAIT 15 sec...")
+                await new Promise(resolve => setTimeout(resolve, 15000))
+                console.log(`Checking if event promise resolved...`)
                 if(!eventPromiseResolved){
-                    console.log("Balance deposit has resolved, but no xcm event found")
+                    console.log("Event promise has NOT resolved.")
+                    console.log('------------------------')
+                    console.log(`Searching for section: ${xcmEventSection} | method: ${xcmEventMethod}`)
+                    console.log(`Events up to now:`)
+                    eventRecords.forEach((eventRecord) => {
+                        console.log(`section: ${eventRecord.event.section} | method: ${eventRecord.event.method}`)
+                    })
                     unsubscribe()
-                    reject("No xcm event found")
+                    reject("Balance Change observed BUT No xcm event found so rejecting")
+                } else {
+                    console.log(`Event promise has resolved successfully`)
                 }
             }
         });
@@ -318,9 +345,9 @@ async function createDepositEventListener(
 }
 
 export function getXcmTransferEventData(
-    node: TNode | "Polkadot" | "Kusama", 
+    node: PNode, 
     transferredAssetSymbol: string, 
-    transferredAssetObject: MyAssetRegistryObject, 
+    transferredAssetObject: IMyAsset, 
     nativeCurrencySymbol: string, 
     events: EventRecord[], 
     relay: Relay,
@@ -505,7 +532,7 @@ export async function listenForXcmpEventThree(api: ApiPromise, depositAddress: s
 
 // }
 
-export async function getDepositFees(eventRecords: FrameSystemEventRecord[], node: TNode | "Polkadot" | "Kusama" ){
+export async function getDepositFees(eventRecords: FrameSystemEventRecord[], node: PNode ){
     let depositLookup = depositEventDictionary[node]
     let xcmEvents = eventRecords.filter((event) => event.event.section === 'currencies')
 
@@ -718,7 +745,7 @@ export async function getStatemintDepositFees(eventRecords: FrameSystemEventReco
     return [depositAmount, feeAmount]
 }
 
-export async function getAcalaDepositFees(eventRecords: FrameSystemEventRecord[], node: TNode | "Polkadot" | "Kusama"){
+export async function getAcalaDepositFees(eventRecords: FrameSystemEventRecord[], node: PNode){
     
     let xcmEvents = eventRecords.filter((event) => event.event.section === 'balances' && event.event.method === 'Deposit')
 
@@ -775,7 +802,7 @@ export async function getPolkadotDepositFees(eventRecords: FrameSystemEventRecor
     return [depositAmount, feeAmount]
 } 
 
-export function getTransferType(startChain: TNode | "Polkadot" | "Kusama", destChain: TNode | "Polkadot" | "Kusama"): "dmp" | "hrmp" | "ump" {
+export function getTransferType(startChain: PNode, destChain: PNode): "dmp" | "hrmp" | "ump" {
     if (startChain == "Kusama" || startChain == "Polkadot"){
         return "dmp"
     } else if (destChain == "Kusama" || destChain ==  "Polkadot"){
@@ -786,17 +813,22 @@ export function getTransferType(startChain: TNode | "Polkadot" | "Kusama", destC
 }
 
 export function createReserveFees(txContainer: TransferExtrinsicContainer, xcmEventData: TransferDepositEventData, eventType: TransferOrDeposit): ReserveFeeData {
+    const startAsset: MyAsset = txContainer.startAsset.asset
+    const destinationAsset: MyAsset = txContainer.destinationAsset.asset
     return {
-        chainId: eventType === 'Transfer' ? txContainer.startChainId : txContainer.destinationChainId,
+        chainId: eventType === 'Transfer' ? startAsset.getChainId() : destinationAsset.getChainId(),
         feeAssetId: xcmEventData.feeAssetId,
         feeAssetAmount: xcmEventData.feeAmount.toString(),
-        reserveAssetId: eventType === 'Transfer' ? txContainer.assetIdStart : txContainer.assetIdEnd,
+        reserveAssetId: eventType === 'Transfer' ? startAsset.getLocalId() : destinationAsset.getLocalId(),
         reserveAssetAmount: eventType === 'Transfer' ? txContainer.transferReserveAmount : txContainer.depositReserveAmount
     }
 }
 
 export function createFeeDatas(txContainer: TransferExtrinsicContainer, xcmEventData: TransferDepositEventData, eventType: TransferOrDeposit): FeeData {
-    const chainId = eventType === 'Transfer' ? txContainer.startChainId : txContainer.destinationChainId
+    const startAsset: MyAsset = txContainer.startAsset.asset
+    const destinationAsset: MyAsset = txContainer.destinationAsset.asset
+
+    const chainId = eventType === 'Transfer' ?  startAsset.getChainId() : destinationAsset.getChainId()
     const feeAssetObject = getAssetRegistryObjectBySymbol(chainId, xcmEventData.feeAssetSymbol, txContainer.relay)
     const feeAssetLocation = feeAssetObject.tokenLocation!
     
@@ -808,6 +840,6 @@ export function createFeeDatas(txContainer: TransferExtrinsicContainer, xcmEvent
         feeAssetDecimals: xcmEventData.feeAssetDecimals,
         feeAmount: xcmEventData.feeAmount.toString(),
         reserveAssetAmount:eventType === 'Transfer' ? txContainer.transferReserveAmount.toString() : txContainer.depositReserveAmount.toString(),
-        reserveAssetId: eventType === 'Transfer' ? txContainer.assetIdStart : txContainer.assetIdEnd
+        reserveAssetId: eventType === 'Transfer' ? startAsset.getLocalId() : destinationAsset.getLocalId()
     }
 }

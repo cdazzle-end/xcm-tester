@@ -57,7 +57,7 @@ export interface DepositEventData {
     feeAssetSymbol: string,
     feeAssetId: string,
     feeAssetDecimals: number,
-    node: TNode | "Polkadot" | "Kusama"
+    node: PNode
 }
 
 export interface TransferEventData {
@@ -69,7 +69,7 @@ export interface TransferEventData {
     feeAssetSymbol: string,
     feeAssetId: string,
     feeAssetDecimals: number,
-    node: TNode | "Polkadot" | "Kusama"
+    node: PNode
 }
 
 export interface ReserveFeeData {

@@ -2,7 +2,7 @@ import fs from 'fs'
 import { AcalaAdapter, AltairAdapter, AstarAdapter, BalanceData, BasiliskAdapter, BifrostAdapter, BifrostPolkadotAdapter, CalamariAdapter, CentrifugeAdapter, CrabAdapter, CrustAdapter, DarwiniaAdapter, HeikoAdapter, HydraDxAdapter, IntegriteeAdapter, InterlayAdapter, InvarchAdapter, KaruraAdapter, KhalaAdapter, KicoAdapter, KiltAdapter, KintsugiAdapter, KusamaAdapter, ListenAdapter, MangataAdapter, MantaAdapter, MoonbeamAdapter, MoonriverAdapter, NodleAdapter, OakAdapter, ParallelAdapter, PendulumAdapter, PhalaAdapter, PichiuAdapter, PolkadotAdapter, QuartzAdapter, RobonomicsAdapter, ShadowAdapter, ShidenAdapter, StatemineAdapter, StatemintAdapter, SubsocialAdapter, TinkernetAdapter, TuringAdapter, UniqueAdapter, ZeitgeistAdapter, getAdapter } from '@polkawallet/bridge';
 import { TNode } from '@paraspell/sdk'
 import { firstValueFrom, Observable, timeout } from "rxjs";
-import { BalanceChangeStatsBn, MyAssetRegistryObject, NativeBalancesType, Relay, TransferrableAssetObject, BalanceChangeStats  } from './../types/types.ts'
+import { BalanceChangeStatsBn, IMyAsset, NativeBalancesType, Relay, BalanceChangeStats, PNode  } from './../types/types.ts'
 import { ApiPromise, WsProvider } from '@polkadot/api';
 // import { TransferrableAssetObject, BalanceChangeStats } from './../types/types.ts'
 import { FixedPointNumber} from "@acala-network/sdk-core";
@@ -13,18 +13,20 @@ import { WalletConfigs } from '@acala-network/sdk/wallet/index.js';
 import { getSigner, getNodeFromChainId, delay, getAssetRegistryObjectBySymbol } from './utils.ts';
 import { getApiForNode } from './apiUtils.ts';
 // import { balanceAdapterMap } from './liveTest.ts';
-import {BigNumber as bn } from "bignumber.js"
+import bn from "bignumber.js"
+import { MyAsset } from '../core/index.ts';
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
 
-const balanceAdapterMap: Map<TNode | "Kusama" | "Polkadot", BalanceAdapter> = new Map<TNode, BalanceAdapter>();
+const balanceAdapterMap: Map<PNode, BalanceAdapter> = new Map<TNode, BalanceAdapter>();
 
 export type BalanceAdapter = StatemintAdapter | StatemineAdapter | AcalaAdapter | KaruraAdapter | AstarAdapter | ShidenAdapter | BifrostAdapter | BifrostPolkadotAdapter | CrabAdapter | DarwiniaAdapter | AltairAdapter | CentrifugeAdapter | ShadowAdapter | CrustAdapter | BasiliskAdapter | HydraDxAdapter | PolkadotAdapter | KusamaAdapter | IntegriteeAdapter | InterlayAdapter | KintsugiAdapter | KicoAdapter | PichiuAdapter | ListenAdapter | MangataAdapter | CalamariAdapter | MantaAdapter | MoonbeamAdapter | MoonriverAdapter | KhalaAdapter | PhalaAdapter | TuringAdapter | OakAdapter | HeikoAdapter | ParallelAdapter | RobonomicsAdapter | TinkernetAdapter | InvarchAdapter | QuartzAdapter | UniqueAdapter | ZeitgeistAdapter | SubsocialAdapter | NodleAdapter | PendulumAdapter | KiltAdapter;
 // ***
 // Used in executeSingleTransferExtrinsic
-export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks: boolean, destChainApi: ApiPromise, transferrableAssetObject: TransferrableAssetObject, depositAddress: string){
-    let tokenSymbol: string = transferrableAssetObject.assetRegistryObject.tokenData.symbol 
+export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks: boolean, destChainApi: ApiPromise, asset: MyAsset, depositAddress: string){
+    // let tokenSymbol: string = transferrableAssetObject.assetRegistryObject.tokenData.symbol 
+    let tokenSymbol = asset.getSymbol()
 
-    console.log(`Watch Token Deposit: Source Chain Name ${transferrableAssetObject.sourceParaspellChainName} | Token Symbol ${tokenSymbol} | Deposit Address ${depositAddress} `)
+    console.log(`Watch Token Deposit: Source Chain Name ${asset.getChainNode()} | Token Symbol ${tokenSymbol} | Deposit Address ${depositAddress} `)
 
     // Make sure api is conencted
     console.log(`Watch Token Deposit: API connected: ${destChainApi.isConnected}`)
@@ -65,8 +67,8 @@ export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks
         tokenSymbol = tokenSymbol.slice(2)
     }
 
-    let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, transferrableAssetObject.assetRegistryObject, relay)
-    const assetId = transferrableAssetObject.assetRegistryObject.tokenData.localId
+    let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, asset, relay)
+    const assetId = asset.getLocalId()
     const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, depositAddress, assetId);
     console.log("Watch Token Deposit: Subscribed to balance")
     return new Observable<BalanceData>((subscriber) => {
@@ -100,13 +102,21 @@ export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks
 }
 // ***
 // Used in executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
-export async function watchTokenBalance(relay: Relay, paraId: number, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, assetObject: MyAssetRegistryObject, node: string, accountAddress: string){
+export async function watchTokenBalance(
+    relay: Relay, 
+    paraId: number, 
+    chopsticks: boolean, 
+    chainApi: ApiPromise, 
+    asset: MyAsset, 
+    node: string, 
+    accountAddress: string
+): Promise<Observable<BalanceData>>{
     // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
     let tokenSymbol;
     if(paraId == 0){
         tokenSymbol = relay == 'kusama' ? "KSM" : "DOT"
     } else {
-        tokenSymbol = assetSymbol
+        tokenSymbol = asset.getSymbol()
     }
 
     console.log(`Watch Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
@@ -141,12 +151,6 @@ export async function watchTokenBalance(relay: Relay, paraId: number, chopsticks
         await destAdapter.init(chainApi);
     }
     
-    // printAndLogToFile("Subscribing to balance for destination chain " + paraId + " for asset " + transferrableAssetObject.paraspellAssetSymbol.symbol + " for address " + aliceAddress)
-    
-    // if(node == "Moonriver" && tokenSymbol.toUpperCase().startsWith("XC")){
-    //     console.log("Removing XC from token symbol")
-    //     tokenSymbol = tokenSymbol.slice(2)
-    // }
     if(relay == 'kusama' && paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"
     || relay == 'polkadot' && paraId == 2004 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "GLMR"){
         console.log("Adding XC from token symbol")
@@ -158,8 +162,8 @@ export async function watchTokenBalance(relay: Relay, paraId: number, chopsticks
         tokenSymbol = tokenSymbol.slice(2)
     }
 
-    let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, assetObject, relay)
-    const assetId = assetObject.tokenData.localId
+    let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, asset, relay)
+    const assetId = asset.getLocalId()
     const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress, assetId);
     console.log("Watch Token Balance: Subscribed to balance")
     // console.log(chainApi.registry.chainTokens)
@@ -277,7 +281,7 @@ export async function getBalanceChange(
 }
 
 // Used in getRelayTokenBalanceAcrossChains, getRelayTokenBalances, allocateKsmFromPreTransferPaths
-export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, node: TNode | "Kusama" | "Polkadot", chainId: number, assetSymbol: string, assetId: string): Promise<BalanceData>{
+export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, node: PNode, chainId: number, assetSymbol: string, assetId: string): Promise<BalanceData>{
     let evm = node == "Moonbeam" || node == "Moonriver" ? true : false
     let account = await getSigner(chopsticks, evm)
 
@@ -295,7 +299,7 @@ export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, no
         return relayBalanceData
     }
 
-    let chainNode: TNode | "Kusama" | "Polkadot";
+    let chainNode: PNode;
     if(relay === "kusama"){
         chainNode = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId, relay)
     } else if (relay === "polkadot"){
@@ -386,7 +390,7 @@ export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, rela
                 account = await getSigner(chopsticks, false)
             }
             console.log("Account Address: " + account.address)
-            let chainNode: TNode | "Kusama" | "Polkadot";
+            let chainNode: PNode;
             if(relay === "kusama"){
                 chainNode = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId, relay)
             } else if (relay === "polkadot"){
@@ -395,8 +399,6 @@ export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, rela
                 throw new Error("Invalid relay")
             }
     
-    
-            // let chainNode: TNode | "Kusama"  = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId)
             let destAdapter = getAdapter(relay, chainId)
     
             if(chainId == 2000){
@@ -516,7 +518,7 @@ export async function getRelayChainBalance(chopsticks: boolean, relay: Relay){
 }
 
 // *** Not used
-export async function getBalanceAdapter(relay: Relay, api: ApiPromise, chainId: number, node: TNode | "Kusama" | "Polkadot"){
+export async function getBalanceAdapter(relay: Relay, api: ApiPromise, chainId: number, node: PNode){
     // let map = balanceAdapterMap
     if(balanceAdapterMap.has(node)){
         console.log(`Adapter for ${node} already exists`)
@@ -532,21 +534,16 @@ export async function getBalanceAdapter(relay: Relay, api: ApiPromise, chainId: 
 
 // Gets current balance
 // Used in executeSingleTransferExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
-export async function getBalance(paraId: number, relay: Relay, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, assetObject: MyAssetRegistryObject, node: string, accountAddress: string): Promise<BalanceData>{
+export async function getBalance(paraId: number, relay: Relay, chopsticks: boolean, chainApi: ApiPromise, asset: MyAsset, node: string, accountAddress: string): Promise<BalanceData>{
 
 
-    console.log(`Get Token Balance for chain ${node} | Token ${assetSymbol}`)
+    console.log(`Get Token Balance for chain ${node} | Token ${asset.getSymbol()}`)
 
     let destAdapter = getAdapter(relay, paraId)
-    console.log('Para ID: ', paraId)
-    let currentBalance: BalanceData;
     
     // Make sure api is connected
-    console.log(`Get Token Balance: API connected: ${chainApi.isConnected}`)
     if(!chainApi.isConnected){
-        console.log("Get Token Balance: API not connected. Connecting...")
         await chainApi.connect()
-        console.log("Get Token Balance: API connected: " + chainApi.isConnected)
     }
 
     if(relay == 'kusama' && paraId == 2000){
@@ -573,32 +570,26 @@ export async function getBalance(paraId: number, relay: Relay, chopsticks: boole
     if(paraId == 0){
         tokenSymbol = relay === 'kusama' ? "KSM" : "DOT"
     } else {
-        tokenSymbol = assetSymbol
+        tokenSymbol = asset.getSymbol()
     }
-
-    let tokenLookupId;
-
     console.log(`Get Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
 
     if(relay == "kusama" && paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"
     || relay == "polkadot" && paraId == 2004 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "GLMR"){
-        // console.log("Adding XC from token symbol")
         tokenSymbol = "xc" + tokenSymbol
     // if chain isnt movr, no prefix
     } else if(relay == 'kusama' && paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")
     || relay == 'polkadot' && paraId != 2004 && tokenSymbol.toUpperCase().startsWith("XC")){
-        // console.log("Removing XC from token symbol")
         tokenSymbol = tokenSymbol.slice(2)
     }
 
-    let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, assetObject, relay)
-    const tokenId = assetObject.tokenData.localId
+    let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, asset, relay)
+    const tokenId = asset.getLocalId()
     const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress, tokenId);
     console.log("Get Token Balance: Subscribed to balance")
     let balance = await firstValueFrom(balanceObservable)
     console.log("Balance: " + JSON.stringify(balance.available.toNumber()))
 
-    // await destAdapter.getApi().disconnect()
     return balance
 }
 
@@ -608,24 +599,17 @@ export async function getBalanceFromId(
     relay: Relay, 
     chopsticks: boolean, 
     chainApi: ApiPromise,
-    assetObject: MyAssetRegistryObject, 
+    asset: MyAsset, 
     node: string, 
     accountAddress: string
 ){
-    let assetSymbol = assetObject.tokenData.symbol
-    let assetId = assetObject.tokenData.localId
-    console.log(`Get Token Balance for chain ${node} | Token ${assetSymbol}`)
+    console.log(`Get Token Balance for chain ${node} | Token ${asset.getSymbol()}`)
 
     let destAdapter = getAdapter(relay, paraId)
-    console.log('Para ID: ', paraId)
-    let currentBalance: BalanceData;
     
     // Make sure api is connected
-    console.log(`Get Token Balance: API connected: ${chainApi.isConnected}`)
     if(!chainApi.isConnected){
-        console.log("Get Token Balance: API not connected. Connecting...")
         await chainApi.connect()
-        console.log("Get Token Balance: API connected: " + chainApi.isConnected)
     }
 
     // Acala/Karura have unique balance utils
@@ -653,7 +637,7 @@ export async function getBalanceFromId(
     if(paraId == 0){
         tokenSymbol = relay === 'kusama' ? "KSM" : "DOT"
     } else {
-        tokenSymbol = assetSymbol
+        tokenSymbol = asset.getSymbol()
     }
 
     console.log(`Get Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
@@ -669,8 +653,8 @@ export async function getBalanceFromId(
         tokenSymbol = tokenSymbol.slice(2)
     }
 
-    let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, assetObject, relay)
-    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress, assetId);
+    let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, asset, relay)
+    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress, asset.getLocalId());
     console.log("Get Token Balance: Subscribed to balance")
     let balance = await firstValueFrom(balanceObservable)
     console.log("Balance: " + JSON.stringify(balance.available.toNumber()))
@@ -679,10 +663,11 @@ export async function getBalanceFromId(
     return balance
 }
 
+// REMOVE
 // TEMP until we smooth out paraspell and balance adapter indexes
 // VALIDATE symbol used for balance adapter, adjust for know symbol collisions
-function getBalanceAdapterSymbol(chainId: number, tokenSymbol: string, assetObject: MyAssetRegistryObject, relay: Relay){
-    let localId = assetObject.tokenData.localId
+function getBalanceAdapterSymbol(chainId: number, tokenSymbol: string, asset: MyAsset, relay: Relay){
+    let localId = asset.getLocalId()
     let validatedSymbol = tokenSymbol
     if(relay == 'kusama'){
     } else {

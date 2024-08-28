@@ -5,10 +5,11 @@ import { ApiPromise } from '@polkadot/api';
 import '@galacticcouncil/api-augment/basilisk';
 import '@galacticcouncil/api-augment/hydradx';
 
-import { Asset, BigNumber, PoolService, TradeRouter, ZERO } from '@galacticcouncil/sdk';
+import { Asset as BsxAsset, BigNumber, PoolService, TradeRouter, ZERO } from '@galacticcouncil/sdk';
 import { SubmittableExtrinsic } from '@polkadot/api/promise/types';
 import { getApiForNode } from './../utils/index.ts';
 import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from "./../types/types.ts";
+import { AssetNode } from "../core/index.ts";
 
 const niceEndpoint = 'wss://rpc.nice.hydration.cloud'
 const wsLocalChain = "ws://172.26.130.75:8010"
@@ -16,13 +17,9 @@ const wsLocalChain = "ws://172.26.130.75:8010"
 export async function getBsxSwapExtrinsicDynamic(
   swapType: PathType,
   startAssetSymbol: string, 
-  destAssetSymbol: string, 
   assetInAmount: string, 
-  assetOutAmount: string, 
-  swapInstructions: any[], 
+  swapInstructions: SwapInstruction[], 
   chopsticks: boolean = true,
-  extrinsicIndex: IndexObject, 
-  instructionIndex: number[],
   priceDeviationPercent: number = 2
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
 
@@ -31,11 +28,11 @@ export async function getBsxSwapExtrinsicDynamic(
     const poolService = new PoolService(api);
     const router = new TradeRouter(poolService);
 
-    let allAssets: Asset[] = await router.getAllAssets()
+    let allAssets: BsxAsset[] = await router.getAllAssets()
 
     let assetPathSymbols = [startAssetSymbol]
     swapInstructions.forEach((instruction) => {
-      assetPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
+      assetPathSymbols.push(instruction.assetNodes[1].getAssetSymbol())
     })
 
     let pathsAndInstructions = splitPathAndInstructions(assetPathSymbols, swapInstructions)
@@ -47,29 +44,28 @@ export async function getBsxSwapExtrinsicDynamic(
       assetNodes.push(instruction.assetNodes[1])
     })
 
-    
+    const assetIn: AssetNode = assetNodes[0]
+    const assetOut: AssetNode = assetNodes[assetNodes.length - 1]
 
-    let destAssetSymbolDynamic = assetNodes[assetNodes.length - 1].getAssetRegistrySymbol()
     let expectedOutDynamic = instructionsToExecute[instructionsToExecute.length - 1].assetNodes[1].pathValue
 
-    let path: Asset[] = assetPathToExecute.map((symbol) => {
+    let path: BsxAsset[] = assetPathToExecute.map((symbol) => {
       const assetInPath =  allAssets.find((asset) => asset.symbol === symbol)
-      // console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
       return assetInPath!
     })
     // let tradeRoute = path.map((asset) => asset.id)
-    const assetIn = path[0]
-    const assetOut = path[path.length - 1]
+    const bsxAssetIn: BsxAsset = path[0]
+    const bsxAssetOut: BsxAsset = path[path.length - 1]
 
     let number = new BigNumber(ZERO)
-    let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), assetIn.decimals)
-    let fnOutputAmount = new FixedPointNumber(expectedOutDynamic.toString(), assetOut.decimals)
+    let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), bsxAssetIn.decimals)
+    let fnOutputAmount = new FixedPointNumber(expectedOutDynamic.toString(), bsxAssetOut.decimals)
 
     //2% acceptable price deviation 2 / 100
     let priceDeviation = fnOutputAmount.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
     let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation)
 
-    let bestBuy = await router.getBestSell(assetIn.id, assetOut.id, assetInAmount.toString())
+    let bestBuy = await router.getBestSell(bsxAssetIn.id, bsxAssetOut.id, assetInAmount.toString())
     let swapZero = bestBuy.toTx(number)
     let tx: SubmittableExtrinsic = swapZero.get()
     
@@ -78,27 +74,24 @@ export async function getBsxSwapExtrinsicDynamic(
     // console.log(` FN INput amount: ${fnInputAmount.toChainData()}`)
     const txFormatted = await api.tx.router
       .sell(
-        assetIn.id, 
-        assetOut.id, 
+        bsxAssetIn.id, 
+        bsxAssetOut.id, 
         fnInputAmount.toChainData(), 
         expectedOutMinusDeviation.toChainData(), 
         route
         )
 
-    let pathInId = assetIn.id
-    let pathOutId = assetOut.id
     let pathAmount = fnInputAmount.toChainData()
     let pathSwapType = swapType
     let swapTxContainer: SwapExtrinsicContainer = {
       relay: 'kusama',
       chainId: 2090,
+      type: "Swap",
       chain: "Basilisk",
       assetNodes: assetNodes,
       extrinsic: txFormatted,
-      extrinsicIndex: extrinsicIndex.i,
-      instructionIndex: instructionIndex,
-      assetSymbolIn: startAssetSymbol,
-      assetSymbolOut: destAssetSymbolDynamic,
+      assetIn: assetIn,
+      assetOut: assetOut,
       assetAmountIn: fnInputAmount,
       expectedAmountOut: fnOutputAmount,
       pathType: pathSwapType,

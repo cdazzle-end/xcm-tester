@@ -1,7 +1,7 @@
 
 import { firstValueFrom, combineLatest, map, Observable, race, EMPTY, timeout } from "rxjs";
 import * as paraspell from "@paraspell/sdk";
-import { ApiSet } from './../types/types.ts'
+import { ApiSet, PNode } from './../types/types.ts'
 import { ApiPromise, ApiRx, WsProvider } from '@polkadot/api';
 import { options } from '@acala-network/api/dist/index.js';
 import { prodParasKusama, prodParasKusamaCommon, prodRelayKusama } from '@polkadot/apps-config/endpoints';
@@ -9,7 +9,7 @@ import { TNode } from "@paraspell/sdk";
 import { dotRpc, ksmRpc, localRpcs } from "./../config/txConsts.ts";
 // import { apiMap } from "./liveTest.ts";
 
-const apiMap: Map<TNode | "Kusama" | "Polkadot", ApiPromise> = new Map<TNode, ApiPromise>();
+const apiMap: Map<PNode, ApiPromise> = new Map<TNode, ApiPromise>();
 const allConnectionPromises = new Map<string, Promise<ApiPromise>>();
 const allConnections = new Map<string, ApiPromise>();
 const promiseApis: Record<number, ApiPromise> = {};
@@ -17,7 +17,7 @@ const observableApis: Record<number, ApiRx> = {};
 
 // Keep a map of all connections. If a connection to a chain already exists, return it
 // POLKADOT_ASSETS HAS THE SAME FUNCTION
-export async function getApiForNode(node: TNode | "Kusama" | "Polkadot", chopsticks: boolean): Promise<ApiPromise>{
+export async function getApiForNode(node: PNode, chopsticks: boolean): Promise<ApiPromise>{
     let map = apiMap
 
     console.log("**********************************************")

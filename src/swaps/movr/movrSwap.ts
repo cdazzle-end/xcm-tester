@@ -6,7 +6,7 @@ import { ethers } from 'ethers'
 import * as fs from 'fs';
 import path from 'path';
 import { BatchSwapParams, SwapData } from './utils/index.ts';
-import {ChainNonces, IndexObject, MyAssetRegistryObject, SwapExtrinsicContainer, SwapInstruction} from '../../types/types.ts'
+import {ChainNonces, IndexObject, IMyAsset, SwapExtrinsicContainer, SwapInstruction} from '../../types/types.ts'
 import { fileURLToPath } from 'url';
 import { AssetNode } from '../../core/AssetNode.ts';
 // import {  } from '../../utils/utils.ts';
@@ -25,7 +25,7 @@ declare global {
 BigInt.prototype.toJSON = function() {
     return this.toString();
 };
-const assetRegistry: MyAssetRegistryObject[] = getAssetRegistry('kusama')
+const assetRegistry: IMyAsset[] = getAssetRegistry('kusama')
 const routerFees = [
     solarFee,
     zenFee
@@ -175,18 +175,18 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
     let tokenPathLocalId: string[] = [];
     let tokenPathAssetNodes: AssetNode[] = []
     let tokenPathAddresses: string[] = []
-    let tokenPathAssetObjects: MyAssetRegistryObject[] = []
+    let tokenPathAssetObjects: IMyAsset[] = []
     swapInstructions.forEach((swapInstruction: SwapInstruction, index: number) => {
         if(index == 0){
             tokenPathLocalId.push(swapInstruction.assetInLocalId)
             tokenPathAssetNodes.push(swapInstruction.assetNodes[0])
-            tokenPathAddresses.push(swapInstruction.assetNodes[0].assetRegistryObject.tokenData.contractAddress!.toLowerCase())
-            tokenPathAssetObjects.push(swapInstruction.assetNodes[0].assetRegistryObject)
+            tokenPathAddresses.push(swapInstruction.assetNodes[0].asset.tokenData.contractAddress!.toLowerCase())
+            tokenPathAssetObjects.push(swapInstruction.assetNodes[0].asset)
         }
         tokenPathLocalId.push(swapInstruction.assetOutLocalId)
         tokenPathAssetNodes.push(swapInstruction.assetNodes[1])
-        tokenPathAddresses.push(swapInstruction.assetNodes[1].assetRegistryObject.tokenData.contractAddress!.toLowerCase())
-        tokenPathAssetObjects.push(swapInstruction.assetNodes[1].assetRegistryObject)
+        tokenPathAddresses.push(swapInstruction.assetNodes[1].asset.tokenData.contractAddress!.toLowerCase())
+        tokenPathAssetObjects.push(swapInstruction.assetNodes[1].asset)
     })
 
     let swapParams: any[] = [];
@@ -292,8 +292,6 @@ export async function getMovrSwapTx(swapInstructions: SwapInstruction[], chopsti
 export async function formatMovrTx(
     movrBatchSwapParams: BatchSwapParams, 
     swapInstructions: SwapInstruction[],
-    extrinsicIndex: IndexObject, 
-    instructionIndex: number[], 
     chopsticks: boolean
 ) {
     let liveWallet = movrBatchSwapParams.wallet;
@@ -318,8 +316,8 @@ export async function formatMovrTx(
 
     let assetInNode = swapInstructions[0].assetNodes[0]
     let assetOutNode = swapInstructions[swapInstructions.length - 1].assetNodes[1]
-    let assetInDecimals = assetInNode.assetRegistryObject.tokenData.decimals
-    let assetOutDecimals = assetOutNode.assetRegistryObject.tokenData.decimals
+    let assetInDecimals = assetInNode.asset.tokenData.decimals
+    let assetOutDecimals = assetOutNode.asset.tokenData.decimals
     let inputAmount = swapInstructions[0].assetNodes[0].pathValue
     let outputAmount = swapInstructions[swapInstructions.length - 1].assetOutTargetAmount
     
@@ -342,8 +340,8 @@ export async function formatMovrTx(
             {value: wrapMovrAmount}
         );
     };
-    let startAsset = swapInstructions[0].assetNodes[0].getAssetRegistrySymbol()
-    let destAsset = swapInstructions[swapInstructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
+    let startAsset = swapInstructions[0].assetNodes[0].getAssetSymbol()
+    let destAsset = swapInstructions[swapInstructions.length - 1].assetNodes[1].getAssetSymbol()
     const descriptorString = `MOVR ${startAsset} -> ${destAsset}`
     let pathStartLocalId = swapInstructions[0].assetInLocalId
     let pathDestLocalId = swapInstructions[swapInstructions.length - 1].assetOutLocalId
@@ -362,17 +360,18 @@ export async function formatMovrTx(
     swapInstructions.forEach((swapInstruction: SwapInstruction) => {
         assetNodes.push(swapInstruction.assetNodes[1])
     })
+    const assetIn = assetNodes[0]
+    const assetOut = assetNodes[assetNodes.length - 1]
     let swapTxContainer: SwapExtrinsicContainer = {
         relay: 'kusama',
         chainId: 2023,
         chain: "Moonriver",
+        type: "Swap",
         assetNodes: assetNodes,
         extrinsic: movrTx,
-        extrinsicIndex: extrinsicIndex.i,
-        instructionIndex: instructionIndex,
         txString: descriptorString,
-        assetSymbolIn: startAsset,
-        assetSymbolOut: destAsset,
+        assetIn: assetIn,
+        assetOut: assetOut,
         assetAmountIn: inputFixedPoint,
         expectedAmountOut: outputFixedPoint,
         // pathInLocalId: pathStartLocalId,
@@ -383,7 +382,6 @@ export async function formatMovrTx(
         api: api,
         movrBatchSwapParams: movrBatchSwapParams
     }
-    increaseIndex(extrinsicIndex)
     return swapTxContainer
 }
 
@@ -900,7 +898,7 @@ function getDexInfo(dexAddress: string): DexInfo{
 
 // }
 function getXcTokens(){
-    const assetRegistry: MyAssetRegistryObject[] = getAssetRegistry('kusama')
+    const assetRegistry: IMyAsset[] = getAssetRegistry('kusama')
     let xcAssets = assetRegistry.filter((asset: any) => asset.tokenData.chain == "2023" && asset.tokenData.symbol.toLowerCase().includes("xc"))
     return xcAssets
 }

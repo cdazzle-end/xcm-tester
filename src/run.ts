@@ -31,7 +31,6 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
     lastExtrinsicSet.allExtrinsicResults.forEach((extrinsicData) => {
         console.log(JSON.stringify(extrinsicData.arbExecutionResult, null, 2))
     })
-    // globalState = executionState
 
     if(lastNode === null){
         console.log("Last node is undefined. No extrinsics executed successfully. Exiting")
@@ -117,11 +116,6 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
 async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr: boolean, inputAmount: number, useLatestTarget: boolean = false){
     if (relay !== 'kusama' && relay !== 'polkadot') throw new Error('Relay not specified')
     GlobalState.initializeAndResetGlobalState(relay)
-        
-    // console.log(`Initialize and reset GlobalState`)
-    // GlobalState.getInstance('polkadot')
-    // resetGlobalState(relay)  
-    // setExecutionRelay(relay)
 
     let latestFile = relay == 'kusama' ? getLatestTargetFileKusama() : getLatestTargetFilePolkadot()
     if(!latestFile){
@@ -166,7 +160,7 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     // Check for allocation instruction
     if(instructionsToExecute[0].type != InstructionType.Swap){
         let firstInstruction: TransferInstruction = instructionsToExecute.splice(0, 1)[0] as TransferInstruction
-        await buildAndExecuteAllocationExtrinsics(relay, [firstInstruction], chopsticks, executeMovr, 100)
+        await buildAndExecuteAllocationExtrinsics(relay, [firstInstruction], chopsticks, executeMovr)
         await logAllResultsDynamic(relay, latestFile, chopsticks)
         instructionsToExecute[0].assetNodes[0].pathValue = getLastNode()!.assetValue
     }
@@ -293,10 +287,10 @@ async function executeLatestArb(relay: Relay, chopsticks: boolean, executeMovr: 
     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
 
     let firstNode: LastNode = {
-        assetKey: assetPath[0].getAssetRegistrySymbol(),
+        assetKey: assetPath[0].getAssetSymbol(),
         assetValue: assetPath[0].pathValue,
         chainId: assetPath[0].getChainId(),
-        assetSymbol: assetPath[0].getAssetRegistrySymbol()
+        assetSymbol: assetPath[0].getAssetSymbol()
     }
     // Set LAST NODE to first node in execution path
     await stateSetLastNode(firstNode)

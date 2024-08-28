@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { localRpcs } from './../config/txConsts.ts';
 import { ExecutionState, ExtrinsicSetResultDynamic, JsonPathNode, LastNode, NewFeeBook, Relay, SwapInstruction, TransferInstruction, TxDetails } from './../types/types.ts';
-import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, getRelayTokenBalances } from './../utils/index.ts';
+import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, getRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, watchTokenDeposit } from './../utils/index.ts';
 import { getParaId, TNode } from '@paraspell/sdk';
 import { getAdapter, getAssetRegistry, getAssetRegistryObject } from '@polkawallet/bridge';
 import bn from 'bignumber.js';
@@ -16,6 +16,7 @@ import { testGlmrRpc } from './../swaps/index.ts';
 import * as Chopsticks from '@acala-network/chopsticks';
 import { buildAndExecuteExtrinsics, buildInstructionSet, buildInstructionSetTest, executeXcmTransfer } from './../execution/index.ts';
 import { AssetNode } from './../core/index.ts';
+import keyring from '@polkadot/keyring';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -699,10 +700,10 @@ async function executeTestPath(relay: Relay, chopsticks: boolean, executeMovr: b
     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
 
     let firstNode: LastNode = {
-        assetKey: assetPath[0].getAssetRegistrySymbol(),
+        assetKey: assetPath[0].getAssetSymbol(),
         assetValue: assetPath[0].pathValue,
         chainId: assetPath[0].getChainId(),
-        assetSymbol: assetPath[0].getAssetRegistrySymbol()
+        assetSymbol: assetPath[0].getAssetSymbol()
     }
     // Set LAST NODE to first node in execution path
     await stateSetLastNode(firstNode)
@@ -748,6 +749,56 @@ async function testXcm(){
     // console.log("XCM Event Data: " + JSON.stringify(eventData, null, 2))
 }
 
+async function testDepositEventListeners(){
+    const chopsticks = true
+    const relay: Relay = 'polkadot'
+    const fromNode: TNode = 'Acala'
+    const fromParaId = 2000
+    const toNode: TNode = 'Moonbeam'
+    const toParaId = 2004
+    const startAssetObject = getAssetRegistryObjectBySymbol(2000, 'ACA', 'polkadot')
+    const destAssetObject = getAssetRegistryObjectBySymbol(2004, 'XCACA', 'polkadot')
+    const amount = '1000000000000'
+    
+
+    const fromSigner = await getSigner(chopsticks, false)
+    const toSigner = await getSigner(chopsticks, true)
+
+    const fromApi = await getApiForNode(fromNode, chopsticks)
+    const toApi = await getApiForNode(toNode, chopsticks)
+
+
+    const xcmTx = paraspell.Builder(fromApi).from(fromNode).to(toNode).currency(startAssetObject.tokenData.localId).amount(amount).address(toSigner.address).build()
+
+    let keyring = new Keyring({
+        ss58Format: 0,
+        type: 'sr25519'
+    })
+    let ss58FormatDest = await toApi.consts.system.ss58Prefix;
+
+    let transferType = getTransferType(fromNode, toNode)
+    let destWalletFormatted = getWalletAddressFormatted(toSigner, keyring, toNode, ss58FormatDest)
+    const destinationAssetDecimals = Number.parseInt(startAssetObject.tokenData.decimals)
+
+    let destBalanceObservable$ = await watchTokenDeposit(relay, toParaId, chopsticks, toApi, destTransferrable, watchDepositAddress)
+    let destAdapterBalanceChangePromise = getBalanceChange(destBalanceObservable$, (unsub) =>{
+        destBalanceUnsub = unsub
+    })
+
+    let depositEventPromise = listenForXcmpDepositEvent(
+        toApi, 
+        toNode, 
+        transferType, 
+        // destAssetObject.tokenData.symbol, 
+        // destinationAssetDecimals, 
+        destAssetObject, 
+        destWalletFormatted, 
+        destAdapterBalanceChangeTracker, 
+        xcmTxProperties, 
+        xcmTransferId
+    ) 
+}
+
 async function buildTest(){
     let relay: Relay = 'polkadot'
     let chopsticks: boolean = true
@@ -764,8 +815,8 @@ async function buildTest(){
         console.log(`Asset Node path data main: ${JSON.stringify(asset.pathData)}`)
         console.log(
             `Chain: ${asset.getChainId()}, 
-            Node: ${asset.paraspellChain}, 
-            Asset: ${asset.getAssetRegistrySymbol()}, 
+            Node: ${asset.chain}, 
+            Asset: ${asset.getAssetSymbol()}, 
             Amount: ${asset.pathValue}, 
             Fee Amounts: ${JSON.stringify(asset.pathData.xcmDepositFeeAmounts)}, 
             Reserve Amounts: ${JSON.stringify(asset.pathData.xcmDepositReserveAmounts)}`

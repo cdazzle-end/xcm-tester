@@ -6,7 +6,7 @@ import "@galacticcouncil/api-augment/hydradx";
 
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import {
-    Asset,
+    Asset as HdxAsset,
     BigNumber,
     PoolService,
     TradeRouter,
@@ -27,15 +27,12 @@ const wsLocalChain = localRpcs["HydraDX"];
 
 export async function getHdxSwapExtrinsicDynamic(
     swapType: PathType,
-    swapData: PathData,
     startAssetSymbol: string,
     destAssetSymbol: string,
     assetInAmount: string,
     assetOutAmount: string,
     swapInstructions: SwapInstruction[],
     chopsticks: boolean = true,
-    extrinsicIndex: IndexObject,
-    instructionIndex: number[],
     priceDeviationPercent: number = 2
 ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]> {
     console.log(
@@ -54,15 +51,14 @@ export async function getHdxSwapExtrinsicDynamic(
     // Suppress unexpected console.log output from the SDK. This is a temporary workaround, because i cant turn it back on for the sdk, but normal console.log messages will resturn
     const originalConsoleLog = console.log;
     console.log = () => {};
-    let allAssets: Asset[] = await router.getAllAssets(); // This prints sdk logs
+    let allAssets: HdxAsset[] = await router.getAllAssets(); // This prints sdk logs
     console.log = originalConsoleLog;
 
-    let assetPathSymbols = [startAssetSymbol];
     let assetPathIds = [startAssetId];
 
     // CHANGING to ID's
     swapInstructions.forEach((instruction) => {
-        assetPathIds.push(instruction.assetNodes[1].getAssetLocalId());
+        assetPathIds.push(instruction.assetNodes[1].getLocalId());
     });
 
     // let pathsAndInstructions = splitPathAndInstructions(assetPathSymbols, swapInstructions)
@@ -78,28 +74,27 @@ export async function getHdxSwapExtrinsicDynamic(
         assetNodes.push(instruction.assetNodes[1]);
     });
 
-    let destAssetSymbolDynamic =
-        assetNodes[assetNodes.length - 1].getAssetRegistrySymbol();
-    let expectedOutDynamic =
-        instructionsToExecute[instructionsToExecute.length - 1].assetNodes[1]
-            .pathValue;
+    const assetIn = assetNodes[0]
+    const assetOut = assetNodes[assetNodes.length - 1] 
 
-    let path: Asset[] = assetPathToExecute.map((assetId) => {
+    let expectedOutDynamic = assetOut.pathValue;
+
+    let path: HdxAsset[] = assetPathToExecute.map((assetId) => {
         const assetInPath = allAssets.find((asset) => asset.id == assetId);
         // console.log(`Asset ${assetInPath.symbol} ${assetInPath.id} ->`)
         return assetInPath!;
     });
-    const assetIn = path[0];
-    const assetOut = path[path.length - 1];
+    const hdxAssetIn: HdxAsset = path[0];
+    const hdxAssetOut: HdxAsset = path[path.length - 1];
 
     let number = new BigNumber(ZERO);
     let fnInputAmount = new FixedPointNumber(
         assetInAmount.toString(),
-        assetIn.decimals
+        hdxAssetIn.decimals
     );
     let fnOutputAmount = new FixedPointNumber(
         expectedOutDynamic.toString(),
-        assetOut.decimals
+        hdxAssetOut.decimals
     );
 
     //2% acceptable price deviation 2 / 100
@@ -109,11 +104,11 @@ export async function getHdxSwapExtrinsicDynamic(
     let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation);
 
     let bestBuy = await router.getBestSell(
-        assetIn.id,
-        assetOut.id,
+        hdxAssetIn.id,
+        hdxAssetOut.id,
         assetInAmount.toString()
     );
-    console.log(`Best buy for in: ${assetIn.id} -> out: ${assetOut.id} (${assetInAmount.toString()})`)
+    console.log(`Best buy for in: ${hdxAssetIn.id} -> out: ${hdxAssetOut.id} (${assetInAmount.toString()})`)
     console.log(`${JSON.stringify(bestBuy, null, 2)}`)
     // console.log("Created best buy")
     let swapZero = bestBuy.toTx(number);
@@ -130,13 +125,13 @@ export async function getHdxSwapExtrinsicDynamic(
     }
     console.log(`Removed commas from route: ${JSON.stringify(route, null)}`)
 
-    console.log(`Asset in id: ${assetIn.id} | Asset out id: ${assetOut.id} | Aset amount in: ${fnInputAmount.toChainData()} | expected out: ${expectedOutMinusDeviation.toChainData()}`);
+    console.log(`Asset in id: ${hdxAssetIn.id} | Asset out id: ${hdxAssetOut.id} | Aset amount in: ${fnInputAmount.toChainData()} | expected out: ${expectedOutMinusDeviation.toChainData()}`);
     // console.log(` FN INput amount: ${fnInputAmount.toChainData()}`)
     let txFormatted
     try {
         txFormatted = await api.tx.router.sell(
-            assetIn.id,
-            assetOut.id,
+            hdxAssetIn.id,
+            hdxAssetOut.id,
             fnInputAmount.toChainData(),
             expectedOutMinusDeviation.toChainData(),
             route
@@ -144,29 +139,28 @@ export async function getHdxSwapExtrinsicDynamic(
     } catch (e) {
         throw new Error(
             `Failed to construct Hydra swap. AssetIn ${JSON.stringify(
-                assetIn
+                hdxAssetIn
             )} | AssetOut: ${JSON.stringify(
-                assetOut
+                hdxAssetOut
             )} | Input amount: ${fnInputAmount.toChainData()} | Expected amount out: ${expectedOutMinusDeviation.toChainData()} | Route: ${JSON.stringify(
                 route
             )} | Error: ${JSON.stringify(e, null, 2)}`
         );
     }
 
-    let pathInId = assetIn.id;
-    let pathOutId = assetOut.id;
+    let pathInId = hdxAssetIn.id;
+    let pathOutId = hdxAssetOut.id;
     let pathAmount = fnInputAmount.toChainData();
     let pathSwapType = swapType;
     let swapTxContainer: SwapExtrinsicContainer = {
         relay: "polkadot",
         chainId: 2034,
         chain: "HydraDX",
+        type: "Swap",
         assetNodes: assetNodes,
         extrinsic: txFormatted,
-        extrinsicIndex: extrinsicIndex.i,
-        instructionIndex: instructionIndex,
-        assetSymbolIn: startAssetSymbol,
-        assetSymbolOut: destAssetSymbolDynamic,
+        assetIn: assetIn,
+        assetOut: assetOut,
         assetAmountIn: fnInputAmount,
         expectedAmountOut: fnOutputAmount,
         pathType: pathSwapType,

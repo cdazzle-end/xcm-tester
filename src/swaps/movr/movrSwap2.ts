@@ -15,7 +15,7 @@ import BN from 'bn.js';
 import {toBigInt} from 'ethers'
 import { BigNumberish } from 'ethers';
 import { getAssetRegistry } from 'src/utils/utils';
-import { MyAssetRegistryObject } from 'src/types/types';
+import { MyAsset } from 'src/types/types';
 // import __dirname from './dirname.js';
 
 const mnemonic = 'bottom drive obey lake curtain smoke basket hold race lonely fit walk';
@@ -554,7 +554,7 @@ function checkForSubstrateToken(address: string){
         // console.log("Not a substrate token")
         return false
     } else {
-        const assetRegistry: MyAssetRegistryObject[] = getAssetRegistry('kusama')
+        const assetRegistry: MyAsset[] = getAssetRegistry('kusama')
         const substrateToken = assetRegistry.find((asset: any) => asset.tokenData.localId == address)
         if(substrateToken){
             return true

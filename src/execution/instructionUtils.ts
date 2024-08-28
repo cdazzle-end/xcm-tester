@@ -1,16 +1,17 @@
 import * as paraspell from "@paraspell/sdk";
 import { AssetNode } from "../core/AssetNode.ts";
-import { IndexObject, InstructionType, MyAssetRegistryObject, NativeBalancesType, Relay, JsonPathNode, SwapInstruction, TransferInstruction, TransferrableAssetObject, TransferToHomeThenDestInstruction } from "./../types/types.ts";
-import { getParaspellChainName, getAssetRegistryObjectBySymbol, getAssetBySymbolOrId, increaseIndex, constructRouteFromFile, constructRouteFromJson, getAssetKeyFromChainAndSymbol, printAllocations, getSigner } from "../utils/utils.ts";
+import { IndexObject, InstructionType, IMyAsset, NativeBalancesType, Relay, JsonPathNode, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, PNode } from "./../types/types.ts";
+import { getNode, getAssetRegistryObjectBySymbol, getAssetBySymbolOrId, increaseIndex, constructRouteFromFile, constructRouteFromJson, getAssetKeyFromChainAndSymbol, printAllocations, getSigner, findValueByKey } from "../utils/utils.ts";
 import fs from 'fs'
 import path from 'path'
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { fileURLToPath } from 'url';
 import { getBalance, getBalanceChainAsset} from "../utils/balanceUtils.ts";
 import { getApiForNode } from "../utils/apiUtils.ts";
-import BigNumber from "bignumber.js";
+import bn from "bignumber.js";
 import { buildAndExecuteAllocationExtrinsics } from "./arbExecutor.ts";
 import { stateSetTracking } from "./../utils/globalStateUtils.ts";
+import { MyAsset } from "../core/index.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,10 +19,9 @@ const __dirname = path.dirname(__filename);
 // Build instructions from arb result log
 export function buildInstructionSet(relay: Relay, assetPath: AssetNode[]) {
     let instructions: (SwapInstruction | TransferInstruction)[] = [];
-    let instructionIndex: IndexObject = {i: 0}
     for (let i = 0; i < assetPath.length - 1; i++) {
         let assetNodes = [assetPath[i], assetPath[i + 1]]
-        let newInstructions = buildInstructions(relay, assetNodes, instructionIndex)
+        let newInstructions = buildInstructions(relay, assetNodes)
         newInstructions.forEach((instruction) => {
             instructions.push(instruction)
         })
@@ -32,10 +32,9 @@ export function buildInstructionSet(relay: Relay, assetPath: AssetNode[]) {
 // Build instructions from arb result log
 export function buildInstructionSetTest(relay: Relay, assetPath: AssetNode[]) {
     let instructions: (SwapInstruction | TransferInstruction)[] = [];
-    let instructionIndex: IndexObject = {i: 0}
     for (let i = 0; i < assetPath.length - 1; i++) {
         let assetNodes = [assetPath[i], assetPath[i + 1]]
-        let newInstructions = buildInstructions(relay, assetNodes, instructionIndex)
+        let newInstructions = buildInstructions(relay, assetNodes)
         newInstructions.forEach((instruction) => {
             instructions.push(instruction)
         })
@@ -44,33 +43,34 @@ export function buildInstructionSetTest(relay: Relay, assetPath: AssetNode[]) {
 }
 
 // Determine instructions between two nodes
-export function buildInstructions(relay: Relay, assetNodes: AssetNode[], instructionIndex: IndexObject): (SwapInstruction | TransferInstruction)[] {
+export function buildInstructions(
+    relay: Relay, 
+    assetNodes: AssetNode[], 
+): (SwapInstruction | TransferInstruction)[] {
     let instructions: (SwapInstruction | TransferInstruction)[] = [];
-    // let instructionIndex = 0
-    // - Nodes on same chain === swap instructions
     if (assetNodes[0].getChainId() == assetNodes[1].getChainId()) {
-        let swapInstructions = buildSwapInstruction(assetNodes, instructionIndex)
+        let swapInstructions = buildSwapInstruction(assetNodes)
         instructions.push(swapInstructions)
     } else{
-        let assetOriginChainId = assetNodes[0].getAssetOriginChainId()
+        let assetOriginChainId = assetNodes[0].getOriginChainId()
 
         // - Node's origin chain === start/current node chain -> transfer away from home instruction
         if(assetOriginChainId == assetNodes[0].getChainId()){
-            let transferInstructions = buildTransferInstruction(relay, assetNodes, InstructionType.TransferAwayFromHomeChain, instructionIndex)
+            let transferInstructions = buildTransferInstruction(relay, assetNodes, InstructionType.TransferAwayFromHomeChain)
             transferInstructions.forEach((instruction) => {
                 instructions.push(instruction)
             })
         }
         // - Node's origin chain === dest node chain -> transfer to home instruction
         else if(assetOriginChainId == assetNodes[1].getChainId()){
-            let transferInstructions = buildTransferInstruction(relay, assetNodes, InstructionType.TransferToHomeChain, instructionIndex)
+            let transferInstructions = buildTransferInstruction(relay, assetNodes, InstructionType.TransferToHomeChain)
             transferInstructions.forEach((instruction) => {
                 instructions.push(instruction)
             })
         }
         // - Node's origin chain !== (start node chain || dest node chain) -> transfer to home then transfer to dest instruction
         else{
-            let transferInstructions = buildTransferInstruction(relay, assetNodes, InstructionType.TransferToHomeThenDestination, instructionIndex)
+            let transferInstructions = buildTransferInstruction(relay, assetNodes, InstructionType.TransferToHomeThenDestination)
             transferInstructions.forEach((instruction) => {
                 instructions.push(instruction)
             })
@@ -83,7 +83,9 @@ export function buildInstructions(relay: Relay, assetNodes: AssetNode[], instruc
     
 }
 
-export function buildSwapInstruction(assetNodes: AssetNode[], index: IndexObject): SwapInstruction {
+export function buildSwapInstruction(
+    assetNodes: AssetNode[], 
+): SwapInstruction {
     //Path type is important for distinguishing between swap types like stable and standard dex.
     //Path type is stored in each node of arb log results, and the path type of the next node is the type of swap between them.
 
@@ -92,39 +94,40 @@ export function buildSwapInstruction(assetNodes: AssetNode[], index: IndexObject
     chain: assetNodes[0].getChainId(),
     pathType: assetNodes[1].pathType,
     pathData: assetNodes[1].pathData,
-    instructionIndex: index.i,
-    assetInLocalId: assetNodes[0].assetRegistryObject.tokenData.localId,
+    assetInLocalId: assetNodes[0].asset.tokenData.localId,
     assetInAmount: assetNodes[0].pathValue,
     assetInAmountFixed: assetNodes[0].pathValueFixed,
-    assetOutLocalId: assetNodes[1].assetRegistryObject.tokenData.localId,
+    assetOutLocalId: assetNodes[1].asset.tokenData.localId,
     assetOutTargetAmount: assetNodes[1].pathValue,
     assetOutTargetAmountFixed: assetNodes[1].pathValueFixed,
     assetNodes: assetNodes,
   };
 //   console.log(JSON.stringify(swapInstruction, null, 2))
-  increaseIndex(index)
   return swapInstruction;
 }
 
-function createInstructionTransferToHome(relay: Relay, assetNodes: AssetNode[], index: IndexObject) {
-    let transferInstruction = createInstructionTransfer(relay, assetNodes, InstructionType.TransferToHomeChain, index)
+function createInstructionTransferToHome(
+    relay: Relay, 
+    assetNodes: AssetNode[], 
+) {
+    let transferInstruction = createInstructionTransfer(relay, assetNodes, InstructionType.TransferToHomeChain)
     return transferInstruction
 }
-function createInstructionTransferAwayFromHome(relay: Relay, assetNodes: AssetNode[], index: IndexObject) {
-    let transferInstruction = createInstructionTransfer(relay, assetNodes, InstructionType.TransferAwayFromHomeChain, index)
+function createInstructionTransferAwayFromHome(
+    relay: Relay, 
+    assetNodes: AssetNode[]
+) {
+    let transferInstruction = createInstructionTransfer(relay, assetNodes, InstructionType.TransferAwayFromHomeChain)
     return transferInstruction
 }
 // Creates transfer for to home then destination, which is two transfers and creates a middle node
-function createInstructionTransferToHomeThenDestination(relay: Relay, assetNodes: AssetNode[], index: IndexObject) {
+function createInstructionTransferToHomeThenDestination(
+    relay: Relay, 
+    assetNodes: AssetNode[]
+) {
     let startAssetNode = assetNodes[0]
     let destinationAssetNode = assetNodes[1]
-    let instructionIndexOne = index.i;
-    // increaseIndex(index)
-    let instructionIndexTwo = index.i;
-    let middleAssetNode = createMiddleNode(relay, startAssetNode, destinationAssetNode)
-
-
-    let relayNode: 'Kusama' | 'Polkadot' = relay === 'kusama' ? 'Kusama' : 'Polkadot'
+    let middleAssetNode = createMiddleNode(relay, startAssetNode)
 
     let xcmTransferReserves = assetNodes[1].pathData.xcmTransferReserveAmounts
     let xcmTransferFees = assetNodes[1].pathData.xcmTransferFeeAmounts
@@ -134,63 +137,56 @@ function createInstructionTransferToHomeThenDestination(relay: Relay, assetNodes
 
     let transferInstruction: TransferToHomeThenDestInstruction = {
         type: InstructionType.TransferToHomeThenDestination,
-        instructionIndex: instructionIndexOne,
-        secondInstructionIndex: instructionIndexTwo,
-        toChainId: destinationAssetNode.getChainId(),
-        fromChainId: startAssetNode.getChainId(),
         
-        startNode: getParaspellChainNameByParaId(relay, startAssetNode.getChainId()) || relayNode,
-        startNodeLocalId: startAssetNode.assetRegistryObject.tokenData.localId,
-        startAssetNode,
+        // startNode: getNode(relay, startAssetNode.getChainId()),
+        // startNodeLocalId: startAssetNode.asset.tokenData.localId,
+        // startAssetNode,
+        startAsset: startAssetNode,
         startTransferFee: xcmTransferFees![0],
         startTransferReserve: xcmTransferReserves![0],
 
-        middleNode: getParaspellChainNameByParaId(relay, middleAssetNode.getChainId()) || relayNode,
-        middleNodeLocalId: middleAssetNode.assetRegistryObject.tokenData.localId,
-        middleAssetNode,
+        // middleNode: getNode(relay, middleAssetNode.getChainId()),
+        // middleNodeLocalId: middleAssetNode.asset.tokenData.localId,
+        middleAsset: middleAssetNode,
         middleTransferFee: xcmTransferFees![1],
         middleTransferReserve: xcmTransferReserves![1],
         middleDepositFee: xcmDepositFees![0],
         middleDepositReserve: xcmDepositReserves![0],
 
-        destinationNode: getParaspellChainNameByParaId(relay, destinationAssetNode.getChainId()) || relayNode,
-        destinationNodeLocalId: destinationAssetNode.assetRegistryObject.tokenData.localId,
-        destinationAssetNode,
+        // destinationNode: getNode(relay, destinationAssetNode.getChainId()),
+        // destinationNodeLocalId: destinationAssetNode.asset.tokenData.localId,
+        destinationAsset: destinationAssetNode,
         destinationDepositFee: xcmDepositFees![1],
         destinationDepositReserve: xcmDepositReserves![1],
 
         assetNodes,
     };
-    console.log(`New Transfer Instruction ${transferInstruction.startNode} -> ${transferInstruction.destinationNode} (${assetNodes[0].getAssetRegistrySymbol()}) Xcm Fee: ${xcmTransferFees}`)
-    increaseIndex(index)
+    console.log(`New Transfer Instruction ${transferInstruction.startAsset.chain} -> ${transferInstruction.destinationAsset.chain} (${assetNodes[0].getAssetSymbol()}) Xcm Fee: ${xcmTransferFees}`)
     return transferInstruction
 }
 
-function createMiddleNode(relay: Relay, startAssetNode: AssetNode, destinationAssetNode: AssetNode) {  
-    
-    let relayNode: 'Kusama' | 'Polkadot' = relay === 'kusama' ? 'Kusama' : 'Polkadot'
+/**
+ * Creating middle node when transferring an asset to origin chain then to desination
+ * 
+ * @param relay 
+ * @param startAssetNode 
+ * @param destinationAssetNode 
+ * @returns 
+ */
+function createMiddleNode(relay: Relay, startAssetNode: AssetNode) {  
 
-
-    let middleChainId = startAssetNode.getAssetOriginChainId()
-    let middleNode: paraspell.TNode | "Kusama" | "Polkadot" = paraspell.getTNode(middleChainId) || relayNode
-    // let middleNode: paraspell.TNode | "Kusama" | "Polkadot" = relayNode
-    let paraspellChain = getParaspellChainName(relay, middleChainId)
-    let paraspellAsset;
-    let assetRegistryObject;
-    if(paraspellChain == "Kusama" || paraspellChain == "Polkadot"){
-        paraspellAsset = null;
-        let assetSymbol = paraspellChain == "Kusama" ? "KSM" : "DOT"
-        assetRegistryObject = getAssetRegistryObjectBySymbol(0, assetSymbol, relay)
+    let middleChainId = startAssetNode.getOriginChainId()
+    let middleNode: PNode = getNode(relay, middleChainId)
+    let middleAsset: MyAsset;
+    if(middleNode == "Kusama" || middleNode == "Polkadot"){
+        let assetSymbol = middleNode == "Kusama" ? "KSM" : "DOT"
+        middleAsset = new MyAsset(getAssetRegistryObjectBySymbol(0, assetSymbol, relay))
     } else {
-        let assetSymbol = startAssetNode.assetRegistryObject.tokenData.symbol
-        let assetId = JSON.stringify(startAssetNode.assetRegistryObject.tokenData.localId).replace(/\\|"/g, "")
-        paraspellAsset = getAssetBySymbolOrId(paraspellChain, assetId, assetSymbol)
-        assetRegistryObject = startAssetNode.getAssetOriginRegistryObject()
+        middleAsset = startAssetNode.getAssetOriginRegistryObject()
     }
     let middleAssetNode = new AssetNode({
-        paraspellChain: middleNode, 
-        // paraspellAsset: paraspellAsset,
-        assetRegistryObject: assetRegistryObject,
+        chain: middleNode,
+        asset: middleAsset,
         pathValue: startAssetNode.pathValue, 
         pathType: startAssetNode.pathType,
         pathData: startAssetNode.pathData
@@ -199,104 +195,103 @@ function createMiddleNode(relay: Relay, startAssetNode: AssetNode, destinationAs
 }
 
 // Creates instruction for to home chain or away from home chain
-function createInstructionTransfer(relay: Relay, assetNodes: AssetNode[], transferType: InstructionType.TransferToHomeChain | InstructionType.TransferAwayFromHomeChain, index: IndexObject) {
-    let startAssetNode = assetNodes[0]
-    let destinationAssetNode = assetNodes[1]
+function createInstructionTransfer(
+    relay: Relay, 
+    assetNodes: AssetNode[], 
+    transferType: InstructionType.TransferToHomeChain | InstructionType.TransferAwayFromHomeChain, 
+) {
+    let startAsset: AssetNode = assetNodes[0]
+    let destinationAsset: AssetNode = assetNodes[1]
     let xcmTransferFees = assetNodes[1].pathData.xcmTransferFeeAmounts
     let xcmTransferReserves = assetNodes[1].pathData.xcmTransferReserveAmounts
     let xcmDepositFees = assetNodes[1].pathData.xcmDepositFeeAmounts
     let xcmDepositReserves = assetNodes[1].pathData.xcmDepositReserveAmounts
-    let relayNode: 'Kusama' | 'Polkadot' = relay === 'kusama' ? 'Kusama' : 'Polkadot'
     let transferInstruction: TransferInstruction = {
         type: transferType,
-        instructionIndex: index.i,
-        fromChainId: startAssetNode.getChainId(),
-        startNode: getParaspellChainNameByParaId(relay, startAssetNode.getChainId()) || relayNode,
-        startNodeLocalId: startAssetNode.assetRegistryObject.tokenData.localId,
-        startAssetNode,
+        startAsset: startAsset,
         startTransferFee: xcmTransferFees![0],
         startTransferReserve: xcmTransferReserves![0],
-        toChainId: destinationAssetNode.getChainId(),
-        destinationNode: getParaspellChainNameByParaId(relay, destinationAssetNode.getChainId()) || relayNode,
-        destinationNodeLocalId: destinationAssetNode.assetRegistryObject.tokenData.localId,
-        destinationAssetNode,
+        destinationAsset: destinationAsset,
         destinationDepositFee: xcmDepositFees![0],
         destinationDepositReserve: xcmDepositReserves![0],
         assetNodes,
     };
 
-    console.log(`New Transfer Instruction ${transferInstruction.startNode} -> ${transferInstruction.destinationNode} (${assetNodes[0].getAssetRegistrySymbol()}) Xcm Fees: ${transferInstruction.startTransferFee}`)
+    console.log(`New Transfer Instruction ${startAsset.chain} -> ${destinationAsset.chain} (${startAsset.getAssetSymbol()}) Xcm Fees: ${transferInstruction.startTransferFee}`)
     
-    increaseIndex(index)
     return transferInstruction
     
 }
-function buildTransferInstruction(relay: Relay, assetNodes: AssetNode[], transferType: InstructionType, index: IndexObject): TransferInstruction[] {
+function buildTransferInstruction(
+    relay: Relay, 
+    assetNodes: AssetNode[], 
+    transferType: InstructionType, 
+): TransferInstruction[] {
     let transferInstructions: TransferInstruction[] = []
 
     let transferInstruction: TransferInstruction;
     switch(transferType){
         case InstructionType.TransferToHomeChain:
-            transferInstruction = createInstructionTransferToHome(relay, assetNodes, index)
+            transferInstruction = createInstructionTransferToHome(relay, assetNodes)
             transferInstructions.push(transferInstruction)
             break;
         case InstructionType.TransferAwayFromHomeChain:
-            transferInstruction = createInstructionTransferAwayFromHome(relay, assetNodes, index)
+            transferInstruction = createInstructionTransferAwayFromHome(relay, assetNodes)
             transferInstructions.push(transferInstruction)
             break;
         case InstructionType.TransferToHomeThenDestination:
-            transferInstruction = createInstructionTransferToHomeThenDestination(relay, assetNodes, index)
+            transferInstruction = createInstructionTransferToHomeThenDestination(relay, assetNodes)
             transferInstructions.push(transferInstruction)
             break;
     }
     return transferInstructions
 }
-
-export function getTransferrableAssetObject(relay: Relay, assetNode: AssetNode): TransferrableAssetObject {
-    let sourceChainParaspell = getParaspellChainName(relay, assetNode.getChainId())
-    // let assetParaspell;
-    // if(sourceChainParaspell == "Kusama"){
-    //     assetParaspell = "KSM"
-    // } else if (sourceChainParaspell == "Polkadot") {
-    //     assetParaspell = "DOT"
-    // } else {
-    //     let assetId = JSON.stringify(assetNode.assetRegistryObject.tokenData.localId).replace(/\\|"/g, "")
-    //     assetParaspell = getAssetBySymbolOrId(sourceChainParaspell, assetId, assetNode.getAssetRegistrySymbol())
-    // }
-    // if(!assetParaspell){
-    //     throw new Error("Can't find asset paraspell object for asset node: " + JSON.stringify(assetNode, null, 2))
-    // }
-    let originChainParaspell = getParaspellChainName(relay, assetNode.getAssetOriginChainId())
-
-    let transferrableAssetObject: TransferrableAssetObject = {
-        sourceParaspellChainName: sourceChainParaspell,
-        assetRegistryObject: assetNode.assetRegistryObject,
-        // paraspellAsset: assetParaspell,
-        originChainParaId: assetNode.getAssetOriginChainId(),
-        originParaspellChainName: originChainParaspell
+/**
+ * Parse parachain value from asset location to get origin/home chain
+ * 
+ * @param asset MyAssetRegistryObject
+ * @returns Para ID
+ */
+function getAssetOriginChainId(asset: IMyAsset): number{
+    // Check if relay chain/kusama
+    if(asset.tokenLocation == "here"){
+        return 0
     }
-    return transferrableAssetObject
+    let parachain = findValueByKey(asset.tokenLocation, "Parachain")
+    if(!parachain){
+        throw new Error("Can't find origin chain for asset: " + JSON.stringify(asset, null, 2))
+    }
+    return parseInt(parachain)
 }
 
-export function getParaspellKsmChainNameByParaId(chainId: number): paraspell.TNode{
-    let chain =  paraspell.NODE_NAMES.find((node) => {
-      return paraspell.getParaId(node) == chainId && paraspell.getRelayChainSymbol(node) == "KSM"  
-    })
-    return chain as paraspell.TNode
-}
-export function getParaspellChainNameByParaId(relay: Relay, chainId: number): paraspell.TNode{
-    let relaySymbol = relay == 'kusama' ? "KSM" : "DOT"
-    let chain =  paraspell.NODE_NAMES.find((node) => {
-      return paraspell.getParaId(node) == chainId && paraspell.getRelayChainSymbol(node) == relaySymbol
-    })
-    return chain as paraspell.TNode
+/**
+ * Create transferrable asset object from asset object
+ * 
+ * @param relay 
+ */
+export function buildTransferrableAssetObject(relay: Relay, asset: IMyAsset){
+    const startChain = getNode(relay, asset.tokenData.chain)
+    const homeChainId = getAssetOriginChainId(asset)
+    const homeChain = getNode(relay, homeChainId)
+
+    return {
+        sourceParaspellChainName: startChain,
+        assetRegistryObject: asset,
+        originChainParaId: homeChainId,
+        originParaspellChainName: homeChain
+    }
 }
 
 // BUILD paths to allocate relay token. all chains -> relay chain && relay chain -> start chain 
 // If running allocation function, then the relay chain should already have enough funds. So likely just relay chain -> start chain
 // maintain atleast a 0.01 Relay Token balance on Relay chain
 // Dont allocate from asset hub because ksm is needed to transactions
-export async function getPreTransferPath(relay: Relay, startChainId: number, inputAmount: number, chopsticks: boolean, nativeBalances: any): Promise<AssetNode[][]>{
+export async function getPreTransferPath(
+    relay: Relay, 
+    startChainId: number, 
+    inputAmount: number, 
+    nativeBalances: any
+): Promise<AssetNode[][]>{
     let nativeAssetSymbol = relay == 'kusama' ? "KSM" : "DOT"
     let minimumRelayBalance = relay == 'kusama' ? 0.01 : 1
 
@@ -376,7 +371,7 @@ export async function getPreTransferPath(relay: Relay, startChainId: number, inp
         allocationAssetNodePaths.forEach((path) => {
             console.log("PATH")
             path.forEach((node) => {
-                console.log(`${node.assetRegistryObject.tokenData.symbol} from ${node.paraspellChain} with value ${node.pathValue} ->`)
+                console.log(`${node.asset.tokenData.symbol} from ${node.chain} with value ${node.pathValue} ->`)
             })
             console.log("*********************************************************")
 
@@ -431,9 +426,13 @@ export async function getPreTransferPath(relay: Relay, startChainId: number, inp
 // export async function getBalance(paraId: number, relay: Relay, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, assetObject: MyAssetRegistryObject, node: string, accountAddress: string): Promise<BalanceData>{
 
 // Relay chain should always have sufficient tokens to fund the swap
-export async function getFundingPath(relay: Relay, startChainId: number, inputAmount: number, chopsticks: boolean, nativeBalances: any): Promise<AssetNode[]>{
+export async function getFundingPath(
+    relay: Relay, 
+    startChainId: number, 
+    inputAmount: number, 
+    nativeBalances: any
+): Promise<AssetNode[]>{
     let nativeAssetSymbol = relay == 'kusama' ? "KSM" : "DOT"
-    let relayNode: "Kusama" | "Polkadot" = relay == 'kusama' ? 'Kusama' : 'Polkadot'
     let relayTokenBalance = nativeBalances[0]
     let startTokenBalance = nativeBalances[startChainId]
 
@@ -466,12 +465,12 @@ export async function collectKsmToRelayPaths(relay: Relay, nativeBalances: Nativ
     let minimumTokenBalance = relay == 'kusama' ? 0.01 : 0.02
     Object.entries(nativeBalances).forEach(([chainId, balance]) => {
         if(Number.parseInt(chainId) != 0 && Number.parseInt(chainId) != startChainId){
-            let chainBalance = new BigNumber(balance)
-            let amountToTransfer;
+            let chainBalance = new bn(balance)
+            let amountToTransfer: bn;
             if(chainBalance.gt(minimumTokenBalance)){
                 amountToTransfer = chainBalance.minus(minimumTokenBalance)
             } else {
-                amountToTransfer = 0
+                amountToTransfer = new bn(0)
             }
             let chainAllocationData = {chainId: Number.parseInt(chainId), balance: amountToTransfer}
             nodesToAllocateFrom.push(chainAllocationData)
@@ -493,7 +492,7 @@ export async function collectKsmToRelayPaths(relay: Relay, nativeBalances: Nativ
     allocationAssetNodePaths.forEach((path) => {
         console.log("PATH")
         path.forEach((node) => {
-            console.log(`${node.assetRegistryObject.tokenData.symbol} from ${node.paraspellChain} with value ${node.pathValue} ->`)
+            console.log(`${node.asset.tokenData.symbol} from ${node.chain} with value ${node.pathValue} ->`)
         })
         console.log("*********************************************************")
     })
@@ -501,7 +500,11 @@ export async function collectKsmToRelayPaths(relay: Relay, nativeBalances: Nativ
 }
 
 
-export async function createTransferPathNode(relay: Relay, assetKey: string, pathValue: number, pathData?: any){
+export async function createTransferPathNode(
+    relay: Relay, 
+    assetKey: string, 
+    pathValue: number
+){
     let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
     let pathNode: JsonPathNode = {
         node_key: assetKey,
@@ -517,7 +520,7 @@ export async function createTransferPathNode(relay: Relay, assetKey: string, pat
 }
 
 
-export async function createAllocationToKusamaPath(relay: Relay, allocationAssetRegistryObject: MyAssetRegistryObject, pathValue: number, pathData?: any){
+export async function createAllocationToKusamaPath(relay: Relay, allocationAssetRegistryObject: IMyAsset, pathValue: number){
     let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
     let assetKeyOne= JSON.stringify(allocationAssetRegistryObject.tokenData.chain) + JSON.stringify(allocationAssetRegistryObject.tokenData.localId)
     let pathNodeOne: JsonPathNode ={
@@ -544,7 +547,7 @@ export async function createAllocationToKusamaPath(relay: Relay, allocationAsset
     }
     return [pathNodeOne, pathNodeTwo] 
 }
-export async function createAllocationKusamaToStartPath(relay: Relay, startAssetRegistryObject: MyAssetRegistryObject, pathValue: number, pathData?: any){
+export async function createAllocationKusamaToStartPath(relay: Relay, startAssetRegistryObject: IMyAsset, pathValue: number){
     let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
     let relayAssetRegistryObject = getAssetRegistryObjectBySymbol(0, nativeAssetName, relay)
     let relayAssetKey = JSON.stringify(relayAssetRegistryObject.tokenData.chain) + JSON.stringify(relayAssetRegistryObject.tokenData.localId)
@@ -574,20 +577,18 @@ export async function createAllocationKusamaToStartPath(relay: Relay, startAsset
 
 export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPaths: AssetNode[][], chopsticks: boolean, executeMovr: boolean){
     //Dynamic allocation from multiple chains. Execute allocations first
-    let allocationInstructions = await Promise.all(allocationPaths.map(async (path) => await buildInstructionSet(relay, path)))
-    await printAllocations(allocationInstructions)
+    let allocationInstructions = await Promise.all(allocationPaths.map(async (path) => buildInstructionSet(relay, path)))
+    printAllocations(allocationInstructions)
 
     // Remove KSM -> start allocation so it can be executed last
     let ksmToStartAllocationInstruction = allocationInstructions.pop()
 
     console.log("Executing allocations from chains to Kusama")
     //Turn tracking off for async executions
-    // const { globalState } = await import("./liveTest.ts");
     stateSetTracking(false)
     let allocationExecutionResultsPromise = allocationInstructions.map(async (instructionSet) => {
         let transferInstructions: TransferInstruction[] = instructionSet as TransferInstruction[]
-        // const { buildAndExecuteAllocationExtrinsics } = await import("./liveTest.ts");
-        let allocationExecution = buildAndExecuteAllocationExtrinsics(relay, transferInstructions, chopsticks, executeMovr, 100)
+        let allocationExecution = buildAndExecuteAllocationExtrinsics(relay, transferInstructions, chopsticks, executeMovr)
         return allocationExecution
     })
     let allocationExecutionResults = await Promise.all(allocationExecutionResultsPromise)
@@ -609,25 +610,25 @@ export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPa
     // Set input Amount to full ksm balance
     ksmTransferInstructions[0].assetNodes[0].pathValue = ksmBalanceToTransfer.toString()
 
-    let ksmExecution = await buildAndExecuteAllocationExtrinsics(relay, ksmTransferInstructions, chopsticks, executeMovr, 100)
+    let ksmExecution = await buildAndExecuteAllocationExtrinsics(relay, ksmTransferInstructions, chopsticks, executeMovr)
 
     console.log("ALLOCATION SUCCESS: " + ksmExecution.success)
     console.log(JSON.stringify(ksmExecution.arbExecutionResult, null, 2))
 }
 
 // // Skip route nodes up to ksm node to start from / first swap node
-export async function getFirstSwapNodeFromInstructions(instructions: (SwapInstruction | TransferInstruction)[], chopsticks: boolean){ 
-    let instructionIndex = 0;   
+export async function getFirstSwapNodeFromInstructions(instructions: (SwapInstruction | TransferInstruction)[]){ 
+    let instructionCounter = 0;   
     let firstInstruction = instructions.find((instruction, index) => {
         if(instruction.type == InstructionType.Swap){
-            instructionIndex = index
+            instructionCounter = index
             return true
         }   
     })
     if(!firstInstruction){
         throw new Error("No swap instructions found")
     }
-    let instructionsToExecute = instructions.slice(instructionIndex)
+    let instructionsToExecute = instructions.slice(instructionCounter)
 
     return instructionsToExecute
 }

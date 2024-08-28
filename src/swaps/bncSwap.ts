@@ -15,17 +15,18 @@ const bncRpc = "wss://bifrost-parachain.api.onfinality.io/public-ws"
 export async function getBncSwapExtrinsicDynamic( 
   swapType: PathType,
   swapInstructions: SwapInstruction[], 
-  chopsticks: boolean = true,
-  extrinsicIndex: IndexObject, 
-  instructionIndex: number[], 
+  chopsticks: boolean = true, 
   priceDeviationPercent: number = 2
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]> {
   const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-list/main/tokens/bifrost-kusama.json');
   const tokensMeta = response.data.tokens;
   await cryptoWaitReady();
 
-  let startAsset = swapInstructions[0].assetNodes[0].getAssetRegistrySymbol()
-  let destAsset = swapInstructions[swapInstructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
+  const assetIn = swapInstructions[0].assetNodes[0]
+  const startAssetSymbol = assetIn.getAssetSymbol()
+  const assetOut = swapInstructions[swapInstructions.length - 1].assetNodes[1]
+  const destAssetSymbol = assetOut.getAssetSymbol()
+  
   let amountIn = swapInstructions[0].assetNodes[0].pathValue;
   let expectedAmountOut = swapInstructions[swapInstructions.length - 1].assetNodes[1].pathValue;
 
@@ -47,15 +48,15 @@ export async function getBncSwapExtrinsicDynamic(
   });
 
   let tokenInSymbol, tokenOutSymbol;
-  if(startAsset.toLowerCase() == 'aseed' || startAsset.toLowerCase() == 'kusd' ){
+  if(startAssetSymbol.toLowerCase() == 'aseed' || startAssetSymbol.toLowerCase() == 'kusd' ){
     tokenInSymbol = 'aUSD'
   } else{
-    tokenInSymbol = startAsset
+    tokenInSymbol = startAssetSymbol
   }
-  if(destAsset.toLowerCase() == 'aseed' || destAsset.toLowerCase() == 'kusd' ){
+  if(destAssetSymbol.toLowerCase() == 'aseed' || destAssetSymbol.toLowerCase() == 'kusd' ){
     tokenOutSymbol = 'aUSD'
   } else{
-    tokenOutSymbol = destAsset
+    tokenOutSymbol = destAssetSymbol
   }
 
   const tokenIn = tokens.find((item) => item.symbol.toLowerCase() === tokenInSymbol.toLowerCase());
@@ -139,15 +140,14 @@ export async function getBncSwapExtrinsicDynamic(
   let swapTxContainer: SwapExtrinsicContainer = {
     relay: 'kusama',
     chainId: 2001,
+    type: "Swap",
     chain: "BifrostKusama",
     assetNodes: assetNodes,
     extrinsic: extrinsics,
-    extrinsicIndex: extrinsicIndex.i,
-    instructionIndex: instructionIndex,
     assetAmountIn: tokenInAmountFN,
-    assetSymbolIn: startAsset,
+    assetIn: assetIn,
     // pathInLocalId: tokenIn.assetId,
-    assetSymbolOut: destAsset,
+    assetOut: assetOut,
     // pathOutLocalId: tokenOut.assetId,
     // pathInLocalId: pathNodeValues.pathInLocalId,
     // pathOutLocalId: pathNodeValues.pathOutLocalId,

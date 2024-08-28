@@ -7,11 +7,11 @@ import { ethers } from 'ethers';
 import { privateKeyToAccount } from 'viem/accounts';
 import { dexAbis, localRpc, wGlmrContractAddress, routerFees, dexAbiMap, maxTickData, minTickData, q96, wsProvider, xcTokenAbi, glmrLpsPath } from './const.ts';
 import { erc20Abi } from 'viem';
-import bn, { BigNumber } from 'bignumber.js'
+import bn from 'bignumber.js'
 import { DexV2Data, DexV3Data, GlobalState, Slot0, V3CalculationResult } from './types.ts';
 import { TickMath } from '@uniswap/v3-sdk';
 import { getAssetRegistry } from '../../../utils/index.ts';
-import { MyAssetRegistryObject } from '../../../types/types.ts';
+import { IMyAsset } from '../../../types/types.ts';
 
 // Use import.meta.url to get the current module's URL
 const currentUrl = import.meta.url;
@@ -311,13 +311,13 @@ async function readFromFile(filePath): Promise<any[]> {
     }
 }
 function lookupXcLocalIdByAddress(address: string){
-    const allAssets: MyAssetRegistryObject[] = getAssetRegistry('polkadot')
+    const allAssets: IMyAsset[] = getAssetRegistry('polkadot')
     // console.log(assetRegistry)
     const xcToken = allAssets.find((asset: any) => asset.tokenData.chain == 2023 && asset.tokenData.contractAddress.toString().toLowerCase() == address.toLowerCase())!
     return xcToken.tokenData.localId
 }
 function lookupXcAddressByLocalId(localId: string){
-    const assetRegistry: MyAssetRegistryObject[] = getAssetRegistry('polkadot')
+    const assetRegistry: IMyAsset[] = getAssetRegistry('polkadot')
     const xcToken = assetRegistry.find((asset: any) => asset.tokenData.chainId == 2023 && asset.tokenData.localId == localId)!
     return xcToken.tokenData.contractAddress
 }
@@ -417,7 +417,7 @@ export function checkForSubstrateToken(address: string){
         // console.log("Not a substrate token")
         return false
     } else {
-        const assetRegistry: MyAssetRegistryObject[] = getAssetRegistry('polkadot')
+        const assetRegistry: IMyAsset[] = getAssetRegistry('polkadot')
         const substrateToken = assetRegistry.find((asset: any) => asset.tokenData.localId == address)
         if(substrateToken){
             return true
@@ -858,7 +858,7 @@ export async function calculateUni3Swap(tokenIn: string, tokenOut: string, amoun
     return calculationResult
 }
 
-function calculateAmount0(liq: BigNumber, pa: BigNumber, pb: BigNumber){
+function calculateAmount0(liq: bn, pa: bn, pb: bn){
     if(pa > pb){
         [pa, pb] = [pb, pa]
     }
@@ -866,7 +866,7 @@ function calculateAmount0(liq: BigNumber, pa: BigNumber, pb: BigNumber){
     return amount
 }
 
-function calculateAmount1(liq: BigNumber, pa: BigNumber, pb: BigNumber){
+function calculateAmount1(liq: bn, pa: bn, pb: bn){
     if(pa > pb){
         [pa, pb] = [pb, pa]
     }

@@ -19,7 +19,7 @@ import { TickMath } from '@uniswap/v3-sdk';
 import { dataSlice } from 'ethers';
 import { fileURLToPath } from 'url';
 import { live_wallet_3 } from '../../config/index.ts';
-import { IndexObject, MyAssetRegistryObject, PathType, SwapExtrinsicContainer, SwapInstruction } from '../../types/types.ts';
+import { IndexObject, IMyAsset, PathType, SwapExtrinsicContainer, SwapInstruction } from '../../types/types.ts';
 import { getApiForNode } from '../../utils/index.ts';
 import { ManagerSwapParams, SwapData, SwapSingleParams } from './utils/types.ts';
 import { getAssetRegistry } from './../../utils/index.ts'
@@ -35,7 +35,7 @@ declare global {
 BigInt.prototype.toJSON = function() {
     return this.toString();
 };
-const allAssets: MyAssetRegistryObject[] = getAssetRegistry('polkadot')
+const allAssets: IMyAsset[] = getAssetRegistry('polkadot')
 const routerFees = [
     solarFee,
     // zenFee
@@ -202,311 +202,6 @@ async function swapAForB(tokenInContract: string, tokenOutContract:string, dexAd
     }
     return [swapData, swapTxReceipt]
 }
-// async function testBatchSwap(tokenPath: string[], inputAmountNumber: number, slippage = 100){
-//     console.log("TestBatchSwap")
-//     const provider = new ethers.JsonRpcProvider(localRpc)
-//     const wallet = new ethers.Wallet(test_account_pk, provider)
-//     const batchContract = await new ethers.Contract(batchContractAddress2, batchArtifact.abi, wallet)
-
-//     const firstTokenContract = new ethers.Contract(tokenPath[0], erc20Abi, wallet)
-//     const firstTokenDecimals = await firstTokenContract.decimals()
-//     let inputAmount = ethers.parseUnits(inputAmountNumber.toString(), firstTokenDecimals)
-
-//     let unwrapMovr = tokenPath[tokenPath.length - 1] == wGlmrContractAddress
-//     console.log(`Unwrapping movr at the end: ${unwrapMovr}`)
-//     // Construct test parameters for swaps:
-//     // usdc -> movr -> frax
-//     // movr -> usdc -> frax
-//     let swapParams = [];
-//     for(let i = 0; i < tokenPath.length - 1; i++){
-//         let wrapMovrAmount = BigInt(0);
-//         if(i == 0 && tokenPath[i] == wGlmrContractAddress){
-//             wrapMovrAmount = inputAmount;
-//         }
-//         const tokenIn = tokenPath[i]
-//         const tokenOut = tokenPath[i+1]
-//         if(i > 0){
-//             inputAmount = swapParams[i-1].calculatedAmountOut
-//         }
-//         const [dexAddress, calculatedAmountOut] = await getBestSwapRoute(tokenIn, tokenOut, inputAmount, localRpc)
-//         let swapParam = {
-//             tokenIn: tokenIn,
-//             tokenOut: tokenOut,
-//             inputAmount: inputAmount,
-//             calculatedAmountOut: calculatedAmountOut,
-//             dexAddress: dexAddress,
-//             wrapMovrAmount: wrapMovrAmount
-//         }
-//         swapParams.push(swapParam)
-
-        
-//         // console.log(`Token In: ${tokenIn} Token Out: ${tokenOut} Dex Address: ${dexAddress}`)
-//         let tokenInContract = new ethers.Contract(tokenIn, erc20Abi, wallet)
-//         const approved = await checkAndApproveToken(tokenIn, wallet, batchContractAddress2, inputAmount)
-//         const balance = await tokenInContract.balanceOf(wallet.address)
-//         console.log("Balance: ", balance.toString())
-//         console.log("Approved new tokens: ", approved)
-//         let allowance = await tokenInContract.allowance(wallet.address, batchContractAddress2)
-//         console.log("Allowance: ", allowance.toString())
-//     }
-//     let dexAddresses: string[] = [];
-//     let abiIndexes: bigint[] = [];
-//     let inputTokens: string[] = [];
-//     let outputTokens: string[] = [];
-//     let amount0Ins: bigint[] = [];
-//     let amount1Ins: bigint[] = [];
-//     let amount0Outs: bigint[] = [];
-//     let amount1Outs: bigint[] = [];
-//     let movrWrapAmounts: bigint[] = [];
-//     let data: string[] = [];
-//     swapParams.forEach((swapParam: any) => {
-//         let dexInfo = getDexInfo(swapParam.dexAddress)
-//         if(swapParam.tokenIn == dexInfo.token0){
-//             amount0Ins.push(swapParam.inputAmount)
-//             amount1Ins.push(BigInt(0))
-//             amount0Outs.push(BigInt(0))
-//             amount1Outs.push(swapParam.calculatedAmountOut)
-//         } else {
-//             amount0Ins.push(BigInt(0))
-//             amount1Ins.push(swapParam.inputAmount)
-//             amount0Outs.push(swapParam.calculatedAmountOut)
-//             amount1Outs.push(BigInt(0))
-//         }
-//         dexAddresses.push(swapParam.dexAddress)
-//         abiIndexes.push(BigInt(dexInfo.abiIndex))
-//         inputTokens.push(swapParam.tokenIn)
-//         outputTokens.push(swapParam.tokenOut)
-//         movrWrapAmounts.push(swapParam.wrapMovrAmount)
-//         data.push("0x")
-//     })
-
-//     // let batchContractAllowance = wm
-
-//     if(unwrapMovr){
-//         let unwrapAmount = swapParams[swapParams.length - 1].calculatedAmountOut;
-//         console.log(`Approving batch contract to spend ${unwrapAmount} wmovr`)
-//         await checkAndApproveToken(wGlmrContractAddress, wallet, batchContractAddress2, unwrapAmount)
-//     }
-
-//     // let movrContract = new ethers.Contract(movrContractAddress, erc20Abi, wallet)
-
-//     const tokenContract = new ethers.Contract(wGlmrContractAddress, erc20Abi, wallet)
-//     const allowance = await tokenContract.allowance(wallet.address, batchContractAddress2);
-//     console.log(`ALLOWANCE CHECK 2: Batch contract address: ${batchContractAddress2} -- Wallet address: ${wallet.address} -- Allowance: ${allowance}`)
-
-//     const outContract = new ethers.Contract(tokenPath[tokenPath.length - 1], erc20Abi, wallet)
-//     const balanceInBefore = await firstTokenContract.balanceOf(wallet.address)
-//     const balanceOutBefore = await outContract.balanceOf(wallet.address)
-//     console.log(`Balance In Before: ${balanceInBefore} Balance Out Before: ${balanceOutBefore}`)
-//     const wrapMovrAmount = swapParams[0].wrapMovrAmount
-//     console.log(`Parameters: Dex Addresses: ${dexAddresses} Abi Indexes: ${abiIndexes} Input Tokens: ${inputTokens} Output Tokens: ${outputTokens} Amount 0 Ins: ${amount0Ins} Amount 1 Ins: ${amount1Ins} Amount 0 Outs: ${amount0Outs} Amount 1 Outs: ${amount1Outs} Movr Wrap Amounts: ${movrWrapAmounts} Data: ${data} Wrap Movr Amount: ${wrapMovrAmount}`)
-//     const swapTx = await batchContract.executeSwaps(dexAddresses, abiIndexes, inputTokens, outputTokens, amount0Ins, amount1Ins, amount0Outs, amount1Outs, movrWrapAmounts, data, {value: wrapMovrAmount})
-//     await swapTx.wait()
-
-//     const balanceInAfter = await firstTokenContract.balanceOf(wallet.address)
-//     const balanceOutAfter = await outContract.balanceOf(wallet.address)
-//     console.log(`Balance In After: ${balanceInAfter} Balance Out After: ${balanceOutAfter}`)
-
-// }
-// async function testXcTokensMoonbase(){
-//     let rpc = "https://moonbase-alpha.public.blastapi.io"
-//     let provider = new ethers.JsonRpcProvider(localRpc)
-//     let wallet = new ethers.Wallet(test_account_pk, provider)
-
-//     let xcCsmAddress = "0xFFFFFFFF519811215e05efa24830eebe9c43acd7";
-
-//     // const tokenContract = new ethers.Contract("0xffFfFFFf519811215E05eFA24830Eebe9c43aCD7", erc20Abi, wallet)
-//     // const tokenContract = new ethers.Contract(xcCsmAddress.toLowerCase(), erc20Abi, wallet)
-//     // let symbol = await tokenContract.symbol()
-//     // console.log(symbol)
-//     let xcTokens = getXcTokens()
-//     let xcAlphaTokens = []
-//     for(const xcToken of xcTokens){
-//         try{
-//             const tokenContract = new ethers.Contract(xcToken.tokenData.contractAddress.toLowerCase(), erc20Abi, wallet)
-//             let symbol = await tokenContract.symbol()
-//             console.log(`${xcToken.tokenData.contractAddress}: ${symbol}: true`)
-//             let alphaToken = {
-//                 contractAddress: xcToken.tokenData.contractAddress,
-//                 localId: xcToken.tokenData.localId,
-//                 symbol: xcToken.tokenData.symbol,
-//                 alpha: true
-//             }
-//             xcAlphaTokens.push(alphaToken)
-//         } catch(e){
-//             console.log(`${xcToken.tokenData.contractAddress}: ${xcToken.tokenData.symbol}: false`)
-//             let alphaToken = {
-//                 contractAddress: xcToken.tokenData.contractAddress,
-//                 localId: xcToken.tokenData.localId,
-//                 symbol: xcToken.tokenData.symbol,
-//                 alpha: false
-//             }
-//             xcAlphaTokens.push(alphaToken)
-//         }
-
-//     }
-//     // fs.writeFileSync('./xcAlphaTokens.json', JSON.stringify(xcAlphaTokens, null, 2))
-//     // xcTokens.forEach(async (xcToken: any) => {
-
-//     // })
-// }
-
-
-
-// async function cleanXcTokenAddresses(){
-//     // let dexes = JSON.parse(fs.readFileSync('./dexInfo.json', 'utf8'));
-//     let xcTokens = getXcTokens()
-//     console.log(xcTokens)
-
-//     let contracts = xcTokens.map((asset) => asset.tokenData.contractAddress)
-//     console.log(contracts)
-
-//     let provider = new ethers.JsonRpcProvider(defaultRpc)
-//     let ksmContract = new ethers.Contract(xcDotContractAddress, erc20Abi, provider)
-//     let address = await ksmContract.getAddress()
-//     console.log(address)
-//     contracts.forEach(async (contract) => {
-//         let tokenContract = new ethers.Contract(contract.toLowerCase(), erc20Abi, provider)
-//         let symbol = await tokenContract.symbol()
-//         console.log(symbol)
-
-//         let address = await tokenContract.getAddress()
-//         console.log(contract)
-//         console.log(address)
-//     })
-
-// }
-
-// async function getAllAbis(){
-//     // const provider = new ethers.JsonRpcProvider(defaultRpc)
-//     const provider = new ethers.JsonRpcProvider(localRpc)
-//     const wallet = new ethers.Wallet(test_account_pk, provider)
-
-//     let lps = JSON.parse(fs.readFileSync('./lpsCleaned.json', 'utf8'));
-//     let dexInfos = []
-//     for(const lp of lps){
-//         console.log(`${lp.contractAddress}`)
-//         try{
-//             const contract = new ethers.Contract(lp.contractAddress, dexAbis[0], wallet)
-//             const token0 = await contract.token0()
-//             const token1 = await contract.token1()
-//             const abiIndex = 0;
-//             // const token0Contract = new ethers.Contract(token0, erc20Abi, wallet)
-//             // const token1Contract = new ethers.Contract(token1, erc20Abi, wallet)
-//             // const symbol0 = await token0Contract.symbol()
-//             // const symbol1 = await token1Contract.symbol()
-//             const [reserves0, reserves1, timestamp] = await contract.getReserves()
-//             console.log(`Dex: ${lp.contractAddress} Token0: ${token0} Token1: ${token1}  Reserves0: ${reserves0} Reserves1: ${reserves1} Timestamp: ${timestamp}`)
-//             let dexInfo = {
-//                 contractAddress: lp.contractAddress,
-//                 token0: token0,
-//                 token1: token1,
-//                 abiIndex: abiIndex,
-//                 // symbol0: symbol0,
-//                 // symbol1: symbol1,
-//             }
-//             dexInfos.push(dexInfo)
-//         } catch (e){
-//             const contract = new ethers.Contract(lp.contractAddress, dexAbis[1], wallet)
-//             const token0 = await contract.token0()
-//             const token1 = await contract.token1()
-//             const abiIndex = 1;
-//             // const token0Contract = new ethers.Contract(token0, erc20Abi, wallet)
-//             // const token1Contract = new ethers.Contract(token1, erc20Abi, wallet)
-//             // const symbol0 = await token0Contract.symbol()
-//             // const symbol1 = await token1Contract.symbol()
-//             const [reserves0, reserves1, timestamp] = await contract.getReserves()
-//             console.log(`Dex: ${lp.contractAddress} Token0: ${token0} Token1: ${token1}  Reserves0: ${reserves0} Reserves1: ${reserves1} Timestamp: ${timestamp}`)
-//             let dexInfo = {
-//                 contractAddress: lp.contractAddress,
-//                 token0: token0,
-//                 token1: token1,
-//                 abiIndex: abiIndex,
-//                 // symbol0: symbol0,
-//                 // symbol1: symbol1,
-//             }
-//             dexInfos.push(dexInfo)
-//         }
-        
-//     }
-
-//     fs.writeFileSync('./dexInfoUpdated.json', JSON.stringify(dexInfos, null, 2))
-
-//     let oldDexInfo = JSON.parse(fs.readFileSync('./dexInfo.json', 'utf8'));
-    
-//     dexInfos.forEach((dexInfo: any) => {
-//         let oldDex = oldDexInfo.find((oldDex: any) => oldDex.contractAddress == dexInfo.contractAddress)
-//         if(!oldDex){
-//             oldDexInfo.push(dexInfo)
-//         }
-//     })
-
-//     fs.writeFileSync('./dexInfoCombined.json', JSON.stringify(oldDexInfo, null, 2))
-//     // lps.forEach((lp: any) => {
-//     //     console.log(`${lp.contractAddress}`)
-//     //     const contract = new ethers.Contract(lp.contractAddress, dexAbis[0], wallet)
-//     //     const token0 = await contract.token0()
-//     //     const token1 = await contract.token1()
-//     //     const [reserves0, reserves1, timestamp] = await contract.getReserves()
-//     //     console.log(`Dex: ${lp.contractAddress} Token0: ${token0} Token1: ${token1} Reserves0: ${reserves0} Reserves1: ${reserves1} Timestamp: ${timestamp}`)
-//     // })
-// }
-// async function readDexes(){
-//     const dexInfos = JSON.parse(fs.readFileSync('./dexInfo.json', 'utf8'));
-//     const dexInfosUpdated = JSON.parse(fs.readFileSync('./dexInfoUpdated.json', 'utf8'));
-//     const provider = new ethers.JsonRpcProvider(localRpc)
-//     const wallet = new ethers.Wallet(test_account_pk, provider)
-
-//     dexInfos.forEach((dexInfo: any) => {
-//         let matches = 0
-//         let match;
-//         dexInfosUpdated.forEach((dexInfoUpdated: any) => {
-//             if(dexInfo.contractAddress == dexInfoUpdated.contractAddress){
-//                 if(dexInfo.abiIndex != dexInfoUpdated.abiIndex){
-//                     console.log("ABI index mismatch: ", dexInfo.contractAddress)
-//                 }
-//                 matches++
-//             }
-//         })
-//         if(matches == 0){
-//             console.log("Dex not found: ", dexInfo.contractAddress)
-//         } else if (matches > 1){
-//             console.log("Multiple dexes found: ", dexInfo.contractAddress)
-//         }
-//     })
-
-// }
-// async function testBatchUnwrap(){
-
-//     let provider = new ethers.JsonRpcProvider(localRpc)
-//     let wallet = new ethers.Wallet(test_account_pk, provider)
-
-//     let movrContract = new ethers.Contract(wGlmrContractAddress, erc20Abi, wallet)
-//     let usdcContract = new ethers.Contract(wormUsdcContractAddress, erc20Abi, wallet)
-    
-//     let movrBalance = await wallet.provider.getBalance(wallet.address)
-//     let wrappedBalance = await movrContract.balanceOf(wallet.address)
-
-//     // console.log(`MOVR Balance: ${movrBalance} Wrapped Balance: ${wrappedBalance}`)
-
-//     let wrapAmount = ethers.parseUnits("10", 18);
-
-//     let tokenPath = [ wormUsdcContractAddress, wGlmrContractAddress,]
-//     // await wrapMovr(wallet, wrapAmount)
-    
-//     movrBalance = await wallet.provider.getBalance(wallet.address)
-//     wrappedBalance = await movrContract.balanceOf(wallet.address)
-//     let usdcBalance = await usdcContract.balanceOf(wallet.address)
-//     console.log(`MOVR Balance: ${movrBalance} Wrapped Balance: ${wrappedBalance} USDC Balance: ${usdcBalance}`)
-
-//     // let swapAmount = ethers.parseUnits("1", 18);
-//     await testBatchSwap(tokenPath, 10)
-
-//     movrBalance = await wallet.provider.getBalance(wallet.address)
-//     wrappedBalance = await movrContract.balanceOf(wallet.address)
-//     usdcBalance = await usdcContract.balanceOf(wallet.address)
-//     console.log(`MOVR Balance: ${movrBalance} Wrapped Balance: ${wrappedBalance} USDC Balance: ${usdcBalance}`)
-// }
 
 async function getDexAbis(){
     let rpcProvider = new ethers.JsonRpcProvider(localRpc)
@@ -537,31 +232,6 @@ async function getDexAbis(){
     // console.log(lps)
     // fs.writeFileSync(path.join(__dirname, './glmr_holders/lps_base.json'), JSON.stringify(lps, null, 2))
 }
-// async function saveLps() {
-//     const lpContractAddresses = JSON.parse(fs.readFileSync(path.join(__dirname, './glmr_holders/confirmed_lps.json'), 'utf8'))
-//     const lps = await Promise.all(lpContractAddresses.map(async (lpContract: any) => {
-//         // console.log(lpContract)
-//         const pool = await new ethers.Contract(lpContract, altDexContractAbi, provider);
-//         let reserves = await pool.getReserves();
-//         const token0 = await pool.token0();
-//         const token1 = await pool.token1();
-//         console.log(reserves)
-//         // let reserve_0 = await hexToDec(reserves[0]["_hex"]);
-//         // let reserve_1 = await hexToDec(reserves[1]["_hex"]);
-//         let reserve_0 = reserves[0].toString();
-//         let reserve_1 = reserves[1].toString();
-//         let newliquidityStats = [reserve_0, reserve_1];
-//         const newPool: MyLp = {
-//             chainId: 2004,
-//             contractAddress: lpContract,
-//             poolAssets: [token0, token1],
-//             liquidityStats: newliquidityStats
-//         }
-//         return newPool;
-//     }))
-//     console.log(lps)
-//     fs.writeFileSync(path.join(__dirname, './glmr_holders/lps_base.json'), JSON.stringify(lps, null, 2))
-// }
 
 class LoggingProvider extends ethers.JsonRpcProvider {
     async call(transaction) {
@@ -619,9 +289,10 @@ export function getV3PoolAddress(token0: string, token1: string,  deployer: stri
 export async function getGlmrSwapTx(
     swapInstructions: SwapInstruction[], 
     chopsticks: boolean,
-    extrinsicIndex: IndexObject, 
-    instructionIndex: number[]
 ): Promise<SwapExtrinsicContainer>{
+    const assetIn = swapInstructions[0].assetNodes[0]
+    const assetOut = swapInstructions[swapInstructions.length - 1].assetNodes[1]
+
     let rpcProvider;
     let wallet;
     let swapManagerContractAddress;
@@ -641,9 +312,10 @@ export async function getGlmrSwapTx(
     let managerContract = new ethers.Contract(swapManagerContractAddress, managerArtifact.abi, wallet)
     let glmrWrapAmount = BigInt(0)
 
+
     // If first token is GLMR, send glmr to manager. Else approve token for manager contract
-    let initialTokenIn = swapInstructions[0].assetNodes[0].assetRegistryObject.tokenData.contractAddress!.toLowerCase()
-    let initialInputAmount = new FixedPointNumber(swapInstructions[0].assetNodes[0].pathValue, Number.parseInt(swapInstructions[0].assetNodes[0].assetRegistryObject.tokenData.decimals))
+    let initialTokenIn = assetIn.getContractAddress().toLowerCase()
+    let initialInputAmount = new FixedPointNumber(assetIn.pathValue, assetIn.getDecimals())
     if (initialTokenIn == wGlmrContractAddress.toLowerCase()) {
         glmrWrapAmount = BigInt(initialInputAmount.toChainData())
     } else {
@@ -685,10 +357,10 @@ export async function getGlmrSwapTx(
         
         let tokenIn, tokenOut, inputTokenIndex, zeroForOne, poolAddress, feeRate, sqrtPriceLimitX96: bigint, data;
 
-        [tokenIn, tokenOut] = [swapInstruction.assetNodes[0].assetRegistryObject.tokenData.contractAddress!.toLowerCase(), swapInstruction.assetNodes[1].assetRegistryObject.tokenData.contractAddress!.toLowerCase()]
+        [tokenIn, tokenOut] = [assetIn.getContractAddress().toLowerCase(), assetOut.getContractAddress().toLowerCase()]
         inputTokenIndex = tokenIn.toLowerCase() < tokenOut.toLowerCase() ? 0 : 1;
-        let inputAmount = BigInt(ethers.parseUnits(swapInstruction.assetInAmount.toString(), Number.parseInt(swapInstruction.assetNodes[0].assetRegistryObject.tokenData.decimals)))
-        let outputAmount = BigInt(ethers.parseUnits(swapInstruction.assetOutTargetAmount.toString(), Number.parseInt(swapInstruction.assetNodes[1].assetRegistryObject.tokenData.decimals)))
+        let inputAmount = BigInt(ethers.parseUnits(swapInstruction.assetInAmount.toString(), assetIn.getDecimals()))
+        let outputAmount = BigInt(ethers.parseUnits(swapInstruction.assetOutTargetAmount.toString(), assetOut.getDecimals()))
 
         poolAddress = swapInstruction.pathData.lpId;
         data = "0x" // Maybe unecessary
@@ -726,18 +398,18 @@ export async function getGlmrSwapTx(
             token1 = tokenIn;
         }
 
-        let poolType: PoolType;
-        let poolInitHash;
-        if (swapInstruction.pathData.dexType == "algebra"){
-            poolType = "Algebra"
-            poolInitHash = algebraPoolInitHash
-        } else if(swapInstruction.pathData.dexType == "uni"){
-            poolType = "Uni"
-            poolInitHash = uniPoolInitHash
-        } else {
-            poolType = "Solar";
+        // let poolType: PoolType;
+        // let poolInitHash;
+        // if (swapInstruction.pathData.dexType == "algebra"){
+        //     poolType = "Algebra"
+        //     poolInitHash = algebraPoolInitHash
+        // } else if(swapInstruction.pathData.dexType == "uni"){
+        //     poolType = "Uni"
+        //     poolInitHash = uniPoolInitHash
+        // } else {
+        //     poolType = "Solar";
             
-        }
+        // }
         // let calculatedPoolAddress = getV3PoolAddress(token0, token1, deployer, poolInitHash, poolType, feeRate)
         // console.log(`Calculated Pool Address: ${calculatedPoolAddress}`)
         console.log("MANAGER SWAP PARAMS")
@@ -754,35 +426,33 @@ export async function getGlmrSwapTx(
         // return swapParams
     }
 
-    let firstAssetNode = swapInstructions[0].assetNodes[0]
-    let assetNodes = [firstAssetNode]
+    let assetNodes = [assetIn]
     swapInstructions.forEach((swapInstruction: SwapInstruction) => {
         assetNodes.push(swapInstruction.assetNodes[1])
     })
-    let startAsset = swapInstructions[0].assetNodes[0].getAssetRegistrySymbol()
-    let destAsset = swapInstructions[swapInstructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
+    let startAsset = assetIn.getAssetSymbol()
+    let destAsset = swapInstructions[swapInstructions.length - 1].assetNodes[1].getAssetSymbol()
     const descriptorString = `GLMR ${startAsset} -> ${destAsset}`
 
-    let finalOutputAmount = new FixedPointNumber(swapParams[swapParams.length - 1].amountOut.toString(), Number.parseInt(swapInstructions[swapInstructions.length - 1].assetNodes[1].assetRegistryObject.tokenData.decimals))
+    let finalOutputAmount = new FixedPointNumber(swapParams[swapParams.length - 1].amountOut.toString(), assetOut.getDecimals())
 
     let api = await getApiForNode("Moonbeam", chopsticks)
 
     let swapTxContainer: SwapExtrinsicContainer = {
         relay: 'polkadot',
         chainId: 2004,
+        type: "Swap",
         chain: "Moonbeam",
         assetNodes: assetNodes,
         extrinsic: glmrTx,
-        extrinsicIndex: extrinsicIndex.i,
-        instructionIndex: instructionIndex,
         txString: descriptorString,
-        assetSymbolIn: startAsset,
-        assetSymbolOut: destAsset,
+        assetIn: assetIn,
+        assetOut: assetOut,
         assetAmountIn: initialInputAmount,
         expectedAmountOut: finalOutputAmount,
         // REVIEW Glmr path type for swaps
         pathType: PathType.DexV2, // glmr swap can have multiple types (V2, V3, stable?) so this property wont be used
-        pathAmount: swapInstructions[0].assetNodes[0].pathValue,
+        pathAmount: assetIn.pathValue,
         api: api,
         glmrSwapParams: swapParams
     }

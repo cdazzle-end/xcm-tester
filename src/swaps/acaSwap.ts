@@ -1,5 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types'
-import bn, { BigNumber } from 'bignumber.js'
+import bn from 'bignumber.js'
 import fs from 'fs'
 import path from 'path'
 import { FixedPointNumber } from "@acala-network/sdk-core"
@@ -22,20 +22,12 @@ const acaRpc = "ws://acala-rpc-0.aca-api.network"
 
 export async function getAcaSwapExtrinsicDynamic(    
     swapType: PathType, 
-    startAsset: any, 
-    destAsset: any, 
-    amountIn: string, 
-    expectedAmountOut: number, 
+    startAssetSymbol: string, 
+    amountIn: string,  
     swapInstructions: SwapInstruction[], 
     chopsticks: boolean = true,
-    extrinsicIndex: IndexObject, 
-    instructionIndex: number[],
     priceDeviationPercent: number = 2
 ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]>{
-    // let rpc = chopsticks ? wsLocalChain : acaRpc
-    // const provider = new WsProvider(rpc);
-    // const api = new ApiPromise(options({ provider }));
-    
 
     const api = await getApiForNode("Acala", chopsticks)
     await api.isReady;
@@ -46,17 +38,19 @@ export async function getAcaSwapExtrinsicDynamic(
 
     const wallet = new Wallet(api)
     await wallet.isReady
-    let [swapInstructionsToExecute, remainingInstructions] = truncateSwapInstructions(startAsset, swapInstructions)
-    let startAssetDynamic = swapInstructionsToExecute[0].assetNodes[0].getAssetRegistrySymbol()
-    let destAssetDynamic = swapInstructionsToExecute[swapInstructionsToExecute.length - 1].assetNodes[1].getAssetRegistrySymbol()
+    let [swapInstructionsToExecute, remainingInstructions] = truncateSwapInstructions(startAssetSymbol, swapInstructions)
+    const assetIn = swapInstructionsToExecute[0].assetNodes[0]
+    const assetOut = swapInstructionsToExecute[swapInstructionsToExecute.length - 1].assetNodes[1]
+    // let startAssetSymbol = assetIn.getAssetSymbol()
+    let destAssetSymbol = assetOut.getAssetSymbol()
 
-    const startToken = wallet.getToken(startAssetDynamic);
-    const destToken = wallet.getToken(destAssetDynamic);
+    const startToken = wallet.getToken(startAssetSymbol);
+    const destToken = wallet.getToken(destAssetSymbol);
 
-    let tokenPathSymbols: string[] = [startAssetDynamic];
+    let tokenPathSymbols: string[] = [startAssetSymbol];
     let extrinsicNodes: AssetNode[] = [swapInstructionsToExecute[0].assetNodes[0]]
     swapInstructionsToExecute.forEach((swapInstruction) => {
-        tokenPathSymbols.push(swapInstruction.assetNodes[1].getAssetRegistrySymbol())
+        tokenPathSymbols.push(swapInstruction.assetNodes[1].getAssetSymbol())
         extrinsicNodes.push(swapInstruction.assetNodes[1])
     })
 
@@ -97,7 +91,7 @@ export async function getAcaSwapExtrinsicDynamic(
 
         // Since there is only one stable pool, dont need to worry about multiple swaps.
         // So just get the swap instruction pool id
-        BigNumber.set({ DECIMAL_PLACES: 40});
+        bn.set({ DECIMAL_PLACES: 40});
         let poolId = swapInstructions[0].pathData.lpId
         let assetRegistry = getAssetRegistry('polkadot');
 
@@ -138,8 +132,8 @@ export async function getAcaSwapExtrinsicDynamic(
         let inputAmountFormatted = new bn(amountInDynamic).times(new bn(10).pow(new bn(startToken.decimals)))
         let outputAmountFormatted = new bn(expectedAmountOutDynamic).times(new bn(10).pow(new bn(destToken.decimals)))
 
-        let extrsinsicInputDx = tokenShares[inputIndex].times(inputAmountFormatted.dividedBy(tokenReserves[inputIndex])).integerValue(BigNumber.ROUND_DOWN)
-        let extrinsicOutputDy = tokenShares[outputIndex].times((outputAmountFormatted.div(tokenReserves[outputIndex]))).integerValue(BigNumber.ROUND_DOWN)
+        let extrsinsicInputDx = tokenShares[inputIndex].times(inputAmountFormatted.dividedBy(tokenReserves[inputIndex])).integerValue(bn.ROUND_DOWN)
+        let extrinsicOutputDy = tokenShares[outputIndex].times((outputAmountFormatted.div(tokenReserves[outputIndex]))).integerValue(bn.ROUND_DOWN)
 
         swapTx = await api.tx.stableAsset
         .swap(
@@ -155,15 +149,14 @@ export async function getAcaSwapExtrinsicDynamic(
         let swapTxContainer: SwapExtrinsicContainer = {
             relay: 'polkadot',
             chainId: 2000,
+            type: "Swap",
             chain: "Acala",
             assetNodes: extrinsicNodes,
             extrinsic: swapTx,
-            extrinsicIndex: extrinsicIndex.i,
-            instructionIndex: instructionIndex,
             assetAmountIn: supplyAmount,
             expectedAmountOut: expectedOutAmountFixed,
-            assetSymbolIn: startAssetDynamic,
-            assetSymbolOut: destAssetDynamic,
+            assetIn: assetIn,
+            assetOut: assetOut,
             pathType: swapType,
             pathAmount: amountIn,
             api: api,

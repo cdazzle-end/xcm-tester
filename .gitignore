@@ -19,6 +19,7 @@ src/swaps/movr/liveWalletReceipts.json
 src/swaps/movr/lps.json
 src/swaps/movr/lpsCleaned.json
 src/swaps/movr/xcAlphaTokens.json
+/build/
 
 /scripts/instructions/arbExecutionResults
 /scripts/instructions/instructionResults

@@ -23,9 +23,7 @@ const bncRpc = "wss://hk.p.bifrost-rpc.liebi.com/ws"
 export async function getBncPolkadotSwapExtrinsicDynamic( 
   swapType: PathType,
   swapInstructions: SwapInstruction[], 
-  chopsticks: boolean = true,
-  extrinsicIndex: IndexObject, 
-  instructionIndex: number[], 
+  chopsticks: boolean = true, 
   priceDeviationPercent: number = 2
   ): Promise<[SwapExtrinsicContainer, SwapInstruction[]]> {
   // const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-listlist/main/tokens/bifrost-polkadot.json');
@@ -34,8 +32,10 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   const tokensMeta = tokensData.tokens;
   await cryptoWaitReady();
 
-  let startAsset = swapInstructions[0].assetNodes[0].getAssetRegistrySymbol()
-  let destAsset = swapInstructions[swapInstructions.length - 1].assetNodes[1].getAssetRegistrySymbol()
+  const assetIn = swapInstructions[0].assetNodes[0]
+  const assetOut = swapInstructions[swapInstructions.length - 1].assetNodes[1]
+  let startAssetSymbol = assetIn.getAssetSymbol()
+  let destAssetSymbol = assetOut.getAssetSymbol()
   let amountIn = swapInstructions[0].assetNodes[0].pathValue;
   let expectedAmountOut = swapInstructions[swapInstructions.length - 1].assetNodes[1].pathValue;
 
@@ -57,21 +57,19 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   });
 
   let tokenInSymbol, tokenOutSymbol;
-  if(startAsset.toLowerCase() == 'aseed' || startAsset.toLowerCase() == 'kusd' ){
+  if(startAssetSymbol.toLowerCase() == 'aseed' || startAssetSymbol.toLowerCase() == 'kusd' ){
     tokenInSymbol = 'aUSD'
   } else{
-    tokenInSymbol = startAsset
+    tokenInSymbol = startAssetSymbol
   }
-  if(destAsset.toLowerCase() == 'aseed' || destAsset.toLowerCase() == 'kusd' ){
+  if(destAssetSymbol.toLowerCase() == 'aseed' || destAssetSymbol.toLowerCase() == 'kusd' ){
     tokenOutSymbol = 'aUSD'
   } else{
-    tokenOutSymbol = destAsset
+    tokenOutSymbol = destAssetSymbol
   }
 
   const tokenIn = tokens.find((item) => item.symbol.toLowerCase() === tokenInSymbol.toLowerCase());
   const tokenOut = tokens.find((item) => item.symbol.toLowerCase() === tokenOutSymbol.toLowerCase());
-  // console.log('token0', tokenIn);
-  // console.log('token1', tokenOut);
 
   const tokensMap: Record<string, typeof Token> = {};
   tokens.reduce((total: any, cur: any) => {
@@ -151,18 +149,13 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   let swapTxContainer: SwapExtrinsicContainer = {
     relay: 'polkadot',
     chainId: 2030,
+    type: "Swap",
     chain: "BifrostPolkadot",
     assetNodes: assetNodes,
     extrinsic: extrinsics,
-    extrinsicIndex: extrinsicIndex.i,
-    instructionIndex: instructionIndex,
     assetAmountIn: tokenInAmountFN,
-    assetSymbolIn: startAsset,
-    // pathInLocalId: tokenIn.assetId,
-    assetSymbolOut: destAsset,
-    // pathOutLocalId: tokenOut.assetId,
-    // pathInLocalId: pathNodeValues.pathInLocalId,
-    // pathOutLocalId: pathNodeValues.pathOutLocalId,
+    assetIn: assetIn,
+    assetOut: assetOut,
     pathType: swapType,
     pathAmount: amountIn,
     expectedAmountOut: tokenOutAmountFn,
@@ -171,7 +164,6 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
     // reverseTx: reverseExtrinsic
   }
 
-  increaseIndex(extrinsicIndex)
   let remainingInstructions: SwapInstruction[] = []
   return [swapTxContainer, remainingInstructions]
 

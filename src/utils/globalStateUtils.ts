@@ -2,7 +2,7 @@ import path from "path";
 import fs from 'fs'
 import { LastNode, Relay, ExtrinsicSetResultDynamic, TransactionState, TransferProperties, SwapProperties, ExecutionSuccess, ExecutionState, SingleSwapResultData, SingleTransferResultData, FeeData, FeeTracker, FeeTrackerEntry, ReserveFeeData, AccumulatedFeeData } from "./../types/types.ts";
 import { fileURLToPath } from 'url';
-import {BigNumber as bn } from "bignumber.js"
+import bn from "bignumber.js"
 import { GlobalState } from "./../core/GlobalState.ts";
 
 const __filename = fileURLToPath(import.meta.url);

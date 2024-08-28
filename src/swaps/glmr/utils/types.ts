@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import bn, { BigNumber } from 'bignumber.js'
+import bn from 'bignumber.js'
 export interface GenericTx {
     type: string, // transfer or swap
     to: string, //Contract address

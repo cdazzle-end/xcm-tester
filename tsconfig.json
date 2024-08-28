@@ -26,5 +26,13 @@
     },
     // Include and exclude can be adjusted as per your project's structure
     "include": ["./**/*"],
-    "exclude": ["dist"]
+    "exclude": [
+        "dist",
+        "build",
+        "src/swaps/movr/movrSwap2.ts",
+        "src/swaps/movr/movrSwap3.ts",
+        "src/swaps/movr/testMovr.ts",
+        "src/scripts/polkadotTest.ts",
+        "src/testScripts/"
+    ]
 }

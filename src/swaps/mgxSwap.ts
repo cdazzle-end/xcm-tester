@@ -15,8 +15,6 @@ export async function getMgxSwapExtrinsic(
   expectedAmountOut: string, 
   swapInstructions: SwapInstruction[], 
   chopsticks: boolean = false,
-  extrinsicIndex: IndexObject, 
-  instructionIndex: number[],
   priceDeviationPercent: number = 2
   ) {
   // Connect to the mainet (also testnet, mainnet)
@@ -28,6 +26,11 @@ export async function getMgxSwapExtrinsic(
     swapInstructions.forEach((instruction) => {
       assetNodes.push(instruction.assetNodes[1])
     })
+
+  const assetIn = assetNodes[0]
+  const assetOut = assetNodes[assetNodes.length - 1]
+  
+
   // await apiStandard.isReady;
   let signer = await getSigner(chopsticks, false)
 
@@ -46,7 +49,7 @@ export async function getMgxSwapExtrinsic(
     let assets = await mangata.query.getAssetsInfo()
     let tokenPathSymbols = [assetInSymbol]
     swapInstructions.forEach((instruction) => {
-      tokenPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
+      tokenPathSymbols.push(instruction.assetNodes[1].getAssetSymbol())
     })
     let tokenPath = tokenPathSymbols.map((symbol) => {
       for(let asset of Object.keys(assets)){
@@ -81,12 +84,11 @@ export async function getMgxSwapExtrinsic(
     relay: 'kusama',
     chainId: 2110,
     chain: "Mangata",
+    type: "Swap",
     assetNodes: assetNodes,
     extrinsic: mgxTx,
-    extrinsicIndex: extrinsicIndex.i,
-    instructionIndex: instructionIndex,
-    assetSymbolIn: assetInSymbol,
-    assetSymbolOut: assetOutSymbol,
+    assetIn: assetIn,
+    assetOut: assetOut,
     assetAmountIn: new FixedPointNumber(amountIn, startTokenDecimals),
     expectedAmountOut: expectedOutFixedPoint,
     pathType: swapType,

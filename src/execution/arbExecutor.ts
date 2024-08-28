@@ -4,7 +4,7 @@ import { printExtrinsicSetResults } from '../utils/utils.ts';
 import { ExtrinsicObject, ExtrinsicSetResultDynamic, IndexObject, InstructionType, LastNode, Relay, SwapInstruction, TransferInstruction } from './../types/types.ts';
 import { getExtrinsicSetResults, getLastNode } from './../utils/globalStateUtils.ts';
 import { buildAndExecuteSwapExtrinsic, executeAndReturnExtrinsic } from './executionUtils.ts';
-import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic, createSwapExtrinsicObject } from './extrinsicUtils.ts';
+import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic } from './extrinsicUtils.ts';
 
 
 // Use instructions to build and execute tx's one by one. Main execution flow happens here
@@ -17,7 +17,6 @@ export async function buildAndExecuteExtrinsics(
     allocationExtrinsic: boolean
 ): Promise<ExtrinsicSetResultDynamic> {
     let swapInstructions: SwapInstruction[] = [];
-    let extrinsicIndex: IndexObject = {i: 0}
     // let allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData) [] = [];
 
     let nodeEndKeys = relay === 'kusama' ? kusamaNodeKeys : dotNodeKeys
@@ -75,11 +74,11 @@ export async function buildAndExecuteExtrinsics(
                             if(Number.parseFloat(nextInputValue) > 0){
                                 instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
                             }
-                            let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, extrinsicIndex, chopsticks);
+                            let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chopsticks);
 
-                            let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
+                            // let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
                             
-                            let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+                            let extrinsicResultData = await executeAndReturnExtrinsic(swapExtrinsicContainer, chopsticks, executeMovr)
                             if(!extrinsicResultData){
                                 throw new Error("Extrinsic Result Data undefined")
                             }
@@ -119,18 +118,16 @@ export async function buildAndExecuteExtrinsics(
                             if( Number.parseFloat(nextInputValue) > 0){
                                 instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
                             }
-                            let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, extrinsicIndex, chopsticks);
+                            let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chopsticks);
 
                             console.log("Swap Tx container assetAmountIn (Actual Value): ", swapExtrinsicContainer.assetAmountIn.toChainData())
                             console.log("Swap Tx container pathAmount (Display Value) ", swapExtrinsicContainer.pathAmount)
 
-                            let extrinsicObj: ExtrinsicObject = {
-                                type: "Swap",
-                                instructionIndex: swapExtrinsicContainer.instructionIndex,
-                                extrinsicIndex: swapExtrinsicContainer.extrinsicIndex,
-                                swapExtrinsicContainer: swapExtrinsicContainer
-                            }
-                            let extrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+                            // let extrinsicObj: ExtrinsicObject = {
+                            //     type: "Swap",
+                            //     extrinsicContainer: swapExtrinsicContainer
+                            // }
+                            let extrinsicResultData = await executeAndReturnExtrinsic(swapExtrinsicContainer, chopsticks, executeMovr)
                             if(allocationExtrinsic){
                                 allocationExtrinsic = false
                             }
@@ -162,16 +159,14 @@ export async function buildAndExecuteExtrinsics(
                             instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue.toString()
                             console.log(`Setting instruction.assetNodes[0].pathValue to previous output: ${nextInputValue}`)
                         }
-                        let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionsToExecute[0], extrinsicIndex, chopsticks);
+                        let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionsToExecute[0], chopsticks);
 
-                        let extrinsicObj: ExtrinsicObject = {
-                            type: "Transfer",
-                            instructionIndex: transferExtrinsic.instructionIndex,
-                            extrinsicIndex: transferExtrinsic.extrinsicIndex,
-                            transferExtrinsicContainer: transferExtrinsic
-                        }
+                        // let extrinsicObj: ExtrinsicObject = {
+                        //     type: "Transfer",
+                        //     extrinsicContainer: transferExtrinsic
+                        // }
     
-                        let transferExtrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+                        let transferExtrinsicResultData = await executeAndReturnExtrinsic(transferExtrinsic, chopsticks, executeMovr)
                         if(!transferExtrinsicResultData){
                             throw new Error("Transfer Tx Result Data: undefined")
                         }
@@ -206,7 +201,7 @@ export async function buildAndExecuteExtrinsics(
         while(instructionsToExecute.length > 0 && testLoopIndex < testLoops){
             console.log("Reached end")
             console.log("Execute remaining swap instructions")
-            let [extrinsicResultData, remainingInstructions] = await buildAndExecuteSwapExtrinsic(relay, instructionsToExecute, chopsticks, executeMovr, nextInputValue, extrinsicIndex)
+            let [extrinsicResultData, remainingInstructions] = await buildAndExecuteSwapExtrinsic(relay, instructionsToExecute, chopsticks, executeMovr, nextInputValue )
             
             // If undefined, not error just skip
             if(!extrinsicResultData){
@@ -250,19 +245,15 @@ export async function buildAndExecuteExtrinsics(
 }
 
 // Don't need to execute while loop for instructionsToExecute/remainingInstructions because each set should just be one transfer, ANY CHAIN -> KUSAMA
-export async function buildAndExecuteAllocationExtrinsics(relay: Relay, instructionSet: TransferInstruction[], chopsticks: boolean, executeMovr: boolean, testLoops: number){
-    // let isntructionsToExecute = instructionSet
-    // while(isntructionsToExecute.length > 0){
-        let extrinsicIndex = {i: 0}
-        let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionSet[0], extrinsicIndex, chopsticks);
-        let extrinsicObj: ExtrinsicObject = {
-            type: "Transfer",
-            instructionIndex: transferExtrinsic.instructionIndex,
-            extrinsicIndex: transferExtrinsic.extrinsicIndex,
-            transferExtrinsicContainer: transferExtrinsic
-        }
+export async function buildAndExecuteAllocationExtrinsics(relay: Relay, instructionSet: TransferInstruction[], chopsticks: boolean, executeMovr: boolean){
+        let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionSet[0], chopsticks);
+        // let extrinsicObj: ExtrinsicObject = {
+        //     type: "Transfer",
+        //     extrinsicContainer: transferExtrinsic,
+        //     // transferExtrinsicContainer: transferExtrinsic
+        // }
 
-        let transferExtrinsicResultData = await executeAndReturnExtrinsic(extrinsicObj, extrinsicIndex, chopsticks, executeMovr)
+        let transferExtrinsicResultData = await executeAndReturnExtrinsic(transferExtrinsic, chopsticks, executeMovr)
         if(!transferExtrinsicResultData){
             throw new Error("Transfer Tx Result Data: undefined")
         }
