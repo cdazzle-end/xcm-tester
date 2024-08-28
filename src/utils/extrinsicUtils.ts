@@ -395,21 +395,6 @@ async function buildPolkadotSwapExtrinsic(
     }
 }
 
-// export async function createTransferExtrinsicObject(transferContainer: TransferExtrinsicContainer){
-//     let extrinsicObj: ExtrinsicObject = {
-//         type: "Transfer",
-//         transferExtrinsicContainer: transferContainer
-//     }
-//     return extrinsicObj
-// }
-// export async function createSwapExtrinsicObject(swapContainer: SwapExtrinsicContainer){
-//     let extrinsicObj: ExtrinsicObject = {
-//         type: "Swap",
-//         swapExtrinsicContainer: swapContainer
-//     }
-//     return extrinsicObj
-// }
-
 export async function buildTransferToKsm(relay: Relay, fromChainId: number, amount: FixedPointNumber, chopsticks: boolean){
     if(fromChainId == 0){
         throw new Error("Trying to transfer kusama away from home chain to kusama")
