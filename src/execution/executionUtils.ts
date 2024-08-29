@@ -1720,8 +1720,7 @@ export async function allocateFundsForSwapFromRelay(relay: Relay, assetPath: Ass
     let startChain = assetPath[0].getChainId()
     let startValue = assetPath[0].getPathValueAsNumber()
 
-    // console.log("Checking balance again to allocate funds for swap")
-    let nativeBalancesRefreshed = await getRelayTokenBalances(chopsticks, relay)
+    let nativeBalancesRefreshed = await attemptGetRelayTokenBalances(chopsticks, relay)
 
     // console.log("Native Balances: " + JSON.stringify(nativeBalancesRefreshed))
 
