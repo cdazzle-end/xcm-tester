@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { localRpcs } from './../config/txConsts.ts';
-import { ExecutionState, ExtrinsicSetResultDynamic, JsonPathNode, LastNode, NewFeeBook, PromiseTracker, Relay, SwapInstruction, TransferInstruction, TxDetails } from './../types/types.ts';
+import { ExecutionState, ExtrinsicSetResultDynamic, ArbFinderNode, LastNode, NewFeeBook, PromiseTracker, Relay, SwapInstruction, TransferInstruction, TxDetails } from './../types/types.ts';
 import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, getRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, watchTokenDeposit, trackPromise } from './../utils/index.ts';
 import { getParaId, TNode } from '@paraspell/sdk';
 import { getAdapter, getAssetRegistry, getAssetRegistryObject } from '@polkawallet/bridge';
@@ -696,7 +696,7 @@ async function executeTestPath(relay: Relay, chopsticks: boolean, executeMovr: b
     stateSetExecutionRelay(relay)
 
     let testFilePath = path.join(__dirname, `./testXcmPath.json`)
-    let arbPathData: JsonPathNode[] = JSON.parse(fs.readFileSync(testFilePath, 'utf8'))
+    let arbPathData: ArbFinderNode[] = JSON.parse(fs.readFileSync(testFilePath, 'utf8'))
 
     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
 
@@ -1202,7 +1202,7 @@ async function testGlmrSwap(){
 async function testLogger(){
     let testPath = path.join(__dirname, './tests/testGlmrPath.json')
 
-    let pathNodes: JsonPathNode[] = JSON.parse(fs.readFileSync(testPath).toString())
+    let pathNodes: ArbFinderNode[] = JSON.parse(fs.readFileSync(testPath).toString())
 
     await mainLogger.info("Main Test Logger")
     // mainLogger.info(JSON.stringify(pathNodes, null, 2))

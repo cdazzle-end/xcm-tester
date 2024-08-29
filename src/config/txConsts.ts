@@ -139,3 +139,6 @@ export const kusamaNodeKeys = [
 export const dotNodeKeys = [
     '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"DOT\\"}}"'
 ]
+
+export const kusamaRelayMinimum = 0.01
+export const polkadotRelayMinimum = 1

@@ -1,7 +1,7 @@
 import '@galacticcouncil/api-augment/basilisk';
 import { dotNodeKeys, kusamaNodeKeys } from '../config/txConsts.ts';
-import { printExtrinsicSetResults } from '../utils/utils.ts';
-import { ExtrinsicObject, ExtrinsicSetResultDynamic, IndexObject, InstructionType, LastNode, Relay, SwapInstruction, TransferInstruction } from './../types/types.ts';
+import { isTransferResult, printExtrinsicSetResults } from '../utils/utils.ts';
+import { ExtrinsicObject, ExtrinsicSetResultDynamic, IndexObject, InstructionType, LastNode, Relay, SingleTransferResultData, SwapInstruction, TransferInstruction } from './../types/types.ts';
 import { getExtrinsicSetResults, getLastNode } from './../utils/globalStateUtils.ts';
 import { buildAndExecuteSwapExtrinsic, executeAndReturnExtrinsic } from './executionUtils.ts';
 import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic } from './extrinsicUtils.ts';
@@ -245,26 +245,35 @@ export async function buildAndExecuteExtrinsics(
 }
 
 // Don't need to execute while loop for instructionsToExecute/remainingInstructions because each set should just be one transfer, ANY CHAIN -> KUSAMA
-export async function buildAndExecuteAllocationExtrinsics(relay: Relay, instructionSet: TransferInstruction[], chopsticks: boolean, executeMovr: boolean){
-        let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionSet[0], chopsticks);
-        // let extrinsicObj: ExtrinsicObject = {
-        //     type: "Transfer",
-        //     extrinsicContainer: transferExtrinsic,
-        //     // transferExtrinsicContainer: transferExtrinsic
-        // }
+/**
+ * Build and execute a single transfer extrinsic from a TransferInstruction
+ * - After building allocation instructions, execute them as singular transfers
+ * 
+ * @param relay 
+ * @param instructionSet - Single TransferInstruction
+ * @param chopsticks 
+ * @param executeMovr 
+ * @returns 
+ */
+export async function buildAndExecuteTransferExtrinsic(
+    relay: Relay, 
+    instructionSet: TransferInstruction, 
+    chopsticks: boolean, 
+    executeMovr: boolean
+): Promise<SingleTransferResultData>{
+    let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, instructionSet[0], chopsticks);
+    
 
-        let transferExtrinsicResultData = await executeAndReturnExtrinsic(transferExtrinsic, chopsticks, executeMovr)
-        if(!transferExtrinsicResultData){
-            throw new Error("Transfer Tx Result Data: undefined")
-        }
-        if(transferExtrinsicResultData.success == false){
-            console.log("Extrinsic failed")
-            console.log(transferExtrinsicResultData.arbExecutionResult)
-            return transferExtrinsicResultData
-        }
+    let transferExtrinsicResultData = await executeAndReturnExtrinsic(transferExtrinsic, chopsticks, executeMovr)
+    if(transferExtrinsicResultData === undefined || !isTransferResult(transferExtrinsicResultData)){
+        throw new Error('Transfer result data error')
+    }
+
+    if(transferExtrinsicResultData.success == false){
+        console.log("Extrinsic failed")
+        console.log(transferExtrinsicResultData.arbExecutionResult)
         return transferExtrinsicResultData
-
-        // isntructionsToExecute = remainingInstructions
-    // }
+    }
+    return transferExtrinsicResultData
     
 }

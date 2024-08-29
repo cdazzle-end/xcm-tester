@@ -3,16 +3,16 @@ import { BN } from "@polkadot/util/bn"
 import { checkAndApproveToken } from "../swaps/movr/utils/utils.ts"
 import { AssetNode } from "../core/AssetNode.ts"
 import { testNets, localRpcs } from "../config/txConsts.ts"
-import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, NativeBalancesType, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, TransferDepositEventData, IMyAsset, ExtrinsicContainer } from "./../types/types.ts"
-import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject, getAssetDecimalsFromLocation, getWalletAddressFormatted, isTxDetails, isSwapExtrinsicContainer, isTransferExtrinsicContainer, isTransferProperties, isSwapProperties, trackPromise } from "../utils/utils.ts"
+import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, RelayTokenBalances, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, TransferDepositEventData, IMyAsset, ExtrinsicContainer } from "./../types/types.ts"
+import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject, getAssetDecimalsFromLocation, getWalletAddressFormatted, isTxDetails, isSwapExtrinsicContainer, isTransferExtrinsicContainer, isTransferProperties, isSwapProperties, trackPromise, isTransferInstruction, getRelayMinimum } from "../utils/utils.ts"
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { buildSwapExtrinsicDynamic } from "./extrinsicUtils.ts"
 import { getApiForNode } from "../utils/apiUtils.ts"
 import { BalanceData } from "@polkawallet/bridge"
 import * as paraspell from '@paraspell/sdk'
 import {KeyringPair} from '@polkadot/keyring/types'
-import { allocateKsmFromPreTransferPaths, buildInstructionSet, collectKsmToRelayPaths, getFundingPath, getPreTransferPath } from "./instructionUtils.ts"
-import { getBalance, getBalanceChange, getBalanceFromId, getDisplayBalance, getRelayTokenBalances, watchTokenBalance, watchTokenDeposit } from "./../utils/balanceUtils.ts"
+import { allocateKsmFromPreTransferPaths, buildInstructionSet, createAllocationPaths as createAllocationAssetPaths, getFundingPath, getPreTransferPath } from "./instructionUtils.ts"
+import { attemptGetRelayTokenBalances, getBalance, getBalanceChange, getBalanceFromId, getDisplayBalance, getRelayTokenBalances, watchTokenBalance, watchTokenDeposit } from "./../utils/balanceUtils.ts"
 import { stateSetLastNode, stateSetResultData, stateSetTransactionState, stateSetTransactionProperties, updateXcmFeeReserves, stateSetTracking } from "./../utils/globalStateUtils.ts"
 // import {BigNumber as bn } from "bignumber.js"
 import bn from 'bignumber.js'
@@ -21,7 +21,7 @@ import { createFeeDatas, createReserveFees, getTransferType, getXcmTransferEvent
 import { WsProvider, ApiPromise, Keyring, ApiRx } from '@polkadot/api'
 import { logEventFeeBook } from "../utils/logUtils.ts"
 import { TNode } from "@paraspell/sdk"
-import { buildAndExecuteAllocationExtrinsics } from "./arbExecutor.ts"
+import { buildAndExecuteTransferExtrinsic } from "./arbExecutor.ts"
 import { MyAsset } from "../core/index.ts"
 import { Observable } from "rxjs"
 // import { H256 } from '@polkadot/types/primitive';
@@ -1546,23 +1546,41 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
     return transactionSuccess
 }
 
-
-export async function collectRelayToken(relay: Relay, chopsticks: boolean, executeMovr: boolean, nativeBalances: NativeBalancesType, startChainId: number){
-    let allocationPaths = await collectKsmToRelayPaths(relay,  nativeBalances, startChainId)
-    let allocationInstructions = await Promise.all(allocationPaths.map(async (path) => buildInstructionSet(relay, path)))
-
-    console.log("Executing allocations from chains to Kusama")
-    // const { globalState } = await import("./liveTest.ts");
-    stateSetTracking(false)
-    // Async execution
-    let allocationExecutionResultsPromise = allocationInstructions.map(async (instructionSet) => {
-        let transferInstructions: TransferInstruction[] = instructionSet as TransferInstruction[]
-        // const { buildAndExecuteAllocationExtrinsics } = await import("./liveTest.ts");
-        let allocationExecution = buildAndExecuteAllocationExtrinsics(relay, transferInstructions, chopsticks, executeMovr)
-        return allocationExecution
+/**
+ * Builds asset paths from each chain to relay depending on chain balance
+ * 
+ * Use each asset path to build a TransferInstruction
+ * 
+ * Build and execute each TransferInstruction (Asynchronously)
+ * 
+ * @param relay 
+ * @param chopsticks 
+ * @param executeMovr 
+ * @param nativeBalances 
+ * @param startChainId 
+ * @returns 
+ */
+export async function collectRelayToken(relay: Relay, chopsticks: boolean, executeMovr: boolean, nativeBalances: RelayTokenBalances, startChainId: number){
+    let assetPaths: AssetNode[][] = await createAllocationAssetPaths(relay,  nativeBalances, startChainId)
+    let transferInstructions: TransferInstruction[] = assetPaths.map((path) => {
+        const instructionSet: TransferInstruction[] = buildInstructionSet(relay, path).map((instruction) => {
+            if(!isTransferInstruction(instruction)) throw new Error('Allocation instruction error')
+                return instruction
+        })
+        // Build instruction set. Allocations will only be one istruction
+        return instructionSet[0]
     })
 
-    let allocationExecutionResults = await Promise.all(allocationExecutionResultsPromise)
+    console.log("Executing allocations from chains to Kusama")
+
+    // Turn tracking off because this is done asyncronously
+    stateSetTracking(false)
+
+    let allTransferResultsPromise: Promise<SingleTransferResultData>[] = transferInstructions.map(async (transferInstruction: TransferInstruction) => {
+        return buildAndExecuteTransferExtrinsic(relay, transferInstruction, chopsticks, executeMovr)
+    })
+
+    let allocationExecutionResults: SingleTransferResultData[] = await Promise.all(allTransferResultsPromise)
 
     // Turn it back on for the rest of the execution
     stateSetTracking(true)
@@ -1578,56 +1596,97 @@ export async function collectRelayToken(relay: Relay, chopsticks: boolean, execu
 
 
 // Get balance of native token accross chains. If RELAY chain has low funds, collect all funds to relay. Return balances of all chains
-export async function checkAndAllocateRelayToken(relay: Relay, startChainId: number, chopsticks: boolean, inputAmount: number, executeMovr: boolean){
+/**
+ * Checks balance of relay chain. If less than required amount, allocate tokens from each chain to the relay
+ * 
+ * @param relay 
+ * @param startChainId - First swap chain, do not allocate from this chain
+ * @param chopsticks 
+ * @param inputAmount - Amount required for arb execution
+ * @param executeMovr 
+ * @returns 
+ */
+export async function allocateToRelay(
+    relay: Relay, 
+    startChainId: number, 
+    chopsticks: boolean, 
+    inputAmount: number, 
+    executeMovr: boolean
+): Promise<RelayTokenBalances>{
     let nativeBalancesSuccess = false;
-    let nativeBalancesQueries = 0;
-    let nativeBalances;
-    const relayChainMinimum = relay == 'kusama' ? 0.01 : 1
-    const relayTokenMinimum = relay == 'kusama' ? 0.01 : 0.02 // Keep a small bit of token on each chain to not reap the account
+    let attempts = 0;
+    let nativeBalances: RelayTokenBalances;
+    const relayChainMinimum = getRelayMinimum(relay)
+    const requiredBalance = new bn(inputAmount).plus(new bn(relayChainMinimum))
     let executedAllocation = false;
-    while(!nativeBalancesSuccess && nativeBalancesQueries < 3){
-        console.log("Querying Relay Token Balances")
-        nativeBalancesQueries += 1
-        try{
-            // Query balances. Query may fail
-            nativeBalances = await getRelayTokenBalances(chopsticks, relay)
-            // console.log("NATIVE BALANCES")
-            // console.log(nativeBalances)
-            nativeBalancesSuccess = true
 
-            // Allocate relay token if needed
-            if(nativeBalances[0] < inputAmount + relayChainMinimum){
-                console.log("Insufficient Relay Token balance. Collecting ksm to relay")
-                executedAllocation = true
-                await collectRelayToken(relay, chopsticks,  executeMovr, nativeBalances, startChainId)
-                nativeBalancesSuccess = false;
-            }
-        } catch(e){
-            console.log(e)
-            console.log("KSM query failed. Retrying")
-        }
+    try{
+        nativeBalances = await attemptGetRelayTokenBalances(chopsticks, relay)
+    } catch(e){
+        throw new Error(`Allocating relay token: Unable to query relay balances. ${JSON.stringify(e, null, 2)}`)
     }
-    if(!nativeBalancesSuccess){
-        throw new Error("Failed to query Relay Token balances")
+
+    // If relay has sufficient balance, return
+    if(new bn(nativeBalances[0]) >= requiredBalance){
+        return nativeBalances
     }
+
+    await collectRelayToken(relay, chopsticks,  executeMovr, nativeBalances, startChainId)
+
     // Query balances again after allocation
+    try{
+        nativeBalances = await attemptGetRelayTokenBalances(chopsticks, relay)
+    } catch(e){
+        throw new Error(`Allocating relay token: Unable to query relay balances. ${JSON.stringify(e, null, 2)}`)
+    }
 
-    nativeBalancesQueries = 0
-    while(executedAllocation && !nativeBalancesSuccess && nativeBalancesQueries < 3){
-        console.log("Query balance again after executing allocation")
-        nativeBalancesQueries += 1
-        try{
-            nativeBalances = await getRelayTokenBalances(chopsticks, relay)
-            nativeBalancesSuccess = true
-        } catch(e) {
-            console.log(e)
-            console.log("Relay Token query failed. Retrying")
-        }
-    }
-    if(!nativeBalancesSuccess){
-        throw new Error("Failed to query Relay Token balances")
-    }
     return nativeBalances
+
+
+    // while(!nativeBalancesSuccess && attempts < 3){
+    //     console.log("Querying Relay Token Balances")
+    //     attempts += 1
+    //     try{
+    //         // Query balances. Query may fail
+    //         // nativeBalances = await getRelayTokenBalances(chopsticks, relay)
+    //         nativeBalances = await attemptGetRelayTokenBalances(chopsticks, relay)
+    //         nativeBalancesSuccess = true
+
+    //         // Allocate to relay if relay balance is less than input amount + minimum
+    //         if(new bn(nativeBalances[0]) < new bn(inputAmount).plus(new bn(relayChainMinimum))){
+    //             console.log("Insufficient Relay Token balance. Collecting ksm to relay")
+    //             executedAllocation = true
+    //             await collectRelayToken(relay, chopsticks,  executeMovr, nativeBalances, startChainId)
+
+    //             // After allocating, need to requery balances
+    //             nativeBalancesSuccess = false;
+    //         }
+    //     } catch(e){
+    //         console.log(e)
+    //         console.log("Relay query or allocation failed. Retrying")
+    //     }
+    // }
+    // if(!nativeBalancesSuccess){
+    //     throw new Error("Failed to query Relay Token balances")
+    // }
+    // // Query balances again after allocation
+
+    // attempts = 0
+    // while(executedAllocation && !nativeBalancesSuccess && attempts < 3){
+    //     console.log("Query balance again after executing allocation")
+    //     attempts += 1
+    //     try{
+    //         nativeBalances = await getRelayTokenBalances(chopsticks, relay)
+    //         nativeBalancesSuccess = true
+    //     } catch(e) {
+    //         console.log(e)
+    //         console.log("Relay Token query failed. Retrying")
+    //     }
+    // }
+    // if(!nativeBalancesSuccess){
+    //     throw new Error("Failed to query Relay Token balances")
+    // }
+    // return nativeBalances
     
 }
 

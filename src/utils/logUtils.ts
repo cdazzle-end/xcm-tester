@@ -1,14 +1,14 @@
 import bn from 'bignumber.js';
 import fs from 'fs';
 import path from 'path';
-import { AccumulatedFeeData, ArbExecutionResult, ExtrinsicObject, ExtrinsicSetResultDynamic, InstructionType, LastFilePath, Relay, ReserveFeeData, SwapInstruction, SwapTxStats, TransferDepositEventData, TransferDepositJsonData, TransferInstruction, TransferTxStats } from "./../types/types.ts";
+import { AccumulatedFeeData, ArbExecutionResult, ExtrinsicObject, ExtrinsicSetResultDynamic, InstructionType, Relay, ReserveFeeData, SwapInstruction, SwapTxStats, TransferDepositEventData, TransferDepositJsonData, TransferInstruction, TransferTxStats } from "./../types/types.ts";
 // import { globalState } from "./liveTest.ts";
 // import 
 declare const fetch: any;
 
 import { getParaId } from "@paraspell/sdk";
 import { fileURLToPath } from 'url';
-import { isSwapResult, isTransferResult, getAccumulatedFeeData, getExtrinsicSetResults, getXcmFeeReserves } from "./index.ts";
+import { isSwapResult, isTransferResult, getAccumulatedFeeData, getExtrinsicSetResults, getXcmFeeReserves, getLastFilePath, getRelay } from "./index.ts";
 // import { getAccumulatedFeeData, getExtrinsicSetResults, getXcmFeeReserves } from './globalStateUtils.ts';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -357,10 +357,12 @@ export async function logXcmFeeReserves(relay: Relay, feeReserveData: Readonly<R
  *
  * @beta
  */
-export async function logAllResultsDynamic(relay: Relay, logFilePath: string, chopsticks: boolean){
+export async function logAllResultsDynamic(chopsticks: boolean){
 
     // let lastNode = extrinsicSetResults.lastSuccessfulNode
     // let extrinsicSetData = extrinsicSetResults.extrinsicData
+    const logFilePath = getLastFilePath()!
+    const relay = getRelay()!
 
     let arbResults: ArbExecutionResult[] = []
     let swapTxStats: SwapTxStats[] = []
@@ -401,15 +403,11 @@ export async function logAllResultsDynamic(relay: Relay, logFilePath: string, ch
     console.log(`Logged results: SwapTxStats, SwapTxResults, TransferTxStats, ArbExecutionResults, XcmFeeReserve`)
 
 }
-// log the latest file path so we can re run the arb from the last node and connect it to the previous attempt via latestFilePath
-export async function logLastFilePath(logFilePath: string){
-    let logFile: LastFilePath = {
-        filePath: logFilePath
-    }
-    fs.writeFileSync(path.join(__dirname, './../executionState/lastAttemptFile.json'), JSON.stringify(logFile, null, 2))
-}
 
-export async function logProfits(relay: Relay, arbAmountOut: string, logFilePath: string, chopsticks: boolean){
+export async function logProfits(arbAmountOut: string, chopsticks: boolean){
+    const logFilePath = getLastFilePath()!
+    const relay = getRelay()!
+
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]
     let logFileTime = logFileStrings[logFileStrings.length - 1]

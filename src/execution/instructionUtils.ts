@@ -1,7 +1,7 @@
 import * as paraspell from "@paraspell/sdk";
 import { AssetNode } from "../core/AssetNode.ts";
-import { IndexObject, InstructionType, IMyAsset, NativeBalancesType, Relay, JsonPathNode, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, PNode } from "./../types/types.ts";
-import { getNode, getAssetRegistryObjectBySymbol, getAssetBySymbolOrId, increaseIndex, constructRouteFromFile, constructRouteFromJson, getAssetKeyFromChainAndSymbol, printAllocations, getSigner, findValueByKey } from "../utils/utils.ts";
+import { IndexObject, InstructionType, IMyAsset, RelayTokenBalances, Relay, ArbFinderNode, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, PNode } from "./../types/types.ts";
+import { getNode, getAssetRegistryObjectBySymbol, getAssetBySymbolOrId, increaseIndex, constructRouteFromFile, constructRouteFromJson, getAssetKeyFromChainAndSymbol, printAllocations, getSigner, findValueByKey, printInstructionSet, readLogData } from "../utils/utils.ts";
 import fs from 'fs'
 import path from 'path'
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import { getBalance, getBalanceChainAsset} from "../utils/balanceUtils.ts";
 import { getApiForNode } from "../utils/apiUtils.ts";
 import bn from "bignumber.js";
-import { buildAndExecuteAllocationExtrinsics } from "./arbExecutor.ts";
+import { buildAndExecuteTransferExtrinsic } from "./arbExecutor.ts";
 import { stateSetTracking } from "./../utils/globalStateUtils.ts";
 import { MyAsset } from "../core/index.ts";
 
@@ -26,6 +26,7 @@ export function buildInstructionSet(relay: Relay, assetPath: AssetNode[]) {
             instructions.push(instruction)
         })
     }
+    printInstructionSet(instructions)
     return instructions
 }
 
@@ -351,10 +352,10 @@ export async function getPreTransferPath(
         }
 
         // Create allocations to relay chain
-        let allocationPaths: JsonPathNode[][] = []
+        let allocationPaths: ArbFinderNode[][] = []
         for(let allocationNode of nodesToAllocateFrom){
             let allocationNodeAssetObject = getAssetRegistryObjectBySymbol(allocationNode.chainId, nativeAssetSymbol, relay)
-            let pathNodes = await createAllocationToKusamaPath(relay, allocationNodeAssetObject, allocationNode.balance)
+            let pathNodes = await createAllocationPath(relay, allocationNodeAssetObject, allocationNode.balance)
             allocationPaths.push(pathNodes)
             console.log(`Allocating ${allocationNode.balance} from chain ${allocationNode.chainId}`)
         }
@@ -381,7 +382,7 @@ export async function getPreTransferPath(
     } else { 
         //Allocate sufficient ksm from a single chain. Returns a single AssetNode[] path
         let [firstChainWithSufficientFunds, returnBalance] = sufficientChainAndBalance
-        let jsonPathNodes: JsonPathNode[] = []
+        let jsonPathNodes: ArbFinderNode[] = []
 
         //Allocate ksm from a parachain node
         if(Number.parseInt(firstChainWithSufficientFunds) != 0) {
@@ -439,7 +440,7 @@ export async function getFundingPath(
     let minimumRelayBalance = relay == 'kusama' ? 0.01 : 1
     let transferAmountPadding = relay == 'kusama' ? 0.01 : 0.1 // Pad transfer amount to account for fees, so we have enough to start swaps with intended amount. Theres a better way to do this
     let amountNeededToTransfer = inputAmount - startTokenBalance
-    let jsonPathNodes: JsonPathNode[] = []
+    let jsonPathNodes: ArbFinderNode[] = []
 
     if(startTokenBalance < inputAmount){
         console.log(`Start chain: ${startChainId} has insufficient funds to allocate. Need to allocate from relay`)
@@ -459,8 +460,17 @@ export async function getFundingPath(
     return assetPath
 }
 
-// This is helpful just to collect all the native asset occasionally
-export async function collectKsmToRelayPaths(relay: Relay, nativeBalances: NativeBalancesType, startChainId: number){
+/**
+ * Create xcm node paths from each chain to relay, depending on chain balances
+ * - Will keep a minimum amount of token on each chain
+ * 
+ * 
+ * @param relay 
+ * @param nativeBalances - Balance of relay token on each chain
+ * @param startChainId - First swap chain, skip allocation from here
+ * @returns 
+ */
+export function createAllocationPaths(relay: Relay, nativeBalances: RelayTokenBalances, startChainId: number){
     let nodesToAllocateFrom: any[] = []
     let minimumTokenBalance = relay == 'kusama' ? 0.01 : 0.02
     Object.entries(nativeBalances).forEach(([chainId, balance]) => {
@@ -478,17 +488,21 @@ export async function collectKsmToRelayPaths(relay: Relay, nativeBalances: Nativ
     })
     let nativeAssetSymbol = relay == 'kusama' ? "KSM" : "DOT"
     
-    // Create allocations to kusama
-    let allocationPaths: JsonPathNode[][] = []
+    // Create node paths from each chain to relay
+    let allocationPaths: ArbFinderNode[][] = []
     for(let allocationNode of nodesToAllocateFrom){
-        let allocationNodeAssetObject = getAssetRegistryObjectBySymbol(allocationNode.chainId, nativeAssetSymbol, relay)
-        let pathNodes = await createAllocationToKusamaPath(relay, allocationNodeAssetObject, allocationNode.balance)
+        let relayAsset = new MyAsset(getAssetRegistryObjectBySymbol(allocationNode.chainId, nativeAssetSymbol, relay))
+        let pathNodes: ArbFinderNode[] = createAllocationPath(relay, relayAsset, allocationNode.balance)
         allocationPaths.push(pathNodes)
         console.log(`Allocating ${allocationNode.balance} from chain ${allocationNode.chainId}`)
     }
 
     // Allocation Paths now ready
-    let allocationAssetNodePaths: AssetNode[][] = allocationPaths.map((path) => constructRouteFromJson(relay, path))
+    // let allocationAssetNodePaths: AssetNode[][] = allocationPaths.map((path) => constructRouteFromJson(relay, path))
+    const allocationAssetNodePaths: AssetNode[][] = allocationPaths.map((allocationPath) => {
+        return allocationPath.map((pathNode) => readLogData(pathNode, relay))
+    })
+
     allocationAssetNodePaths.forEach((path) => {
         console.log("PATH")
         path.forEach((node) => {
@@ -506,7 +520,7 @@ export async function createTransferPathNode(
     pathValue: number
 ){
     let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
-    let pathNode: JsonPathNode = {
+    let pathNode: ArbFinderNode = {
         node_key: assetKey,
         asset_name: nativeAssetName,
         path_value: pathValue,
@@ -519,11 +533,18 @@ export async function createTransferPathNode(
     return pathNode
 }
 
-
-export async function createAllocationToKusamaPath(relay: Relay, allocationAssetRegistryObject: IMyAsset, pathValue: number){
+/**
+ * Create 2 ArbFinderNode path nodes from specified chain -> relay for the given value
+ * 
+ * @param relay 
+ * @param relayAsset - relay asset from the chain to be allocated from 
+ * @param pathValue 
+ * @returns [nodeOne, nodeTwo]
+ */
+export function createAllocationPath(relay: Relay, relayAsset: MyAsset, pathValue: number): [ArbFinderNode, ArbFinderNode]{
     let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
-    let assetKeyOne= JSON.stringify(allocationAssetRegistryObject.tokenData.chain) + JSON.stringify(allocationAssetRegistryObject.tokenData.localId)
-    let pathNodeOne: JsonPathNode ={
+    let assetKeyOne = relayAsset.getAssetKey()
+    let pathNodeOne: ArbFinderNode ={
         node_key: assetKeyOne,
         asset_name: nativeAssetName,
         path_value: pathValue,
@@ -533,9 +554,9 @@ export async function createAllocationToKusamaPath(relay: Relay, allocationAsset
             "lp_id": null
         }
     }
-    let relayAssetRegistryObject = getAssetRegistryObjectBySymbol(0, nativeAssetName, relay)
-    let assetKeyTwo = JSON.stringify(relayAssetRegistryObject.tokenData.chain) + JSON.stringify(relayAssetRegistryObject.tokenData.localId)
-    let pathNodeTwo: JsonPathNode ={
+    let relayAssetRegistryObject = new MyAsset(getAssetRegistryObjectBySymbol(0, nativeAssetName, relay))
+    let assetKeyTwo = relayAssetRegistryObject.getAssetKey()
+    let pathNodeTwo: ArbFinderNode ={
         node_key: assetKeyTwo,
         asset_name: nativeAssetName,
         path_value: pathValue,
@@ -551,7 +572,7 @@ export async function createAllocationKusamaToStartPath(relay: Relay, startAsset
     let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
     let relayAssetRegistryObject = getAssetRegistryObjectBySymbol(0, nativeAssetName, relay)
     let relayAssetKey = JSON.stringify(relayAssetRegistryObject.tokenData.chain) + JSON.stringify(relayAssetRegistryObject.tokenData.localId)
-    let relayNode: JsonPathNode ={
+    let relayNode: ArbFinderNode ={
         node_key: relayAssetKey,
         asset_name: nativeAssetName,
         path_value: pathValue,
@@ -562,7 +583,7 @@ export async function createAllocationKusamaToStartPath(relay: Relay, startAsset
         }
     }
     let startAssetKey = JSON.stringify(startAssetRegistryObject.tokenData.chain) + JSON.stringify(startAssetRegistryObject.tokenData.localId)
-    let startNode: JsonPathNode ={
+    let startNode: ArbFinderNode ={
         node_key: startAssetKey,
         asset_name: nativeAssetName,
         path_value: pathValue,
@@ -588,7 +609,7 @@ export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPa
     stateSetTracking(false)
     let allocationExecutionResultsPromise = allocationInstructions.map(async (instructionSet) => {
         let transferInstructions: TransferInstruction[] = instructionSet as TransferInstruction[]
-        let allocationExecution = buildAndExecuteAllocationExtrinsics(relay, transferInstructions, chopsticks, executeMovr)
+        let allocationExecution = buildAndExecuteTransferExtrinsic(relay, transferInstructions, chopsticks, executeMovr)
         return allocationExecution
     })
     let allocationExecutionResults = await Promise.all(allocationExecutionResultsPromise)
@@ -610,7 +631,7 @@ export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPa
     // Set input Amount to full ksm balance
     ksmTransferInstructions[0].assetNodes[0].pathValue = ksmBalanceToTransfer.toString()
 
-    let ksmExecution = await buildAndExecuteAllocationExtrinsics(relay, ksmTransferInstructions, chopsticks, executeMovr)
+    let ksmExecution = await buildAndExecuteTransferExtrinsic(relay, ksmTransferInstructions, chopsticks, executeMovr)
 
     console.log("ALLOCATION SUCCESS: " + ksmExecution.success)
     console.log(JSON.stringify(ksmExecution.arbExecutionResult, null, 2))

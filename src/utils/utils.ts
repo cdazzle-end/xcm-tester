@@ -13,7 +13,9 @@ import {
     arb_wallet_kusama,
     dotTargetNode,
     ksmTargetNode,
+    kusamaRelayMinimum,
     live_wallet_3,
+    polkadotRelayMinimum,
 } from "../config/txConsts.ts";
 import {
     ArbExecutionResult,
@@ -21,7 +23,7 @@ import {
     ExtrinsicSetResultDynamic,
     IndexObject,
     InstructionType,
-    JsonPathNode,
+    ArbFinderNode,
     LastNode,
     IMyAsset,
     PathData,
@@ -45,6 +47,7 @@ import {
 } from "./../types/types.ts";
 import { MyAsset } from "../core/index.ts";
 import { arbFinderPath, kusamaAssetRegistryPath, polkadotAssetRegistryPath } from "../config/index.ts";
+import { stateSetLastFile } from "./index.ts";
 
 // import { buildTransferExtrinsic } from './extrinsicUtils.ts';
 // Get the __dirname equivalent in ES module
@@ -52,34 +55,24 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F";
 
 // After reading log data, truncate the asset node path to the first swap node. To avoid unnecessary transfers
-export async function truncateAssetPath(
-    nodes: AssetNode[],
-    chopsticks: boolean
-) {
-    let firstKsmNodeIndex = -1;
-
-    // The first node (index 0) will not be a swap, the json node path_identifier is 0 (logically incorrect, 0 is for xcm path traversal but this is the first node with node previous path)
-    // and PathData.path_type will be "Start"
-    // Since first node is always start node, then first swap node will always be at index 1 or greater
-    for (let i = 0; i < nodes.length; i++) {
-        // console.log("Node path data: ", JSON.stringify(nodes[i].pathData))
+/**
+ * Truncate AssetNode[] path to skip past transfers up to first swap
+ * - Find's first node with a swap path type, and slices the node array from there
+ * 
+ * @param nodes 
+ * @param chopsticks 
+ * @returns AssetNode[]
+ */
+export function truncateAssetPath(nodes: AssetNode[]): AssetNode[]{
+    for (let i = 1; i < nodes.length; i++) {
         if (
             nodes[i].pathData.dexType != "Start" &&
             nodes[i].pathData.dexType != "Xcm"
         ) {
-            firstKsmNodeIndex = i - 1;
-            break;
+            return nodes.slice(i - 1)
         }
     }
-    if (firstKsmNodeIndex == -1) {
-        throw new Error("No swap instructions found");
-    }
-
-    // If the first asset node with a swap type is at index 2 (the third node), that means the first swap is from the second node (index 1) to the third (index 2).
-    // Therefore we remove all nodes up to index 1, just the first node(index 0)
-    // Thats why when we find the first swap node we substract one from the index and remove all nodes up tho that index.
-    let truncatedAssetNodes = nodes.slice(firstKsmNodeIndex);
-    return truncatedAssetNodes;
+    throw new Error("Truncating asset path | Could not find AssetNode with swap dex type.")
 }
 
 export function getNodeFromChainId(chainId: number, relay: Relay): PNode {
@@ -270,7 +263,7 @@ export function parsePathNodeKey(assetKey: string): [number, string] {
     return [chainId, localId];
 }
 
-export function parseJsonNodePathData(jsonObject: JsonPathNode): PathData {
+export function parseJsonNodePathData(jsonObject: ArbFinderNode): PathData {
     let data = jsonObject.path_data as any;
     let pathDataFormatted: PathData = {
         dexType: data.path_type,
@@ -284,24 +277,32 @@ export function parseJsonNodePathData(jsonObject: JsonPathNode): PathData {
 }
 
 // Reads a json object from the arbitrage result log and returns the corresponding paraspell asset and amount
+/**
+ * Constructs AssetNodes from arb-finder's path data
+ * - Formats path data and retreives all relevant asset info (as MyAsset) for each path node
+ * 
+ * @param arbPathNode 
+ * @param relay 
+ * @returns 
+ */
 export function readLogData(
-    jsonObject: JsonPathNode | JsonPathNode,
+    arbPathNode: ArbFinderNode,
     relay: Relay
 ) {
-    let [chainId, assetLocalId] = parsePathNodeKey(jsonObject.node_key);
+    let [chainId, assetLocalId] = parsePathNodeKey(arbPathNode.node_key);
 
     let asset: MyAsset = new MyAsset(
         getAssetRegistryObject(chainId, assetLocalId, relay)
     );
     let chain = getNode(relay, chainId);
-    let pathDataFormatted = parseJsonNodePathData(jsonObject);
+    let pathDataFormatted = parseJsonNodePathData(arbPathNode);
 
-    let pathType: PathType = jsonObject.path_type as PathType;
+    let pathType: PathType = arbPathNode.path_type as PathType;
 
     let assetNode = new AssetNode({
         chain: chain,
         asset: asset,
-        pathValue: jsonObject.path_value.toString(),
+        pathValue: arbPathNode.path_value.toString(),
         pathType: pathType,
         pathData: pathDataFormatted,
     });
@@ -703,52 +704,123 @@ export function getLatestAsyncFilesKusama(): [number, string][] {
     });
 
     return logFilePaths;
-    // try {
-    //     let sortedDays
-    //     let latestDayDir;
-    //     let latestDayPath
-    //     let days;
-
-    //     days = fs.readdirSync(resultsDirPath, { withFileTypes: true })
-    //         .filter(dirent => dirent.isDirectory())
-    //         .map(dirent => dirent.name)
-    //         .filter((day) => !day.includes("_small"))
-    //     sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-    //     // Get the latest day's directory
-    //     console.log("Sorted days: ", JSON.stringify(days, null, 2))
-
-    //     latestDayDir = sortedDays[0]
-    //     latestDayPath = path.join(resultsDirPath, latestDayDir);
-
-    //     console.log("Days: ", JSON.stringify(days, null, 2))
-    //     // Sort directories by date
-    //     console.log("Latest Target Day Path: ", latestDayPath)
-    //     // Get list of files in the latest day's directory
-    //     const files = fs.readdirSync(latestDayPath);
-
-    //     // Sort files by timestamp in filename
-    //     const sortedFiles = files.sort((a, b) => {
-    //         const timeA = a.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
-    //         const timeB = b.match(/\d{2}-\d{2}-\d{2}/)[0].replace(/-/g, ':');
-    //         return new Date(`${latestDayDir}T${timeA}`).getTime() - new Date(`${latestDayDir}T${timeB}`).getTime();
-    //     });
-
-    //     // Get the latest file
-    //     const latestFile = sortedFiles[sortedFiles.length - 1];
-    //     const latestFilePath = path.join(latestDayPath, latestFile);
-
-    //     return latestFilePath;
-    // } catch (error) {
-    //     console.error('Error:', error);
-    //     return null;
-    // }
 }
 
-export function getLatestTargetFileKusama() {
+// export function getLatestTargetFileKusama() {
+//     const resultsDirPath = path.join(
+//         __dirname,
+//         `${arbFinderPath}/target_log_data/kusama/`
+//     );
+//     try {
+//         let sortedDays;
+//         let latestDayDir;
+//         let latestDayPath;
+//         let days;
+
+//         days = fs
+//             .readdirSync(resultsDirPath, { withFileTypes: true })
+//             .filter((dirent) => dirent.isDirectory())
+//             .map((dirent) => dirent.name)
+//             .filter((day) => !day.includes("_small"));
+//         sortedDays = days.sort(
+//             (a, b) => new Date(b).getTime() - new Date(a).getTime()
+//         );
+
+//         // Get the latest day's directory
+//         latestDayDir = sortedDays[0];
+//         latestDayPath = path.join(resultsDirPath, latestDayDir);
+
+//         // Sort directories by date
+//         // Get list of files in the latest day's directory
+//         const files = fs.readdirSync(latestDayPath);
+
+//         // Sort files by timestamp in filename
+//         const sortedFiles = files.sort((a, b) => {
+//             const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
+//             const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
+//             return (
+//                 new Date(`${latestDayDir}T${timeA}`).getTime() -
+//                 new Date(`${latestDayDir}T${timeB}`).getTime()
+//             );
+//         });
+
+//         // Get the latest file
+//         const latestFile = sortedFiles[sortedFiles.length - 1];
+//         const latestFilePath = path.join(latestDayPath, latestFile);
+
+//         return latestFilePath;
+//     } catch (error) {
+//         console.error("Error:", error);
+//         return null;
+//     }
+// }
+
+// export function getLatestTargetFilePolkadot() {
+//     const resultsDirPath = path.join(
+//         __dirname,
+//         `${arbFinderPath}/target_log_data/polkadot/`
+//     );
+//     try {
+//         let sortedDays;
+//         let latestDayDir;
+//         let latestDayPath;
+//         let days;
+
+//         days = fs
+//             .readdirSync(resultsDirPath, { withFileTypes: true })
+//             .filter((dirent) => dirent.isDirectory())
+//             .map((dirent) => dirent.name)
+//             .filter((day) => !day.includes("_small"));
+//         sortedDays = days.sort(
+//             (a, b) => new Date(b).getTime() - new Date(a).getTime()
+//         );
+
+//         // Get the latest day's directory
+//         latestDayDir = sortedDays[0];
+//         latestDayPath = path.join(resultsDirPath, latestDayDir);
+
+//         // Sort directories by date
+//         // Get list of files in the latest day's directory
+//         const files = fs.readdirSync(latestDayPath);
+
+//         // Sort files by timestamp in filename
+//         const sortedFiles = files.sort((a, b) => {
+//             const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
+//             const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
+//             return (
+//                 new Date(`${latestDayDir}T${timeA}`).getTime() -
+//                 new Date(`${latestDayDir}T${timeB}`).getTime()
+//             );
+//         });
+
+//         // Get the latest file
+//         const latestFile = sortedFiles[sortedFiles.length - 1];
+//         const latestFilePath = path.join(latestDayPath, latestFile);
+
+//         return latestFilePath;
+//     } catch (error) {
+//         console.error("Error:", error);
+//         return null;
+//     }
+// }
+
+/**
+ * Finds filepath to most recent arb-finder result from target arb
+ * - Executes at the start of a new run
+ * - Sets GlobalState lastFilePath 
+ * 
+ * Parses and returns arb data as ArbFinderNode[]
+ * 
+ * @param relay 
+ * @returns ArbFinderNode[] - arb path
+ */
+export function getLastTargetArb(relay: Relay): ArbFinderNode[]{
     const resultsDirPath = path.join(
         __dirname,
-        `${arbFinderPath}/target_log_data/kusama/`
+        `${arbFinderPath}/target_log_data/${relay}/`
     );
+
+    let latestFilePath: string
     try {
         let sortedDays;
         let latestDayDir;
@@ -784,69 +856,22 @@ export function getLatestTargetFileKusama() {
 
         // Get the latest file
         const latestFile = sortedFiles[sortedFiles.length - 1];
-        const latestFilePath = path.join(latestDayPath, latestFile);
+        latestFilePath = path.join(latestDayPath, latestFile);
 
-        return latestFilePath;
+        // return latestFilePath;
     } catch (error) {
         console.error("Error:", error);
-        return null;
+        throw new Error("Latest File undefined")
     }
+
+    stateSetLastFile(latestFilePath)
+
+    return JSON.parse(fs.readFileSync(latestFilePath, 'utf8'))
 }
-
-export function getLatestTargetFilePolkadot() {
-    const resultsDirPath = path.join(
-        __dirname,
-        `${arbFinderPath}/target_log_data/polkadot/`
-    );
-    try {
-        let sortedDays;
-        let latestDayDir;
-        let latestDayPath;
-        let days;
-
-        days = fs
-            .readdirSync(resultsDirPath, { withFileTypes: true })
-            .filter((dirent) => dirent.isDirectory())
-            .map((dirent) => dirent.name)
-            .filter((day) => !day.includes("_small"));
-        sortedDays = days.sort(
-            (a, b) => new Date(b).getTime() - new Date(a).getTime()
-        );
-
-        // Get the latest day's directory
-        latestDayDir = sortedDays[0];
-        latestDayPath = path.join(resultsDirPath, latestDayDir);
-
-        // Sort directories by date
-        // Get list of files in the latest day's directory
-        const files = fs.readdirSync(latestDayPath);
-
-        // Sort files by timestamp in filename
-        const sortedFiles = files.sort((a, b) => {
-            const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
-            const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
-            return (
-                new Date(`${latestDayDir}T${timeA}`).getTime() -
-                new Date(`${latestDayDir}T${timeB}`).getTime()
-            );
-        });
-
-        // Get the latest file
-        const latestFile = sortedFiles[sortedFiles.length - 1];
-        const latestFilePath = path.join(latestDayPath, latestFile);
-
-        return latestFilePath;
-    } catch (error) {
-        console.error("Error:", error);
-        return null;
-    }
-}
-
-export function getLatestDefaultFile(relay: Relay) {}
 
 export function constructRouteFromFile(relay: Relay, logFilePath: string) {
     console.log("LatestFile: ", logFilePath);
-    const testResults: JsonPathNode[] = JSON.parse(
+    const testResults: ArbFinderNode[] = JSON.parse(
         fs.readFileSync(logFilePath, "utf8")
     );
     console.log(JSON.stringify(testResults));
@@ -857,7 +882,7 @@ export function constructRouteFromFile(relay: Relay, logFilePath: string) {
 }
 export function constructRouteFromJson(
     relay: Relay,
-    jsonPathNodes: JsonPathNode[]
+    jsonPathNodes: ArbFinderNode[]
 ) {
     let assetPath: AssetNode[] = jsonPathNodes.map((node) =>
         readLogData(node, relay)
@@ -1077,7 +1102,7 @@ export async function getLatestDefaultArb(
     }
 
     let estimatedResults = latestFile.map(async ([inputAmount, filePath]) => {
-        let latestFileData: JsonPathNode[] = JSON.parse(
+        let latestFileData: ArbFinderNode[] = JSON.parse(
             fs.readFileSync(filePath, "utf8")
         );
 
@@ -1173,6 +1198,10 @@ export function trackPromise(promise: Promise<any>) {
     return promiseTracker;
 }
 
+export function getRelayMinimum(relay: Relay): number{
+    return relay === 'polkadot' ? polkadotRelayMinimum : kusamaRelayMinimum
+}
+
 //TODO maybe make own file
 // Type guard function
 export function isTxDetails(error: unknown): error is TxDetails {
@@ -1217,3 +1246,16 @@ export function isSwapProperties(properties: SwapProperties | TransferProperties
 export function isTransferProperties(properties: SwapProperties | TransferProperties): properties is TransferProperties{
     return properties.type === "Transfer"
 }
+
+export function isTransferInstruction(instruction: TransferInstruction | SwapInstruction): instruction is TransferInstruction{
+    return instruction.type !== InstructionType.Swap
+}
+export function isSwapInstruction(instruction: TransferInstruction | SwapInstruction): instruction is SwapInstruction{
+    return instruction.type === InstructionType.Swap
+}
+// export function isTransferResults(resultData: SingleTransferResultData | SingleSwapResultData): resultData is SingleTransferResultData {
+
+// }
+// export function isSwapResults(resultData: SingleTransferResultData | SingleSwapResultData): resultData is SingleTransferResultData {
+    
+// }

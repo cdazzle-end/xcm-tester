@@ -32,11 +32,14 @@ export interface AssetNodeData {
     chain: PNode,
     asset: MyAsset,
     pathValue: string, // asset amount display
-    // ** Maybe remove. 0 = Xcm, 1 = Dex,  2 = Stable (All forms of stable), 3 = DexV3 (PathData.path_type = pool name like uni3 or algebra), 4 = Omnipool, 100 = Cex (Not in use atm),
+    // REVIEW
+    // ** Maybe remove. 0 = Xcm, 1 = Dex,  2 = Stable (All forms of stable, including stable share), 3 = DexV3 (PathData.path_type = pool name like uni3 or algebra), 4 = Omnipool, 100 = Cex (Not in use atm),
     // pathType is confusing and redundant as it can be inferred from pathData
     pathType: PathType,
     pathData: PathData
 }
+
+
 
 export class AssetNode implements AssetNodeData{
     chain: PNode;

@@ -4,9 +4,10 @@ import { readdir, stat } from "fs/promises";
 import path, { join } from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { Relay, JsonPathNode } from "./../types/types.ts";
+import { Relay, ArbFinderNode } from "./../types/types.ts";
 import { dotTargetNode, ksmTargetNode } from "../config/txConsts.js";
 import { acalaStableLpsPath, arbFinderPath, assetRegistryPath, glmrLpsPath, kusamaAssetRegistryPath, lpRegistryPath, polkadotAssetRegistryPath} from "../config/index.ts"
+import { stateSetLastFile } from "../utils/index.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +51,17 @@ export async function runArbFallback(args: string, relay: Relay) {
         });
     });
 }
+
+/**
+ * Spawns a new shell that will navigate to the arb-finder repository and execute a new target arb with specified input.
+ * - Arb-finder will log results in /target_log_data/ directory, which we can parse and use for arb execution
+ * 
+ * Resolves true if arb-finder completes successfully, or throws error
+ * 
+ * @param args - Input for arb-finder executable
+ * @param relay - relay
+ * @returns 
+ */
 export async function runArbTarget(args: string, relay: Relay) {
     return new Promise((resolve, reject) => {
         let functionCall = `search_best_path_a_to_b_${relay} ` + args;
@@ -229,7 +241,7 @@ export async function runAndReturnFallbackArb(
     args: string,
     chopsticks: boolean,
     relay: Relay
-): Promise<JsonPathNode[]> {
+): Promise<ArbFinderNode[]> {
     await updateAssetsAndLps(chopsticks,relay)
 
     try {
@@ -242,7 +254,7 @@ export async function runAndReturnFallbackArb(
             const latestFile = await findLatestFileInLatestDirectory(
                 fallbackLogFolder
             );
-            let latestFileData: JsonPathNode[] = JSON.parse(
+            let latestFileData: ArbFinderNode[] = JSON.parse(
                 fs.readFileSync(latestFile, "utf8")
             );
             return latestFileData;
@@ -290,11 +302,21 @@ async function updateAssetsAndLps(chopsticks: boolean, relay: Relay){
     console.log(lpsResult);
 }
 
+/**
+ * Updates assets and lps, then executes new target arb.
+ * - arb-finder will log the path in /target_log_data/
+ * - After arb-finder completes successfully, the path file is retrieved and returned  
+ * 
+ * @param args - args to pass to arb-finder executable
+ * @param chopsticks - testnet/live
+ * @param relay - relay
+ * @returns - filepath to arb-finder output log
+ */
 export async function runAndReturnTargetArb(
     args: string,
     chopsticks: boolean,
     relay: Relay
-): Promise<JsonPathNode[]> {
+): Promise<string> {
 
   await updateAssetsAndLps(chopsticks,relay)
 
@@ -308,10 +330,11 @@ export async function runAndReturnTargetArb(
             const latestFile = await findLatestFileInLatestDirectory(
                 targetLogFolder
             );
-            let latestFileData: JsonPathNode[] = JSON.parse(
-                fs.readFileSync(latestFile, "utf8")
-            );
-            return latestFileData;
+            return latestFile
+            // let latestFileData: ArbFinderNode[] = JSON.parse(
+            //     fs.readFileSync(latestFile, "utf8")
+            // );
+            // return latestFileData;
         } else {
             throw new Error("Arb Fallback failed");
         }
@@ -329,7 +352,7 @@ export async function getArbExecutionPath(
     useLatestTarget: boolean, 
     chopsticks: boolean
 ){
-    let arbPathData: JsonPathNode[] | JsonPathNode[] = []
+    let arbPathData: ArbFinderNode[] | ArbFinderNode[] = []
     
     // If useLatestTarget is false, will update LPs and run arb
     if(!useLatestTarget){
@@ -348,23 +371,35 @@ export async function getArbExecutionPath(
 }
 
 /**
+ * Runs arb-finder target with dot or ksm
+ * 
  * Use at the start of a new run
  * - Updates both asset and lp registries
  * - Calls arb-finder executable, searches for best arb path using default asset
  * - Logs and returns path as JSON objects. This data is used to execute the arb
  * 
+ * Sets GlobalState lastFilePath
+ * 
  * @param relay - Relay to run on
  * @param inputAmount - Amount to use as input for the initial asset
  * @param chopsticks - testnet/live
  */
-export async function findNewArb(
+export async function findNewTargetArb(
     relay: Relay,
     inputAmount: number,
     chopsticks: boolean
-): Promise<JsonPathNode[]> {
+): Promise<ArbFinderNode[]> {
     try{
-        let arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
-        return await runAndReturnTargetArb(arbArgs, chopsticks, relay)
+        const arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
+        const latestTargetArbData = await runAndReturnTargetArb(arbArgs, chopsticks, relay)
+
+        // Set state latest file
+        stateSetLastFile(latestTargetArbData)
+
+        const arbFinderPath: ArbFinderNode[] = JSON.parse(
+            fs.readFileSync(latestTargetArbData, "utf8")
+        );
+        return arbFinderPath;
     }  catch {
         console.log("Failed to run target arb")
         throw new Error("Failed to run target arb")
@@ -388,7 +423,7 @@ async function testArbFinder(relay: Relay) {
             const latestFile = await findLatestFileInLatestDirectory(
                 targetLogFolder
             );
-            let latestFileData: JsonPathNode[] = JSON.parse(
+            let latestFileData: ArbFinderNode[] = JSON.parse(
                 fs.readFileSync(latestFile, "utf8")
             );
             return latestFileData;

@@ -2,12 +2,12 @@ import '@galacticcouncil/api-augment/basilisk';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { runAndReturnFallbackArb, getArbExecutionPath } from './arbFinder/runArbFinder.ts';
+import { runAndReturnFallbackArb, getArbExecutionPath, findNewTargetArb } from './arbFinder/runArbFinder.ts';
 import { dotTargetNode, ksmTargetNode } from './config/index.ts';
 import { AssetNode, GlobalState } from './core/index.ts';
-import { allocateFundsForSwapFromRelay, buildAndExecuteAllocationExtrinsics, buildAndExecuteExtrinsics, buildInstructionSet, checkAndAllocateRelayToken, confirmLastTransactionSuccess } from './execution/index.ts';
-import { ExecutionState, ExtrinsicSetResultDynamic, InstructionType, JsonPathNode, LastNode, Relay, SwapInstruction, SwapProperties, TransactionState, TransferInstruction, TransferProperties } from './types/types.ts';
-import { closeApis, getExecutionAttempts, getExecutionSuccess, getLastNode, getLatestDefaultArb, getLatestTargetFileKusama, getLatestTargetFilePolkadot, getTotalArbResultAmount, getTransactionProperties, getTransactionState, initializeLastGlobalState, logAllResultsDynamic, logProfits, nodeLogger, pathLogger, printInstructionSet, readLogData, resetGlobalState, stateSetExecutionRelay, stateSetExecutionSuccess, stateSetLastNode, stateSetTransactionState, stateSLastFile, truncateAssetPath } from './utils/index.ts';
+import { allocateFundsForSwapFromRelay, buildAndExecuteTransferExtrinsic, buildAndExecuteExtrinsics, buildInstructionSet, allocateToRelay, confirmLastTransactionSuccess } from './execution/index.ts';
+import { ExecutionState, ExtrinsicSetResultDynamic, InstructionType, ArbFinderNode, LastNode, Relay, SwapInstruction, SwapProperties, TransactionState, TransferInstruction, TransferProperties } from './types/types.ts';
+import { closeApis, getExecutionAttempts, getExecutionSuccess, getLastNode, getLatestDefaultArb, getLastTargetArb, getTotalArbResultAmount, getTransactionProperties, getTransactionState, initializeLastGlobalState, logAllResultsDynamic, logProfits, nodeLogger, pathLogger, printInstructionSet, readLogData, resetGlobalState, stateSetExecutionRelay, stateSetExecutionSuccess, stateSetLastNode, stateSetTransactionState, stateSetLastFile, truncateAssetPath } from './utils/index.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -62,7 +62,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
         console.log("Executing Arb Fallback with args: " + functionArgs)
         
 
-        let arbResults: JsonPathNode[];
+        let arbResults: ArbFinderNode[];
         try{
             arbResults = await runAndReturnFallbackArb(functionArgs, chopsticks, relay)
         } catch {
@@ -81,7 +81,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
         await printInstructionSet(instructions)
         let extrinsicSetResults = await buildAndExecuteExtrinsics(relay, instructions, chopsticks, executeMovr, 100, true)
 
-        await logAllResultsDynamic(relay, logFilePath, chopsticks)
+        await logAllResultsDynamic(chopsticks)
         // await logAllArbAttempts(relay, logFilePath, chopsticks)
         if(extrinsicSetResults.success){
             arbSuccess = true
@@ -99,7 +99,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
     // await logAllResultsDynamic(relay, logFilePath, chopsticks)
     // await logAllArbAttempts(relay, logFilePath, chopsticks)
     let arbAmountOut = await getTotalArbResultAmount(relay, getLastNode()!, chopsticks)
-    await logProfits(relay, arbAmountOut, logFilePath, chopsticks )
+    await logProfits(arbAmountOut, chopsticks )
 }
 
 // Main function. Find new arb with specified input amount, or use previous arb path. Execute path and log results
@@ -117,32 +117,26 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     if (relay !== 'kusama' && relay !== 'polkadot') throw new Error('Relay not specified')
     GlobalState.initializeAndResetGlobalState(relay)
 
-    let latestFile = relay == 'kusama' ? getLatestTargetFileKusama() : getLatestTargetFilePolkadot()
-    if(!latestFile){
-        throw new Error("Latest File undefined")
+    // Execute new arb-finder, or just parse results from last arb file
+    let arbPathData: ArbFinderNode[]
+    if(useLatestTarget){
+        arbPathData = getLastTargetArb(relay)
+    } else {
+        arbPathData = await findNewTargetArb(relay, inputAmount, chopsticks)
     }
-    stateSLastFile(latestFile) // *** FIGURE out better place for this. Last file is used to track arb execution across multiple attempts
 
-    // GET arb execution path data
-    let arbPathData: JsonPathNode[] = await getArbExecutionPath(relay, latestFile, inputAmount, useLatestTarget, chopsticks)
-
-    pathLogger.info(`Arb Path Data: ${JSON.stringify(arbPathData, null, 2)}`)
-
-    console.log("ARB PATH DATA: ", JSON.stringify(arbPathData, null, 2))
-
-    // READ arb path data, construct asset path
     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
 
+    pathLogger.info(`Arb Path Data: ${JSON.stringify(arbPathData, null, 2)}`)
     nodeLogger.info(`Asset Path: ${JSON.stringify(assetPath, null, 2)}`)
 
-    // Skip nodes up to first swap node
-    let assetNodesAbreviated = await truncateAssetPath(assetPath, chopsticks)
+    let assetNodesAbreviated: AssetNode[] = await truncateAssetPath(assetPath)
 
     let startChainId = assetNodesAbreviated[0].getChainId()
 
     // Allocate tokens to relay if needed. Return balance on all chains
     console.log("Check and allocate relay token")
-    let nativeBalances = await checkAndAllocateRelayToken(relay, startChainId, chopsticks, inputAmount, executeMovr);
+    let nativeBalances = await allocateToRelay(relay, startChainId, chopsticks, inputAmount, executeMovr);
 
     // GET allocation node from relay -> start chain if needed.
     let executionPath: AssetNode[] = await allocateFundsForSwapFromRelay(relay, assetNodesAbreviated, nativeBalances, chopsticks, executeMovr)
@@ -153,15 +147,12 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
 
     // BUILD instruction set from asset path
     let instructionsToExecute: (SwapInstruction | TransferInstruction)[] = await buildInstructionSet(relay, executionPath)
-    await printInstructionSet(instructionsToExecute)
-
-
 
     // Check for allocation instruction
     if(instructionsToExecute[0].type != InstructionType.Swap){
         let firstInstruction: TransferInstruction = instructionsToExecute.splice(0, 1)[0] as TransferInstruction
-        await buildAndExecuteAllocationExtrinsics(relay, [firstInstruction], chopsticks, executeMovr)
-        await logAllResultsDynamic(relay, latestFile, chopsticks)
+        await buildAndExecuteTransferExtrinsic(relay, [firstInstruction], chopsticks, executeMovr)
+        await logAllResultsDynamic(chopsticks)
         instructionsToExecute[0].assetNodes[0].pathValue = getLastNode()!.assetValue
     }
 
@@ -171,7 +162,7 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, executeMovr, testLoops, true)
 
     // LOG results
-    await logAllResultsDynamic(relay, latestFile, chopsticks) // Logs Global State Extrinsic Set Results, and to latest attempt folder
+    await logAllResultsDynamic(chopsticks) // Logs Global State Extrinsic Set Results, and to latest attempt folder
     
     let arbSuccess = executionResults.success
     let lastNode: LastNode | null = getLastNode()
@@ -194,7 +185,7 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
         let functionArgs = `${lastNode.assetKey} ${targetNode} ${lastNode.assetValue}`
         console.log("Executing Arb Fallback with args: " + functionArgs)
 
-        let fallbackArbResults: JsonPathNode[];
+        let fallbackArbResults: ArbFinderNode[];
         try{
             fallbackArbResults = await runAndReturnFallbackArb(functionArgs, chopsticks, relay)
         } catch {
@@ -205,8 +196,8 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
         instructionsToExecute = await buildInstructionSet(relay, assetPath)
         executionResults = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, executeMovr, 100, false)
 
-        await logAllResultsDynamic(relay, latestFile, chopsticks)
-        // await logAllArbAttempts(relay, latestFile, chopsticks)
+        await logAllResultsDynamic(chopsticks)
+        // await logAllArbAttempts(chopsticks)
         if(executionResults.success){
             arbSuccess = true
         }
@@ -220,13 +211,13 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     if(arbSuccess){
         stateSetExecutionSuccess(true)
     }
-    await logAllResultsDynamic(relay, latestFile, chopsticks)
+    await logAllResultsDynamic(chopsticks)
 
     console.log("Getting total arb amount out for normal arb")
     let arbAmountOut = await getTotalArbResultAmount(relay, getLastNode()!, chopsticks)
-    await logProfits(relay, arbAmountOut, latestFile, chopsticks )
+    await logProfits(arbAmountOut, chopsticks )
     
-    console.log(`Result for latest file ${latestFile}: ${arbSuccess}`)
+    // console.log(`Result for latest file ${latestFile}: ${arbSuccess}`)
     console.log(`Total Arb Amount Out: ${arbAmountOut}`)
 
     await closeApis();
@@ -281,8 +272,8 @@ async function executeLatestArb(relay: Relay, chopsticks: boolean, executeMovr: 
     stateSetExecutionSuccess(false)    
     stateSetExecutionRelay(relay)
 
-    let latestFile = relay == 'kusama' ? getLatestTargetFileKusama() : getLatestTargetFilePolkadot()
-    let arbPathData: JsonPathNode[] = JSON.parse(fs.readFileSync(latestFile!, 'utf8'))
+    let latestFile = getLastTargetArb(relay)
+    let arbPathData: ArbFinderNode[] = latestFile
 
     let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
 

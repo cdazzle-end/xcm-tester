@@ -205,12 +205,28 @@ export async function stateSetExecutionSuccess(success: boolean){
     globalState.setExecutionSuccess(success)
 
 }
+/**
+ * Last successful node we reached in arb execution. Set as soon as we confirm transaction success.
+ * 
+ * If LastNode hasn't been set, then we can't retry the arb and will throw an error
+ * 
+ * @param node - Formatted node data (LastNode)
+ */
 export async function stateSetLastNode(node: LastNode) {
     const globalState = GlobalState.getInstance();
     globalState.setLastNode(node)
 }
 
-export async function stateSLastFile(filePath: string) {
+/**
+ * When running a new arb, set last file path after successfully setting first LastNode.
+ * 
+ * Currently we need last file path to retry the arb execution, and for that we need LastNode to be set.
+ * 
+ * May be beneficial to set last file path as soon as we find a new arb instead
+ * 
+ * @param filePath - Path to arb-finder result data that is being used to execute the arb
+ */
+export async function stateSetLastFile(filePath: string) {
     const globalState = GlobalState.getInstance();
     globalState.setLastFile(filePath)
 }
@@ -254,6 +270,15 @@ export function getLastNode(): Readonly<LastNode | null>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().lastNode
 }
+export function getLastFilePath(): Readonly<string | null>{
+    const globalState = GlobalState.getInstance();
+    return globalState.getState().lastFilePath
+}
+export function getRelay(): Readonly<Relay | null>{
+    const globalState = GlobalState.getInstance();
+    return globalState.getState().relay
+}
+
 export function getExecutionSuccess(): Readonly<boolean>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().executionSuccess

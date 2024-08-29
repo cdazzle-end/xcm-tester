@@ -2,7 +2,7 @@ import fs from 'fs'
 import { AcalaAdapter, AltairAdapter, AstarAdapter, BalanceData, BasiliskAdapter, BifrostAdapter, BifrostPolkadotAdapter, CalamariAdapter, CentrifugeAdapter, CrabAdapter, CrustAdapter, DarwiniaAdapter, HeikoAdapter, HydraDxAdapter, IntegriteeAdapter, InterlayAdapter, InvarchAdapter, KaruraAdapter, KhalaAdapter, KicoAdapter, KiltAdapter, KintsugiAdapter, KusamaAdapter, ListenAdapter, MangataAdapter, MantaAdapter, MoonbeamAdapter, MoonriverAdapter, NodleAdapter, OakAdapter, ParallelAdapter, PendulumAdapter, PhalaAdapter, PichiuAdapter, PolkadotAdapter, QuartzAdapter, RobonomicsAdapter, ShadowAdapter, ShidenAdapter, StatemineAdapter, StatemintAdapter, SubsocialAdapter, TinkernetAdapter, TuringAdapter, UniqueAdapter, ZeitgeistAdapter, getAdapter } from '@polkawallet/bridge';
 import { TNode } from '@paraspell/sdk'
 import { firstValueFrom, Observable, timeout } from "rxjs";
-import { BalanceChangeStatsBn, IMyAsset, NativeBalancesType, Relay, BalanceChangeStats, PNode  } from './../types/types.ts'
+import { BalanceChangeStatsBn, IMyAsset, RelayTokenBalances, Relay, BalanceChangeStats, PNode  } from './../types/types.ts'
 import { ApiPromise, WsProvider } from '@polkadot/api';
 // import { TransferrableAssetObject, BalanceChangeStats } from './../types/types.ts'
 import { FixedPointNumber} from "@acala-network/sdk-core";
@@ -358,7 +358,7 @@ export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, no
 
 // *** Not used
 export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, relay: Relay){
-    let nativeBalances: NativeBalancesType = relay === 'kusama' ? 
+    let nativeBalances: RelayTokenBalances = relay === 'kusama' ? 
     {
         0: "0",
         2000: "0",
@@ -462,9 +462,16 @@ export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, rela
 }
 
 // Used in checkAndAllocateRelayToken, allocateFundsForSwap
-export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay){
+/**
+ * Query each chain for balance of relay token
+ * 
+ * @param chopsticks 
+ * @param relay 
+ * @returns 
+ */
+export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay): Promise<RelayTokenBalances>{
     console.log("Getting native balances")
-    let nativeBalances: NativeBalancesType = relay === 'kusama' ? 
+    let nativeBalances: RelayTokenBalances = relay === 'kusama' ? 
     {
         0: "0",
         2000: "0",
@@ -499,7 +506,27 @@ export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay){
     })
     await Promise.all(nativeBalancesPromise)
     return nativeBalances
-        
+}
+
+/**
+ * Makes multiple attempts to call getRelayTokenBalances()
+ * - Query may fail, so we can try multiple times
+ * 
+ * @param chopsticks 
+ * @param relay 
+ */
+export async function attemptGetRelayTokenBalances(chopsticks: boolean, relay: Relay): Promise<RelayTokenBalances>{
+    let attempts = 0;
+    while(attempts < 5){
+        try{
+            const nativeBalances = await getRelayTokenBalances(chopsticks, relay)
+            console.log(`Queried balances successfully. Returning balances: ${JSON.stringify(nativeBalances, null, 2)}`)
+            return nativeBalances
+        } catch (e){
+            console.log(`Relay Token balances query failed. Trying again. | ${JSON.stringify(e, null, 2)}`)
+        }
+    }
+    throw new Error("Failed to query relay token balances.")
 }
 
 // Used in getBalanceChainAsset
