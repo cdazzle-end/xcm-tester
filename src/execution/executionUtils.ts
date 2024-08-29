@@ -4,7 +4,7 @@ import { checkAndApproveToken } from "../swaps/movr/utils/utils.ts"
 import { AssetNode } from "../core/AssetNode.ts"
 import { testNets, localRpcs } from "../config/txConsts.ts"
 import { ExtrinsicObject, IndexObject, SingleSwapResultData, SwapTxStats, ArbExecutionResult, TxDetails, BalanceChangeStats, LastNode, SingleTransferResultData, TransferTxStats, TransferExtrinsicContainer, SwapExtrinsicContainer, SwapResultObject, SwapInstruction, ChainNonces, PreExecutionTransfer, TransactionState, TransferProperties, SwapProperties, Relay, TransferInstruction, NativeBalancesType, FeeData, ReserveFeeData, BalanceChangeStatsBn, PromiseTracker, TransferDepositEventData, IMyAsset, ExtrinsicContainer } from "./../types/types.ts"
-import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject, getAssetDecimalsFromLocation, getWalletAddressFormatted, isTxDetails, isSwapExtrinsicContainer, isTransferExtrinsicContainer, isTransferProperties, isSwapProperties } from "../utils/utils.ts"
+import { getSigner, increaseIndex, printExtrinsicSetResults, getLastSuccessfulNodeFromResultData, getAssetRegistryObjectBySymbol, getAssetRegistryObject, getAssetDecimalsFromLocation, getWalletAddressFormatted, isTxDetails, isSwapExtrinsicContainer, isTransferExtrinsicContainer, isTransferProperties, isSwapProperties, trackPromise } from "../utils/utils.ts"
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { buildSwapExtrinsicDynamic } from "./extrinsicUtils.ts"
 import { getApiForNode } from "../utils/apiUtils.ts"
@@ -422,30 +422,7 @@ export async function executeSingleSwapExtrinsicGlmr(
 }
 
 
-function trackPromise(promise: Promise<any>) {
-    let isResolved = false;
 
-    // Create a new promise that resolves the same way the original does
-    // and updates the `isResolved` flag
-    const trackedPromise = promise.then(
-        (result) => {
-            isResolved = true;
-            return result; // Pass through the result
-        },
-        (error) => {
-            isResolved = true;
-            throw error; // Rethrow the error to be caught later
-        }
-    );
-    let promiseTracker: PromiseTracker = {
-        trackedPromise: trackedPromise,
-        isResolved: () => isResolved
-    }
-
-    // Return both the new promise and a function to check if it's resolved
-    // return { trackedPromise, isResolved: () => isResolved };
-    return promiseTracker;
-}
 export async function executeSingleSwapExtrinsic(
     // extrinsicObj: ExtrinsicObject,
     swapTxContainer: SwapExtrinsicContainer,
@@ -789,17 +766,9 @@ export async function executeSingleTransferExtrinsic(
             chopsticks: chopsticks,
             startAsset: startAsset,
             destAsset: destinationAsset,
-            // startNode: startChain,
-            // startParaId: startParaId,
-            // startAssetSymbol: startAsset.getSymbol(),
-            // startAssetLocalId: startAsset.getLocalId(),
             startAddress: startSigner.address,
             startNodeStartBalance: startBalance,
             startNodeStartBalanceString: startBalance.free.toString(),
-            // destNode: destChain,
-            // destParaId: destParaId,
-            // destAssetSymbol: destinationAsset.getSymbol(),
-            // destAssetLocalId: destinationAsset.getLocalId(),
             destNodeStartBalance: destinationStartBalance,
             destNodeStartBalanceString: destinationStartBalance.free.toString(),
             destAddress: destSigner.address,

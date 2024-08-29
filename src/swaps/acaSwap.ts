@@ -13,6 +13,7 @@ import { getApiForNode, getSigner, getAssetRegistry, increaseIndex } from '../ut
 import { localRpcs } from '../config/txConsts.ts'
 
 import { fileURLToPath } from 'url'
+import { acalaStableLpsPath } from 'src/config/index.ts'
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const wsLocalChain = localRpcs["Acala"]
@@ -173,7 +174,8 @@ function truncateSwapInstructions(startAsset: string, swapInstructions: SwapInst
 }
 
 function getAcalaStablePoolData(poolId: number){
-    let acalaStableLps = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../polkadot_assets/lps/lp_registry/aca_stable_lps.json'), 'utf8'))
+    let acalaStableLps = JSON.parse(fs.readFileSync(acalaStableLpsPath, 'utf8'))
+    
     // console.log("Acala Stable LPs: " + JSON.stringify(acalaStableLps, null, 2))
     let poolData = acalaStableLps.find((pool) => {
         return pool["poolId"] == poolId

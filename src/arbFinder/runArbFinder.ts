@@ -5,45 +5,20 @@ import path, { join } from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { Relay, JsonPathNode } from "./../types/types.ts";
-// import * as lp from './../../../test2/arb-dot-2/lps/all_lp.js'
 import { dotTargetNode, ksmTargetNode } from "../config/txConsts.js";
-// import pkg from './../../../test2/arb-dot-2/lps/all_lp.ts';
-// const { updateLpsChop } = pkg;
+import { acalaStableLpsPath, arbFinderPath, assetRegistryPath, glmrLpsPath, kusamaAssetRegistryPath, lpRegistryPath, polkadotAssetRegistryPath} from "../config/index.ts"
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// export async function runArbFallback(args: string, relay: Relay){
-//     return new Promise((resolve, reject) => {
-//         let functionCall = relay === "kusama" ? 'fallback_search_a_to_b_kusama ' + args : 'fallback_search_a_to_b_polkadot ' + args;
-//         const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
-//         // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run ${functionCall}`;
 
-//         console.log("Executing arb: " + functionCall)
-//         exec(command, (error, stdout, stderr) => {
-//             // console.log(`stdout: ${stdout}`);
-//             if (error) {
-//                 console.error(`exec error: ${error}`);
-//                 reject(error); // Reject the promise on execution error, including non-zero exit codes
-//                 return;
-//             }
-//             if (stderr) {
-//                 console.error(`stderr: ${stderr}`);
-//                 resolve(false); // You might still resolve with false if you want to treat stderr output as a soft failure
-//                 // Or you could reject based on specific stderr content:
-//                 // if (stderr.includes("Error:")) reject(new Error(stderr));
-//             } else {
-//                 resolve(true); // Resolve with true if execution was successful without errors
-//             }
-//         });
-//     });
-// }
 export async function runArbFallback(args: string, relay: Relay) {
     return new Promise((resolve, reject) => {
         let functionCall =
             relay === "kusama"
                 ? "fallback_search_a_to_b_kusama " + args
                 : "fallback_search_a_to_b_polkadot " + args;
-        const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
+        const command = `cd ${arbFinderPath} && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
 
         console.log("Executing arb: " + functionCall);
         exec(command, (error, stdout, stderr) => {
@@ -78,8 +53,8 @@ export async function runArbFallback(args: string, relay: Relay) {
 export async function runArbTarget(args: string, relay: Relay) {
     return new Promise((resolve, reject) => {
         let functionCall = `search_best_path_a_to_b_${relay} ` + args;
-        const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
-        // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\test2\\arb-dot-2\\arb_handler && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
+        const command = `cd ${arbFinderPath} && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
+        // const command = `cd ${arbFinderPath} && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
 
         console.log("Executing arb: " + functionCall);
         exec(command, (error, stdout, stderr) => {
@@ -166,10 +141,10 @@ async function findLatestFileInLatestDirectory(baseDir: string) {
     }
 }
 export async function updateAssets(chopsticks: boolean, relay: Relay) {
-    // const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\polkadot_assets\\assets\\ && ts-node assetHandler.ts ${relay} ${chopsticks}`;
+    // const command = `cd ${assetRegistryPath} && ts-node assetHandler.ts ${relay} ${chopsticks}`;
     return new Promise((resolve, reject) => {
         // let functionCall = 'search_best_path_a_to_b ' + chop;
-        const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\polkadot_assets\\assets\\ && ts-node assetHandler.ts ${relay} ${chopsticks}`;
+        const command = `cd ${assetRegistryPath} && ts-node assetHandler.ts ${relay} ${chopsticks}`;
 
         console.log("Updating Assets");
         let child = exec(command, (error, stdout, stderr) => {
@@ -211,7 +186,7 @@ export async function updateLps(chop: boolean, relay: Relay) {
 
     return new Promise((resolve, reject) => {
         // let functionCall = 'search_best_path_a_to_b ' + chop;
-        const command = `cd C:\\Users\\dazzl\\CodingProjects\\substrate\\polkadot_assets\\lps\\ && ts-node all_lps.ts ${relay} ${chop}`;
+        const command = `cd ${lpRegistryPath} && ts-node all_lps.ts ${relay} ${chop}`;
 
         console.log("Updating Lps");
         let child = exec(command, (error, stdout, stderr) => {
@@ -262,7 +237,7 @@ export async function runAndReturnFallbackArb(
         if (arbCompleted) {
             const fallbackLogFolder = await path.join(
                 __dirname,
-                `/../../../test2/arb-dot-2/arb_handler/fallback_log_data/${relay}/`
+                `${arbFinderPath}/fallback_log_data/${relay}/`
             );
             const latestFile = await findLatestFileInLatestDirectory(
                 fallbackLogFolder
@@ -328,7 +303,7 @@ export async function runAndReturnTargetArb(
         if (arbCompleted) {
             const targetLogFolder = await path.join(
                 __dirname,
-                `/../../../test2/arb-dot-2/arb_handler/target_log_data/${relay}/`
+                `${arbFinderPath}/target_log_data/${relay}/`
             );
             const latestFile = await findLatestFileInLatestDirectory(
                 targetLogFolder
@@ -347,7 +322,13 @@ export async function runAndReturnTargetArb(
     }
 }
 
-export async function getArbExecutionPath(relay: Relay, latestFile: string, inputAmount: number, useLatestTarget: boolean, chopsticks: boolean){
+export async function getArbExecutionPath(
+    relay: Relay, 
+    latestFile: string, 
+    inputAmount: number, 
+    useLatestTarget: boolean, 
+    chopsticks: boolean
+){
     let arbPathData: JsonPathNode[] | JsonPathNode[] = []
     
     // If useLatestTarget is false, will update LPs and run arb
@@ -366,6 +347,30 @@ export async function getArbExecutionPath(relay: Relay, latestFile: string, inpu
     return arbPathData
 }
 
+/**
+ * Use at the start of a new run
+ * - Updates both asset and lp registries
+ * - Calls arb-finder executable, searches for best arb path using default asset
+ * - Logs and returns path as JSON objects. This data is used to execute the arb
+ * 
+ * @param relay - Relay to run on
+ * @param inputAmount - Amount to use as input for the initial asset
+ * @param chopsticks - testnet/live
+ */
+export async function findNewArb(
+    relay: Relay,
+    inputAmount: number,
+    chopsticks: boolean
+): Promise<JsonPathNode[]> {
+    try{
+        let arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
+        return await runAndReturnTargetArb(arbArgs, chopsticks, relay)
+    }  catch {
+        console.log("Failed to run target arb")
+        throw new Error("Failed to run target arb")
+    }
+}
+
 
 async function testArbFinder(relay: Relay) {
     let arbArgs =
@@ -378,7 +383,7 @@ async function testArbFinder(relay: Relay) {
         if (arbCompleted) {
             const targetLogFolder = await path.join(
                 __dirname,
-                "/../../../test2/arb-dot-2/arb_handler/target_log_data/"
+                `${arbFinderPath}/target_log_data/`
             );
             const latestFile = await findLatestFileInLatestDirectory(
                 targetLogFolder

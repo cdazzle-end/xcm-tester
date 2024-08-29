@@ -7,16 +7,17 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { localRpcs } from './../config/txConsts.ts';
-import { ExecutionState, ExtrinsicSetResultDynamic, JsonPathNode, LastNode, NewFeeBook, Relay, SwapInstruction, TransferInstruction, TxDetails } from './../types/types.ts';
-import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, getRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, watchTokenDeposit } from './../utils/index.ts';
+import { ExecutionState, ExtrinsicSetResultDynamic, JsonPathNode, LastNode, NewFeeBook, PromiseTracker, Relay, SwapInstruction, TransferInstruction, TxDetails } from './../types/types.ts';
+import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, getRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, watchTokenDeposit, trackPromise } from './../utils/index.ts';
 import { getParaId, TNode } from '@paraspell/sdk';
 import { getAdapter, getAssetRegistry, getAssetRegistryObject } from '@polkawallet/bridge';
 import bn from 'bignumber.js';
 import { testGlmrRpc } from './../swaps/index.ts';
 import * as Chopsticks from '@acala-network/chopsticks';
-import { buildAndExecuteExtrinsics, buildInstructionSet, buildInstructionSetTest, executeXcmTransfer } from './../execution/index.ts';
-import { AssetNode } from './../core/index.ts';
+import { buildAndExecuteExtrinsics, buildInstructionSet, buildInstructionSetTest, executeTransferExtrinsic, executeXcmTransfer } from './../execution/index.ts';
+import { AssetNode, MyAsset } from './../core/index.ts';
 import keyring from '@polkadot/keyring';
+// import { acalaFileTest } from '../config/index.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -752,23 +753,28 @@ async function testXcm(){
 async function testDepositEventListeners(){
     const chopsticks = true
     const relay: Relay = 'polkadot'
-    const fromNode: TNode = 'Acala'
-    const fromParaId = 2000
-    const toNode: TNode = 'Moonbeam'
-    const toParaId = 2004
-    const startAssetObject = getAssetRegistryObjectBySymbol(2000, 'ACA', 'polkadot')
-    const destAssetObject = getAssetRegistryObjectBySymbol(2004, 'XCACA', 'polkadot')
-    const amount = '1000000000000'
+    const fromNode: TNode = 'Moonbeam'
+    const fromParaId = getChainIdFromNode(fromNode)
+    const toNode: TNode = 'HydraDX'
+    const toParaId = getChainIdFromNode(toNode)
+    const startAsset = new MyAsset(getAssetRegistryObjectBySymbol(fromParaId, 'GLMR', 'polkadot'))
+    const destAsset = new MyAsset(getAssetRegistryObjectBySymbol(toParaId, 'GLMR', 'polkadot'))
+    const amount = '100000000000000000000'
     
+    const fromEvm = fromParaId === 2004 ? true : false
+    const toEvm = toParaId === 2004 ? true : false
 
-    const fromSigner = await getSigner(chopsticks, false)
-    const toSigner = await getSigner(chopsticks, true)
+    const fromSigner = await getSigner(chopsticks, fromEvm)
+    const toSigner = await getSigner(chopsticks, toEvm)
 
     const fromApi = await getApiForNode(fromNode, chopsticks)
     const toApi = await getApiForNode(toNode, chopsticks)
 
-
-    const xcmTx = paraspell.Builder(fromApi).from(fromNode).to(toNode).currency(startAssetObject.tokenData.localId).amount(amount).address(toSigner.address).build()
+    
+    const inputAssetId = JSON.stringify(startAsset.getLocalId()).replace(/\\|"/g, "")
+    const xcmTx = paraspell.Builder(fromApi).from(fromNode).to(toNode).currency(inputAssetId).amount(amount).address(toSigner.address).build()
+    
+    const xcmTxProperties = xcmTx.toHuman() as any
 
     let keyring = new Keyring({
         ss58Format: 0,
@@ -778,25 +784,36 @@ async function testDepositEventListeners(){
 
     let transferType = getTransferType(fromNode, toNode)
     let destWalletFormatted = getWalletAddressFormatted(toSigner, keyring, toNode, ss58FormatDest)
-    const destinationAssetDecimals = Number.parseInt(startAssetObject.tokenData.decimals)
+    const destinationAssetDecimals = Number.parseInt(startAsset.tokenData.decimals)
 
-    let destBalanceObservable$ = await watchTokenDeposit(relay, toParaId, chopsticks, toApi, destTransferrable, watchDepositAddress)
+    let destBalanceUnsub: any
+    let destBalanceObservable$ = await watchTokenDeposit(relay, toParaId, chopsticks, toApi, destAsset, toSigner.address)
     let destAdapterBalanceChangePromise = getBalanceChange(destBalanceObservable$, (unsub) =>{
         destBalanceUnsub = unsub
     })
 
+    let destBalanceDepositTracker: PromiseTracker = trackPromise(destAdapterBalanceChangePromise)
+
+    let txResult = executeXcmTransfer(xcmTx, fromSigner)
+    let txDetails = await txResult
+    let xcmTransferId = txDetails.xcmMessageHash
+
     let depositEventPromise = listenForXcmpDepositEvent(
         toApi, 
         toNode, 
-        transferType, 
-        // destAssetObject.tokenData.symbol, 
-        // destinationAssetDecimals, 
-        destAssetObject, 
+        transferType,
+        destAsset, 
         destWalletFormatted, 
-        destAdapterBalanceChangeTracker, 
+        destBalanceDepositTracker, 
         xcmTxProperties, 
         xcmTransferId
     ) 
+
+    let depositEventTracker = trackPromise(depositEventPromise)
+
+    const depositEventData = await depositEventPromise
+
+    console.log(JSON.stringify(depositEventData, null, 2))
 }
 
 async function buildTest(){
@@ -1210,7 +1227,7 @@ async function testParaspellReworked(){
     // let destParaId = getChainIdFromNode(destNode)
 
     let assetSymbol = 'PINK'
-    let startNodeAsset = await getAssetRegistryObjectBySymbol(startParaId, assetSymbol, relay)
+    let startNodeAsset = new MyAsset(getAssetRegistryObjectBySymbol(startParaId, assetSymbol, relay))
     // let destNodeAsset = await getAssetRegistryObjectBySymbol(destParaId, assetSymbol, relay)
 
     let startAssetId = startNodeAsset.tokenData.localId
@@ -1385,7 +1402,7 @@ async function testBalanceAdapters(){
     let relay: Relay = 'polkadot'
     let paraId = 2030
     let assetSymbol = 'vglmr'
-    let assetObject = await getAssetRegistryObjectBySymbol(paraId, assetSymbol, relay)
+    let assetObject = new MyAsset(getAssetRegistryObjectBySymbol(paraId, assetSymbol, relay))
     let assetId = assetObject.tokenData.localId
 
     let chopsticks = true
@@ -1402,8 +1419,10 @@ async function testBalanceAdapters(){
 
 async function main(){
 
-    await testBalanceAdapters()
+    // await testBalanceAdapters()
+    // await testDepositEventListeners()
+    // await testFilePaths()
     process.exit(0)
 }
 
-// main()
+main()

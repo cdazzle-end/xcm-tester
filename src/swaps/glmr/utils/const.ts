@@ -279,7 +279,7 @@ export const maxTickData: TickData = {
         intialized: false
     }
 
-export const glmrLpsPath = path.join(__dirname, '../../../../../polkadot_assets/lps/lp_registry/glmr_lps.json')
+
 
 export const swapManagerContractLocal = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707"
 export const swapManagerContractLive = "0x4BF47cE8738d447B94727B6ae01BAB6389144E98"

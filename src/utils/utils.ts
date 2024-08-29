@@ -41,8 +41,10 @@ import {
     ExtrinsicObject,
     TransferProperties,
     SwapProperties,
+    PromiseTracker,
 } from "./../types/types.ts";
 import { MyAsset } from "../core/index.ts";
+import { arbFinderPath, kusamaAssetRegistryPath, polkadotAssetRegistryPath } from "../config/index.ts";
 
 // import { buildTransferExtrinsic } from './extrinsicUtils.ts';
 // Get the __dirname equivalent in ES module
@@ -505,8 +507,8 @@ export async function getLastSuccessfulNodeFromAllExtrinsics(
 export function getLatestFileFromLatestDay(small: boolean) {
     const resultsDirPath = path.join(
         __dirname,
-        "/../../../test2/arb-dot-2/arb_handler/result_log_data"
-    );
+        `${arbFinderPath}/result_log_data/`
+   );
     try {
         let sortedDays;
         let latestDayDir;
@@ -576,8 +578,8 @@ export function getLatestFileFromLatestDay(small: boolean) {
 export function getLatestAsyncFilesPolkadot(): [number, string][] {
     const resultsDirPath = path.join(
         __dirname,
-        "/../../../test2/arb-dot-2/arb_handler/default_log_data/polkadot"
-    );
+        `${arbFinderPath}/default_log_data/polkadot/`    
+        );
     let inputAmounts = [0.5, 2, 5];
 
     let logFilePaths: [number, string][] = inputAmounts.map((inputAmount) => {
@@ -641,7 +643,7 @@ export function getLatestAsyncFilesPolkadot(): [number, string][] {
 export function getLatestAsyncFilesKusama(): [number, string][] {
     const resultsDirPath = path.join(
         __dirname,
-        "/../../../test2/arb-dot-2/arb_handler/default_log_data/kusama/"
+        `${arbFinderPath}/default_log_data/kusama/`
     );
     let inputAmounts = [0.1, 0.5, 1];
 
@@ -745,7 +747,7 @@ export function getLatestAsyncFilesKusama(): [number, string][] {
 export function getLatestTargetFileKusama() {
     const resultsDirPath = path.join(
         __dirname,
-        "/../../../test2/arb-dot-2/arb_handler/target_log_data/kusama/"
+        `${arbFinderPath}/target_log_data/kusama/`
     );
     try {
         let sortedDays;
@@ -794,7 +796,7 @@ export function getLatestTargetFileKusama() {
 export function getLatestTargetFilePolkadot() {
     const resultsDirPath = path.join(
         __dirname,
-        "/../../../test2/arb-dot-2/arb_handler/target_log_data/polkadot/"
+        `${arbFinderPath}/target_log_data/polkadot/`
     );
     try {
         let sortedDays;
@@ -950,9 +952,8 @@ export function printInstructionSet(
 export function getAssetRegistry(relay: Relay) {
     const assetRegistryPath =
         relay === "kusama"
-            ? "../../../polkadot_assets/assets/asset_registry/allAssetsKusamaCollected.json"
-            : "../../../polkadot_assets/assets/asset_registry/allAssetsPolkadotCollected.json";
-    // const assetRegistryPath = relay === 'kusama' ? '../../allAssets.json' : '../../../polkadot_assets/assets/asset_registry/allAssetsPolkadotCollected.json'
+            ? kusamaAssetRegistryPath
+            : polkadotAssetRegistryPath;
     const assetRegistry: IMyAsset[] = JSON.parse(
         fs.readFileSync(path.join(__dirname, assetRegistryPath), "utf8")
     );
@@ -1145,6 +1146,31 @@ export function toFullAssetAmount(
     decimals: string | number
 ): bn {
     return new bn(inputAmount).times(new bn(10).pow(new bn(decimals)));
+}
+
+export function trackPromise(promise: Promise<any>) {
+    let isResolved = false;
+
+    // Create a new promise that resolves the same way the original does
+    // and updates the `isResolved` flag
+    const trackedPromise = promise.then(
+        (result) => {
+            isResolved = true;
+            return result; // Pass through the result
+        },
+        (error) => {
+            isResolved = true;
+            throw error; // Rethrow the error to be caught later
+        }
+    );
+    let promiseTracker: PromiseTracker = {
+        trackedPromise: trackedPromise,
+        isResolved: () => isResolved
+    }
+
+    // Return both the new promise and a function to check if it's resolved
+    // return { trackedPromise, isResolved: () => isResolved };
+    return promiseTracker;
 }
 
 //TODO maybe make own file

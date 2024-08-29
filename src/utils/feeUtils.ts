@@ -252,7 +252,7 @@ async function createDepositEventListener(
     return new Promise(async (resolve, reject) => {
         let eventPromiseResolved;
         let xcmEventSection = nodeEventData.xcm.section
-        let xcmEventMethod
+        let xcmEventMethod = nodeEventData.xcm.method
         let eventRecords: FrameSystemEventRecord[] = []
 
         // This will find the event that matches the section and method from registry, and then compare the message hash

@@ -1,5 +1,5 @@
 import '@moonbeam-network/api-augment/moonriver';
-import { algebraFactoryContract, algebraPoolDeployer, algebraPoolInitHash, batchArtifact, batchContractAddress2, defaultRpc, dexAbiMap, dexAbis, glmrLpsPath, localRpc, solarFee, swapManagerContractLive, swapManagerContractLocal, test_account, test_account_pk, uniFactoryContract, uniPoolInitHash, usdcContractAddress, wGlmrContractAddress } from './utils/const.ts';
+import { algebraFactoryContract, algebraPoolDeployer, algebraPoolInitHash, batchArtifact, batchContractAddress2, defaultRpc, dexAbiMap, dexAbis, localRpc, solarFee, swapManagerContractLive, swapManagerContractLocal, test_account, test_account_pk, uniFactoryContract, uniPoolInitHash, usdcContractAddress, wGlmrContractAddress } from './utils/const.ts';
 import { approveMax, calculateAlgebraSwap, calculateSwapAmountRouterFormula, checkAndApproveToken, getContractAbiIndex, getGlmrPoolData, getTokenContractData, isV3Pool, wrapGlmr } from './utils/utils.ts';
 // import * as mutex from 'mutexify'
 // import { ApiPromise, Keyring, WsProvider } from '@polkadot/api';
@@ -18,7 +18,7 @@ import { Token } from '@uniswap/sdk-core';
 import { TickMath } from '@uniswap/v3-sdk';
 import { dataSlice } from 'ethers';
 import { fileURLToPath } from 'url';
-import { live_wallet_3 } from '../../config/index.ts';
+import { glmrLpsPath, live_wallet_3 } from '../../config/index.ts';
 import { IndexObject, IMyAsset, PathType, SwapExtrinsicContainer, SwapInstruction } from '../../types/types.ts';
 import { getApiForNode } from '../../utils/index.ts';
 import { ManagerSwapParams, SwapData, SwapSingleParams } from './utils/types.ts';

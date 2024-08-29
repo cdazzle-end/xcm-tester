@@ -10,6 +10,9 @@
         "allowImportingTsExtensions": true,
         // ... other options from Bridge's tsconfig ...
         "baseUrl": ".",
+        "paths": {
+            "src/*": ["src/*"]
+          },
         "resolveJsonModule": true,
         "skipLibCheck": true,
         "emitDeclarationOnly": true,
@@ -25,7 +28,7 @@
         "sourceMap": true
     },
     // Include and exclude can be adjusted as per your project's structure
-    "include": ["./**/*"],
+    "include": ["./**/*", "src/**/*"],
     "exclude": [
         "dist",
         "build",

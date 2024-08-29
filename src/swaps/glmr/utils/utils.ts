@@ -5,13 +5,14 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { ethers } from 'ethers';
 import { privateKeyToAccount } from 'viem/accounts';
-import { dexAbis, localRpc, wGlmrContractAddress, routerFees, dexAbiMap, maxTickData, minTickData, q96, wsProvider, xcTokenAbi, glmrLpsPath } from './const.ts';
+import { dexAbis, localRpc, wGlmrContractAddress, routerFees, dexAbiMap, maxTickData, minTickData, q96, wsProvider, xcTokenAbi } from './const.ts';
 import { erc20Abi } from 'viem';
 import bn from 'bignumber.js'
 import { DexV2Data, DexV3Data, GlobalState, Slot0, V3CalculationResult } from './types.ts';
 import { TickMath } from '@uniswap/v3-sdk';
 import { getAssetRegistry } from '../../../utils/index.ts';
 import { IMyAsset } from '../../../types/types.ts';
+import { glmrLpsPath } from '../../../config/index.ts';
 
 // Use import.meta.url to get the current module's URL
 const currentUrl = import.meta.url;

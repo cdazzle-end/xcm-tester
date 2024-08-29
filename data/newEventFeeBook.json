@@ -32,7 +32,7 @@
         "node": ""
       },
       "{\"NativeAssetId\":{\"Token\":\"ACA\"}}": {
-        "xcmAmount": "36263143350528",
+        "xcmAmount": "34987959151052",
         "xcmAssetSymbol": "ACA",
         "xcmAssetId": {
           "NativeAssetId": {
@@ -128,7 +128,7 @@
         "node": "Moonbeam"
       },
       "\"GLMR\"": {
-        "xcmAmount": "13990382424980182736",
+        "xcmAmount": "34948514487174239480",
         "xcmAssetSymbol": "GLMR",
         "xcmAssetId": "GLMR",
         "xcmAssetDecimals": "18",
@@ -606,7 +606,7 @@
         "node": ""
       },
       "\"224821240862170613278369189818311486111\"": {
-        "xcmAmount": "36152847148282",
+        "xcmAmount": "34877662948806",
         "xcmAssetSymbol": "xcACA",
         "xcmAssetId": "224821240862170613278369189818311486111",
         "xcmAssetDecimals": "12",
@@ -751,11 +751,11 @@
         "node": ""
       },
       "\"16\"": {
-        "xcmAmount": "13987533531384316513",
+        "xcmAmount": "34945810657601148403",
         "xcmAssetSymbol": "GLMR",
         "xcmAssetId": "16",
         "xcmAssetDecimals": "18",
-        "feeAmount": "2848893595866223",
+        "feeAmount": "2703829573091077",
         "feeAssetSymbol": "GLMR",
         "feeAssetId": "16",
         "feeAssetDecimals": "18",
