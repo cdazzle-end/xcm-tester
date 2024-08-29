@@ -151,7 +151,7 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     // Check for allocation instruction
     if(instructionsToExecute[0].type != InstructionType.Swap){
         let firstInstruction: TransferInstruction = instructionsToExecute.splice(0, 1)[0] as TransferInstruction
-        await buildAndExecuteTransferExtrinsic(relay, [firstInstruction], chopsticks, executeMovr)
+        await buildAndExecuteTransferExtrinsic(relay, firstInstruction, chopsticks, executeMovr)
         await logAllResultsDynamic(chopsticks)
         instructionsToExecute[0].assetNodes[0].pathValue = getLastNode()!.assetValue
     }
