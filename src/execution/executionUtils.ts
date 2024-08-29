@@ -1717,20 +1717,20 @@ export async function allocateFundsForSwap(relay: Relay, assetPath: AssetNode[],
 }
 
 export async function allocateFundsForSwapFromRelay(relay: Relay, assetPath: AssetNode[],  nativeBalances: any, chopsticks: boolean, executeMovr: boolean){
-    let startChain = assetPath[0].getChainId()
+    let startChainId = assetPath[0].getChainId()
     let startValue = assetPath[0].getPathValueAsNumber()
 
     let nativeBalancesRefreshed = await attemptGetRelayTokenBalances(chopsticks, relay)
 
     // console.log("Native Balances: " + JSON.stringify(nativeBalancesRefreshed))
 
-    console.log("ALLOCATING FUNDS FOR SWAP")
+    console.log("ALLOCATING FUNDS TO START CHAIN")
     let executionPath: AssetNode[] = assetPath
-    if(new bn(nativeBalancesRefreshed[startChain]).lt(startValue)){
+    if(new bn(nativeBalancesRefreshed[startChainId]).lt(startValue)){
         
         // Build allocation All chains -> relay chain && relay chain -> startChain when enough allocation
         console.log("*** StartNode has insufficient start balance. Need to allocate")
-        let allocationNode: AssetNode[] = await getFundingPath(relay, startChain, startValue, nativeBalancesRefreshed)
+        let allocationNode: AssetNode[] = await getFundingPath(relay, startChainId, startValue, nativeBalancesRefreshed)
         executionPath = allocationNode.concat(assetPath)
     }  else {
         console.log("SWAP CHAIN HAS ENOUGH FUNDS")
