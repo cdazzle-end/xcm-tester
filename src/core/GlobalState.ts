@@ -15,6 +15,7 @@ import {
     FeeTracker,
     FeeTrackerEntry,
     ReserveFeeData,
+    RelayTokenBalances,
 } from "./../types/types.ts";
 import { fileURLToPath } from "url";
 import bn from "bignumber.js";
@@ -36,7 +37,7 @@ export class GlobalState {
      * 
      * @param relay Which relay that is being used
      */
-    private constructor(relay: "kusama" | "polkadot") {
+    private constructor(relay: Relay) {
         this.stateFilePath = path.join(
             __dirname,
             `./../executionState/${relay}.json`
@@ -44,7 +45,7 @@ export class GlobalState {
         this.state = this.loadState();
     }
 
-    public static getInstance(relay?: "kusama" | "polkadot"): GlobalState {
+    public static getInstance(relay?: Relay): GlobalState {
         if (!GlobalState.instance && relay) {
             GlobalState.instance = new GlobalState(relay);
         } else if (!GlobalState.instance && !relay) {
@@ -73,6 +74,7 @@ export class GlobalState {
             relay: null,
             lastNode: null,
             lastFilePath: null,
+            nextInputValue: '0',
             extrinsicSetResults: null,
             transactionState: null,
             transactionProperties: null,
@@ -80,6 +82,7 @@ export class GlobalState {
             executionAttempts: 0,
             accumulatedFeeData: null,
             xcmFeeReserves: null,
+            relayTokenBalances: null
         };
       }
 
@@ -94,19 +97,7 @@ export class GlobalState {
             return JSON.parse(fs.readFileSync(this.stateFilePath, "utf8"));
         } catch (error) {
             // If file doesn't exist or is invalid, return default state
-            return {
-                tracking: true,
-                relay: null,
-                lastNode: null,
-                lastFilePath: null,
-                extrinsicSetResults: null,
-                transactionState: null,
-                transactionProperties: null,
-                executionSuccess: false,
-                executionAttempts: 0,
-                accumulatedFeeData: null,
-                xcmFeeReserves: null,
-            };
+            return this.getDefaultState()
         }
     }
 
@@ -187,6 +178,20 @@ export class GlobalState {
             `./../executionState/${relay}.json`
         );
         this.saveState();
+    }
+
+    setRelayTokenBalances(relayTokenBalances: RelayTokenBalances){
+        this.updateState({ relayTokenBalances })
+    }
+
+    /**
+     * Set's the value that will be used for the next transaction input
+     * - value is stored as a string and parsed as a number when accessed
+     * 
+     * @param value 
+     */
+    setNextInputValue(nextInputValue: string){
+        this.updateState({ nextInputValue })
     }
     /**
      * Updates globalState.xcmFeeReserves: ReserveFeeData[]

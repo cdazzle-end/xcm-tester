@@ -8,7 +8,7 @@ declare const fetch: any;
 
 import { getParaId } from "@paraspell/sdk";
 import { fileURLToPath } from 'url';
-import { isSwapResult, isTransferResult, getAccumulatedFeeData, getExtrinsicSetResults, getXcmFeeReserves, getLastFilePath, getRelay } from "./index.ts";
+import { isSwapResult, isTransferResult, stateGetAccumulatedFeeData, stateGetExtrinsicSetResults, stateGetXcmFeeReserves, stateGetLastFilePath, stateGetRelay } from "./index.ts";
 // import { getAccumulatedFeeData, getExtrinsicSetResults, getXcmFeeReserves } from './globalStateUtils.ts';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -361,8 +361,8 @@ export async function logAllResultsDynamic(chopsticks: boolean){
 
     // let lastNode = extrinsicSetResults.lastSuccessfulNode
     // let extrinsicSetData = extrinsicSetResults.extrinsicData
-    const logFilePath = getLastFilePath()!
-    const relay = getRelay()!
+    const logFilePath = stateGetLastFilePath()!
+    const relay = stateGetRelay()!
 
     let arbResults: ArbExecutionResult[] = []
     let swapTxStats: SwapTxStats[] = []
@@ -373,7 +373,7 @@ export async function logAllResultsDynamic(chopsticks: boolean){
 
     // const { globalState } = await import("./liveTest.ts");
     // let allExtrinsicsSet = globalState.extrinsicSetResults!
-    const allExtrinsicsSet: Readonly<ExtrinsicSetResultDynamic | null> = getExtrinsicSetResults()
+    const allExtrinsicsSet: Readonly<ExtrinsicSetResultDynamic | null> = stateGetExtrinsicSetResults()
     if(allExtrinsicsSet === null) throw new Error('LogAllResults: Extrinsic Set is null')
     allExtrinsicsSet.allExtrinsicResults.forEach((result) => {
         arbResults.push(result.arbExecutionResult);
@@ -386,8 +386,8 @@ export async function logAllResultsDynamic(chopsticks: boolean){
         }
     })
 
-    const accumulatedFees: Readonly<AccumulatedFeeData> = getAccumulatedFeeData()!
-    const xcmReserveFees: Readonly<ReserveFeeData[]> = getXcmFeeReserves()!
+    const accumulatedFees: Readonly<AccumulatedFeeData> = stateGetAccumulatedFeeData()!
+    const xcmReserveFees: Readonly<ReserveFeeData[]> = stateGetXcmFeeReserves()!
 
     // REVIEW Consolidate log info. What is used/needed.
     // --- these 4 are just taken from allExtrinsicsSet and written to their own file for visual clarity. Can change this
@@ -405,8 +405,8 @@ export async function logAllResultsDynamic(chopsticks: boolean){
 }
 
 export async function logProfits(arbAmountOut: string, chopsticks: boolean){
-    const logFilePath = getLastFilePath()!
-    const relay = getRelay()!
+    const logFilePath = stateGetLastFilePath()!
+    const relay = stateGetRelay()!
 
     let logFileStrings = logFilePath.split("\\");
     let logFileDay = logFileStrings[logFileStrings.length - 2]

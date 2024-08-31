@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { localRpcs } from './../config/txConsts.ts';
 import { ExecutionState, ExtrinsicSetResultDynamic, ArbFinderNode, LastNode, NewFeeBook, PromiseTracker, Relay, SwapInstruction, TransferInstruction, TxDetails } from './../types/types.ts';
-import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, getRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, watchTokenDeposit, trackPromise } from './../utils/index.ts';
+import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, queryRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, watchTokenDeposit, trackPromise } from './../utils/index.ts';
 import { getParaId, TNode } from '@paraspell/sdk';
 import { getAdapter, getAssetRegistry, getAssetRegistryObject } from '@polkawallet/bridge';
 import bn from 'bignumber.js';
@@ -867,7 +867,7 @@ async function testApi(){
     // let block = await api.query.system.number()
 
     // console.log('block: ' + block)
-    await getRelayTokenBalances(true, 'polkadot')
+    await queryRelayTokenBalances(true, 'polkadot')
 }
 
 async function testAssetLookup(){
@@ -1187,7 +1187,7 @@ async function testCheckAndAllocate(){
 
     // await checkAndAllocateRelayToken();
     // let nativeBalances = await getRelayTokenBalanceAcrossChains(chopsticks, relay)
-    let nativeBalances = await getRelayTokenBalances(chopsticks, relay)
+    let nativeBalances = await queryRelayTokenBalances(chopsticks, relay)
     console.log("Native Balances: " + JSON.stringify(nativeBalances, null, 2))
     // let relayBalance = await getBalanceChainAsset(chopsticks, relay, "Polkadot", 0, "DOT")
     // console.log("Relay Balance: " + relayBalance.free.toChainData())

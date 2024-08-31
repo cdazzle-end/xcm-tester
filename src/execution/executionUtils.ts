@@ -11,8 +11,8 @@ import { getApiForNode } from "../utils/apiUtils.ts"
 import { BalanceData } from "@polkawallet/bridge"
 import * as paraspell from '@paraspell/sdk'
 import {KeyringPair} from '@polkadot/keyring/types'
-import { allocateKsmFromPreTransferPaths, buildInstructionSet, createAllocationPaths as createAllocationAssetPaths, getFundingPath, getPreTransferPath } from "./instructionUtils.ts"
-import { attemptGetRelayTokenBalances, getBalance, getBalanceChange, getBalanceFromId, getDisplayBalance, getRelayTokenBalances, watchTokenBalance, watchTokenDeposit } from "./../utils/balanceUtils.ts"
+import { buildInstructionSet, createAllocationPaths as createAllocationAssetPaths, getStartChainAllocationPath } from "./instructionUtils.ts"
+import { attemptQueryRelayTokenBalances, getBalance, getBalanceChange, getBalanceFromId, getDisplayBalance, getRelayTokenBalances, queryRelayTokenBalances, watchTokenBalance, watchTokenDeposit } from "./../utils/balanceUtils.ts"
 import { stateSetLastNode, stateSetResultData, stateSetTransactionState, stateSetTransactionProperties, updateXcmFeeReserves, stateSetTracking } from "./../utils/globalStateUtils.ts"
 // import {BigNumber as bn } from "bignumber.js"
 import bn from 'bignumber.js'
@@ -1229,23 +1229,23 @@ export async function executeSwapExtrinsic(txContainer: ExtrinsicContainer, chop
 }
 
 // TODO Reformat this, only used once at the end of the arb execution loop to handle remaining instructions.
-// The rest of the loop uses a build function and an execute function
-export async function buildAndExecuteSwapExtrinsic(
-    relay: Relay, 
-    instructionsToExecute: SwapInstruction[], 
-    chopsticks: boolean, 
-    executeMovr: boolean, 
-    nextInputValue: string,
-): Promise<[(SingleSwapResultData | SingleTransferResultData | undefined), SwapInstruction[]]>{
-    if(Number.parseFloat(nextInputValue) > 0){
-        instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
-    }
-    let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chopsticks);
-    // let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
+// // The rest of the loop uses a build function and an execute function
+// export async function buildAndExecuteSwapExtrinsic(
+//     relay: Relay, 
+//     instructionsToExecute: SwapInstruction[], 
+//     chopsticks: boolean, 
+//     executeMovr: boolean, 
+//     nextInputValue: string,
+// ): Promise<[(SingleSwapResultData | SingleTransferResultData | undefined), SwapInstruction[]]>{
+//     if(Number.parseFloat(nextInputValue) > 0){
+//         instructionsToExecute[0].assetNodes[0].pathValue = nextInputValue
+//     }
+//     let [swapExtrinsicContainer, remainingInstructions] = await buildSwapExtrinsicDynamic(relay, instructionsToExecute, chopsticks);
+//     // let extrinsicObj: ExtrinsicObject = await createSwapExtrinsicObject(swapExtrinsicContainer)
     
-    let extrinsicResultData: SingleTransferResultData | SingleSwapResultData | undefined = await executeAndReturnExtrinsic(swapExtrinsicContainer, chopsticks, executeMovr)
-    return [extrinsicResultData, remainingInstructions]
-}
+//     let extrinsicResultData: SingleTransferResultData | SingleSwapResultData | undefined = await executeAndReturnExtrinsic(swapExtrinsicContainer, chopsticks, executeMovr)
+//     return [extrinsicResultData, remainingInstructions]
+// }
 
 // Handle different extrinsic types
 export async function executeAndReturnExtrinsic(
@@ -1450,6 +1450,11 @@ export async function executePreTransfers(relay: Relay, preTransfers: PreExecuti
 }
 
 // If execution fails mid transaction, we need to confirm the last transaction was successful and set last node accordingly 
+/** Confirm last transaction
+ * 
+ * If success, update GlobalState lastNode
+ * 
+ */
 export async function confirmLastTransactionSuccess(lastTransactionProperties: TransferProperties | SwapProperties){
     console.log("CONFIRMING LAST TRANSACTION....")
     let transactionSuccess = false
@@ -1484,7 +1489,7 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
                 chainId: destAsset.getChainId()
             }
             console.log("Last Transfer Extrinsic successful. setting last node...")
-            await stateSetLastNode(lastSuccessfulNode)
+            stateSetLastNode(lastSuccessfulNode)
         } else {
             console.log("LAST TRANSACTION (TRANSFER) WAS NOT SUCCESSFUL")
         }
@@ -1594,6 +1599,30 @@ export async function collectRelayToken(relay: Relay, chopsticks: boolean, execu
     
 }
 
+/**
+ * Collect tokens from all chains to relay
+ * 
+ * Modify path to allocate funds from the relay at the beginning
+ * 
+ * @param relay 
+ * @param assetPath - AssetNode[] path to execute 
+ * @param startChainId 
+ * @param chopsticks 
+ * @param inputAmount 
+ * @param executeMovr 
+ * @return AssetNode[] modified path with allocation node if needed
+ */
+export async function allocateFunds(
+    relay: Relay, 
+    assetPath: AssetNode[],
+    chopsticks: boolean, 
+    inputAmount: number, 
+    executeMovr: boolean
+): Promise<AssetNode[]> {
+    const startChainId = assetPath[0].getChainId()
+    await allocateToRelay(relay, startChainId, chopsticks, inputAmount, executeMovr)
+    return await allocateToStartChain(relay, assetPath, chopsticks)
+}
 
 // Get balance of native token accross chains. If RELAY chain has low funds, collect all funds to relay. Return balances of all chains
 /**
@@ -1613,15 +1642,14 @@ export async function allocateToRelay(
     inputAmount: number, 
     executeMovr: boolean
 ): Promise<RelayTokenBalances>{
-    let nativeBalancesSuccess = false;
-    let attempts = 0;
+
     let nativeBalances: RelayTokenBalances;
     const relayChainMinimum = getRelayMinimum(relay)
     const requiredBalance = new bn(inputAmount).plus(new bn(relayChainMinimum))
-    let executedAllocation = false;
+
 
     try{
-        nativeBalances = await attemptGetRelayTokenBalances(chopsticks, relay)
+        nativeBalances = await attemptQueryRelayTokenBalances(chopsticks, relay)
     } catch(e){
         throw new Error(`Allocating relay token: Unable to query relay balances. ${JSON.stringify(e, null, 2)}`)
     }
@@ -1635,14 +1663,16 @@ export async function allocateToRelay(
 
     // Query balances again after allocation
     try{
-        nativeBalances = await attemptGetRelayTokenBalances(chopsticks, relay)
+        nativeBalances = await attemptQueryRelayTokenBalances(chopsticks, relay)
     } catch(e){
         throw new Error(`Allocating relay token: Unable to query relay balances. ${JSON.stringify(e, null, 2)}`)
     }
 
     return nativeBalances
 
-
+    // let nativeBalancesSuccess = false;
+    // let attempts = 0;
+    // let executedAllocation = false;
     // while(!nativeBalancesSuccess && attempts < 3){
     //     console.log("Querying Relay Token Balances")
     //     attempts += 1
@@ -1690,53 +1720,61 @@ export async function allocateToRelay(
     
 }
 
-export async function allocateFundsForSwap(relay: Relay, assetPath: AssetNode[],  nativeBalances: any, chopsticks: boolean, executeMovr: boolean){
-    let startChain = assetPath[0].getChainId()
-    let startValue = assetPath[0].getPathValueAsNumber()
-
-    console.log("ALLOCATING FUNDS FOR SWAP")
-    let executionPath: AssetNode[] = assetPath
-    if(new bn(nativeBalances[startChain]).lt(startValue)){
-        
-        // Build allocation All chains -> relay chain && relay chain -> startChain when enough allocation
-        console.log("*** StartNode has insufficient start balance. Need to allocate")
-        let allocationPaths: AssetNode[][] = await getPreTransferPath(relay, startChain, startValue, nativeBalances)
-        
-        // Execute allocations to RELAY, then add RELAY -> StartNode to execution path
-        if(allocationPaths.length > 1){
-            let ksmAllocationPath = allocationPaths.pop()!
-            await allocateKsmFromPreTransferPaths(relay, allocationPaths, chopsticks, executeMovr)
-            executionPath = ksmAllocationPath.concat(assetPath)
-        } else {
-            executionPath = allocationPaths[0].concat(assetPath)
-        }
-    }  else {
-        console.log("SWAP CHAIN HAS ENOUGH FUNDS")
-    }
-    return executionPath
-}
-
-export async function allocateFundsForSwapFromRelay(relay: Relay, assetPath: AssetNode[],  nativeBalances: any, chopsticks: boolean, executeMovr: boolean){
+/**
+ * Ensure start chain has sufficient funds. Prepend arb path with transfer node. Return final AssetNode path
+ * - Prepend only if start chain has insufficient balance for swap
+ * - The xcm node will be the relay asset, on the relay chain, for an amount slightly larger than the swap amount
+ * - After prepending new node, the first transaction will be an xcm transfer from the relay chain to the start chain
+ * 
+ * @param relay 
+ * @param assetPath - AssetNode[] path to execute, before preppending allocation node
+ * @param chopsticks 
+ * @returns AssetNode[] - final arb path that will be executed
+ */
+export async function allocateToStartChain(relay: Relay, assetPath: AssetNode[], chopsticks: boolean){
     let startChainId = assetPath[0].getChainId()
     let startValue = assetPath[0].getPathValueAsNumber()
 
-    let nativeBalancesRefreshed = await attemptGetRelayTokenBalances(chopsticks, relay)
+    let relayTokenBalances: RelayTokenBalances = await getRelayTokenBalances(chopsticks, relay)
 
-    // console.log("Native Balances: " + JSON.stringify(nativeBalancesRefreshed))
-
-    console.log("ALLOCATING FUNDS TO START CHAIN")
+    
     let executionPath: AssetNode[] = assetPath
-    if(new bn(nativeBalancesRefreshed[startChainId]).lt(startValue)){
-        
-        // Build allocation All chains -> relay chain && relay chain -> startChain when enough allocation
+    if(new bn(relayTokenBalances[startChainId]).lt(startValue)){
+        // Build allocation relay chain -> startChain 
         console.log("*** StartNode has insufficient start balance. Need to allocate")
-        let allocationNode: AssetNode[] = await getFundingPath(relay, startChainId, startValue, nativeBalancesRefreshed)
+        let allocationNode: AssetNode[] = await getStartChainAllocationPath(relay, startChainId, startValue, relayTokenBalances)
         executionPath = allocationNode.concat(assetPath)
     }  else {
         console.log("SWAP CHAIN HAS ENOUGH FUNDS")
     }
     return executionPath
 }
+
+// export async function allocateFundsForSwap(relay: Relay, assetPath: AssetNode[],  nativeBalances: any, chopsticks: boolean, executeMovr: boolean){
+//     let startChain = assetPath[0].getChainId()
+//     let startValue = assetPath[0].getPathValueAsNumber()
+
+//     console.log("ALLOCATING FUNDS FOR SWAP")
+//     let executionPath: AssetNode[] = assetPath
+//     if(new bn(nativeBalances[startChain]).lt(startValue)){
+        
+//         // Build allocation All chains -> relay chain && relay chain -> startChain when enough allocation
+//         console.log("*** StartNode has insufficient start balance. Need to allocate")
+//         let allocationPaths: AssetNode[][] = await getPreTransferPath(relay, startChain, startValue, nativeBalances)
+        
+//         // Execute allocations to RELAY, then add RELAY -> StartNode to execution path
+//         if(allocationPaths.length > 1){
+//             let ksmAllocationPath = allocationPaths.pop()!
+//             await allocateKsmFromPreTransferPaths(relay, allocationPaths, chopsticks, executeMovr)
+//             executionPath = ksmAllocationPath.concat(assetPath)
+//         } else {
+//             executionPath = allocationPaths[0].concat(assetPath)
+//         }
+//     }  else {
+//         console.log("SWAP CHAIN HAS ENOUGH FUNDS")
+//     }
+//     return executionPath
+// }
 
 export async function executeXcmTransfer(xcmTx: paraspell.Extrinsic, signer: KeyringPair): Promise<TxDetails>{
     return new Promise((resolve, reject) => {

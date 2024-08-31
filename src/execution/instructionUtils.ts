@@ -1,7 +1,7 @@
 import * as paraspell from "@paraspell/sdk";
 import { AssetNode } from "../core/AssetNode.ts";
-import { IndexObject, InstructionType, IMyAsset, RelayTokenBalances, Relay, ArbFinderNode, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, PNode } from "./../types/types.ts";
-import { getNode, getAssetRegistryObjectBySymbol, getAssetBySymbolOrId, increaseIndex, constructRouteFromFile, constructRouteFromJson, getAssetKeyFromChainAndSymbol, printAllocations, getSigner, findValueByKey, printInstructionSet, readLogData } from "../utils/utils.ts";
+import { IndexObject, InstructionType, IMyAsset, RelayTokenBalances, Relay, ArbFinderNode, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, PNode, RelayTokenSymbol } from "./../types/types.ts";
+import { getNode, getAssetRegistryObjectBySymbol, getAssetBySymbolOrId, increaseIndex, constructRouteFromFile, constructAssetNodesFromPath, getAssetKeyFromChainAndSymbol, printAllocations, getSigner, findValueByKey, printInstructionSet, readLogData, getRelayTokenSymbol, getRelayMinimum } from "../utils/utils.ts";
 import fs from 'fs'
 import path from 'path'
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
@@ -287,176 +287,190 @@ export function buildTransferrableAssetObject(relay: Relay, asset: IMyAsset){
 // If running allocation function, then the relay chain should already have enough funds. So likely just relay chain -> start chain
 // maintain atleast a 0.01 Relay Token balance on Relay chain
 // Dont allocate from asset hub because ksm is needed to transactions
-export async function getPreTransferPath(
-    relay: Relay, 
-    startChainId: number, 
-    inputAmount: number, 
-    nativeBalances: any
-): Promise<AssetNode[][]>{
-    let nativeAssetSymbol = relay == 'kusama' ? "KSM" : "DOT"
-    let minimumRelayBalance = relay == 'kusama' ? 0.01 : 1
+// export async function getPreTransferPath(
+//     relay: Relay, 
+//     startChainId: number, 
+//     inputAmount: number, 
+//     nativeBalances: any
+// ): Promise<AssetNode[][]>{
+//     let nativeAssetSymbol = relay == 'kusama' ? "KSM" : "DOT"
+//     let minimumRelayBalance = relay == 'kusama' ? 0.01 : 1
 
-    // Finds a chain with sufficient funds to allocate from
-    // If we run relay allocation function, then the relay chain should have the funds to transfer for swap
-    let startChainBalance = nativeBalances[startChainId]
-    let sufficientChainAndBalance = Object.entries(nativeBalances).find(([chainId, balance]) => {
-        let transferrableRelayTokenBalance = balance as number
-        if(Number.parseInt(chainId) == 0){
-            transferrableRelayTokenBalance = transferrableRelayTokenBalance - minimumRelayBalance // Need to leave a 0.01 KSM balance on kusama
-        }
-        let combinedBalance = startChainBalance + transferrableRelayTokenBalance
-        console.log(`Comparing chain ${chainId} : (${transferrableRelayTokenBalance}) -> Combined Balance ${combinedBalance} | Required amount: ${inputAmount}`)
-        return Number.parseInt(chainId) != Number.parseInt(startChainId.toString()) && combinedBalance > inputAmount
-    })
+//     // Finds a chain with sufficient funds to allocate from
+//     // If we run relay allocation function, then the relay chain should have the funds to transfer for swap
+//     let startChainBalance = nativeBalances[startChainId]
+//     let sufficientChainAndBalance = Object.entries(nativeBalances).find(([chainId, balance]) => {
+//         let transferrableRelayTokenBalance = balance as number
+//         if(Number.parseInt(chainId) == 0){
+//             transferrableRelayTokenBalance = transferrableRelayTokenBalance - minimumRelayBalance // Need to leave a 0.01 KSM balance on kusama
+//         }
+//         let combinedBalance = startChainBalance + transferrableRelayTokenBalance
+//         console.log(`Comparing chain ${chainId} : (${transferrableRelayTokenBalance}) -> Combined Balance ${combinedBalance} | Required amount: ${inputAmount}`)
+//         return Number.parseInt(chainId) != Number.parseInt(startChainId.toString()) && combinedBalance > inputAmount
+//     })
     
 
-    // Dynamically allocate from multiple chains. Returns multiple AssetNode[] paths
-    if(!sufficientChainAndBalance){
-        console.log("No SINGLE chain with sufficient funds. Need to allocate from multiple.")
-        // First make sure there is enough KSM/DOT to allocate
-        let totalBalance = 0;
-        Object.values(nativeBalances).forEach((balance) => {
-            totalBalance += balance as number
-        })
-        if(totalBalance < inputAmount){
-            throw new Error("Insufficient KSM/DOT to allocate")
-        }
-        // Count start + relay balance and allocate to that
-        let accumulatedBalance = nativeBalances[startChainId] + nativeBalances[0];
+//     // Dynamically allocate from multiple chains. Returns multiple AssetNode[] paths
+//     if(!sufficientChainAndBalance){
+//         console.log("No SINGLE chain with sufficient funds. Need to allocate from multiple.")
+//         // First make sure there is enough KSM/DOT to allocate
+//         let totalBalance = 0;
+//         Object.values(nativeBalances).forEach((balance) => {
+//             totalBalance += balance as number
+//         })
+//         if(totalBalance < inputAmount){
+//             throw new Error("Insufficient KSM/DOT to allocate")
+//         }
+//         // Count start + relay balance and allocate to that
+//         let accumulatedBalance = nativeBalances[startChainId] + nativeBalances[0];
 
-        // Add 5% more allocation to account for fees
-        let remainingRelayTokenToAllocate = inputAmount - accumulatedBalance
-        remainingRelayTokenToAllocate = remainingRelayTokenToAllocate + (remainingRelayTokenToAllocate * 0.05)
-        let nodesToAllocateFrom: any[] = []
-        let allocationSufficient = false
-        Object.entries(nativeBalances).forEach(([chainId, balance]) => {
-            let chainBalance = balance as number
-            if(Number.parseInt(chainId) != 0 && Number.parseInt(chainId) != startChainId && !allocationSufficient && chainBalance > 0){
-                if(chainBalance > remainingRelayTokenToAllocate){
-                    let chainAllocationData = {chainId: Number.parseInt(chainId), balance: remainingRelayTokenToAllocate}
-                    accumulatedBalance += remainingRelayTokenToAllocate
-                    remainingRelayTokenToAllocate = 0;
-                    allocationSufficient = true
-                    nodesToAllocateFrom.push(chainAllocationData)
-                } else {
-                    let chainAllocationData = {chainId: Number.parseInt(chainId), balance: chainBalance}
-                    accumulatedBalance += chainBalance
-                    remainingRelayTokenToAllocate -= chainBalance
-                    nodesToAllocateFrom.push(chainAllocationData)
-                }
-            }
-        })
+//         // Add 5% more allocation to account for fees
+//         let remainingRelayTokenToAllocate = inputAmount - accumulatedBalance
+//         remainingRelayTokenToAllocate = remainingRelayTokenToAllocate + (remainingRelayTokenToAllocate * 0.05)
+//         let nodesToAllocateFrom: any[] = []
+//         let allocationSufficient = false
+//         Object.entries(nativeBalances).forEach(([chainId, balance]) => {
+//             let chainBalance = balance as number
+//             if(Number.parseInt(chainId) != 0 && Number.parseInt(chainId) != startChainId && !allocationSufficient && chainBalance > 0){
+//                 if(chainBalance > remainingRelayTokenToAllocate){
+//                     let chainAllocationData = {chainId: Number.parseInt(chainId), balance: remainingRelayTokenToAllocate}
+//                     accumulatedBalance += remainingRelayTokenToAllocate
+//                     remainingRelayTokenToAllocate = 0;
+//                     allocationSufficient = true
+//                     nodesToAllocateFrom.push(chainAllocationData)
+//                 } else {
+//                     let chainAllocationData = {chainId: Number.parseInt(chainId), balance: chainBalance}
+//                     accumulatedBalance += chainBalance
+//                     remainingRelayTokenToAllocate -= chainBalance
+//                     nodesToAllocateFrom.push(chainAllocationData)
+//                 }
+//             }
+//         })
 
-        if(accumulatedBalance < inputAmount){
-            throw new Error("Insufficient funds to allocate")
-        }
+//         if(accumulatedBalance < inputAmount){
+//             throw new Error("Insufficient funds to allocate")
+//         }
 
-        // Create allocations to relay chain
-        let allocationPaths: ArbFinderNode[][] = []
-        for(let allocationNode of nodesToAllocateFrom){
-            let allocationNodeAssetObject = getAssetRegistryObjectBySymbol(allocationNode.chainId, nativeAssetSymbol, relay)
-            let pathNodes = await createAllocationPath(relay, allocationNodeAssetObject, allocationNode.balance)
-            allocationPaths.push(pathNodes)
-            console.log(`Allocating ${allocationNode.balance} from chain ${allocationNode.chainId}`)
-        }
+//         // Create allocations to relay chain
+//         let allocationPaths: ArbFinderNode[][] = []
+//         for(let allocationNode of nodesToAllocateFrom){
+//             let allocationNodeAssetObject = getAssetRegistryObjectBySymbol(allocationNode.chainId, nativeAssetSymbol, relay)
+//             let pathNodes = await createAllocationPath(relay, allocationNodeAssetObject, allocationNode.balance)
+//             allocationPaths.push(pathNodes)
+//             console.log(`Allocating ${allocationNode.balance} from chain ${allocationNode.chainId}`)
+//         }
 
-        // Create allocation to start chain
-        let startNodeAssetObject = getAssetRegistryObjectBySymbol(startChainId, nativeAssetSymbol, relay)
-        let ksmAmountToTransfer = inputAmount - startChainBalance
-        let kusamaToStartPath = await createAllocationKusamaToStartPath(relay, startNodeAssetObject, ksmAmountToTransfer)
-        allocationPaths.push(kusamaToStartPath)
+//         // Create allocation to start chain
+//         let startNodeAssetObject = getAssetRegistryObjectBySymbol(startChainId, nativeAssetSymbol, relay)
+//         let ksmAmountToTransfer = inputAmount - startChainBalance
+//         let kusamaToStartPath = await createAllocationKusamaToStartPath(relay, startNodeAssetObject, ksmAmountToTransfer)
+//         allocationPaths.push(kusamaToStartPath)
 
-        // Allocation Paths now ready
-        let allocationAssetNodePaths: AssetNode[][] = allocationPaths.map((path) => constructRouteFromJson(relay, path))
-        console.log("Construction allocation paths")
-        allocationAssetNodePaths.forEach((path) => {
-            console.log("PATH")
-            path.forEach((node) => {
-                console.log(`${node.asset.tokenData.symbol} from ${node.chain} with value ${node.pathValue} ->`)
-            })
-            console.log("*********************************************************")
+//         // Allocation Paths now ready
+//         let allocationAssetNodePaths: AssetNode[][] = allocationPaths.map((path) => constructRouteFromJson(relay, path))
+//         console.log("Construction allocation paths")
+//         allocationAssetNodePaths.forEach((path) => {
+//             console.log("PATH")
+//             path.forEach((node) => {
+//                 console.log(`${node.asset.tokenData.symbol} from ${node.chain} with value ${node.pathValue} ->`)
+//             })
+//             console.log("*********************************************************")
 
-        })
-        return allocationAssetNodePaths
+//         })
+//         return allocationAssetNodePaths
 
-    } else { 
-        //Allocate sufficient ksm from a single chain. Returns a single AssetNode[] path
-        let [firstChainWithSufficientFunds, returnBalance] = sufficientChainAndBalance
-        let jsonPathNodes: ArbFinderNode[] = []
+//     } else { 
+//         //Allocate sufficient ksm from a single chain. Returns a single AssetNode[] path
+//         let [firstChainWithSufficientFunds, returnBalance] = sufficientChainAndBalance
+//         let jsonPathNodes: ArbFinderNode[] = []
 
-        //Allocate ksm from a parachain node
-        if(Number.parseInt(firstChainWithSufficientFunds) != 0) {
-            let firstAssetObject = getAssetRegistryObjectBySymbol(Number.parseInt(firstChainWithSufficientFunds), nativeAssetSymbol, relay)            
-            let secondAssetObject = getAssetRegistryObjectBySymbol(0, nativeAssetSymbol, relay)
+//         //Allocate ksm from a parachain node
+//         if(Number.parseInt(firstChainWithSufficientFunds) != 0) {
+//             let firstAssetObject = getAssetRegistryObjectBySymbol(Number.parseInt(firstChainWithSufficientFunds), nativeAssetSymbol, relay)            
+//             let secondAssetObject = getAssetRegistryObjectBySymbol(0, nativeAssetSymbol, relay)
 
-            let firstAssetKey = JSON.stringify(firstAssetObject.tokenData.chain) + JSON.stringify(firstAssetObject.tokenData.localId)
-            let secondAssetKey = JSON.stringify(secondAssetObject.tokenData.chain) + JSON.stringify(secondAssetObject.tokenData.localId)
-            let keys = [firstAssetKey, secondAssetKey]
+//             let firstAssetKey = JSON.stringify(firstAssetObject.tokenData.chain) + JSON.stringify(firstAssetObject.tokenData.localId)
+//             let secondAssetKey = JSON.stringify(secondAssetObject.tokenData.chain) + JSON.stringify(secondAssetObject.tokenData.localId)
+//             let keys = [firstAssetKey, secondAssetKey]
 
-            let amountRelayTokenToTransfer = inputAmount - startChainBalance
-            let pathNodesPromise = keys.map((key) => {
-                return createTransferPathNode(relay, key, amountRelayTokenToTransfer)
-            })
-            jsonPathNodes = await Promise.all(pathNodesPromise)
-            fs.writeFileSync(path.join(__dirname, './preTransferNodes.json'), JSON.stringify(jsonPathNodes, null, 2))
-        } else {
+//             let amountRelayTokenToTransfer = inputAmount - startChainBalance
+//             let pathNodesPromise = keys.map((key) => {
+//                 return createXcmPathNode(relay, key, amountRelayTokenToTransfer)
+//             })
+//             jsonPathNodes = await Promise.all(pathNodesPromise)
+//             fs.writeFileSync(path.join(__dirname, './preTransferNodes.json'), JSON.stringify(jsonPathNodes, null, 2))
+//         } else {
 
-            //Allocate ksm from Kusama only
-            let secondAssetKey = getAssetKeyFromChainAndSymbol(0, nativeAssetSymbol, relay)
-            let amountRelayTokenToTransfer = inputAmount - nativeBalances[startChainId]
-            amountRelayTokenToTransfer = amountRelayTokenToTransfer + (amountRelayTokenToTransfer * 0.05)
+//             //Allocate ksm from Kusama only
+//             let secondAssetKey = getAssetKeyFromChainAndSymbol(0, nativeAssetSymbol, relay)
+//             let amountRelayTokenToTransfer = inputAmount - nativeBalances[startChainId]
+//             amountRelayTokenToTransfer = amountRelayTokenToTransfer + (amountRelayTokenToTransfer * 0.05)
 
-            if(amountRelayTokenToTransfer > nativeBalances[0]){
-                console.log("Insufficient KSM to allocate")
-                throw new Error("Insufficient KSM to allocate")
+//             if(amountRelayTokenToTransfer > nativeBalances[0]){
+//                 console.log("Insufficient KSM to allocate")
+//                 throw new Error("Insufficient KSM to allocate")
 
-            }
-            let relayTokenPathNode = await createTransferPathNode(relay, secondAssetKey, amountRelayTokenToTransfer)
-            jsonPathNodes = [relayTokenPathNode]
-            fs.writeFileSync(path.join(__dirname, './preTransferNodes.json'), JSON.stringify(jsonPathNodes))
-        }
+//             }
+//             let relayTokenPathNode = await createXcmPathNode(relay, secondAssetKey, amountRelayTokenToTransfer)
+//             jsonPathNodes = [relayTokenPathNode]
+//             fs.writeFileSync(path.join(__dirname, './preTransferNodes.json'), JSON.stringify(jsonPathNodes))
+//         }
 
-        // CONSTRUCT nodes from paths
-        let assetPath = constructRouteFromJson(relay, jsonPathNodes)
-        return [assetPath]
-    }
+//         // CONSTRUCT nodes from paths
+//         let assetPath = constructRouteFromJson(relay, jsonPathNodes)
+//         return [assetPath]
+//     }
 
  
-    // BUILD ASSET NODE ROUTE
-}
+//     // BUILD ASSET NODE ROUTE
+// }
 // export async function getBalance(paraId: number, relay: Relay, chopsticks: boolean, chainApi: ApiPromise, assetSymbol: string, assetObject: MyAssetRegistryObject, node: string, accountAddress: string): Promise<BalanceData>{
 
-// Relay chain should always have sufficient tokens to fund the swap
-export async function getFundingPath(
+/**
+ * Prepend arb path with a transfer node from the relay to start chain
+ * - Only if start chain has less than the required balance for swap
+ * - Relay chain must have sufficient balance
+ * - Writes path node to file (./preTransferNodes.json)
+ * 
+ * @param relay 
+ * @param startChainId 
+ * @param inputAmount 
+ * @param nativeBalances 
+ * @returns 
+ */
+export function getStartChainAllocationPath(
     relay: Relay, 
     startChainId: number, 
     inputAmount: number, 
     nativeBalances: any
-): Promise<AssetNode[]>{
-    let nativeAssetSymbol = relay == 'kusama' ? "KSM" : "DOT"
-    let relayTokenBalance = nativeBalances[0]
-    let startTokenBalance = nativeBalances[startChainId]
+): AssetNode[]{
+    const relayTokenSymbol: RelayTokenSymbol = getRelayTokenSymbol(relay)
+    const relayTokenBalance: bn = new bn(nativeBalances[0])
+    const startTokenBalance: bn = new bn(nativeBalances[startChainId])
 
-    let minimumRelayBalance = relay == 'kusama' ? 0.01 : 1
-    let transferAmountPadding = relay == 'kusama' ? 0.01 : 0.1 // Pad transfer amount to account for fees, so we have enough to start swaps with intended amount. Theres a better way to do this
-    let amountNeededToTransfer = inputAmount - startTokenBalance
-    let jsonPathNodes: ArbFinderNode[] = []
+    const requiredInputAmount = new bn(inputAmount)
 
-    if(startTokenBalance < inputAmount){
+    const minimumRelayBalance = new bn(getRelayMinimum(relay))
+    const transferAmountPadding = relay == 'kusama' ? new bn(0.01) : new bn(0.1) // Pad transfer amount to account for fees, so we have enough to start swaps with intended amount. Theres a better way to do this
+    const amountNeededToTransfer = requiredInputAmount.minus(startTokenBalance)
+    const actualAmountToTransfer = amountNeededToTransfer.plus(transferAmountPadding)
+    
+    let transferPathNodes: ArbFinderNode[] = []
+
+    const requiredRelayBalance: bn = amountNeededToTransfer.plus(minimumRelayBalance).plus(transferAmountPadding)
+
+    if(startTokenBalance.lt(requiredInputAmount)){
         console.log(`Start chain: ${startChainId} has insufficient funds to allocate. Need to allocate from relay`)
-        let relayBalanceSufficient = relayTokenBalance > amountNeededToTransfer + minimumRelayBalance + transferAmountPadding
-        if(!relayBalanceSufficient){
-            throw new Error("Insufficient funds to allocate")
-        }
-        let actualAmountToTransfer = amountNeededToTransfer + transferAmountPadding
-        let nodeAssetKey = getAssetKeyFromChainAndSymbol(0, nativeAssetSymbol, relay)
-        let relayTokenPathNode = await createTransferPathNode(relay, nodeAssetKey, actualAmountToTransfer)
-        jsonPathNodes = [relayTokenPathNode]
-        fs.writeFileSync(path.join(__dirname, './preTransferNodes.json'), JSON.stringify(jsonPathNodes))
+        if (relayTokenBalance.lt(requiredRelayBalance)) throw new Error("Relay does not have enough funds to allocate for swap")
+
+        let relayAsset = new MyAsset(getAssetRegistryObjectBySymbol(0, relayTokenSymbol, relay))
+        let relayPathNode: ArbFinderNode = createXcmPathNode(relay, relayAsset, actualAmountToTransfer.toNumber())
+        transferPathNodes = [relayPathNode]
+        fs.writeFileSync(path.join(__dirname, './preTransferNodes.json'), JSON.stringify(transferPathNodes))
     }
 
     // CONSTRUCT nodes from paths
-    let assetPath: AssetNode[] = constructRouteFromJson(relay, jsonPathNodes)
+    let assetPath: AssetNode[] = constructAssetNodesFromPath(relay, transferPathNodes)
     return assetPath
 }
 
@@ -513,16 +527,22 @@ export function createAllocationPaths(relay: Relay, nativeBalances: RelayTokenBa
         return allocationAssetNodePaths
 }
 
-
-export async function createTransferPathNode(
+/**
+ * Create a xcm path node for a given asset and path value
+ * 
+ * @param relay 
+ * @param assetKey 
+ * @param pathValue 
+ * @returns 
+ */
+export function createXcmPathNode(
     relay: Relay, 
-    assetKey: string, 
+    asset: MyAsset,
     pathValue: number
-){
-    let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
+): ArbFinderNode {
     let pathNode: ArbFinderNode = {
-        node_key: assetKey,
-        asset_name: nativeAssetName,
+        node_key: asset.getAssetKey(),
+        asset_name: asset.getSymbol(),
         path_value: pathValue,
         path_type: "Xcm",
         path_data: {
@@ -596,46 +616,46 @@ export async function createAllocationKusamaToStartPath(relay: Relay, startAsset
     return [relayNode, startNode] 
 }
 
-export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPaths: AssetNode[][], chopsticks: boolean, executeMovr: boolean){
-    //Dynamic allocation from multiple chains. Execute allocations first
-    let allocationInstructions = await Promise.all(allocationPaths.map(async (path) => buildInstructionSet(relay, path)))
-    printAllocations(allocationInstructions)
+// export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPaths: AssetNode[][], chopsticks: boolean, executeMovr: boolean){
+//     //Dynamic allocation from multiple chains. Execute allocations first
+//     let allocationInstructions = await Promise.all(allocationPaths.map(async (path) => buildInstructionSet(relay, path)))
+//     printAllocations(allocationInstructions)
 
-    // Remove KSM -> start allocation so it can be executed last
-    let ksmToStartAllocationInstruction = allocationInstructions.pop()
+//     // Remove KSM -> start allocation so it can be executed last
+//     let ksmToStartAllocationInstruction = allocationInstructions.pop()
 
-    console.log("Executing allocations from chains to Kusama")
-    //Turn tracking off for async executions
-    stateSetTracking(false)
-    let allocationExecutionResultsPromise = allocationInstructions.map(async (instructionSet) => {
-        let transferInstructions: TransferInstruction[] = instructionSet as TransferInstruction[]
-        let allocationExecution = buildAndExecuteTransferExtrinsic(relay, transferInstructions, chopsticks, executeMovr)
-        return allocationExecution
-    })
-    let allocationExecutionResults = await Promise.all(allocationExecutionResultsPromise)
-    stateSetTracking(true)
+//     console.log("Executing allocations from chains to Kusama")
+//     //Turn tracking off for async executions
+//     stateSetTracking(false)
+//     let allocationExecutionResultsPromise = allocationInstructions.map(async (instructionSet) => {
+//         let transferInstructions: TransferInstruction[] = instructionSet as TransferInstruction[]
+//         let allocationExecution = buildAndExecuteTransferExtrinsic(relay, transferInstructions, chopsticks, executeMovr)
+//         return allocationExecution
+//     })
+//     let allocationExecutionResults = await Promise.all(allocationExecutionResultsPromise)
+//     stateSetTracking(true)
 
-    allocationExecutionResults.forEach((result) => {
-        console.log("ALLOCATION SUCCESS: " + result.success)
-        console.log(JSON.stringify(result.arbExecutionResult, null, 2))
-    })
+//     allocationExecutionResults.forEach((result) => {
+//         console.log("ALLOCATION SUCCESS: " + result.success)
+//         console.log(JSON.stringify(result.arbExecutionResult, null, 2))
+//     })
 
-    let ksmBalance = await getBalanceChainAsset(chopsticks, relay, "Kusama", 0, "KSM", "KSM")
-    let ksmBalanceToTransfer = ksmBalance.free.toNumber() - 0.01
+//     let ksmBalance = await getBalanceChainAsset(chopsticks, relay, "Kusama", 0, "KSM", "KSM")
+//     let ksmBalanceToTransfer = ksmBalance.free.toNumber() - 0.01
 
-    console.log("Executing Kusama to start allocation")
-    console.log(`${ksmToStartAllocationInstruction![0].assetNodes[0].getChainId()} -> ${ksmToStartAllocationInstruction![0].assetNodes[1].getChainId()} | ${ksmToStartAllocationInstruction![0].assetNodes[0].pathValue} -> ${ksmToStartAllocationInstruction![0].assetNodes[1].pathValue}`)
-    //Execute Kusama to start chain
-    let ksmTransferInstructions: TransferInstruction[] = ksmToStartAllocationInstruction as TransferInstruction[]
+//     console.log("Executing Kusama to start allocation")
+//     console.log(`${ksmToStartAllocationInstruction![0].assetNodes[0].getChainId()} -> ${ksmToStartAllocationInstruction![0].assetNodes[1].getChainId()} | ${ksmToStartAllocationInstruction![0].assetNodes[0].pathValue} -> ${ksmToStartAllocationInstruction![0].assetNodes[1].pathValue}`)
+//     //Execute Kusama to start chain
+//     let ksmTransferInstructions: TransferInstruction[] = ksmToStartAllocationInstruction as TransferInstruction[]
 
-    // Set input Amount to full ksm balance
-    ksmTransferInstructions[0].assetNodes[0].pathValue = ksmBalanceToTransfer.toString()
+//     // Set input Amount to full ksm balance
+//     ksmTransferInstructions[0].assetNodes[0].pathValue = ksmBalanceToTransfer.toString()
 
-    let ksmExecution = await buildAndExecuteTransferExtrinsic(relay, ksmTransferInstructions, chopsticks, executeMovr)
+//     let ksmExecution = await buildAndExecuteTransferExtrinsic(relay, ksmTransferInstructions, chopsticks, executeMovr)
 
-    console.log("ALLOCATION SUCCESS: " + ksmExecution.success)
-    console.log(JSON.stringify(ksmExecution.arbExecutionResult, null, 2))
-}
+//     console.log("ALLOCATION SUCCESS: " + ksmExecution.success)
+//     console.log(JSON.stringify(ksmExecution.arbExecutionResult, null, 2))
+// }
 
 // // Skip route nodes up to ksm node to start from / first swap node
 export async function getFirstSwapNodeFromInstructions(instructions: (SwapInstruction | TransferInstruction)[]){ 

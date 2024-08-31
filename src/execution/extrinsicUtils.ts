@@ -51,6 +51,15 @@ export async function buildTransferExtrinsicReworked(
     return transferExtrinsics
 }
 
+/**
+ * Build transfer extrinsic from instruction
+ * - If instruction requires 2 transfers, will build 1 extrinsic and return an instruction to build the second
+ * 
+ * @param relay 
+ * @param instruction 
+ * @param chopsticks 
+ * @returns [extrinsic, remainingInstructions] - If there are no remaining instructions, then will return an empty array
+ */
 export async function buildTransferExtrinsicDynamic(
     relay: Relay, 
     instruction: TransferInstruction, 
@@ -65,6 +74,8 @@ export async function buildTransferExtrinsicDynamic(
         case InstructionType.TransferAwayFromHomeChain:
             transferExtrinsic = await buildTransferExtrinsicFromInstruction(relay, instruction, chopsticks);
             break;
+
+        // Build 1 extrinsic and an instruction for a second extrinsic
         case InstructionType.TransferToHomeThenDestination:
             console.log("TRANSFERS")
             let [transferOne, transferTwo] = splitDoubleTransferInstruction(instruction)

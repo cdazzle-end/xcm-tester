@@ -119,13 +119,14 @@ export const live_wallet_3 = process.env.LIVE_WALLET_3_PK!
 // if(!alithPk || !arb_wallet_kusama || !live_wallet_3) throw new Error("Error loading MOVR env variables")
 export const mainWalletAddress = "GXeHEVY5SSJFQqcFmANaY3mTsRpcE9EUVzDcGpowbbe41ZZ"
 export const mainWalletEthAddress = '0xAe8Da4A9792503f1eC97eD035e35133A9E65a61f'
-export const ksmTargetNode = '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"KSM\\"}}"'
-export const dotTargetNode = '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"DOT\\"}}"'
 export const testBncNode = '"2001{\\"Native\\":\\"BNC\\"}"'
 export const testZlkNode = '"2001{\\"Native\\":\\"ZLK\\"}"'
 export const karRpc = "wss://karura-rpc-0.aca-api.network"
 export const acaRpc = "wss://acala-rpc-0.aca-api.network"
 export const movrRpc = "wss://rpc.moonriver.moonbeam.network"
+
+
+export const ksmTargetNode = '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"KSM\\"}}"'
 export const kusamaNodeKeys = [
     '2000{"NativeAssetId":{"Token":"KSM"}}',
     '2001{"Token":"KSM"}',
@@ -136,6 +137,7 @@ export const kusamaNodeKeys = [
     '2090"1"'
 ]
 
+export const dotTargetNode = '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"DOT\\"}}"'
 export const dotNodeKeys = [
     '"2000{\\"NativeAssetId\\":{\\"Token\\":\\"DOT\\"}}"'
 ]

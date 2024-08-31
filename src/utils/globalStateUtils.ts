@@ -1,6 +1,13 @@
+/**
+ * @fileoverview Functions to access and set GlobalState properties. 
+ * 
+ * Every time a value is set, the state is saved to file.
+ */
+
+
 import path from "path";
 import fs from 'fs'
-import { LastNode, Relay, ExtrinsicSetResultDynamic, TransactionState, TransferProperties, SwapProperties, ExecutionSuccess, ExecutionState, SingleSwapResultData, SingleTransferResultData, FeeData, FeeTracker, FeeTrackerEntry, ReserveFeeData, AccumulatedFeeData } from "./../types/types.ts";
+import { LastNode, Relay, ExtrinsicSetResultDynamic, TransactionState, TransferProperties, SwapProperties, ExecutionSuccess, ExecutionState, SingleSwapResultData, SingleTransferResultData, FeeData, FeeTracker, FeeTrackerEntry, ReserveFeeData, AccumulatedFeeData, RelayTokenBalances } from "./../types/types.ts";
 import { fileURLToPath } from 'url';
 import bn from "bignumber.js"
 import { GlobalState } from "./../core/GlobalState.ts";
@@ -10,157 +17,9 @@ const __dirname = path.dirname(__filename);
 
 // Functions to set global state
 // Every time global state is set, it should be written to a file
-
-// export async function setLastNode(node: LastNode, relay: Relay){
-//     const { globalState } = await import("./liveTest.ts");
-//     globalState.lastNode = node
-//     if(globalState.tracking == true){
-//         if(relay == 'kusama'){
-//             // fs.writeFileSync(path.join(__dirname, './lastNode.json'), JSON.stringify(node, null, 2), 'utf8')
-//             fs.writeFileSync(path.join(__dirname, './executionState/kusama.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         } else {
-//             // globalState.lastNode = node
-//             fs.writeFileSync(path.join(__dirname, './executionState/polkadot.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         }
-
-//     }
-
-// }
-// export async function setLastFile(filePath: string, relay: Relay){
-//     const { globalState } = await import("./liveTest.ts");
-//     console.log("Setting LAST FILE PATH")
-//     console.log(filePath)
-//     globalState.lastFilePath = filePath;
-//     if(globalState.tracking == true){
-//         if(relay == 'kusama'){
-//             // fs.writeFileSync(path.join(__dirname, './lastAttemptFile.json'), JSON.stringify(filePath, null, 2), 'utf8')
-//             fs.writeFileSync(path.join(__dirname, './executionState/kusama.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         } else {
-//             fs.writeFileSync(path.join(__dirname, './executionState/polkadot.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         }
-        
-//     }
-
-// }
-// export async function setLastExtrinsicSet(extrinsicSet: ExtrinsicSetResultDynamic, relay: Relay){
-//     const { globalState } = await import("./liveTest.ts");
-//     globalState.extrinsicSetResults = extrinsicSet
-//     if(globalState.tracking == true){
-//         if(relay == 'kusama'){
-//             // fs.writeFileSync(path.join(__dirname, './executionState/lastExtrinsicSet.json'), JSON.stringify(extrinsicSet, null, 2), 'utf8')
-//             fs.writeFileSync(path.join(__dirname, './executionState/kusama.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         } else {
-//             // globalState.extrinsicSetResults = extrinsicSet
-//             fs.writeFileSync(path.join(__dirname, './executionState/polkadot.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         }
-//     }
-// }
-
-// export async function setResultData(resultData: SingleSwapResultData | SingleTransferResultData, relay: Relay){
-//     const { globalState } = await import("./liveTest.ts");
-//     if(globalState.extrinsicSetResults == null){
-//         globalState.extrinsicSetResults = {
-//             allExtrinsicResults: [],
-//             success: false,
-//             lastSuccessfulNode: null
-//         }
-//     }
-//     globalState.extrinsicSetResults.allExtrinsicResults.push(resultData);
-//     globalState.extrinsicSetResults.success = resultData.success
-//     globalState.extrinsicSetResults.lastSuccessfulNode = globalState.lastNode
-//     if(globalState.tracking == true){
-//         if(relay == 'kusama'){
-//             fs.writeFileSync(path.join(__dirname, './executionState/kusama.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         } else {
-//             fs.writeFileSync(path.join(__dirname, './executionState/polkadot.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         }
-//     }
-
-// }
-// export async function setTransactionState(transactionState: TransactionState, relay: Relay){
-//     const { globalState } = await import("./liveTest.ts");
-//     globalState.transactionState = transactionState;
-//     if(globalState.tracking == true){
-//         if(relay == 'kusama'){
-//             // fs.writeFileSync(path.join(__dirname, './lastTransactionState.json'), JSON.stringify(transactionState, null, 2), 'utf8')
-//             fs.writeFileSync(path.join(__dirname, './executionState/kusama.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         } else {
-//             // globalState.transactionState = transactionState;
-//             fs.writeFileSync(path.join(__dirname, './executionState/polkadot.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         }
-        
-//     }
-// }
-// export async function setTransctionProperties(properties: TransferProperties | SwapProperties, relay: Relay){
-//     const { globalState } = await import("./liveTest.ts");
-//     globalState.transactionProperties = properties;
-//     if(globalState.tracking == true){
-//         if(relay == 'kusama'){
-//             // fs.writeFileSync(path.join(__dirname, './lastTransactionProperties.json'), JSON.stringify(properties, null, 2), 'utf8')
-//             fs.writeFileSync(path.join(__dirname, './executionState/kusama.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         } else {
-//             // globalState.transactionProperties = properties;
-//             fs.writeFileSync(path.join(__dirname, './executionState/polkadot.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         }
-        
-//     }
-
-// }
-
-// USED to track execution attempts until successful, then resets
-// export async function setExecutionSuccess(success: boolean, relay: Relay){
-//     const { globalState } = await import("./liveTest.ts");
-//     if(globalState.tracking == true){
-//         if(success){
-//             globalState.executionSuccess = true
-//             globalState.executionAttempts = 0
-//         } else {
-//             globalState.executionAttempts! += 1
-//         }
-//         // let executionSuccess: ExecutionSuccess = {success, executionAttempts: globalState.executionAttempts}
-//         if(relay == 'kusama'){
-//             // fs.writeFileSync(path.join(__dirname, './lastExecutionSuccess.json'), JSON.stringify(executionSuccess, null, 2), 'utf8')
-//             fs.writeFileSync(path.join(__dirname, './executionState/kusama.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         } else {
-//             fs.writeFileSync(path.join(__dirname, './executionState/polkadot.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         }
-        
-//     }
-
-// }
-// export async function setExecutionRelay(relay: Relay) {
-//     const { globalState } = await import("./liveTest.ts");
-//     if(globalState.tracking == true){
-//         globalState.relay = relay
-//         if(relay == 'kusama'){
-//             // fs.writeFileSync(path.join(__dirname, './lastExecutionRelay.json'), JSON.stringify(relay, null, 2), 'utf8')
-//             fs.writeFileSync(path.join(__dirname, './executionState/kusama.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         } else {
-//             fs.writeFileSync(path.join(__dirname, './executionState/polkadot.json'), JSON.stringify(globalState, null, 2), 'utf8')
-//         }
-        
-//     }
-// }
-
-// export async function resetExecutionState() {
-//     const { globalState } = await import("./liveTest.ts");
-//     globalState.relay = null,
-//     globalState.lastNode = null
-//     globalState.lastFilePath = null
-//     globalState.extrinsicSetResults = null
-//     globalState.transactionState = null
-//     globalState.transactionProperties = null
-//     globalState.executionSuccess = false
-//     globalState.executionAttempts = 0
-//     globalState.accumulatedFeeData = null
-//     globalState.xcmFeeReserves = null
-
-// }
-
-
-
-
-
+/**
+ * 
+ */
 /**
  * Updates globalState.xcmFeeReserves: ReserveFeeData[]
  * - Adds ReserveFeeData fom latest xcm transfer
@@ -170,7 +29,7 @@ const __dirname = path.dirname(__filename);
  * @param reserveFees - ReserveFeeData
  * @param relay Which relay to use
  */
-// export async function updateXcmFeeReserves(reserveFees: ReserveFeeData[], relay: Relay){
+// export function updateXcmFeeReserves(reserveFees: ReserveFeeData[], relay: Relay){
 //     const { globalState } = await import("./liveTest.ts");
 //     console.log("******** WRITE XCM FEE RESERVES *********")
 //     // console.log(`Fee data: ${JSON.stringify(feeData, null, 2)}`)
@@ -191,16 +50,16 @@ const __dirname = path.dirname(__filename);
 
 // }
 
-export async function resetGlobalState(relay: Relay) {
+export function resetGlobalState(relay: Relay) {
     const globalState = GlobalState.getInstance(relay);
     globalState.resetState();
   }
 
-export async function stateSetExecutionRelay(relay: Relay){
+export function stateSetExecutionRelay(relay: Relay){
     const globalState = GlobalState.getInstance(relay);
     globalState.setExecutionRelay(relay)
 }
-export async function stateSetExecutionSuccess(success: boolean){
+export function stateSetExecutionSuccess(success: boolean){
     const globalState = GlobalState.getInstance();
     globalState.setExecutionSuccess(success)
 
@@ -212,7 +71,7 @@ export async function stateSetExecutionSuccess(success: boolean){
  * 
  * @param node - Formatted node data (LastNode)
  */
-export async function stateSetLastNode(node: LastNode) {
+export function stateSetLastNode(node: LastNode) {
     const globalState = GlobalState.getInstance();
     globalState.setLastNode(node)
 }
@@ -226,86 +85,113 @@ export async function stateSetLastNode(node: LastNode) {
  * 
  * @param filePath - Path to arb-finder result data that is being used to execute the arb
  */
-export async function stateSetLastFile(filePath: string) {
+export function stateSetLastFile(filePath: string) {
     const globalState = GlobalState.getInstance();
     globalState.setLastFile(filePath)
 }
 
-export async function stateSetLastExtrinsicSet(extrinsicSet: ExtrinsicSetResultDynamic) {
+export function stateSetLastExtrinsicSet(extrinsicSet: ExtrinsicSetResultDynamic) {
     const globalState = GlobalState.getInstance();
     globalState.setLastExtrinsicSet(extrinsicSet)
 }
 
-export async function stateSetResultData(resultData: SingleSwapResultData | SingleTransferResultData) {
+export function stateSetResultData(resultData: SingleSwapResultData | SingleTransferResultData) {
     const globalState = GlobalState.getInstance();
     globalState.setResultData(resultData)
 }
 
-export async function stateSetTransactionState(transactionState: TransactionState) {
+export function stateSetTransactionState(transactionState: TransactionState) {
     const globalState = GlobalState.getInstance();
     globalState.setTransactionState(transactionState)
 }
 
-export async function stateSetTransactionProperties(properties: TransferProperties | SwapProperties) {
+export function stateSetTransactionProperties(properties: TransferProperties | SwapProperties) {
     const globalState = GlobalState.getInstance();
     globalState.setTransactionProperties(properties)
 }
-export async function stateSetTracking(tracking: boolean){
+export function stateSetTracking(tracking: boolean){
     const globalState = GlobalState.getInstance();
     globalState.setTracking(tracking)
 
+}
+export function stateSetRelayTokenBalances(balances: RelayTokenBalances) {
+    const globalState = GlobalState.getInstance()
+    globalState.setRelayTokenBalances(balances)
+}
+export function stateSetNextInputValue(nextInputValue: string){
+    const globalState = GlobalState.getInstance()
+    globalState.setNextInputValue(nextInputValue)
 }
 export async function updateXcmFeeReserves(reserveFees: ReserveFeeData[]){
     const globalState = GlobalState.getInstance();
     globalState.updateXcmFeeReserves(reserveFees)
 }
-export function getExecutionState(): Readonly<ExecutionState>{
+// --------------------------- GET -----------------------------
+export function stateGetExecutionState(): Readonly<ExecutionState>{
     const globalState = GlobalState.getInstance();
     return globalState.getState()
 }
-export function getTransactionState(): Readonly<TransactionState>{
-    return getExecutionState().transactionState!
+export function stateGetTransactionState(): Readonly<TransactionState>{
+    return stateGetExecutionState().transactionState!
 }
-export function getLastNode(): Readonly<LastNode | null>{
+export function stateGetLastNode(): Readonly<LastNode | null>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().lastNode
 }
-export function getLastFilePath(): Readonly<string | null>{
+export function stateGetLastFilePath(): Readonly<string | null>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().lastFilePath
 }
-export function getRelay(): Readonly<Relay | null>{
+export function stateGetRelay(): Readonly<Relay | null>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().relay
 }
 
-export function getExecutionSuccess(): Readonly<boolean>{
+export function stateGetExecutionSuccess(): Readonly<boolean>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().executionSuccess
 }
-export function getExtrinsicSetResults(): Readonly<ExtrinsicSetResultDynamic | null>{
+export function stateGetExtrinsicSetResults(): Readonly<ExtrinsicSetResultDynamic | null>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().extrinsicSetResults
 }
-export function getAccumulatedFeeData(): Readonly<AccumulatedFeeData | null>{
+export function stateGetAccumulatedFeeData(): Readonly<AccumulatedFeeData | null>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().accumulatedFeeData
 }
-export function getXcmFeeReserves(): Readonly<ReserveFeeData[] | null>{
+export function stateGetXcmFeeReserves(): Readonly<ReserveFeeData[] | null>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().xcmFeeReserves
 }
-export function getTransactionProperties(): Readonly<SwapProperties | TransferProperties | null>{
+export function stateGetTransactionProperties(): Readonly<SwapProperties | TransferProperties | null>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().transactionProperties
 }
-export function getExecutionAttempts(): Readonly<number>{
+export function stateGetExecutionAttempts(): Readonly<number>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().executionAttempts
 }
-export function getTracking(): Readonly<boolean>{
+export function stateGetTracking(): Readonly<boolean>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().tracking
+}
+export function stateGetRelayTokenBalances(): Readonly<RelayTokenBalances | null> {
+    const globalState = GlobalState.getInstance()
+    return globalState.getState().relayTokenBalances
+}
+
+export function stateGetNextInputValue(): Readonly<string> {
+    const globalState = GlobalState.getInstance()
+    return globalState.getState().nextInputValue
+}
+
+export function getLastExtrinsicResults(): SingleTransferResultData | SingleSwapResultData{
+    const extrinsicResults: (SingleTransferResultData | SingleSwapResultData)[] = stateGetExtrinsicSetResults()!.allExtrinsicResults
+    return extrinsicResults[extrinsicResults.length - 1]
+}
+
+export function wasLastExtrinsicSuccessful(): boolean{
+    return getLastExtrinsicResults().success
 }
 /**
  * If GlobalState has not been initialized yet, then reads global state file for last used state

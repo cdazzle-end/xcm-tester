@@ -12,7 +12,14 @@ import { stateSetLastFile } from "../utils/index.ts";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
+/**
+ * "fallback_search_a_to_b_kusama " + args ||
+ * "fallback_search_a_to_b_polkadot " + args
+ * 
+ * @param args 
+ * @param relay 
+ * @returns 
+ */
 export async function runArbFallback(args: string, relay: Relay) {
     return new Promise((resolve, reject) => {
         let functionCall =
@@ -56,13 +63,15 @@ export async function runArbFallback(args: string, relay: Relay) {
  * Spawns a new shell that will navigate to the arb-finder repository and execute a new target arb with specified input.
  * - Arb-finder will log results in /target_log_data/ directory, which we can parse and use for arb execution
  * 
+ * `search_best_path_a_to_b_${relay} ` + args
+ * 
  * Resolves true if arb-finder completes successfully, or throws error
  * 
  * @param args - Input for arb-finder executable
  * @param relay - relay
  * @returns 
  */
-export async function runArbTarget(args: string, relay: Relay) {
+export async function runArbTarget(args: string, relay: Relay): Promise<boolean> {
     return new Promise((resolve, reject) => {
         let functionCall = `search_best_path_a_to_b_${relay} ` + args;
         const command = `cd ${arbFinderPath} && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
@@ -237,38 +246,7 @@ export async function updateLps(chop: boolean, relay: Relay) {
     });
 }
 
-export async function runAndReturnFallbackArb(
-    args: string,
-    chopsticks: boolean,
-    relay: Relay
-): Promise<ArbFinderNode[]> {
-    await updateAssetsAndLps(chopsticks,relay)
 
-    try {
-        let arbCompleted = await runArbFallback(args, relay);
-        if (arbCompleted) {
-            const fallbackLogFolder = await path.join(
-                __dirname,
-                `${arbFinderPath}/fallback_log_data/${relay}/`
-            );
-            const latestFile = await findLatestFileInLatestDirectory(
-                fallbackLogFolder
-            );
-            let latestFileData: ArbFinderNode[] = JSON.parse(
-                fs.readFileSync(latestFile, "utf8")
-            );
-            return latestFileData;
-        } else {
-            throw new Error("Arb Fallback failed");
-        }
-    } catch (e) {
-        console.log("Error running and returning fallback arb");
-        console.log(e);
-        throw new Error("Error running and returning fallback arb");
-    }
-
-    // return results;
-}
 
 async function updateAssetsAndLps(chopsticks: boolean, relay: Relay){
   let assetsResult;  
@@ -312,71 +290,67 @@ async function updateAssetsAndLps(chopsticks: boolean, relay: Relay){
  * @param relay - relay
  * @returns - filepath to arb-finder output log
  */
-export async function runAndReturnTargetArb(
-    args: string,
-    chopsticks: boolean,
-    relay: Relay
-): Promise<string> {
+// export async function runAndReturnTargetArb(
+//     args: string,
+//     relay: Relay
+// ): Promise<string> {
 
-  await updateAssetsAndLps(chopsticks,relay)
+//     try {
+//         let arbCompleted = await runArbTarget(args, relay);
+//         if (arbCompleted) {
+//             const targetLogFolder = await path.join(
+//                 __dirname,
+//                 `${arbFinderPath}/target_log_data/${relay}/`
+//             );
+//             const latestFile = await findLatestFileInLatestDirectory(
+//                 targetLogFolder
+//             );
+//             return latestFile
+//             // let latestFileData: ArbFinderNode[] = JSON.parse(
+//             //     fs.readFileSync(latestFile, "utf8")
+//             // );
+//             // return latestFileData;
+//         } else {
+//             throw new Error("Arb Fallback failed");
+//         }
+//     } catch (e) {
+//         console.log("Error running and returning fallback arb");
+//         console.log(e);
+//         throw new Error("Error running and returning fallback arb");
+//     }
+// }
 
-    try {
-        let arbCompleted = await runArbTarget(args, relay);
-        if (arbCompleted) {
-            const targetLogFolder = await path.join(
-                __dirname,
-                `${arbFinderPath}/target_log_data/${relay}/`
-            );
-            const latestFile = await findLatestFileInLatestDirectory(
-                targetLogFolder
-            );
-            return latestFile
-            // let latestFileData: ArbFinderNode[] = JSON.parse(
-            //     fs.readFileSync(latestFile, "utf8")
-            // );
-            // return latestFileData;
-        } else {
-            throw new Error("Arb Fallback failed");
-        }
-    } catch (e) {
-        console.log("Error running and returning fallback arb");
-        console.log(e);
-        throw new Error("Error running and returning fallback arb");
-    }
-}
-
-export async function getArbExecutionPath(
-    relay: Relay, 
-    latestFile: string, 
-    inputAmount: number, 
-    useLatestTarget: boolean, 
-    chopsticks: boolean
-){
-    let arbPathData: ArbFinderNode[] | ArbFinderNode[] = []
+// export async function getArbExecutionPath(
+//     relay: Relay, 
+//     latestFile: string, 
+//     inputAmount: number, 
+//     useLatestTarget: boolean, 
+//     chopsticks: boolean
+// ){
+//     let arbPathData: ArbFinderNode[] | ArbFinderNode[] = []
     
-    // If useLatestTarget is false, will update LPs and run arb
-    if(!useLatestTarget){
-        try{
-            let arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
-            arbPathData = await runAndReturnTargetArb(arbArgs, chopsticks, relay)
-        }  catch {
-            console.log("Failed to run target arb")
-            throw new Error("Failed to run target arb")
-        }
-    } else {
-        arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
-    }
+//     // If useLatestTarget is false, will update LPs and run arb
+//     if(!useLatestTarget){
+//         try{
+//             let arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
+//             arbPathData = await runAndReturnTargetArb(arbArgs, chopsticks, relay)
+//         }  catch {
+//             console.log("Failed to run target arb")
+//             throw new Error("Failed to run target arb")
+//         }
+//     } else {
+//         arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
+//     }
 
-    return arbPathData
-}
+//     return arbPathData
+// }
 
 /**
- * Runs arb-finder target with dot or ksm
- * 
  * Use at the start of a new run
- * - Updates both asset and lp registries
- * - Calls arb-finder executable, searches for best arb path using default asset
- * - Logs and returns path as JSON objects. This data is used to execute the arb
+ * - Updates assets and lps
+ * - Runs runTargetArb function
+ * - Save results in /target_log_data/
+ * - Read, parse, and return results as ArbFinderNode[] 
  * 
  * Sets GlobalState lastFilePath
  * 
@@ -389,21 +363,77 @@ export async function findNewTargetArb(
     inputAmount: number,
     chopsticks: boolean
 ): Promise<ArbFinderNode[]> {
+    await updateAssetsAndLps(chopsticks, relay)
     try{
         const arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
-        const latestTargetArbData = await runAndReturnTargetArb(arbArgs, chopsticks, relay)
+        let arbCompleted = await runArbTarget(arbArgs, relay);
+        if (arbCompleted) {
+            const targetLogFolder = await path.join(
+                __dirname,
+                `${arbFinderPath}/target_log_data/${relay}/`
+            );
+            const latestFile = await findLatestFileInLatestDirectory(
+                targetLogFolder
+            );
 
-        // Set state latest file
-        stateSetLastFile(latestTargetArbData)
+            // Set state latest file
+            stateSetLastFile(latestFile)
 
-        const arbFinderPath: ArbFinderNode[] = JSON.parse(
-            fs.readFileSync(latestTargetArbData, "utf8")
-        );
-        return arbFinderPath;
+            const targetArbResults: ArbFinderNode[] = JSON.parse(
+                fs.readFileSync(latestFile, "utf8")
+            );
+            return targetArbResults;
+        } else {
+            throw new Error("Failed to run target arb")
+        }
     }  catch {
         console.log("Failed to run target arb")
         throw new Error("Failed to run target arb")
     }
+}
+
+/**
+ * Use when continuing a previous attempt, starting from an arbitrary asset
+ * - Update assets and lps
+ * - Run runArbFallback function
+ * - Save results in /fallback_log_data/
+ * - Read, parse, and return results as ArbFinderNode[] 
+ * 
+ * @param args 
+ * @param chopsticks 
+ * @param relay 
+ * @returns 
+ */
+export async function findFallbackArb(
+    args: string,
+    chopsticks: boolean,
+    relay: Relay
+): Promise<ArbFinderNode[]> {
+    await updateAssetsAndLps(chopsticks,relay)
+
+    try {
+        let arbCompleted = await runArbFallback(args, relay);
+        if (arbCompleted) {
+            const fallbackLogFolder = await path.join(
+                __dirname,
+                `${arbFinderPath}/fallback_log_data/${relay}/`
+            );
+            const latestFile = await findLatestFileInLatestDirectory(fallbackLogFolder);
+
+            const fallbackArbResults: ArbFinderNode[] = JSON.parse(
+                fs.readFileSync(latestFile, "utf8")
+            );
+            return fallbackArbResults;
+        } else {
+            throw new Error("Arb Fallback failed");
+        }
+    } catch (e) {
+        console.log("Error running and returning fallback arb");
+        console.log(e);
+        throw new Error("Error running and returning fallback arb");
+    }
+
+    // return results;
 }
 
 

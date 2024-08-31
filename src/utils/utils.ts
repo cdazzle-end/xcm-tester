@@ -8,11 +8,12 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { AssetNode } from "../core/AssetNode.ts";
-import { runAndReturnTargetArb } from "../arbFinder/runArbFinder.ts";
 import {
     arb_wallet_kusama,
+    dotNodeKeys,
     dotTargetNode,
     ksmTargetNode,
+    kusamaNodeKeys,
     kusamaRelayMinimum,
     live_wallet_3,
     polkadotRelayMinimum,
@@ -44,6 +45,7 @@ import {
     TransferProperties,
     SwapProperties,
     PromiseTracker,
+    RelayTokenSymbol,
 } from "./../types/types.ts";
 import { MyAsset } from "../core/index.ts";
 import { arbFinderPath, kusamaAssetRegistryPath, polkadotAssetRegistryPath } from "../config/index.ts";
@@ -175,15 +177,8 @@ export function getAssetKeyFromChainAndSymbol(
     symbol: string,
     relay: Relay
 ): string {
-    let assetRegistryObject: IMyAsset = getAssetRegistryObjectBySymbol(
-        chainId,
-        symbol,
-        relay
-    );
-    return JSON.stringify(
-        assetRegistryObject.tokenData.chain.toString() +
-            JSON.stringify(assetRegistryObject.tokenData.localId)
-    );
+    return new MyAsset(getAssetRegistryObjectBySymbol(chainId, symbol, relay)).getAssetKey()
+
 }
 export function getAssetRegistryObjectBySymbol(
     chainId: number,
@@ -263,6 +258,30 @@ export function parsePathNodeKey(assetKey: string): [number, string] {
     return [chainId, localId];
 }
 
+/**
+ * Get asset key (chain+localId) to an arbitrary target node, set in txConsts.ts. Target node is currently set to the relay asset on Acala/Karura
+ * - The chain of the target node does not matter
+ * - Arb finder will get all assets that have the same location as thee target node, and will treat them all as targets
+ * - 
+ * 
+ * @param relay 
+ * @returns 
+ */
+export function getTargetNode(relay: Relay){
+    return relay === 'polkadot' ? dotTargetNode : ksmTargetNode
+}
+
+/**
+ * 
+ * Get's the asset key of dot/ksm on every chain
+ * 
+ * @param relay 
+ * @returns 
+ */
+export function getAllNodes(relay: Relay): string[]{
+    return relay === 'polkadot' ? dotNodeKeys : kusamaNodeKeys
+}
+
 export function parseJsonNodePathData(jsonObject: ArbFinderNode): PathData {
     let data = jsonObject.path_data as any;
     let pathDataFormatted: PathData = {
@@ -274,6 +293,27 @@ export function parseJsonNodePathData(jsonObject: ArbFinderNode): PathData {
         xcmDepositReserveAmounts: data.xcm_deposit_reserve_amounts,
     };
     return pathDataFormatted;
+}
+
+/**
+ * Checks if chain is EVM, because they are handled differently
+ * - Don't run swaps on evm when testing 
+ * - evm chains have different signers
+ * - etc
+ * 
+ * @param chain 
+ * @returns boolean
+ */
+export function isEvmChain(chain: PNode){
+    // Add more if necessary
+    if (
+        chain === 'Astar' ||
+        chain === 'Shiden' ||
+        chain === 'Moonbeam' ||
+        chain === 'Moonriver'
+    ) {
+        return true
+    }
 }
 
 // Reads a json object from the arbitrage result log and returns the corresponding paraspell asset and amount
@@ -880,14 +920,14 @@ export function constructRouteFromFile(relay: Relay, logFilePath: string) {
     );
     return assetPath;
 }
-export function constructRouteFromJson(
+export function constructAssetNodesFromPath(
     relay: Relay,
-    jsonPathNodes: ArbFinderNode[]
+    arbPath: ArbFinderNode[]
 ) {
-    let assetPath: AssetNode[] = jsonPathNodes.map((node) =>
+    let assetNodePath: AssetNode[] = arbPath.map((node) =>
         readLogData(node, relay)
     );
-    return assetPath;
+    return assetNodePath;
 }
 
 // How much profit we got for latest arb
@@ -1196,6 +1236,10 @@ export function trackPromise(promise: Promise<any>) {
     // Return both the new promise and a function to check if it's resolved
     // return { trackedPromise, isResolved: () => isResolved };
     return promiseTracker;
+}
+
+export function getRelayTokenSymbol(relay: Relay): RelayTokenSymbol {
+    return relay === 'polkadot' ? "DOT" : "KSM"
 }
 
 export function getRelayMinimum(relay: Relay): number{

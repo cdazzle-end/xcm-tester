@@ -15,6 +15,7 @@ import { getApiForNode } from './apiUtils.ts';
 // import { balanceAdapterMap } from './liveTest.ts';
 import bn from "bignumber.js"
 import { MyAsset } from '../core/index.ts';
+import { getRelayTokenSymbol, stateGetRelayTokenBalances, stateSetRelayTokenBalances } from './index.ts';
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
 
 const balanceAdapterMap: Map<PNode, BalanceAdapter> = new Map<TNode, BalanceAdapter>();
@@ -357,109 +358,109 @@ export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, no
 }
 
 // *** Not used
-export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, relay: Relay){
-    let nativeBalances: RelayTokenBalances = relay === 'kusama' ? 
-    {
-        0: "0",
-        2000: "0",
-        2001: "0",
-        2023: "0",
-        2085: "0",
-        2090: "0",
-        2110: "0"
-    } : {
-        0: "0",
-        2000: "0",
-        2030: "0",
-        2034: "0",
-        2004: "0",
-        2012: "0"
-    }
+// export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, relay: Relay){
+//     let nativeBalances: RelayTokenBalances = relay === 'kusama' ? 
+//     {
+//         0: "0",
+//         2000: "0",
+//         2001: "0",
+//         2023: "0",
+//         2085: "0",
+//         2090: "0",
+//         2110: "0"
+//     } : {
+//         0: "0",
+//         2000: "0",
+//         2030: "0",
+//         2034: "0",
+//         2004: "0",
+//         2012: "0"
+//     }
 
-    let chainIds = Object.keys(nativeBalances)
-    let asyncAdapters = []
+//     let chainIds = Object.keys(nativeBalances)
+//     let asyncAdapters = []
 
-    // Something errs when querying the relay chain at the same time
-    let nativeBalancesPromise = chainIds.map(async (chainKey) => {
-        let account;
-        let chainId = Number.parseInt(chainKey)
-        if (chainId != 0){
-            if(relay == 'kusama' && chainId == 2023 || relay == 'polkadot' && chainId == 2004){ // MOVR or GLMR
-                account = await getSigner(chopsticks, true)
-            } else {
-                account = await getSigner(chopsticks, false)
-            }
-            console.log("Account Address: " + account.address)
-            let chainNode: PNode;
-            if(relay === "kusama"){
-                chainNode = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId, relay)
-            } else if (relay === "polkadot"){
-                chainNode = chainId == 0 ? "Polkadot" : getNodeFromChainId(chainId, relay)
-            } else {
-                throw new Error("Invalid relay")
-            }
+//     // Something errs when querying the relay chain at the same time
+//     let nativeBalancesPromise = chainIds.map(async (chainKey) => {
+//         let account;
+//         let chainId = Number.parseInt(chainKey)
+//         if (chainId != 0){
+//             if(relay == 'kusama' && chainId == 2023 || relay == 'polkadot' && chainId == 2004){ // MOVR or GLMR
+//                 account = await getSigner(chopsticks, true)
+//             } else {
+//                 account = await getSigner(chopsticks, false)
+//             }
+//             console.log("Account Address: " + account.address)
+//             let chainNode: PNode;
+//             if(relay === "kusama"){
+//                 chainNode = chainId == 0 ? "Kusama" : getNodeFromChainId(chainId, relay)
+//             } else if (relay === "polkadot"){
+//                 chainNode = chainId == 0 ? "Polkadot" : getNodeFromChainId(chainId, relay)
+//             } else {
+//                 throw new Error("Invalid relay")
+//             }
     
-            let destAdapter = getAdapter(relay, chainId)
+//             let destAdapter = getAdapter(relay, chainId)
     
-            if(chainId == 2000){
-                let rpc;
-                if(relay === 'kusama'){
-                    rpc = chopsticks ? localRpcs["Karura"] : karRpc
-                } else {
-                    rpc = chopsticks ? localRpcs["Acala"] : acaRpc
-                }
-                let provider = new WsProvider(rpc)
-                let walletConfigs: WalletConfigs = {
-                    evmProvider: EvmRpcProvider.from(rpc),
-                    wsProvider: provider
-                }
-                // let karApi = await ApiPromise.create({provider: provider})
-                let karApi = await getApiForNode(chainNode, chopsticks)
-                let adapterWallet = new Wallet(karApi, walletConfigs);
-                await destAdapter.init(karApi, adapterWallet);
-            } else {
-                let api = await getApiForNode(chainNode, chopsticks)
-                await destAdapter.init(api);
-            }
+//             if(chainId == 2000){
+//                 let rpc;
+//                 if(relay === 'kusama'){
+//                     rpc = chopsticks ? localRpcs["Karura"] : karRpc
+//                 } else {
+//                     rpc = chopsticks ? localRpcs["Acala"] : acaRpc
+//                 }
+//                 let provider = new WsProvider(rpc)
+//                 let walletConfigs: WalletConfigs = {
+//                     evmProvider: EvmRpcProvider.from(rpc),
+//                     wsProvider: provider
+//                 }
+//                 // let karApi = await ApiPromise.create({provider: provider})
+//                 let karApi = await getApiForNode(chainNode, chopsticks)
+//                 let adapterWallet = new Wallet(karApi, walletConfigs);
+//                 await destAdapter.init(karApi, adapterWallet);
+//             } else {
+//                 let api = await getApiForNode(chainNode, chopsticks)
+//                 await destAdapter.init(api);
+//             }
     
     
-            let tokenSymbol = relay === "kusama" ? "KSM" : "DOT"
+//             let tokenSymbol = relay === "kusama" ? "KSM" : "DOT"
     
-            if(relay == 'kusama' && chainId == 2023 || relay == 'polkadot' && chainId == 2004){
-                // console.log("Adding XC to token symbol")
-                tokenSymbol = "xc" + tokenSymbol
-            }
+//             if(relay == 'kusama' && chainId == 2023 || relay == 'polkadot' && chainId == 2004){
+//                 // console.log("Adding XC to token symbol")
+//                 tokenSymbol = "xc" + tokenSymbol
+//             }
     
-            // REVIEW Getting relay asset object by symbol, might cause issues? Chains like moonbeam might have other assets w the symbol of DOT or KSM
-            const assetId = getAssetRegistryObjectBySymbol(chainId, tokenSymbol, relay).tokenData.localId
-            const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, account.address, assetId);
-            console.log("Delaying for 5")
-            await delay(5000)
-            let balance = await firstValueFrom(balanceObservable)
-            nativeBalances[chainId] = balance.available.toString()
-            console.log(`Balance for chain ${chainId}: ${balance.available.toString()}`)
-            // asyncAdapters.push(destAdapter)
+//             // REVIEW Getting relay asset object by symbol, might cause issues? Chains like moonbeam might have other assets w the symbol of DOT or KSM
+//             const assetId = getAssetRegistryObjectBySymbol(chainId, tokenSymbol, relay).tokenData.localId
+//             const balanceObservable = destAdapter.subscribeTokenBalance(tokenSymbol, account.address, assetId);
+//             console.log("Delaying for 5")
+//             await delay(5000)
+//             let balance = await firstValueFrom(balanceObservable)
+//             nativeBalances[chainId] = balance.available.toString()
+//             console.log(`Balance for chain ${chainId}: ${balance.available.toString()}`)
+//             // asyncAdapters.push(destAdapter)
     
-            console.log("Closing balance adapter for: " + chainId)
-            // await destAdapter.getApi().disconnect()
+//             console.log("Closing balance adapter for: " + chainId)
+//             // await destAdapter.getApi().disconnect()
             
-            return nativeBalances
-        }
+//             return nativeBalances
+//         }
 
-    })
-    // console.log("Delaying for 10 seconds")
-    // await delay(10000)
-    await Promise.all(nativeBalancesPromise)
+//     })
+//     // console.log("Delaying for 10 seconds")
+//     // await delay(10000)
+//     await Promise.all(nativeBalancesPromise)
 
-    // REVIEW Getting relay asset 
+//     // REVIEW Getting relay asset 
 
-    let dotBalance = await getBalanceChainAsset(chopsticks, relay, "Polkadot", 0, "DOT", "DOT")
-    console.log("relay chain dot balance: " + dotBalance.available.toString())
-    nativeBalances[0] = dotBalance.available.toString()
+//     let dotBalance = await getBalanceChainAsset(chopsticks, relay, "Polkadot", 0, "DOT", "DOT")
+//     console.log("relay chain dot balance: " + dotBalance.available.toString())
+//     nativeBalances[0] = dotBalance.available.toString()
 
-    return nativeBalances
+//     return nativeBalances
 
-}
+// }
 
 // Used in checkAndAllocateRelayToken, allocateFundsForSwap
 /**
@@ -469,7 +470,7 @@ export async function getRelayTokenBalanceAcrossChains(chopsticks: boolean, rela
  * @param relay 
  * @returns 
  */
-export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay): Promise<RelayTokenBalances>{
+export async function queryRelayTokenBalances(chopsticks: boolean, relay: Relay): Promise<RelayTokenBalances>{
     console.log("Getting native balances")
     let nativeBalances: RelayTokenBalances = relay === 'kusama' ? 
     {
@@ -489,7 +490,7 @@ export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay): 
         2012: "0"
     }
 
-    let relayToken = relay === 'kusama' ? "KSM" : "DOT"
+    let relayToken = getRelayTokenSymbol(relay)
 
 
 
@@ -515,18 +516,32 @@ export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay): 
  * @param chopsticks 
  * @param relay 
  */
-export async function attemptGetRelayTokenBalances(chopsticks: boolean, relay: Relay): Promise<RelayTokenBalances>{
+export async function attemptQueryRelayTokenBalances(chopsticks: boolean, relay: Relay): Promise<RelayTokenBalances>{
     let attempts = 0;
     while(attempts < 5){
         try{
-            const nativeBalances = await getRelayTokenBalances(chopsticks, relay)
+            const nativeBalances = await queryRelayTokenBalances(chopsticks, relay)
             console.log(`Queried balances successfully. Returning balances: ${JSON.stringify(nativeBalances, null, 2)}`)
+            stateSetRelayTokenBalances(nativeBalances)
             return nativeBalances
         } catch (e){
+            attempts++
             console.log(`Relay Token balances query failed. Trying again. | ${JSON.stringify(e, null, 2)}`)
         }
     }
     throw new Error("Failed to query relay token balances.")
+}
+
+/**
+ * Return relayTokenBalances, or query if not set yet
+ * 
+ * @param chopsticks 
+ * @param relay 
+ */
+export async function getRelayTokenBalances(chopsticks: boolean, relay: Relay): Promise<RelayTokenBalances> {
+    const relayTokenBalances: Readonly<RelayTokenBalances | null> = stateGetRelayTokenBalances()
+
+    return relayTokenBalances === null ? attemptQueryRelayTokenBalances(chopsticks, relay) : relayTokenBalances
 }
 
 // Used in getBalanceChainAsset
