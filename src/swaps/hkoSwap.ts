@@ -7,7 +7,7 @@ const hkoWs = "wss://heiko-rpc.parallel.fi"
 import path from 'path'
 import { fileURLToPath } from 'url';
 import { getApiForNode, getAssetRegistry } from './../utils/index.ts'
-// import { MyAsset } from "src/core/index.ts"
+// import { MyAsset } from "../core/index.ts"
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

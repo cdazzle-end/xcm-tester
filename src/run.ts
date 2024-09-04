@@ -124,6 +124,8 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     } else {
         arbPathData = await findNewTargetArb(relay, inputAmount, chopsticks)
     }
+    console.log(`Arb finder path nodes:`)
+    arbPathData.forEach((node) => console.log(`${node.node_key} ${node.path_value} ${node.path_type}`))
 
     // Parse path into asset nodes
     let assetPath: AssetNode[] = constructAssetNodesFromPath(relay, arbPathData)

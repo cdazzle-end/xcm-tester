@@ -66,7 +66,9 @@ const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F";
  * @returns AssetNode[]
  */
 export function truncateAssetPath(nodes: AssetNode[]): AssetNode[]{
+    console.log(`Truncating asset node path`)
     for (let i = 1; i < nodes.length; i++) {
+        console.log(`Asset node: ${nodes[i].chain} ${nodes[i].getAssetKey()} ${nodes[i].pathValue} ${nodes[i].pathType} ${nodes[i].pathData.dexType}`)
         if (
             nodes[i].pathData.dexType != "Start" &&
             nodes[i].pathData.dexType != "Xcm"
@@ -1020,7 +1022,8 @@ export function getAssetRegistry(relay: Relay) {
             ? kusamaAssetRegistryPath
             : polkadotAssetRegistryPath;
     const assetRegistry: IMyAsset[] = JSON.parse(
-        fs.readFileSync(path.join(__dirname, assetRegistryPath), "utf8")
+        // fs.readFileSync(path.join(__dirname, assetRegistryPath), "utf8")
+        fs.readFileSync(assetRegistryPath, "utf8")
     );
     return assetRegistry;
 }

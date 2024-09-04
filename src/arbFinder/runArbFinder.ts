@@ -368,10 +368,11 @@ export async function findNewTargetArb(
         const arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
         let arbCompleted = await runArbTarget(arbArgs, relay);
         if (arbCompleted) {
-            const targetLogFolder = await path.join(
-                __dirname,
-                `${arbFinderPath}/target_log_data/${relay}/`
-            );
+            // const targetLogFolder = await path.join(
+            //     __dirname,
+            //     `${arbFinderPath}/target_log_data/${relay}/`
+            // );
+            const targetLogFolder = `${arbFinderPath}/target_log_data/${relay}/`
             const latestFile = await findLatestFileInLatestDirectory(
                 targetLogFolder
             );
@@ -414,10 +415,7 @@ export async function findFallbackArb(
     try {
         let arbCompleted = await runArbFallback(args, relay);
         if (arbCompleted) {
-            const fallbackLogFolder = await path.join(
-                __dirname,
-                `${arbFinderPath}/fallback_log_data/${relay}/`
-            );
+            const fallbackLogFolder = `${arbFinderPath}/fallback_log_data/${relay}/`
             const latestFile = await findLatestFileInLatestDirectory(fallbackLogFolder);
 
             const fallbackArbResults: ArbFinderNode[] = JSON.parse(
@@ -446,10 +444,7 @@ async function testArbFinder(relay: Relay) {
     try {
         let arbCompleted = await runArbTarget(arbArgs, relay);
         if (arbCompleted) {
-            const targetLogFolder = await path.join(
-                __dirname,
-                `${arbFinderPath}/target_log_data/`
-            );
+            const targetLogFolder = `${arbFinderPath}/target_log_data/`
             const latestFile = await findLatestFileInLatestDirectory(
                 targetLogFolder
             );

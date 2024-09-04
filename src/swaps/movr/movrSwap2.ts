@@ -11,11 +11,11 @@ import { WebSocketProvider, Web3} from 'web3'
 import { privateKeyToAccount } from 'viem/accounts';
 import path from 'path';
 import { contract } from 'web3/lib/commonjs/eth.exports';
-import BN from 'bn.js';
+import bn from 'bignumber.js';
 import {toBigInt} from 'ethers'
 import { BigNumberish } from 'ethers';
-import { getAssetRegistry } from 'src/utils/utils';
-import { MyAsset } from 'src/types/types';
+import { getAssetRegistry } from '../../utils/utils';
+import { MyAsset } from '../../types/types';
 // import __dirname from './dirname.js';
 
 const mnemonic = 'bottom drive obey lake curtain smoke basket hold race lonely fit walk';
@@ -314,13 +314,13 @@ async function testDex(){
     const solarRouter = new ethers.Contract(solarDexRouterAddress, solarContractAbi, wallet);
 
     let [reserve0, reserve1, timestamp] = await testDexContract.getReserves()
-    let reserve0BN = new BN(reserve0.toString())
-    let reserve1BN = new BN(reserve1.toString())
+    let reserve0BN = new bn(reserve0.toString())
+    let reserve1BN = new bn(reserve1.toString())
     console.log("Reserve 0: ", reserve0.toString())
     console.log("Reserve 1: ", reserve1.toString())
     // Define the parameters
     const amountInTokenASwap = ethers.parseUnits("1", 18); // 10 Token A
-    const amountInBN = new BN(amountInTokenASwap.toString())
+    const amountInBN = new bn(amountInTokenASwap.toString())
     // const amountInBigInt = new BigInt(amountInt)
     const amountOutTokenSwap = calculateSwapAmount(amountInBN, reserve0BN, reserve1BN)
 
@@ -416,18 +416,18 @@ async function checkApprovalWithRouter(){
     }
 
 }
-function calculateSwapAmount(inputAmount: BN, inputReserve: BN, outputReserve: BN){
+function calculateSwapAmount(inputAmount: bn, inputReserve: bn, outputReserve: bn){
     console.log("BN")
     const slippageTolerance = 0.01
     // const number1: BigNumberish = 0.5
     // console.log("Number: ", number1.toString())
     console.log("Slippage tolerance: ", slippageTolerance.toString())
-    let amountOutIdeal: BN = outputReserve.mul(inputAmount).div(inputReserve.add(inputAmount))
+    let amountOutIdeal: bn = outputReserve.mul(inputAmount).div(inputReserve.add(inputAmount))
     console.log("Amount out ideal: ", amountOutIdeal.toString())
     const amountOutIdealNumber = amountOutIdeal.toNumber()
     const slippageAmount = amountOutIdealNumber * (slippageTolerance/1)
     console.log("Slippage amount: ", slippageAmount)
-    const slipAmountBN = new BN(slippageAmount)
+    const slipAmountBN = new bn(slippageAmount)
     const amountOutMinusSlippage = amountOutIdeal.sub(slipAmountBN)
     console.log("Amount out minus slippage: ", amountOutMinusSlippage.toString())
     // const amountOutMin = amountOutIdeal.mul(new BN(1).sub(slippageTolerance))
@@ -533,8 +533,8 @@ async function testLiveMovrRmrkSwap(){
     console.log(value.toString())
     // 10000000000000000
     let [reserve0, reserve1, timestamp] = await testDexContract.getReserves()
-    let reserve0BN = new BN(reserve0.toString())
-    let reserve1BN = new BN(reserve1.toString())
+    let reserve0BN = new bn(reserve0.toString())
+    let reserve1BN = new bn(reserve1.toString())
     console.log("Reserve 0: ", reserve0.toString())
     console.log("Reserve 1: ", reserve1.toString())
 

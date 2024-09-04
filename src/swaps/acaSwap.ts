@@ -13,7 +13,7 @@ import { getApiForNode, getSigner, getAssetRegistry, increaseIndex } from '../ut
 import { localRpcs } from '../config/txConsts.ts'
 
 import { fileURLToPath } from 'url'
-import { acalaStableLpsPath } from 'src/config/index.ts'
+import { acalaStableLpsPath } from '../config/index.ts'
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const wsLocalChain = localRpcs["Acala"]
