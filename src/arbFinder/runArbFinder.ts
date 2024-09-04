@@ -73,7 +73,8 @@ export async function runArbFallback(args: string, relay: Relay) {
  */
 export async function runArbTarget(args: string, relay: Relay): Promise<boolean> {
     return new Promise((resolve, reject) => {
-        let functionCall = `search_best_path_a_to_b_${relay} ` + args;
+        // let functionCall = `search_best_path_a_to_b_${relay} ` + args;
+        let functionCall = `target_search ${relay}` + args;
         const command = `cd ${arbFinderPath} && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
         // const command = `cd ${arbFinderPath} && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
 
