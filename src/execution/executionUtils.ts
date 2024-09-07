@@ -652,8 +652,6 @@ export async function executeSingleSwapExtrinsic(
 
 }
 
-
-// Some transactions dont track, like allocate, with asyncronoouus execution would be a mess
 // Only returns undefined when in testing, and skipping chains to execute transfers on.
 /**
  * Execution handler for single transfer extrinsic
@@ -680,10 +678,6 @@ export async function executeSingleTransferExtrinsic(
     chopsticks: boolean
 ):Promise<SingleTransferResultData | undefined>{
     console.log("Execute Single Transfer Extrinsic ()")
-    // let transferResultData: SingleTransferResultData;
-    // let arbExecutionResult: ArbExecutionResult;
-    // let transferTxStats: TransferTxStats;
-    // const transferTxContainer =  
 
     const { relay, extrinsic, startAsset, startChain, startApi, destinationAsset, destinationApi, destinationChain } = transferTxContainer
 
