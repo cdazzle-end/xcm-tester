@@ -20,9 +20,10 @@ import { dataSlice } from 'ethers';
 import { fileURLToPath } from 'url';
 import { glmrLpsPath, live_wallet_3 } from '../../config/index.ts';
 import { IndexObject, IMyAsset, PathType, SwapExtrinsicContainer, SwapInstruction } from '../../types/types.ts';
-import { getApiForNode } from '../../utils/index.ts';
+import { getApiForNode, getAssetMapAssets } from '../../utils/index.ts';
 import { ManagerSwapParams, SwapData, SwapSingleParams } from './utils/types.ts';
-import { getAssetRegistry } from './../../utils/index.ts'
+import { } from './../../utils/index.ts'
+import bn from 'bignumber.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // console.log(__dirname)
 // Patch BigInt for JSON serialization
@@ -35,7 +36,7 @@ declare global {
 BigInt.prototype.toJSON = function() {
     return this.toString();
 };
-const allAssets: IMyAsset[] = getAssetRegistry('polkadot')
+const allAssets: IMyAsset[] = getAssetMapAssets('polkadot')
 const routerFees = [
     solarFee,
     // zenFee
@@ -448,8 +449,8 @@ export async function getGlmrSwapTx(
         txString: descriptorString,
         assetIn: assetIn,
         assetOut: assetOut,
-        assetAmountIn: initialInputAmount,
-        expectedAmountOut: finalOutputAmount,
+        assetAmountIn: new bn(initialInputAmount.toChainData()),
+        expectedAmountOut: new bn(finalOutputAmount.toChainData()),
         // REVIEW Glmr path type for swaps
         pathType: PathType.DexV2, // glmr swap can have multiple types (V2, V3, stable?) so this property wont be used
         pathAmount: assetIn.pathValue,

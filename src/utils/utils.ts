@@ -46,15 +46,20 @@ import {
     SwapProperties,
     PromiseTracker,
     RelayTokenSymbol,
+    AssetMap,
 } from "./../types/types.ts";
-import { MyAsset } from "../core/index.ts";
+import { GlobalState, MyAsset } from "../core/index.ts";
 import { arbFinderPath, kusamaAssetRegistryPath, polkadotAssetRegistryPath } from "../config/index.ts";
-import { stateSetLastFile } from "./index.ts";
+import { stateGetExtrinsicSetResults, stateGetLastNode, stateSetLastFile } from "./index.ts";
 
 // import { buildTransferExtrinsic } from './extrinsicUtils.ts';
 // Get the __dirname equivalent in ES module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F";
+
+// Create two AssetMaps, one for each relay
+const kusamaAssetMap: AssetMap = createAssetMap('kusama');
+const polkadotAssetMap: AssetMap = createAssetMap('polkadot');
 
 // After reading log data, truncate the asset node path to the first swap node. To avoid unnecessary transfers
 /**
@@ -107,45 +112,12 @@ export function getNode(relay: Relay, chainId: number): PNode {
     return chain as TNode;
 }
 
-export const getAssetBySymbolOrId = (
-    node: TNode,
-    inputAssetId: string,
-    inputAssetSymbol: string
-    // symbolOrId: string | number
-): { symbol?: string; assetId?: string } | null => {
-    const { otherAssets, nativeAssets, relayChainAssetSymbol } =
-        getAssetsObject(node);
-    let allAssets = [...otherAssets, ...nativeAssets];
-
-    // Modified function to take both asset Id and symbol, which we can get from our assetRegistry
-    // Search for asset but unique ID, but some paraspell assets dont have marked ID, so we can use symbol for that until we add all ID's to paraspell assets
-    let paraspellAsset = allAssets.find(({ symbol, assetId }) => {
-        return assetId?.toLowerCase() == inputAssetId.toLowerCase();
-    });
-
-    if (!paraspellAsset) {
-        paraspellAsset = allAssets.find(({ symbol, assetId }) => {
-            return symbol?.toLowerCase() == inputAssetSymbol.toLowerCase();
-        });
-    }
-
-    if (paraspellAsset !== undefined) {
-        const { symbol, assetId } = paraspellAsset;
-        return { symbol, assetId };
-    }
-
-    if (relayChainAssetSymbol.toLowerCase() === inputAssetSymbol.toLowerCase())
-        return { symbol: relayChainAssetSymbol };
-
-    return null;
-};
-
-export function getAssetRegistryObject(
+export function getMyAssetById(
     chainId: number,
     localId: string,
     relay: Relay
 ): IMyAsset {
-    let assetRegistry = getAssetRegistry(relay);
+    let assetRegistry = getAssetMapAssets(relay);
     let asset = assetRegistry.find((assetRegistryObject: IMyAsset) => {
         if (chainId == 0 && assetRegistryObject.tokenData.chain == 0) {
             return true;
@@ -187,7 +159,7 @@ export function getAssetRegistryObjectBySymbol(
     symbol: string,
     relay: Relay
 ): IMyAsset {
-    let assetRegistry = getAssetRegistry(relay);
+    let assetRegistry = getAssetMapAssets(relay);
     let asset = assetRegistry.find((assetRegistryObject: IMyAsset) => {
         return (
             assetRegistryObject.tokenData.chain == chainId &&
@@ -334,7 +306,7 @@ export function readLogData(
     let [chainId, assetLocalId] = parsePathNodeKey(arbPathNode.node_key);
 
     let asset: MyAsset = new MyAsset(
-        getAssetRegistryObject(chainId, assetLocalId, relay)
+        getMyAssetById(chainId, assetLocalId, relay)
     );
     let chain = getNode(relay, chainId);
     let pathDataFormatted = parseJsonNodePathData(arbPathNode);
@@ -452,10 +424,6 @@ export async function getKeyring(
     }
 }
 
-export function increaseIndex(index: IndexObject) {
-    index.i += 1;
-}
-
 export function printInstruction(
     instruction: SwapInstruction | TransferInstruction
 ) {
@@ -475,14 +443,14 @@ export function printInstruction(
         const nodes = instruction.assetNodes;
         console.log(
             `TRANSFER ${instruction.startAsset.getAssetSymbol()} --- ${
-                instruction.startAsset
-            } -> ${instruction.middleAsset} -> ${instruction.destinationAsset}`
+                instruction.startAsset.getAssetKey()
+            } -> ${instruction.middleAsset.getAssetKey()} -> ${instruction.destinationAsset.getAssetKey()}`
         );
     } else {
         console.log(
             `TRANSFER ${instruction.startAsset.getAssetSymbol()} --- ${
-                instruction.startAsset
-            } -> ${instruction.destinationAsset}`
+                instruction.startAsset.getAssetKey()
+            } -> ${instruction.destinationAsset.getAssetKey()}`
         );
     }
 }
@@ -494,128 +462,6 @@ export function printExtrinsicSetResults(
         console.log(resultData.success);
         console.log(JSON.stringify(resultData.arbExecutionResult, null, 2));
     });
-}
-
-export async function getLastSuccessfulNodeFromResultData(
-    allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData)[]
-) {
-    let lastSuccessfulResultData =
-        allExtrinsicResultData[allExtrinsicResultData.length - 1];
-    if (!lastSuccessfulResultData.success) {
-        if (allExtrinsicResultData.length > 1) {
-            lastSuccessfulResultData =
-                allExtrinsicResultData[allExtrinsicResultData.length - 2];
-            if (!lastSuccessfulResultData.success) {
-                console.log("No successful extrinsics");
-            }
-        } else {
-            console.log("No successful extrinsics");
-        }
-    }
-    return lastSuccessfulResultData.lastNode;
-}
-export async function getLastNodeFromResultData(
-    allExtrinsicResultData: (SingleSwapResultData | SingleTransferResultData)[]
-) {
-    let lastSuccessfulResultData =
-        allExtrinsicResultData[allExtrinsicResultData.length - 1];
-    // if(!lastSuccessfulResultData.success){
-    //     console.log("No successful extrinsics")
-    // }
-    return lastSuccessfulResultData.lastNode;
-}
-export async function getLastSuccessfulNodeFromAllExtrinsics(
-    allExtrinsicResultData: ExtrinsicSetResultDynamic[]
-) {
-    let resultData: (SingleSwapResultData | SingleTransferResultData)[] = [];
-    allExtrinsicResultData.forEach((extrinsicSetResult) => {
-        extrinsicSetResult.allExtrinsicResults.forEach((extrinsicData) => {
-            resultData.push(extrinsicData);
-        });
-    });
-    let lastSuccessfulResultData = resultData[resultData.length - 1];
-    if (!lastSuccessfulResultData.success) {
-        if (resultData.length > 1) {
-            lastSuccessfulResultData = resultData[resultData.length - 2];
-            if (!lastSuccessfulResultData.success) {
-                console.log("No successful extrinsics");
-            }
-        } else {
-            console.log("No successful extrinsics");
-        }
-    }
-
-    return lastSuccessfulResultData.lastNode;
-}
-export function getLatestFileFromLatestDay(small: boolean) {
-    const resultsDirPath = path.join(
-        __dirname,
-        `${arbFinderPath}/result_log_data/`
-   );
-    try {
-        let sortedDays;
-        let latestDayDir;
-        let latestDayPath;
-        let days;
-        if (small) {
-            // Get list of directories (days)
-            days = fs
-                .readdirSync(resultsDirPath, { withFileTypes: true })
-                .filter((dirent) => dirent.isDirectory())
-                .map((dirent) => dirent.name)
-                .filter((day) => day.includes("_small"));
-            sortedDays = days.sort(
-                (a, b) => new Date(b).getTime() - new Date(a).getTime()
-            );
-            latestDayDir = sortedDays[sortedDays.length - 1];
-            latestDayPath = path.join(resultsDirPath, latestDayDir);
-        } else {
-            days = fs
-                .readdirSync(resultsDirPath, { withFileTypes: true })
-                .filter((dirent) => dirent.isDirectory())
-                .map((dirent) => dirent.name)
-                .filter((day) => !day.includes("_small"));
-            sortedDays = days.sort(
-                (a, b) => new Date(b).getTime() - new Date(a).getTime()
-            );
-            // Get the latest day's directory
-            console.log("Sorted days: ", JSON.stringify(days, null, 2));
-
-            latestDayDir = sortedDays[0];
-            latestDayPath = path.join(resultsDirPath, latestDayDir);
-        }
-
-        console.log("Days: ", JSON.stringify(days, null, 2));
-        // Sort directories by date
-        // const sortedDays = days.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-        // // Get the latest day's directory
-        // console.log("Sorted days: ", JSON.stringify(days, null, 2))
-
-        // const latestDayDir = sortedDays[sortedDays.length - 1]
-        // const latestDayPath = path.join(resultsDirPath, latestDayDir);
-        console.log("Latest Day Path: ", latestDayPath);
-        // Get list of files in the latest day's directory
-        const files = fs.readdirSync(latestDayPath);
-
-        // Sort files by timestamp in filename
-        const sortedFiles = files.sort((a, b) => {
-            const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
-            const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
-            return (
-                new Date(`${latestDayDir}T${timeA}`).getTime() -
-                new Date(`${latestDayDir}T${timeB}`).getTime()
-            );
-        });
-
-        // Get the latest file
-        const latestFile = sortedFiles[sortedFiles.length - 1];
-        const latestFilePath = path.join(latestDayPath, latestFile);
-
-        return latestFilePath;
-    } catch (error) {
-        console.error("Error:", error);
-        return null;
-    }
 }
 
 export function getLatestAsyncFilesPolkadot(): [number, string][] {
@@ -748,104 +594,6 @@ export function getLatestAsyncFilesKusama(): [number, string][] {
     return logFilePaths;
 }
 
-// export function getLatestTargetFileKusama() {
-//     const resultsDirPath = path.join(
-//         __dirname,
-//         `${arbFinderPath}/target_log_data/kusama/`
-//     );
-//     try {
-//         let sortedDays;
-//         let latestDayDir;
-//         let latestDayPath;
-//         let days;
-
-//         days = fs
-//             .readdirSync(resultsDirPath, { withFileTypes: true })
-//             .filter((dirent) => dirent.isDirectory())
-//             .map((dirent) => dirent.name)
-//             .filter((day) => !day.includes("_small"));
-//         sortedDays = days.sort(
-//             (a, b) => new Date(b).getTime() - new Date(a).getTime()
-//         );
-
-//         // Get the latest day's directory
-//         latestDayDir = sortedDays[0];
-//         latestDayPath = path.join(resultsDirPath, latestDayDir);
-
-//         // Sort directories by date
-//         // Get list of files in the latest day's directory
-//         const files = fs.readdirSync(latestDayPath);
-
-//         // Sort files by timestamp in filename
-//         const sortedFiles = files.sort((a, b) => {
-//             const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
-//             const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
-//             return (
-//                 new Date(`${latestDayDir}T${timeA}`).getTime() -
-//                 new Date(`${latestDayDir}T${timeB}`).getTime()
-//             );
-//         });
-
-//         // Get the latest file
-//         const latestFile = sortedFiles[sortedFiles.length - 1];
-//         const latestFilePath = path.join(latestDayPath, latestFile);
-
-//         return latestFilePath;
-//     } catch (error) {
-//         console.error("Error:", error);
-//         return null;
-//     }
-// }
-
-// export function getLatestTargetFilePolkadot() {
-//     const resultsDirPath = path.join(
-//         __dirname,
-//         `${arbFinderPath}/target_log_data/polkadot/`
-//     );
-//     try {
-//         let sortedDays;
-//         let latestDayDir;
-//         let latestDayPath;
-//         let days;
-
-//         days = fs
-//             .readdirSync(resultsDirPath, { withFileTypes: true })
-//             .filter((dirent) => dirent.isDirectory())
-//             .map((dirent) => dirent.name)
-//             .filter((day) => !day.includes("_small"));
-//         sortedDays = days.sort(
-//             (a, b) => new Date(b).getTime() - new Date(a).getTime()
-//         );
-
-//         // Get the latest day's directory
-//         latestDayDir = sortedDays[0];
-//         latestDayPath = path.join(resultsDirPath, latestDayDir);
-
-//         // Sort directories by date
-//         // Get list of files in the latest day's directory
-//         const files = fs.readdirSync(latestDayPath);
-
-//         // Sort files by timestamp in filename
-//         const sortedFiles = files.sort((a, b) => {
-//             const timeA = a.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
-//             const timeB = b.match(/\d{2}-\d{2}-\d{2}/)![0].replace(/-/g, ":");
-//             return (
-//                 new Date(`${latestDayDir}T${timeA}`).getTime() -
-//                 new Date(`${latestDayDir}T${timeB}`).getTime()
-//             );
-//         });
-
-//         // Get the latest file
-//         const latestFile = sortedFiles[sortedFiles.length - 1];
-//         const latestFilePath = path.join(latestDayPath, latestFile);
-
-//         return latestFilePath;
-//     } catch (error) {
-//         console.error("Error:", error);
-//         return null;
-//     }
-// }
-
 /**
  * Finds filepath to most recent arb-finder result from target arb
  * - Executes at the start of a new run
@@ -932,60 +680,73 @@ export function constructAssetNodesFromPath(
     return assetNodePath;
 }
 
-// How much profit we got for latest arb
+// 
+/**
+ * Calculate profit
+ * - Get extrinsic set results
+ * - Take input from first extrinsic and output of the last extrinsic
+ * 
+ * Confirm last node is target node
+ * 
+ * Returns profit amount formatted into display notation
+ */
 export async function getTotalArbResultAmount(
     relay: Relay,
-    lastSuccessfulNode: LastNode,
     chopsticks: boolean
 ): Promise<string> {
     console.log("Getting total arb amount result");
-    let latestFilePath;
-    if (chopsticks) {
-        latestFilePath = path.join(
-            __dirname,
-            `./logResults/chopsticks/latestAttempt/${relay}/arbExecutionResults.json`
-        );
+    GlobalState.getInstance('polkadot')
+
+    let results: Readonly<ExtrinsicSetResultDynamic> = stateGetExtrinsicSetResults()!;
+    let firstExtrinsic: SingleSwapResultData | SingleTransferResultData = results.allExtrinsicResults[0]
+    let lastExtrinsic: SingleSwapResultData | SingleTransferResultData = results.allExtrinsicResults[results.allExtrinsicResults.length - 1]
+
+    let originalInputValue: bn;
+
+    if(isSwapResult(firstExtrinsic)){
+        originalInputValue = new bn(firstExtrinsic.swapTxStats.tokenInBalanceChange.changeInBalance)
+
+    } else if(isTransferResult(firstExtrinsic)){
+        originalInputValue = new bn(firstExtrinsic.transferTxStats.startBalanceStats.changeInBalance)
     } else {
-        latestFilePath = path.join(
-            __dirname,
-            `./logResults/latestAttempt/${relay}/arbExecutionResults.json`
-        );
+        throw new Error('')
+    }
+    console.log(originalInputValue)
+
+    let finalOutputValue: bn
+
+    if(isSwapResult(lastExtrinsic)){
+        finalOutputValue = new bn(lastExtrinsic.swapTxStats.tokenOutBalanceChange.changeInBalance)
+
+    } else if(isTransferResult(lastExtrinsic)){
+        finalOutputValue = new bn(lastExtrinsic.transferTxStats.destBalanceStats.changeInBalance)
+    }else {
+        throw new Error('')
     }
 
-    let latestArbResults: ArbExecutionResult[] = JSON.parse(
-        fs.readFileSync(latestFilePath, "utf8")
-    );
-    console.log("Latest arb execution results");
-    console.log(JSON.stringify(latestArbResults, null, 2));
-    let assetOut = latestArbResults[latestArbResults.length - 1].assetSymbolOut;
-    let arbAmountProfit = new bn(0);
-    let arbAmountIn = new bn(latestArbResults[0].assetAmountIn);
-    let arbAmountOut = new bn(lastSuccessfulNode.assetValue);
-    // if(assetOut == "KSM"){
-    //     arbAmountOut = latestArbResults[latestArbResults.length - 1].assetAmountOut - arbAmountIn
-    // }
-    console.log("Last Node: ", JSON.stringify(lastSuccessfulNode));
-    let lastNodeAssetSymbol = lastSuccessfulNode.assetSymbol;
-    console.log("Last Node Asset Symbol: ", lastNodeAssetSymbol);
-    console.log("Asset out from result set: ", assetOut);
-    console.log("Amount in: ", arbAmountIn);
-    if (
-        (relay == "kusama" && lastSuccessfulNode.assetSymbol == "KSM") ||
-        lastSuccessfulNode.assetSymbol.toUpperCase() == "XCKSM"
-    ) {
-        console.log("Amount out: ", arbAmountOut);
-        arbAmountProfit = arbAmountOut.minus(arbAmountIn);
+    let totalProfit = finalOutputValue.minus(originalInputValue)
+
+    let testAsset = new MyAsset(getAssetRegistryObjectBySymbol(2000, 'DOT', 'polkadot'))
+    let assetLocation = testAsset.getLocation();
+
+    let xcmAssets = getAssetsAtLocation(assetLocation, 'polkadot')
+
+    let lastNode = stateGetLastNode()
+    let lastNodeAsset = new MyAsset(getAssetRegistryObjectBySymbol(lastNode?.chainId!, lastNode?.assetSymbol!, 'polkadot'))
+
+    let foundAsset = xcmAssets.find((xcmAsset) => {
+        return new MyAsset(xcmAsset).getAssetKey() == lastNodeAsset.getAssetKey()
+    })
+
+    if (foundAsset !== undefined){
+        console.log(`Final node is a target node. Success`)
+        return totalProfit.div(new bn(10).pow(lastNodeAsset.getDecimals())).toString()
+    } else {
+        console.log(`Final node is NOT a target. Fail`)
+        return "0"
     }
-    if (
-        (relay == "polkadot" && lastSuccessfulNode.assetSymbol == "DOT") ||
-        lastSuccessfulNode.assetSymbol.toUpperCase() == "XCDOT"
-    ) {
-        console.log("Amount out: ", arbAmountOut);
-        arbAmountProfit = arbAmountOut.minus(arbAmountIn);
-    }
-    // getLastSuccessfulNodeFromResultData
-    console.log("Amount Profit: ", arbAmountProfit);
-    return arbAmountProfit.toFixed();
+
+
 }
 
 export function printAllocations(
@@ -1022,10 +783,55 @@ export function getAssetRegistry(relay: Relay) {
             ? kusamaAssetRegistryPath
             : polkadotAssetRegistryPath;
     const assetRegistry: IMyAsset[] = JSON.parse(
-        // fs.readFileSync(path.join(__dirname, assetRegistryPath), "utf8")
         fs.readFileSync(assetRegistryPath, "utf8")
     );
     return assetRegistry;
+}
+
+/** 
+ * Asset map is the new registry.
+ * 
+ * Called at the beginning, at modular level, to create one asset map we can use repeatedly
+ * - Reads asset registry JSON data into IMyAsset[]
+ * - Enters each asset into the map with assetKey
+ */
+export function createAssetMap(relay: Relay): AssetMap {
+    const assetRegistryPath = relay === "kusama" ? kusamaAssetRegistryPath : polkadotAssetRegistryPath;
+    const assetArray: IMyAsset[] = JSON.parse(fs.readFileSync(assetRegistryPath, "utf8"));
+    return new Map(assetArray.map(asset => [new MyAsset(asset).getAssetKey(), asset]));
+}
+/**
+ * Get list of values from asset map
+ * 
+ * Returns all assets MyAsset[]
+ * 
+ * @param relay 
+ * @returns all assets as MyAsset[]
+ */
+export function getAssetMapAssets(relay: Relay): IMyAsset[] {
+    return Array.from((relay === 'kusama' ? kusamaAssetMap : polkadotAssetMap).values());
+}
+
+/**
+ * Get current instance of asset map
+ * 
+ * @param relay 
+ * @returns AssetMap
+ */
+export function getAssetRegistryMap(relay: Relay): AssetMap {
+    return relay === 'kusama' ? kusamaAssetMap : polkadotAssetMap;
+}
+
+/**
+ * Lookup asset in AssetMap by assetKey. Throw if asset not found
+ * 
+ * @param assetKey 
+ * @param relay 
+ * @returns 
+ */
+export function assetMapLookupByKey(assetKey: string, relay: Relay): IMyAsset{
+    return (relay === 'kusama' ? kusamaAssetMap : polkadotAssetMap).get(assetKey) 
+        ?? (() => { throw new Error(`Asset not found for key: ${assetKey} in ${relay} network`); })();
 }
 
 export function getChainIdFromNode(node: PNode) {
@@ -1070,13 +876,8 @@ export function deepEqual(obj1: any, obj2: any) {
 }
 
 export function getAssetDecimalsFromLocation(location: any, relay: Relay) {
-    let assetRegistry: IMyAsset[] = getAssetRegistry(relay);
-    // let assetsAtLocation: MyAssetRegistryObject[] = []
-    // let assetsAtLocation: MyAssetRegistryObject = assetRegistry.find((assetObject) => {
-    //     if(JSON.stringify(assetObject.tokenLocation) == JSON.stringify(location)){
-    //         return assetObject
-    //     }
-    // })
+    let assetRegistry: IMyAsset[] = getAssetMapAssets(relay);
+
     let firstAssetWithLocation: IMyAsset = assetRegistry.find(
         (assetObject) =>
             JSON.stringify(assetObject.tokenLocation) ==
@@ -1085,11 +886,20 @@ export function getAssetDecimalsFromLocation(location: any, relay: Relay) {
     return firstAssetWithLocation.tokenData.decimals;
 }
 
+/**
+ * Get all assets with the specified location
+ * 
+ * Could rework this to create a map with location as key, if we needed to lookup and compare asset locations more often
+ * 
+ * @param assetLocationObject 
+ * @param relay 
+ * @returns 
+ */
 export function getAssetsAtLocation(
     assetLocationObject: any,
     relay: Relay
 ): IMyAsset[] {
-    let assetRegistry: IMyAsset[] = getAssetRegistry(relay);
+    let assetRegistry: IMyAsset[] = getAssetMapAssets(relay);
     let assetsAtLocation: IMyAsset[] = assetRegistry
         .map((assetObject) => {
             if (
@@ -1106,6 +916,15 @@ export function getAssetsAtLocation(
     return assetsAtLocation;
 }
 
+/**
+ * Get formatted address string to match against chain deposit events
+ * 
+ * @param signer 
+ * @param key 
+ * @param chain 
+ * @param ss58Format 
+ * @returns 
+ */
 export function getWalletAddressFormatted(
     signer: KeyringPair,
     key: Keyring,
@@ -1216,7 +1035,7 @@ export function toFullAssetAmount(
     return new bn(inputAmount).times(new bn(10).pow(new bn(decimals)));
 }
 
-export function trackPromise(promise: Promise<any>) {
+export function trackPromise(promise: Promise<any>): PromiseTracker {
     let isResolved = false;
 
     // Create a new promise that resolves the same way the original does

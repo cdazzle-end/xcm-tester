@@ -8,6 +8,8 @@ import { firstValueFrom } from 'rxjs';
 import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from '../types/types.ts';
 import { Token, TokenAmount } from '@zenlink-dex/sdk-core';
 import { getSigner } from '../utils/utils.ts';
+import bn from 'bignumber.js'
+import { getBalanceFromDisplay } from '../utils/index.ts';
 
 const wsLocalChain = "ws://172.26.130.75:8009"
 const bncRpc = "wss://bifrost-parachain.api.onfinality.io/public-ws"
@@ -90,9 +92,9 @@ export async function getBncSwapExtrinsicDynamic(
   const stablePairs = await firstValueFrom(dexApi.stablePairOf());
   const stablePools = await firstValueFrom(dexApi.stablePoolOfPairs(stablePairs));
 
-  let tokenInAmountFN = new FixedPointNumber(amountIn, tokenIn.decimals);
-  const tokenInAmount = new TokenAmount(tokenIn, tokenInAmountFN.toChainData());
-  const tokenOutAmountFn = new FixedPointNumber(expectedAmountOut, tokenOut.decimals);
+  let tokenInAmountFN = getBalanceFromDisplay(amountIn, tokenIn.decimals);
+  const tokenInAmount = new TokenAmount(tokenIn, tokenInAmountFN.toString());
+  const tokenOutAmountBn = getBalanceFromDisplay(expectedAmountOut, tokenOut.decimals);
   
   
 
@@ -112,13 +114,13 @@ export async function getBncSwapExtrinsicDynamic(
   }
   
   // Allow for 2% price deviation from expected value,should probably be tighter
-  let slipAmount = tokenOutAmountFn.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-  let amountOutFnMinusSlip = tokenOutAmountFn.sub(slipAmount)
+  let slipAmount = tokenOutAmountBn.times(new bn(priceDeviationPercent)).div(new bn(100)).integerValue(bn.ROUND_DOWN)
+  let amountOutFnMinusSlip = tokenOutAmountBn.minus(slipAmount)
 
-  console.log(`Token out amount: ${tokenOutAmountFn.toChainData()} Minus slip: ${amountOutFnMinusSlip.toChainData()}`)
-  console.log(`Slip amount: ${slipAmount.toChainData()}`)
+  console.log(`Token out amount: ${tokenOutAmountBn.toString()} Minus slip: ${amountOutFnMinusSlip.toString()}`)
+  console.log(`Slip amount: ${slipAmount.toString()}`)
 
-  const tokenOutAmount = new TokenAmount(tokenOut, amountOutFnMinusSlip.toChainData());
+  const tokenOutAmount = new TokenAmount(tokenOut, amountOutFnMinusSlip.toString());
 
 
   const blockNumber = await dexApi.api.query.system.number();
@@ -144,19 +146,14 @@ export async function getBncSwapExtrinsicDynamic(
     chain: "BifrostKusama",
     assetNodes: assetNodes,
     extrinsic: extrinsics,
-    assetAmountIn: tokenInAmountFN,
+    assetAmountIn: new bn(tokenInAmountFN.toString()),
     assetIn: assetIn,
-    // pathInLocalId: tokenIn.assetId,
     assetOut: assetOut,
-    // pathOutLocalId: tokenOut.assetId,
-    // pathInLocalId: pathNodeValues.pathInLocalId,
-    // pathOutLocalId: pathNodeValues.pathOutLocalId,
     pathType: swapType,
     pathAmount: amountIn,
-    expectedAmountOut: tokenOutAmountFn,
+    expectedAmountOut: new bn(tokenOutAmountBn.toString()),
     // REVIEW does api conversion from 10.10 to 12.1 work properly
     api: dexApi.api as unknown as ApiPromise,
-    // reverseTx: reverseExtrinsic
   }
   let remainingInstructions: SwapInstruction[] = []
   return [swapTxContainer, remainingInstructions]

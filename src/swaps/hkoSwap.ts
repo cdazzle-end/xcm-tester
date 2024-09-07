@@ -6,7 +6,8 @@ const wsLocalChain = "ws://172.26.130.75:8012"
 const hkoWs = "wss://heiko-rpc.parallel.fi"
 import path from 'path'
 import { fileURLToPath } from 'url';
-import { getApiForNode, getAssetRegistry } from './../utils/index.ts'
+import { getApiForNode, getAssetMapAssets, getAssetRegistry, getBalanceFromDisplay } from './../utils/index.ts'
+import bn from 'bignumber.js'
 // import { MyAsset } from "../core/index.ts"
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,15 +34,16 @@ export async function getHkoSwapExtrinsic(
       const assetOut = assetNodes[assetNodes.length - 1]
 
       // let assetIn = getAssetBySymbol(startAssetSymbol)
-      let assetInDecimals = assetIn.getDecimals()
-      let assetInAmountFn = new FixedPointNumber(assetInAmount, assetInDecimals)
-
+      // let assetInDecimals = assetIn.getDecimals()
+      // let assetInAmountFn = new FixedPointNumber(assetInAmount, assetInDecimals)
+      let inputAmount: bn = assetIn.getChainBalance()
+      let outputAmount: bn = assetOut.getChainBalance()
       // let assetOut = getAssetBySymbol(destAssetSymbol)
-      let assetOutDecimals = assetOut.getDecimals()
-      let assetOutAmountFn = new FixedPointNumber(assetOutAmount,assetOutDecimals)
+      // let assetOutDecimals = assetOut.getDecimals()
+      // let outputAmount = new FixedPointNumber(assetOutAmount,assetOutDecimals)
 
-      let priceDeviation = assetOutAmountFn.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-      let expectedOutMinusDeviation = assetOutAmountFn.sub(priceDeviation)
+      let priceDeviation = outputAmount.times(new bn(priceDeviationPercent)).div(new bn(100)).integerValue(bn.ROUND_DOWN)
+      let expectedOutMinusDeviation = outputAmount.minus(priceDeviation)
 
       let tokenPathSymbols = [startAssetSymbol]
       swapInstructions.forEach((instruction) => {
@@ -52,7 +54,7 @@ export async function getHkoSwapExtrinsic(
         let asset = getAssetBySymbol(symbol)
         return Number.parseInt(asset.tokenData.localId)
       })
-      let swapTx = await api.tx.ammRoute.swapExactTokensForTokens(tokenPathIds,assetInAmountFn.toChainData(), expectedOutMinusDeviation.toChainData())
+      let swapTx = await api.tx.ammRoute.swapExactTokensForTokens(tokenPathIds, inputAmount.toString(), expectedOutMinusDeviation.toString())
 
       let swapTxContainer: SwapExtrinsicContainer = {
         relay: 'kusama',
@@ -65,7 +67,7 @@ export async function getHkoSwapExtrinsic(
         extrinsic: swapTx,
         assetIn: assetIn,
         assetOut: assetOut,
-        assetAmountIn: assetInAmountFn,
+        assetAmountIn: inputAmount,
         expectedAmountOut: expectedOutMinusDeviation,
         api: api,
 
@@ -115,7 +117,7 @@ api.disconnect();
 }
 
 function getAssetBySymbol(symbol: string){
-    let allAssets: IMyAsset[] = getAssetRegistry('kusama')
+    let allAssets: IMyAsset[] = getAssetMapAssets('kusama')
     // console.log(JSON.stringify(allAssets, null, 2))
     let matchedAsset = allAssets.find((asset: any) => {
         return asset.tokenData.chain == 2085 && asset.tokenData.symbol == symbol
@@ -127,7 +129,7 @@ function getAssetBySymbol(symbol: string){
 }
 
 function getAssetById(id: number){
-  let allAssets: IMyAsset[] = getAssetRegistry('kusama')
+  let allAssets: IMyAsset[] = getAssetMapAssets('kusama')
     // console.log(JSON.stringify(allAssets, null, 2))
     let matchedAsset = allAssets.find((asset: any) => {
         return asset.tokenData.chain == 2085 && asset.tokenData.localId == id

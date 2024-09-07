@@ -7,9 +7,10 @@ import '@galacticcouncil/api-augment/hydradx';
 
 import { Asset as BsxAsset, BigNumber, PoolService, TradeRouter, ZERO } from '@galacticcouncil/sdk';
 import { SubmittableExtrinsic } from '@polkadot/api/promise/types';
-import { getApiForNode } from './../utils/index.ts';
+import { getApiForNode, getBalanceFromDisplay } from './../utils/index.ts';
 import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from "./../types/types.ts";
 import { AssetNode } from "../core/index.ts";
+import bn from 'bignumber.js'
 
 const niceEndpoint = 'wss://rpc.nice.hydration.cloud'
 const wsLocalChain = "ws://172.26.130.75:8010"
@@ -58,12 +59,12 @@ export async function getBsxSwapExtrinsicDynamic(
     const bsxAssetOut: BsxAsset = path[path.length - 1]
 
     let number = new BigNumber(ZERO)
-    let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), bsxAssetIn.decimals)
-    let fnOutputAmount = new FixedPointNumber(expectedOutDynamic.toString(), bsxAssetOut.decimals)
-
+    // let fnInputAmount = new FixedPointNumber(assetInAmount.toString(), bsxAssetIn.decimals)
+    let inputAmount: bn = getBalanceFromDisplay(assetInAmount, bsxAssetIn.decimals)
+    let outputAmount: bn = getBalanceFromDisplay(expectedOutDynamic, bsxAssetOut.decimals)
     //2% acceptable price deviation 2 / 100
-    let priceDeviation = fnOutputAmount.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-    let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation)
+    let priceDeviation = outputAmount.times(new bn(priceDeviationPercent)).div(new bn(100)).integerValue(bn.ROUND_DOWN)
+    let expectedOutMinusDeviation: bn = outputAmount.minus(priceDeviation)
 
     let bestBuy = await router.getBestSell(bsxAssetIn.id, bsxAssetOut.id, assetInAmount.toString())
     let swapZero = bestBuy.toTx(number)
@@ -76,12 +77,12 @@ export async function getBsxSwapExtrinsicDynamic(
       .sell(
         bsxAssetIn.id, 
         bsxAssetOut.id, 
-        fnInputAmount.toChainData(), 
-        expectedOutMinusDeviation.toChainData(), 
+        inputAmount.toString(), 
+        expectedOutMinusDeviation.toString(), 
         route
         )
 
-    let pathAmount = fnInputAmount.toChainData()
+    let pathAmount = inputAmount.toString()
     let pathSwapType = swapType
     let swapTxContainer: SwapExtrinsicContainer = {
       relay: 'kusama',
@@ -92,8 +93,8 @@ export async function getBsxSwapExtrinsicDynamic(
       extrinsic: txFormatted,
       assetIn: assetIn,
       assetOut: assetOut,
-      assetAmountIn: fnInputAmount,
-      expectedAmountOut: fnOutputAmount,
+      assetAmountIn: inputAmount,
+      expectedAmountOut: outputAmount,
       pathType: pathSwapType,
       pathAmount: pathAmount,
       api: api,

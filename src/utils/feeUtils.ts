@@ -1,7 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { EventRecord } from "@polkadot/types/interfaces";
 import { FeeData, IMyAsset, PNode, PromiseTracker, Relay, ReserveFeeData, TransferDepositEventData, TransferExtrinsicContainer, TransferOrDeposit } from './../types/types.ts';
-import { findValueByKey, getAssetRegistryObject, getAssetRegistryObjectBySymbol, getChainIdFromNode } from './utils.ts';
+import { findValueByKey, getMyAssetById, getAssetRegistryObjectBySymbol, getChainIdFromNode } from './utils.ts';
 
 import { getParaId, getRelayChainSymbol, TNode } from '@paraspell/sdk';
 import { BN } from '@polkadot/util/bn/bn';
@@ -81,7 +81,7 @@ import { MyAsset } from '../core/index.ts';
 /**
  * 
  * @param api 
- * @param node 
+ * @param receivingChain 
  * @param transferType 
  * @param depositAssetSymbol - REMOVE. Used to determine if asset is native chain token 
  * @param depositAssetDecimals - REMOVE
@@ -94,48 +94,49 @@ import { MyAsset } from '../core/index.ts';
  * @returns 
  */
 export async function listenForXcmpDepositEvent(
-    api: ApiPromise, 
-    node: PNode, 
-    transferType: TransferType,
-    // depositAssetSymbol: string, 
-    // depositAssetDecimals: number, 
-    depositAssetObject: MyAsset, 
+    transferTxContainer: TransferExtrinsicContainer,
     depositAddress: string, 
     balanceDepositTracker: PromiseTracker, 
     xcmTxProperties: any, // Use for further info. To distinguish between transfer and transferMultiassets
     xcmpMessageHash?: string, 
     xcmpMessageId?: string
 ): Promise<TransferDepositEventData> {
+    let sendingChain: PNode = transferTxContainer.startChain
+    let receivingApi: ApiPromise = transferTxContainer.destinationApi
+    let receivingChain: PNode = transferTxContainer.destinationChain
+    let receivingAsset: MyAsset = transferTxContainer.destinationAsset.asset
+    let transferType = getTransferType(sendingChain, receivingChain)
+
+
     const txParams = xcmTxProperties.method
-    const section = txParams.section
     const method = txParams.method
 
-    const depositAssetSymbol = depositAssetObject.tokenData.symbol
-    const depositAssetDecimals = Number.parseInt(depositAssetObject.tokenData.decimals)
+    const depositAssetSymbol = receivingAsset.tokenData.symbol
+    const depositAssetDecimals = Number.parseInt(receivingAsset.tokenData.decimals)
 
     if(transferType === "hrmp" && !xcmpMessageHash && !xcmpMessageId){
         throw new Error("HRMP transfers require XCMP message hash")
     }
-    let nativeChainToken = api.registry.chainTokens[0]
+    let nativeChainToken = receivingApi.registry.chainTokens[0]
     let tokenType: TokenType = depositAssetSymbol.toUpperCase() == nativeChainToken.toUpperCase() ? "native" : "tokens" 
 
     // let nodeEventData = depositEventDictionary[node][transferType][tokenType]
     let nodeEventData: XcmDepositEventData | null
     if(transferType === "hrmp"){
-        nodeEventData = depositEventDictionary[node]?.[transferType]?.[tokenType] ?? null;
+        nodeEventData = depositEventDictionary[receivingChain]?.[transferType]?.[tokenType] ?? null;
     } else {
-        nodeEventData = depositEventDictionary[node][transferType] ?? null
+        nodeEventData = depositEventDictionary[receivingChain][transferType] ?? null
     }
     if(nodeEventData === null){
-        console.log(`Deposit type ${transferType} not avaiable for ${node}`)
+        console.log(`Deposit type ${transferType} not avaiable for ${receivingChain}`)
         throw new Error("Invalid node or transfer type")
     }
     nodeEventData = nodeEventData as XcmDepositEventData
 
     let eventListener: Promise<FrameSystemEventRecord[]> = createDepositEventListener(
-        api, 
+        receivingApi, 
         nodeEventData, 
-        node, 
+        receivingChain, 
         tokenType, 
         transferType, 
         depositAddress, 
@@ -149,7 +150,7 @@ export async function listenForXcmpDepositEvent(
         events = await eventListener;
     } catch (error) {
         console.error("Error listening for XCMP Deposit event:", error);
-        throw new Error(`Failed to listen for XCMP Deposit event. Depositing to -> ${node} ${depositAssetSymbol} `);
+        throw new Error(`Failed to listen for XCMP Deposit event. Depositing to -> ${receivingChain} ${depositAssetSymbol} `);
     }
 
     if(!events){
@@ -160,7 +161,7 @@ export async function listenForXcmpDepositEvent(
 
     // REVIEW Asset Hub deposit when xTokens.transferMultiassets. Currently only from Hydra
     if(method === 'transferMultiassets'){
-        if(node !== "AssetHubPolkadot") throw new Error(`Not configured for transferMultiassets deposit events for node ${node}`)
+        if(receivingChain !== "AssetHubPolkadot") throw new Error(`Not configured for transferMultiassets deposit events for node ${receivingChain}`)
         console.log(`TRUE`)
         const eventDataRegistry = multiassetsDepositEventDictionary["AssetHubPolkadot"]
         console.log(`AssetHub tranfserMultiAsset Event Data Registry: ${JSON.stringify(eventDataRegistry)}`)
@@ -174,20 +175,20 @@ export async function listenForXcmpDepositEvent(
         //REVIEW Will this return commas in the asset ID?
         let feeAssetId = new bn(feeAssetIdEvent.event.data[eventDataRegistry.feeAssetId.assetIdIndex].toString())
 
-        const nodeChainId = getParaId(node)
-        const relay: Relay = getRelayChainSymbol(node) === 'DOT' ? 'polkadot' : 'kusama'
-        const feeAssetObject = getAssetRegistryObject(nodeChainId, feeAssetId.toString(), relay)
+        const nodeChainId = getParaId(receivingChain)
+        const relay: Relay = getRelayChainSymbol(receivingChain) === 'DOT' ? 'polkadot' : 'kusama'
+        const feeAssetObject = getMyAssetById(nodeChainId, feeAssetId.toString(), relay)
 
         let depositEventData: TransferDepositEventData = {
             xcmAmount: new bn(depositAmount.toString()),
             xcmAssetSymbol: depositAssetSymbol,
-            xcmAssetId: depositAssetObject.tokenData.localId,
+            xcmAssetId: receivingAsset.tokenData.localId,
             xcmAssetDecimals: depositAssetDecimals,
             feeAmount: feeAmount,
             feeAssetSymbol: feeAssetObject.tokenData.symbol,
             feeAssetId: feeAssetId.toString(),
             feeAssetDecimals: Number.parseInt(feeAssetObject.tokenData.decimals),
-            node: node
+            node: receivingChain
         }
         console.log(`*** transferMultiassets Deposit Event success: ${JSON.stringify(depositEventData, null, 2)}`)
         // console.log(`DEPOSIT EVENT SUCCESS: Deposit amount: ${eventDataRegistry.depositAmount.toString()} | Fee amount: ${eventDataRegistry.feeAmount.toString()}`)
@@ -223,13 +224,13 @@ export async function listenForXcmpDepositEvent(
     let depositEventData: TransferDepositEventData = {
         xcmAmount: new bn(depositAmount.toString()),
         xcmAssetSymbol: depositAssetSymbol,
-        xcmAssetId: depositAssetObject.tokenData.localId,
+        xcmAssetId: receivingAsset.tokenData.localId,
         xcmAssetDecimals: depositAssetDecimals,
         feeAmount: feeAmount,
         feeAssetSymbol: depositAssetSymbol,
-        feeAssetId: depositAssetObject.tokenData.localId,
+        feeAssetId: receivingAsset.tokenData.localId,
         feeAssetDecimals: depositAssetDecimals,
-        node: node
+        node: receivingChain
     }
     // console.log(`DEPOSIT EVENT SUCCESS: Deposit amount: ${depositEventData.xcmAmount.toString()} | Fee amount: ${depositEventData.feeAmount.toString()}`)
 
@@ -343,15 +344,28 @@ async function createDepositEventListener(
     })
 }
 
+/**
+ * Take event records from Transfer Extrinsic details, extract relevant info
+ * - transfer asset and amount
+ * - fee asset and amount
+ * 
+ * @param node 
+ * @param transferredAssetObject 
+ * @param nativeCurrencySymbol 
+ * @param events 
+ * @param relay 
+ * @param xcmTxProperties 
+ * @returns 
+ */
 export function getXcmTransferEventData(
-    node: PNode, 
-    transferredAssetSymbol: string, 
-    transferredAssetObject: IMyAsset, 
+    node: PNode,
+    transferredAssetObject: MyAsset, 
     nativeCurrencySymbol: string, 
     events: EventRecord[], 
     relay: Relay,
     xcmTxProperties: any // Copy of tx properties to use if needed to distinguish between extrinsics
 ): TransferDepositEventData{
+    let transferredAssetSymbol = transferredAssetObject.getSymbol()
     let eventRecords = events.map((event) => event).reverse()
 
     let nodeFeeEvents = transferEventDictionary[node].feeEvents
@@ -823,6 +837,14 @@ export function createReserveFees(txContainer: TransferExtrinsicContainer, xcmEv
     }
 }
 
+/**
+ * Format Event Data from transfer or deposit as a FeeData object
+ * 
+ * @param txContainer 
+ * @param xcmEventData 
+ * @param eventType 
+ * @returns 
+ */
 export function createFeeDatas(txContainer: TransferExtrinsicContainer, xcmEventData: TransferDepositEventData, eventType: TransferOrDeposit): FeeData {
     const startAsset: MyAsset = txContainer.startAsset.asset
     const destinationAsset: MyAsset = txContainer.destinationAsset.asset

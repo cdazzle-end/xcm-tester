@@ -3,8 +3,9 @@ import { ApiPromise, Keyring, options, WsProvider } from "@parallel-finance/api"
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { localRpcs } from "../config/index.ts"
-import { getApiForNode, getAssetRegistry, getSigner } from './../utils/index.ts'
-import { IndexObject, PathType, Relay, SwapExtrinsicContainer } from "./../types/types.ts"
+import { getApiForNode, getAssetMapAssets, getAssetRegistry, getSigner } from './../utils/index.ts'
+import { IndexObject, PathType, Relay, SwapExtrinsicContainer, SwapInstruction } from "./../types/types.ts"
+import bn from 'bignumber.js'
 const wsLocalChain = localRpcs["Parallel"]
 const paraWs = "wss://parallel-rpc.dwellir.com"
 const __filename = fileURLToPath(import.meta.url);
@@ -17,15 +18,10 @@ export async function getParaSwapExtrinsic(
   destAssetSymbol: string, 
   assetInAmount: string, 
   assetOutAmount: string, 
-  swapInstructions: any[], 
+  swapInstructions: SwapInstruction[], 
   chopsticks: boolean = true,
   priceDeviationPercent: number = 2
   ) {
-  // let rpc = chopsticks ? wsLocalChain : paraWs  
-  // console.log("RPC: ", rpc)
-  // const api = await ApiPromise.create(options({
-  //       provider: new WsProvider(rpc)
-  //     }))
 
   const api = await getApiForNode("Parallel", chopsticks)
   console.log("Connected to api")
@@ -45,21 +41,28 @@ export async function getParaSwapExtrinsic(
       console.log("Asset in: ", assetIn)
       let assetInLocalId = assetIn.getLocalId()
       let assetInDecimals = assetIn.getDecimals()
-      let assetInAmountFn = new FixedPointNumber(assetInAmount, assetInDecimals)
+      // let assetInAmountFn = new FixedPointNumber(assetInAmount, assetInDecimals)
+      console.log(`Input: ${assetIn.pathValue}`)
+      console.log(`Output: ${assetOut.pathValue}`)
+      let inputAmount = assetIn.getChainBalance()
+      let outputAmount = assetOut.getChainBalance()
+
+      console.log(`Input formatted: ${inputAmount.toString()}`)
+      console.log(`Output formatted: ${outputAmount.toString()}`)
 
       // let assetOut = getAssetBySymbol(relay, destAssetSymbol)
       let assetOutLocalId = assetOut.getLocalId()
       let assetOutDecimals = assetOut.getDecimals()
-      let assetOutAmountFn = new FixedPointNumber(assetOutAmount,assetOutDecimals)
+      // let outputAmount = new FixedPointNumber(assetOutAmount,assetOutDecimals)
 
       console.log(`Asset in ${assetInLocalId} -- AssetOut ${assetOutLocalId}`)
 
-      let priceDeviation = assetOutAmountFn.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-      let expectedOutMinusDeviation = assetOutAmountFn.sub(priceDeviation)
+      let priceDeviation = outputAmount.times(new bn(priceDeviationPercent)).div(new bn(100)).integerValue(bn.ROUND_DOWN)
+      let expectedOutMinusDeviation = outputAmount.minus(priceDeviation)
 
       let tokenPathSymbols = [startAssetSymbol]
       swapInstructions.forEach((instruction) => {
-        tokenPathSymbols.push(instruction.assetNodes[1].getAssetRegistrySymbol())
+        tokenPathSymbols.push(instruction.assetNodes[1].getAssetSymbol())
       })
       
       let tokenPathIds = tokenPathSymbols.map((symbol) => {
@@ -67,7 +70,8 @@ export async function getParaSwapExtrinsic(
         return Number.parseInt(asset.tokenData.localId)
       })
       console.log("Create swap tx:")
-      let swapTx = await api.tx.ammRoute.swapExactTokensForTokens(tokenPathIds,assetInAmountFn.toChainData(), expectedOutMinusDeviation.toChainData())
+      console.log(`Para swap params: ${JSON.stringify(tokenPathIds)} | ${JSON.stringify(inputAmount.toString())} | ${JSON.stringify(expectedOutMinusDeviation.toString())}`)
+      let swapTx = await api.tx.ammRoute.swapExactTokensForTokens(tokenPathIds, inputAmount.toString(), expectedOutMinusDeviation.toString())
 
       console.log("Swap tx: ", JSON.stringify(swapTx, null, 2))
 
@@ -82,7 +86,7 @@ export async function getParaSwapExtrinsic(
         extrinsic: swapTx,
         assetIn: assetIn,
         assetOut: assetOut,
-        assetAmountIn: assetInAmountFn,
+        assetAmountIn: inputAmount,
         expectedAmountOut: expectedOutMinusDeviation,
         api: api,
         // reverseTx: reverseTxParams
@@ -117,7 +121,7 @@ const main = async () => {
 }
 
 function getAssetBySymbol(relay: Relay, symbol: string){
-    let allAssets = getAssetRegistry(relay)
+    let allAssets = getAssetMapAssets(relay)
     // console.log(JSON.stringify(allAssets, null, 2))
     let matchedAsset = allAssets.find((asset: any) => {
         return asset.tokenData.network == 'polkadot' && asset.tokenData.chain == 2012 && asset.tokenData.symbol == symbol
@@ -129,7 +133,7 @@ function getAssetBySymbol(relay: Relay, symbol: string){
 }
 
 function getAssetById(relay: Relay, id: number){
-    let allAssets = getAssetRegistry(relay)
+    let allAssets = getAssetMapAssets(relay)
     // console.log(JSON.stringify(allAssets, null, 2))
     let matchedAsset = allAssets.find((asset: any) => {
         return asset.tokenData.network == 'polkadot' && asset.tokenData.chain == 2012 && asset.tokenData.localId == id

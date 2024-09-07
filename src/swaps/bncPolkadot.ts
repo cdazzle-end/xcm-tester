@@ -11,8 +11,9 @@ import { firstValueFrom } from 'rxjs';
 import { fileURLToPath } from 'url';
 import { localRpcs } from '../config/txConsts.ts';
 import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from '../types/types.ts';
-import { getSigner, increaseIndex } from '../utils/utils.ts';
-;
+import { getSigner } from '../utils/utils.ts';
+import bn from 'bignumber.js'
+import { getBalanceFromDisplay } from '../utils/index.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,9 +100,10 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   // const stablePairs = await firstValueFrom(dexApi.stablePairOf());
   // const stablePools = await firstValueFrom(dexApi.stablePoolOfPairs(stablePairs));
   let stablePools = []
-  let tokenInAmountFN = new FixedPointNumber(amountIn, tokenIn.decimals);
-  const tokenInAmount = new TokenAmount(tokenIn, tokenInAmountFN.toChainData());
-  const tokenOutAmountFn = new FixedPointNumber(expectedAmountOut, tokenOut.decimals);
+  // let tokenInAmountFN = new FixedPointNumber(amountIn, tokenIn.decimals);
+  let tokenInAmountBn: bn = getBalanceFromDisplay(amountIn, tokenIn.decimals);
+  const tokenInAmount: TokenAmount = new TokenAmount(tokenIn, tokenInAmountBn.toString());
+  const tokenOutAmountBn: bn = getBalanceFromDisplay(expectedAmountOut, tokenOut.decimals);
   
 
   // use smart router to get the best trade;
@@ -119,13 +121,13 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   }
   
   // Allow for 2% price deviation from expected value,should probably be tighter
-  let slipAmount = tokenOutAmountFn.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-  let amountOutFnMinusSlip = tokenOutAmountFn.sub(slipAmount)
+  let slipAmount = tokenOutAmountBn.times(new bn(priceDeviationPercent)).div(new bn(100)).integerValue(bn.ROUND_DOWN)
+  let amountOutFnMinusSlip = tokenOutAmountBn.minus(slipAmount)
 
-  console.log(`Token out amount: ${tokenOutAmountFn.toChainData()} Minus slip: ${amountOutFnMinusSlip.toChainData()}`)
-  console.log(`Slip amount: ${slipAmount.toChainData()}`)
+  console.log(`Token out amount: ${tokenOutAmountBn.toString()} Minus slip: ${amountOutFnMinusSlip.toString()}`)
+  console.log(`Slip amount: ${slipAmount.toString()}`)
 
-  const tokenOutAmount = new TokenAmount(tokenOut, amountOutFnMinusSlip.toChainData());
+  const tokenOutAmount = new TokenAmount(tokenOut, amountOutFnMinusSlip.toString());
   const blockNumber = await dexApi.api.query.system.number();
   
 
@@ -153,12 +155,12 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
     chain: "BifrostPolkadot",
     assetNodes: assetNodes,
     extrinsic: extrinsics,
-    assetAmountIn: tokenInAmountFN,
+    assetAmountIn: tokenInAmountBn,
     assetIn: assetIn,
     assetOut: assetOut,
     pathType: swapType,
     pathAmount: amountIn,
-    expectedAmountOut: tokenOutAmountFn,
+    expectedAmountOut: tokenOutAmountBn,
     // REVIEW api
     api: dexApi.api as unknown as ApiPromise,
     // reverseTx: reverseExtrinsic

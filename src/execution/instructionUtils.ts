@@ -1,7 +1,7 @@
 import * as paraspell from "@paraspell/sdk";
 import { AssetNode } from "../core/AssetNode.ts";
 import { IndexObject, InstructionType, IMyAsset, RelayTokenBalances, Relay, ArbFinderNode, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, PNode, RelayTokenSymbol } from "./../types/types.ts";
-import { getNode, getAssetRegistryObjectBySymbol, getAssetBySymbolOrId, increaseIndex, constructRouteFromFile, constructAssetNodesFromPath, getAssetKeyFromChainAndSymbol, printAllocations, getSigner, findValueByKey, printInstructionSet, readLogData, getRelayTokenSymbol, getRelayMinimum } from "../utils/utils.ts";
+import { getNode, getAssetRegistryObjectBySymbol, constructRouteFromFile, constructAssetNodesFromPath, getSigner, findValueByKey, printInstructionSet, readLogData, getRelayTokenSymbol, getRelayMinimum } from "../utils/utils.ts";
 import fs from 'fs'
 import path from 'path'
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
@@ -97,10 +97,8 @@ export function buildSwapInstruction(
     pathData: assetNodes[1].pathData,
     assetInLocalId: assetNodes[0].asset.tokenData.localId,
     assetInAmount: assetNodes[0].pathValue,
-    assetInAmountFixed: assetNodes[0].pathValueFixed,
     assetOutLocalId: assetNodes[1].asset.tokenData.localId,
     assetOutTargetAmount: assetNodes[1].pathValue,
-    assetOutTargetAmountFixed: assetNodes[1].pathValueFixed,
     assetNodes: assetNodes,
   };
 //   console.log(JSON.stringify(swapInstruction, null, 2))

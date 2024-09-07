@@ -50,9 +50,12 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
 
         // If last transaction has been submitted but not finalized, we need to query the balances to see if it completed successfully or not
         if(lastTransactionState == TransactionState.Broadcasted){
+            console.log(`Last transaction was BROADCASTED. Confirm status`)
             await confirmLastTransactionSuccess(lastTransactionProperties)
             stateSetTransactionState(TransactionState.PreSubmission)
             lastNode = stateGetLastNode()!
+        } else {
+            console.log(`Last transaction not BROADCASTED`)
         }
         // let lastNodeValueTemp = '40.00'
         let arbInput = customInput > 0 ? customInput : lastNode.assetValue
@@ -61,10 +64,13 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
         customInput = 0
         console.log("Executing Arb Fallback with args: " + functionArgs)
         
+        let fallbackStartKey = lastNode.assetKey
+        let fallbackDestinationKey = targetNode
+        let fallbackInputValue = arbInput.toString()
 
         let arbResults: ArbFinderNode[];
         try{
-            arbResults = await findFallbackArb(functionArgs, chopsticks, relay)
+            arbResults = await findFallbackArb(fallbackStartKey, fallbackDestinationKey, fallbackInputValue, chopsticks, relay)
         } catch {
             console.log("Failed to run fallback arb")
             continue;
@@ -98,7 +104,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
     }
     // await logAllResultsDynamic(relay, logFilePath, chopsticks)
     // await logAllArbAttempts(relay, logFilePath, chopsticks)
-    let arbAmountOut = await getTotalArbResultAmount(relay, stateGetLastNode()!, chopsticks)
+    let arbAmountOut = await getTotalArbResultAmount(relay, chopsticks)
     await logProfits(arbAmountOut, chopsticks )
 }
 
@@ -139,7 +145,7 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     let arbSuccess = false
 
     // Loop to build and execute extrinsics from asset nodes
-    while(!arbSuccess && stateGetLastNode()!.chainId != 0 && arbLoops < 2){
+    while(!arbSuccess && stateGetLastNode()!.chainId != 0 && arbLoops < 1){
 
         if(arbLoops > 0){ // After first attempt, re run arb and try again
             console.log("Arb Execution failed, trying again...")
@@ -152,10 +158,13 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
 
             // Find arb from last successful node (asset and value) to destination node
             let targetNode = getTargetNode(relay)
+            let fallbackStartKey = stateGetLastNode()!.assetKey
+            let fallbackDestinationKey = targetNode
+            let fallbackInputValue = stateGetLastNode()!.assetValue
             let functionArgs = `${stateGetLastNode()!.assetKey} ${targetNode} ${stateGetLastNode()!.assetValue}`
             console.log("Executing Arb Fallback with args: " + functionArgs)
             try{
-                const fallbackArbPath: ArbFinderNode[] = await findFallbackArb(functionArgs, chopsticks, relay)
+                const fallbackArbPath: ArbFinderNode[] = await findFallbackArb(fallbackStartKey, fallbackDestinationKey, fallbackInputValue, chopsticks, relay)
                 assetPath = constructAssetNodesFromPath(relay, fallbackArbPath)
             } catch {
                 console.log("Failed to run fallback arb")
@@ -196,7 +205,7 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     // await logAllResultsDynamic(chopsticks)
 
     console.log("Getting total arb amount out for normal arb")
-    let arbAmountOut = await getTotalArbResultAmount(relay, stateGetLastNode()!, chopsticks)
+    let arbAmountOut = await getTotalArbResultAmount(relay, chopsticks)
     await logProfits(arbAmountOut, chopsticks )
     
     // console.log(`Result for latest file ${latestFile}: ${arbSuccess}`)

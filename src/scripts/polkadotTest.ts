@@ -7,16 +7,18 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { localRpcs } from './../config/txConsts.ts';
-import { ExecutionState, ExtrinsicSetResultDynamic, ArbFinderNode, LastNode, NewFeeBook, PromiseTracker, Relay, SwapInstruction, TransferInstruction, TxDetails } from './../types/types.ts';
-import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, queryRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, watchTokenDeposit, trackPromise } from './../utils/index.ts';
+import { ExecutionState, ExtrinsicSetResultDynamic, ArbFinderNode, LastNode, NewFeeBook, PromiseTracker, Relay, SwapInstruction, TransferInstruction, TxDetails, SingleTransferResultData, SingleSwapResultData, AssetMap, IMyAsset } from './../types/types.ts';
+import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, queryRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, watchTokenDeposit, trackPromise, stateGetExtrinsicSetResults, isSwapResult, isTransferResult, stateGetLastNode, getAssetRegistry, getAssetRegistryMap, getMyAssetById } from './../utils/index.ts';
 import { getParaId, TNode } from '@paraspell/sdk';
-import { getAdapter, getAssetRegistry, getAssetRegistryObject } from '@polkawallet/bridge';
+import { getAdapter,  } from '@polkawallet/bridge';
 import bn from 'bignumber.js';
 import { testGlmrRpc } from './../swaps/index.ts';
 import * as Chopsticks from '@acala-network/chopsticks';
 import { buildAndExecuteExtrinsics, buildInstructionSet, buildInstructionSetTest, executeTransferExtrinsic, executeXcmTransfer } from './../execution/index.ts';
-import { AssetNode, MyAsset } from './../core/index.ts';
+import { AssetNode, GlobalState, MyAsset } from './../core/index.ts';
+import { arbRunFallbackSearch, arbRunTargetSearch, findLatestFileInLatestDirectory } from './../arbFinder/runArbFinder.ts'
 import keyring from '@polkadot/keyring';
+import { arbFinderPath } from '../config/index.ts';
 // import { acalaFileTest } from '../config/index.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -715,7 +717,7 @@ async function executeTestPath(relay: Relay, chopsticks: boolean, executeMovr: b
 
     let testLoops = 100
 
-    let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, executeMovr, testLoops, true)
+    let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, executeMovr, false)
 }
 
 async function testXcm(){
@@ -845,7 +847,7 @@ async function buildTest(){
     printInstructionSet(instructionSet)
 
     // await buildPolkadotExtrinsics(relay, instructionSet, false, false, 20)
-    let results = await buildAndExecuteExtrinsics(relay, instructionSet, chopsticks, executeMovr, 20, true)
+    let results = await buildAndExecuteExtrinsics(relay, instructionSet, chopsticks, executeMovr, true)
     console.log(`Results: ${JSON.stringify(results.success)}`)
 }
 
@@ -878,7 +880,7 @@ async function testAssetLookup(){
     console.log(id)
     console.log(JSON.stringify(id))
     console.log('-------------')
-    let assetObject = getAssetRegistryObject(2000, JSON.stringify(id).replace(/\\|"/g, ""), 'polkadot')
+    let assetObject = getMyAssetById(2000, JSON.stringify(id).replace(/\\|"/g, ""), 'polkadot')
     console.log(assetObject.tokenData.localId)
 
     const registry = getAssetRegistry('polkadot').filter((assetFilter) => assetFilter.tokenData.chain === 2000)
@@ -1417,11 +1419,204 @@ async function testBalanceAdapters(){
     console.log(`Balance for ${assetSymbol} on ${node} for ${signer.address}: ${JSON.stringify(balance)}`)
 }
 
+async function callArbFinderTargetSearch(){
+    let relay: Relay = 'polkadot';
+    let testAsset = new MyAsset(getAssetRegistryObjectBySymbol(2000, 'DOT', relay))
+    let assetKey = testAsset.getAssetKey()
+    let functionArgs = `${assetKey} ${assetKey} 1`
+    let arbCompleted = await arbRunFallbackSearch(assetKey, assetKey, "1", relay)
+
+    if (arbCompleted) {
+        // const targetLogFolder = await path.join(
+        //     __dirname,
+        //     `${arbFinderPath}/target_log_data/${relay}/`
+        // );
+        const targetLogFolder = `${arbFinderPath}/target_log_data/${relay}/`
+        const latestFile = await findLatestFileInLatestDirectory(
+            targetLogFolder
+        );
+
+        // Set state latest file
+        // stateSetLastFile(latestFile)
+
+        const targetArbResults: ArbFinderNode[] = JSON.parse(
+            fs.readFileSync(latestFile, "utf8")
+        );
+        // return targetArbResults;
+        console.log(JSON.stringify(targetArbResults, null, 2))
+    } else {
+        throw new Error("Failed to run target arb")
+    }
+}
+
+/** Test asset lookup. Re construct asset registry each lookup */
+function testAssetRegistryOne(){
+    let assetRegistry: IMyAsset[] = getAssetRegistry('polkadot')
+    assetRegistry.forEach((asset) => {
+        getAssetByKey(new MyAsset(asset).getAssetKey(), 'polkadot')
+    })
+}
+function getAssetByKey(assetKey: string, relay: Relay){
+    // console.log(`Searching for asset key: ${assetKey}`)
+    let assets = getAssetRegistry(relay)
+    let matchingAsset = assets.find((registryAsset) => {
+        let registryKey = new MyAsset(registryAsset).getAssetKey()
+        if (registryKey === assetKey){
+            return true
+        }
+    })
+    if(matchingAsset === undefined) throw new Error(`Cant find asset with key ${assetKey}`)
+}
+
+/** Test asset lookup. Create asset registry once and pass it to each function for lookup */
+function testAssetRegistryTwo(){
+    let assetRegistry: IMyAsset[] = getAssetRegistry('polkadot')
+    assetRegistry.forEach((asset) => {
+        getAssetByKeyRegistry(new MyAsset(asset).getAssetKey(), assetRegistry)
+    })
+}
+
+function getAssetByKeyRegistry(assetKey: string, assetRegistry: IMyAsset[]): IMyAsset{
+    // console.log(`Searching for asset key: ${assetKey}`)
+    let matchingAsset = assetRegistry.find((registryAsset) => {
+        let registryKey = new MyAsset(registryAsset).getAssetKey()
+        if (registryKey === assetKey){
+            return true
+        }
+    })
+    if(matchingAsset === undefined) throw new Error(`Cant find asset with key ${assetKey}`)
+    return matchingAsset
+}
+
+
+/** Create asset map, get list of assets, look each asset up in map */
+function testAssetMapOne(){
+    let relay: Relay = 'polkadot'
+    let assetMap: AssetMap = getAssetRegistryMap(relay)
+    
+    let assetRegistry: IMyAsset[] = getAssetRegistry(relay)
+    assetRegistry.forEach((asset) => {
+        getAssetByKeyHashmap(asset, assetMap)
+    })
+
+}
+
+
+function getAssetByKeyHashmap(asset: IMyAsset, assetMap: AssetMap){
+    let assetKey = new MyAsset(asset).getAssetKey()
+    let assetMatch = assetMap.get(assetKey)
+    if(assetMatch === undefined) throw new Error(`Map lookup error: ${new MyAsset(asset).getAssetKey()}`)
+    if(new MyAsset(assetMatch).getAssetKey() !== assetKey) throw new Error(`Keys do not match`)
+
+    return assetMatch
+}
+/** get list of assets, look each asset up in map lookup, creating map each time */
+function testAssetMapTwo(){
+    let relay: Relay = 'polkadot'
+    let assetMap: AssetMap = getAssetRegistryMap(relay)
+    
+    let assetRegistry: IMyAsset[] = getAssetRegistry(relay)
+    assetRegistry.forEach((asset) => {
+        getAssetByKey(new MyAsset(asset).getAssetKey(), relay)
+    })
+
+}
+async function testArbProfit(){
+    GlobalState.getInstance('polkadot')
+
+    let results: Readonly<ExtrinsicSetResultDynamic> = stateGetExtrinsicSetResults()!;
+    let firstExtrinsic: SingleSwapResultData | SingleTransferResultData = results.allExtrinsicResults[0]
+    let lastExtrinsic: SingleSwapResultData | SingleTransferResultData = results.allExtrinsicResults[results.allExtrinsicResults.length - 1]
+
+    let originalInputValue: bn;
+
+    console.log("FIRST")
+    if(isSwapResult(firstExtrinsic)){
+        console.log("Swap")
+        originalInputValue = new bn(firstExtrinsic.swapTxStats.tokenInBalanceChange.changeInBalance)
+
+    } else if(isTransferResult(firstExtrinsic)){
+        console.log("Trasnfer")
+        originalInputValue = new bn(firstExtrinsic.transferTxStats.startBalanceStats.changeInBalance)
+    } else {
+        throw new Error('')
+    }
+    console.log(originalInputValue)
+
+    let finalOutputValue: bn
+
+    console.log("LAST")
+    if(isSwapResult(lastExtrinsic)){
+        console.log("Swap")
+        finalOutputValue = new bn(lastExtrinsic.swapTxStats.tokenOutBalanceChange.changeInBalance)
+
+    } else if(isTransferResult(lastExtrinsic)){
+        console.log("Trasnfer")
+        finalOutputValue = new bn(lastExtrinsic.transferTxStats.destBalanceStats.changeInBalance)
+    }else {
+        throw new Error('')
+    }
+    console.log(finalOutputValue)
+
+    let totalProfit = finalOutputValue.minus(originalInputValue)
+    console.log(`Total profit: ${totalProfit.toString()}`)
+
+    let testAsset = new MyAsset(getAssetRegistryObjectBySymbol(2000, 'DOT', 'polkadot'))
+    let assetLocation = testAsset.getLocation();
+
+    let xcmAssets = getAssetsAtLocation(assetLocation, 'polkadot')
+    console.log(`Assets at location: ${JSON.stringify(xcmAssets, null, 2)}`)
+
+    let lastNode = stateGetLastNode()
+    let lastNodeAsset = new MyAsset(getAssetRegistryObjectBySymbol(lastNode?.chainId!, lastNode?.assetSymbol!, 'polkadot'))
+
+    console.log(`Last node: ${lastNodeAsset.getAssetKey()}`)
+
+    let foundAsset = xcmAssets.find((xcmAsset) => {
+        return new MyAsset(xcmAsset).getAssetKey() == lastNodeAsset.getAssetKey()
+    })
+
+    if (foundAsset !== undefined){
+        console.log(`Final node is a target node. Success`)
+    } else {
+        console.log(`Final node is NOT a target. Fail`)
+    }
+
+    console.log(`Final node: ${JSON.stringify(foundAsset)}`)
+
+    let value = totalProfit.div(new bn(10).pow(lastNodeAsset.getDecimals()))
+
+    console.log(`Final formatted: ${value}`)
+}
+// Utility function to measure execution time
+function measureExecutionTime(fn: () => void, iterations: number = 1): number {
+    const start = performance.now();
+    
+    for (let i = 0; i < iterations; i++) {
+      fn();
+    }
+    
+    const end = performance.now();
+    return end - start;
+  }
+
+function testExecutionTimes(){
+    let timeOne = measureExecutionTime(() => testAssetMapOne(), 1)
+    // let timeTwo = measureExecutionTime(() => testAssetRegistryTwo(), 1)
+
+    console.log(`One (Create registry each time): ${timeOne} | Two (Create registry once): `)
+}
+
+
 async function main(){
 
     // await testBalanceAdapters()
     // await testDepositEventListeners()
     // await testFilePaths()
+    // await testArbProfit()
+    // await testAssetRegistryOne()
+    testExecutionTimes()
+    // await callArbFinderTargetSearch()
     process.exit(0)
 }
 

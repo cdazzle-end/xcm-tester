@@ -1,6 +1,6 @@
 import '@galacticcouncil/api-augment/basilisk';
 import { dotNodeKeys, kusamaNodeKeys } from '../config/txConsts.ts';
-import { getAllNodes, isEvmChain, isTransferResult, printExtrinsicSetResults } from '../utils/utils.ts';
+import { getAllNodes, isEvmChain, isTransferResult, printExtrinsicSetResults, printInstruction } from '../utils/utils.ts';
 import { ExtrinsicObject, ExtrinsicSetResultDynamic, IndexObject, InstructionType, LastNode, Relay, SingleTransferResultData, SwapInstruction, TransferInstruction } from './../types/types.ts';
 import { stateGetExtrinsicSetResults, stateGetLastNode, stateGetNextInputValue, stateSetNextInputValue, wasLastExtrinsicSuccessful } from './../utils/globalStateUtils.ts';
 import { executeAndReturnExtrinsic } from './executionUtils.ts';
@@ -24,14 +24,17 @@ export async function buildAndExecuteExtrinsics(
     let loopIndex = 0;
     // let lastNode: LastNode;
     let firstInputValue = instructionSet[0].assetNodes[0].pathValue
-    console.log("FIRST INSTRUCTION INPUT VALUE: ", firstInputValue)
+    // console.log("FIRST INSTRUCTION INPUT VALUE: ", firstInputValue)
     try{
         for (const instruction of instructionSet) {
-            console.log("LOOP NUMBER: ", loopIndex)
-            console.log("Allocation Extrinsic: ", allocationExtrinsic)
+            console.log(`Loop index: ${loopIndex}`)
+            printInstruction(instruction)
+            // console.log("LOOP NUMBER: ", loopIndex)
+            // console.log("Allocation Extrinsic: ", allocationExtrinsic)
             const lastExtrinsicSetResultsCheck: ExtrinsicSetResultDynamic | null = stateGetExtrinsicSetResults()
             // If last successful node is a DOT/KSM node, we can finish
             if(allocationExtrinsic == false && destinationNodes.includes(stateGetLastNode()!.assetKey) && lastExtrinsicSetResultsCheck != null){
+                console.log(`Returning because reached end target`)
                 return lastExtrinsicSetResultsCheck
             }
 
@@ -55,7 +58,7 @@ export async function buildAndExecuteExtrinsics(
                        
                         // If extrinsic failed then return
                         let extrinsicResults = stateGetExtrinsicSetResults()
-                        if(extrinsicResults!.success === false) return extrinsicResults!
+                        if(extrinsicResults!.success === false) throw new Error(`Extrinsic failed. Returning results...`)  
                         
                         // After executing swap instruction queue, clear queue and add this new swap instruction to queue
                         swapInstructionQueue = [instruction];
@@ -69,17 +72,14 @@ export async function buildAndExecuteExtrinsics(
                         swapInstructionQueue = [];   
                     }
                     
-                    // If extrinsic failed then return
-                    let extrinsicResults = stateGetExtrinsicSetResults()
-                    if(extrinsicResults!.success === false) return extrinsicResults!
 
                     // Then execute transfer instructions
                     let instructionsToExecute = [instruction]
                     await buildAndExecuteTransferExtrinsics(relay, instructionsToExecute, chopsticks, executeMovr, allocationExtrinsic)
 
                     // If extrinsic failed then return
-                    extrinsicResults = stateGetExtrinsicSetResults()
-                    if(extrinsicResults!.success === false) return extrinsicResults!                    
+                    let extrinsicResults = stateGetExtrinsicSetResults()
+                    if(extrinsicResults!.success === false) throw new Error(`Extrinsic failed. Returning results...`)                
                    
                     break;
 
@@ -91,22 +91,23 @@ export async function buildAndExecuteExtrinsics(
 
         // If extrinsic failed then return
         let extrinsicResults = stateGetExtrinsicSetResults()
-        if(extrinsicResults!.success === false) return extrinsicResults!
+        if(extrinsicResults!.success === false) throw new Error(`Extrinsic failed. Returning results...`)  
 
         swapInstructionQueue = [];   
     } catch(e){
         // Need to properly handle this. Error should be extrinsicResultData
+        console.log(`Execution error`)
         console.log(e)
         let extrinsicSetResults: ExtrinsicSetResultDynamic | null = stateGetExtrinsicSetResults()
         if(extrinsicSetResults === null){
-            throw new Error("Extrsinsic set results undefined")
+            throw new Error("Can't return extrinsic set results. Extrinsics undefined")
         }       
         printExtrinsicSetResults(extrinsicSetResults.allExtrinsicResults)
         return extrinsicSetResults
     }
     let extrinsicSetResults: ExtrinsicSetResultDynamic | null = stateGetExtrinsicSetResults()
     if(extrinsicSetResults === null){
-        throw new Error("Extrsinsic set results undefined")
+        throw new Error("Can't return extrinsic set results. Extrinsics undefined")
     }       
     return extrinsicSetResults
 }

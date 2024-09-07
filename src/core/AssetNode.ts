@@ -4,9 +4,9 @@ import { LastNode, IMyAsset, PathData, PathType, Relay, PNode } from "./../types
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url';
-import { FixedPointNumber } from "@acala-network/sdk-core";
-import { deepEqual, getAssetRegistry } from "../utils/utils.ts";
 import { MyAsset } from "./index.ts";
+import bn from 'bignumber.js'
+import { getBalanceFromDisplay } from "../utils/balanceUtils.ts";
 
 // Get the __dirname equivalent in ES module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -39,13 +39,20 @@ export interface AssetNodeData {
     pathData: PathData
 }
 
-
+/**
+ * Asset Nodes are built from the arb finder search result. Each asset node represents a node in the path
+ * 
+ * @prop chain - Chain Name
+ * @prop asset - My asset data, token data + multi-location of asset
+ * @prop pathValue - Asset value of node in DISPLAY format
+ * @prop pathType - Type of the transition from the previous node to this one. XCM or Swap type
+ * @prop pathData - Additional data relevant to the xcm or swap
+ */
 
 export class AssetNode implements AssetNodeData{
     chain: PNode;
     asset: MyAsset;
     pathValue: string; 
-    pathValueFixed: FixedPointNumber // asset amount formatted
     pathType: PathType; 
     pathData: PathData;
     
@@ -57,22 +64,10 @@ export class AssetNode implements AssetNodeData{
         this.pathValue = data.pathValue;
         this.pathType = data.pathType;
         this.pathData = data.pathData;
-
-        let assetDecimals = this.asset.tokenData.decimals
-        this.pathValueFixed = new FixedPointNumber(this.pathValue, Number.parseInt(assetDecimals))
     }
 
     getPathValueAsNumber(){
         return Number.parseFloat(this.pathValue)
-    }
-
-    // Reduce path by 2% to ensure trade amount for reverse
-    getReducedPathValue() {
-        let assetDecimals = this.asset.tokenData.decimals
-        let amountFn = new FixedPointNumber(this.pathValue, Number.parseInt(assetDecimals))
-        let amountToSubtract = amountFn.mul(new FixedPointNumber(2)).div(new FixedPointNumber(100))
-        let reducedAmount = amountFn.sub(amountToSubtract)
-        return reducedAmount.toNumber()
     }
 
     getChainId(): number{
@@ -116,6 +111,15 @@ export class AssetNode implements AssetNodeData{
 
     getContractAddress(): string {
         return this.asset.getContractAddress()
+    }
+
+    /**
+     * Converts the path value (which is in display format) to chain format
+     * 
+     * @returns bn
+     */
+    getChainBalance(): bn {
+        return getBalanceFromDisplay(this.pathValue, this.getDecimals())
     }
 }
 

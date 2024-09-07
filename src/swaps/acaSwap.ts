@@ -5,9 +5,9 @@ import path from 'path'
 import { FixedPointNumber } from "@acala-network/sdk-core"
 import { Wallet } from "@acala-network/sdk/wallet/wallet.js"
 import { SubmittableExtrinsic } from '@polkadot/api/submittable/types'
-import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from './../types/types.ts'
+import { IMyAsset, IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from './../types/types.ts'
 import { AssetNode } from '../core/AssetNode.ts'
-import { getApiForNode, getSigner, getAssetRegistry, increaseIndex } from '../utils/index.ts'
+import { getApiForNode, getSigner,  getAssetMapAssets, } from '../utils/index.ts'
 // import {  } from '../utils/utils.ts'
 // import {  } from './../utils/apiUtils.ts'
 import { localRpcs } from '../config/txConsts.ts'
@@ -94,7 +94,8 @@ export async function getAcaSwapExtrinsicDynamic(
         // So just get the swap instruction pool id
         bn.set({ DECIMAL_PLACES: 40});
         let poolId = swapInstructions[0].pathData.lpId
-        let assetRegistry = getAssetRegistry('polkadot');
+        // let assetRegistry = getAssetRegistry('polkadot');
+        let assetRegistry: IMyAsset[] = getAssetMapAssets('polkadot')
 
         console.log("Pool ID: " + poolId)
         console.log("Swap instruction path data: - " + JSON.stringify(swapInstructions[0].pathData, null, 2))
@@ -154,8 +155,8 @@ export async function getAcaSwapExtrinsicDynamic(
             chain: "Acala",
             assetNodes: extrinsicNodes,
             extrinsic: swapTx,
-            assetAmountIn: supplyAmount,
-            expectedAmountOut: expectedOutAmountFixed,
+            assetAmountIn: new bn(supplyAmount.toChainData()),
+            expectedAmountOut: new bn(expectedOutAmountFixed.toChainData()),
             assetIn: assetIn,
             assetOut: assetOut,
             pathType: swapType,
@@ -241,7 +242,8 @@ async function testStablePool(){
     console.log("Pool Data: " + JSON.stringify(poolData, null, 2))
 
     // let poolId = swapInstructions[0].pathData.lpId
-    let assetRegistry = getAssetRegistry('polkadot');
+    // let assetRegistry = getAssetRegistry('polkadot');
+    let assetRegistry: IMyAsset[] = getAssetMapAssets('polkadot')
 
     let targetStablePool = getAcalaStablePoolData(Number.parseInt(poolId))
     let stablePoolAssets = targetStablePool.poolAssets

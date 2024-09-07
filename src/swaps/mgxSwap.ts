@@ -1,6 +1,7 @@
 import { FixedPointNumber } from "@acala-network/sdk-core";
 import { Mangata, MangataInstance } from "@mangata-finance/sdk";
 import { BN } from '@polkadot/util';
+import BigNumber from 'bignumber.js'
 import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from '../types/types.ts';
 import { getSigner } from '../utils/index.ts';
 const wsLocalChain = "ws://172.26.130.75:8011"
@@ -61,22 +62,23 @@ export async function getMgxSwapExtrinsic(
     let startTokenDecimals = tokenPath[0]!.decimals
     let endTokenDecimals = tokenPath[tokenPath.length - 1]!.decimals
 
-    let inputFixedPoint = new FixedPointNumber(amountIn, startTokenDecimals).toChainData()
-    let expectedOutFixedPoint = new FixedPointNumber(expectedAmountOut, endTokenDecimals)
+    // let inputFixedPoint = new FixedPointNumber(amountIn, startTokenDecimals).toChainData()
+    // let expectedOutFixedPoint = new FixedPointNumber(expectedAmountOut, endTokenDecimals)
+    let inputAmount = assetIn.getChainBalance()
+    let outputAmount = assetOut.getChainBalance()
+    let priceDeviation = outputAmount.times(new BigNumber(priceDeviationPercent)).div(new BigNumber(100)).integerValue(BigNumber.ROUND_DOWN)
+    let expectedOutMinusDeviation = outputAmount.minus(priceDeviation)
 
-    let priceDeviation = expectedOutFixedPoint.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100))
-    let expectedOutMinusDeviation = expectedOutFixedPoint.sub(priceDeviation)
-
-    let inputBn = new BN(inputFixedPoint)
-    let expectedOutBn = new BN(expectedOutMinusDeviation.toChainData())
-    console.log(`inputAmount: ${inputBn} expectedOutAmount: ${expectedOutBn}`)
+    // let inputBn = new bn(inputFixedPoint)
+    let expectedOutBn = new BigNumber(expectedOutMinusDeviation.toString())
+    // console.log(`inputAmount: ${inputBn} expectedOutAmount: ${expectedOutBn}`)
     let tokenPathIds = tokenPath.map((token) => token!.id)
 
     const args = {
       account: signer,
       tokenIds: tokenPathIds,
-      amount: inputBn,
-      minAmountOut: expectedOutBn,
+      amount: new BN(inputAmount.toString()),
+      minAmountOut: new BN(expectedOutBn.toString()),
     }
   let mgxTx = await mangata.submitableExtrinsic.multiswapSellAsset(args)
 
@@ -89,8 +91,8 @@ export async function getMgxSwapExtrinsic(
     extrinsic: mgxTx,
     assetIn: assetIn,
     assetOut: assetOut,
-    assetAmountIn: new FixedPointNumber(amountIn, startTokenDecimals),
-    expectedAmountOut: expectedOutFixedPoint,
+    assetAmountIn: inputAmount,
+    expectedAmountOut: expectedOutBn,
     pathType: swapType,
     pathAmount: amountIn,
     api: await mangata.api()

@@ -2,7 +2,7 @@ import fs from 'fs'
 import { AcalaAdapter, AltairAdapter, AstarAdapter, BalanceData, BasiliskAdapter, BifrostAdapter, BifrostPolkadotAdapter, CalamariAdapter, CentrifugeAdapter, CrabAdapter, CrustAdapter, DarwiniaAdapter, HeikoAdapter, HydraDxAdapter, IntegriteeAdapter, InterlayAdapter, InvarchAdapter, KaruraAdapter, KhalaAdapter, KicoAdapter, KiltAdapter, KintsugiAdapter, KusamaAdapter, ListenAdapter, MangataAdapter, MantaAdapter, MoonbeamAdapter, MoonriverAdapter, NodleAdapter, OakAdapter, ParallelAdapter, PendulumAdapter, PhalaAdapter, PichiuAdapter, PolkadotAdapter, QuartzAdapter, RobonomicsAdapter, ShadowAdapter, ShidenAdapter, StatemineAdapter, StatemintAdapter, SubsocialAdapter, TinkernetAdapter, TuringAdapter, UniqueAdapter, ZeitgeistAdapter, getAdapter } from '@polkawallet/bridge';
 import { TNode } from '@paraspell/sdk'
 import { firstValueFrom, Observable, timeout } from "rxjs";
-import { BalanceChangeStatsBn, IMyAsset, RelayTokenBalances, Relay, BalanceChangeStats, PNode  } from './../types/types.ts'
+import { BalanceChange, IMyAsset, RelayTokenBalances, Relay, PNode, BalanceDataBN  } from './../types/types.ts'
 import { ApiPromise, WsProvider } from '@polkadot/api';
 // import { TransferrableAssetObject, BalanceChangeStats } from './../types/types.ts'
 import { FixedPointNumber} from "@acala-network/sdk-core";
@@ -21,6 +21,73 @@ bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precisio
 const balanceAdapterMap: Map<PNode, BalanceAdapter> = new Map<TNode, BalanceAdapter>();
 
 export type BalanceAdapter = StatemintAdapter | StatemineAdapter | AcalaAdapter | KaruraAdapter | AstarAdapter | ShidenAdapter | BifrostAdapter | BifrostPolkadotAdapter | CrabAdapter | DarwiniaAdapter | AltairAdapter | CentrifugeAdapter | ShadowAdapter | CrustAdapter | BasiliskAdapter | HydraDxAdapter | PolkadotAdapter | KusamaAdapter | IntegriteeAdapter | InterlayAdapter | KintsugiAdapter | KicoAdapter | PichiuAdapter | ListenAdapter | MangataAdapter | CalamariAdapter | MantaAdapter | MoonbeamAdapter | MoonriverAdapter | KhalaAdapter | PhalaAdapter | TuringAdapter | OakAdapter | HeikoAdapter | ParallelAdapter | RobonomicsAdapter | TinkernetAdapter | InvarchAdapter | QuartzAdapter | UniqueAdapter | ZeitgeistAdapter | SubsocialAdapter | NodleAdapter | PendulumAdapter | KiltAdapter;
+
+/**
+ * Query the balance of an asset, confirm balance change
+ * 
+ * If balance has not changed, return null
+ * 
+ * return BalanceChange
+ * 
+ * @param startBalance 
+ * @param paraId 
+ * @param relay 
+ * @param chopsticks 
+ * @param api 
+ * @param asset 
+ * @param address 
+ * @returns 
+ */
+export async function manualCheckBalanceChange(
+    startBalance: bn,
+    relay: Relay, 
+    chopsticks: boolean, 
+    api: ApiPromise, 
+    asset: MyAsset, 
+    address: string
+): Promise<BalanceChange | null>{
+    console.log("Waited 10 seconds. QUERYING BALANCE...")
+    let currentBalance: bn = await getBalance(relay, chopsticks, api, asset, address)
+    console.log(`Current Balance: ${currentBalance.toString()}`)
+
+    let changeInBalance = currentBalance.minus(startBalance).abs()
+    let tokenDepositConfirmed
+    if(changeInBalance.gt(new bn(0))){
+        console.log("QUERIED BALANCE AND FOUND CHANGE")
+
+        let balanceChange: BalanceChange = {
+            startBalance: startBalance,
+            endBalance: currentBalance,
+            changeInBalance: changeInBalance,
+            decimals: asset.getDecimals()
+        }
+        tokenDepositConfirmed = true
+        return balanceChange
+        
+    }  else {
+        console.log("BALANCE QUERIED AND NO CHANGE IN BALANCE, waiting 10 seconds")
+        return null
+        // tokenDepositConfirmed = false
+        // await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+}
+
+export async function transferWatchBalanceChange(
+    relay: Relay, 
+    chopsticks: boolean, 
+    destChainApi: ApiPromise, 
+    asset: MyAsset, 
+    depositAddress: string,
+    setUnsubscribeCallback: (unsubscribe: () => void) => void // New parameter
+): Promise<BalanceChange> {
+    let paraId = asset.getChainId()
+    let balanceObservable$ = await watchTokenDeposit(relay, paraId, chopsticks, destChainApi, asset, depositAddress);
+    let balanceChange = getBalanceChange(balanceObservable$, (unsubscribe) => {
+        setUnsubscribeCallback(unsubscribe); // Set the unsubscribe function
+    });
+    return balanceChange
+}
+
 // ***
 // Used in executeSingleTransferExtrinsic
 export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks: boolean, destChainApi: ApiPromise, asset: MyAsset, depositAddress: string){
@@ -108,11 +175,11 @@ export async function watchTokenBalance(
     paraId: number, 
     chopsticks: boolean, 
     chainApi: ApiPromise, 
-    asset: MyAsset, 
-    node: string, 
+    asset: MyAsset,
     accountAddress: string
 ): Promise<Observable<BalanceData>>{
     // printAndLogToFile("Initiating balance adapter for destination chain " + paraId + " on port " + destPort )
+    let chain = getNodeFromChainId(paraId, relay)
     let tokenSymbol;
     if(paraId == 0){
         tokenSymbol = relay == 'kusama' ? "KSM" : "DOT"
@@ -120,7 +187,7 @@ export async function watchTokenBalance(
         tokenSymbol = asset.getSymbol()
     }
 
-    console.log(`Watch Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
+    console.log(`Watch Token Balance: Watching chain ${chain} | Token ${tokenSymbol} | Address ${accountAddress}`)
 
     // Make sure api is connected
     console.log(`Watch Token Balance: API connected: ${chainApi.isConnected}`)
@@ -137,9 +204,9 @@ export async function watchTokenBalance(
     if(relay == 'kusama' && paraId == 2000 || relay == 'polkadot' && paraId == 2000){
         let rpcEndpoint
         if(relay == 'kusama'){
-            rpcEndpoint = chopsticks ? localRpcs[node] : karRpc
+            rpcEndpoint = chopsticks ? localRpcs[chain] : karRpc
         } else [
-            rpcEndpoint = chopsticks ? localRpcs[node] : acaRpc
+            rpcEndpoint = chopsticks ? localRpcs[chain] : acaRpc
         ]
         
         let walletConfigs: WalletConfigs = {
@@ -206,18 +273,16 @@ export async function watchTokenBalance(
 export async function getBalanceChange(
     balanceObservable$: Observable<BalanceData>,
     setUnsubscribeCallback: (unsubscribe: () => void) => void
-  ): Promise<BalanceChangeStatsBn> {
+  ): Promise<BalanceChange> {
     console.log("Get Balance Change: waiting for balance change")
     let currentBalance: BalanceData;
-    let balanceChangeStats: BalanceChangeStatsBn = {
+    let balanceChangeStats: BalanceChange = {
         startBalance: new bn(0),
         endBalance: new bn(0),
         changeInBalance: new bn(0),
-        startBalanceDisplay: "0",
-        endBalanceDisplay: "0",
-        changeInBalanceDisplay: "0"
+        decimals: 0
     }
-    const balanceChangePromise = new Promise<BalanceChangeStatsBn>((resolve, reject) => {
+    const balanceChangePromise = new Promise<BalanceChange>((resolve, reject) => {
         const subscription = balanceObservable$.pipe(timeout(120000)).subscribe({
             next(balance) {
                 if(currentBalance){
@@ -226,20 +291,10 @@ export async function getBalanceChange(
                     let endBalance = balance.free._getInner()        
                     let changeInBalance = endBalance.minus(startBalance).abs()
             
-                    let startBalanceDisplay = getDisplayBalance(startBalance, decimals)
-                    let endBalanceDisplay = getDisplayBalance(endBalance, decimals)
-                    let changeInBalanceDisplay = getDisplayBalance(changeInBalance, decimals)
-                    // console.log(`Get Balance Change: Previous Balance: ${currentBalance.free} | New Balance: ${balance.free} | Change in Balance: ${changeInBalance}`)
-                    // console.log(`Asset decimals: ${decimals}`)
-                    // console.log(`Start Balance: ${startBalance.toString()} | End Balance: ${endBalance.toString()} | Change in Balance: ${changeInBalance.toString()}`)
-                    console.log(`Start Balance Display: ${startBalanceDisplay.toString()} | End Balance Display: ${endBalanceDisplay.toString()} | Change in Balance Display: ${changeInBalanceDisplay.toString()}`)
                     balanceChangeStats = {
                         startBalance,
                         endBalance,
                         changeInBalance,
-                        startBalanceDisplay: startBalanceDisplay.toString(),
-                        endBalanceDisplay: endBalanceDisplay.toString(),
-                        changeInBalanceDisplay: changeInBalanceDisplay.toString(),
                         decimals
                     }
                     subscription.unsubscribe();
@@ -576,10 +631,16 @@ export async function getBalanceAdapter(relay: Relay, api: ApiPromise, chainId: 
 
 // Gets current balance
 // Used in executeSingleTransferExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
-export async function getBalance(paraId: number, relay: Relay, chopsticks: boolean, chainApi: ApiPromise, asset: MyAsset, node: string, accountAddress: string): Promise<BalanceData>{
-
-
-    console.log(`Get Token Balance for chain ${node} | Token ${asset.getSymbol()}`)
+export async function getBalance(
+    relay: Relay, 
+    chopsticks: boolean, 
+    chainApi: ApiPromise, 
+    asset: MyAsset,  
+    accountAddress: string
+): Promise<bn>{
+    let paraId = asset.getChainId()
+    let chain = getNodeFromChainId(paraId, relay)
+    console.log(`Get Token Balance for chain ${chain} | Token ${asset.getSymbol()}`)
 
     let destAdapter = getAdapter(relay, paraId)
     
@@ -589,7 +650,7 @@ export async function getBalance(paraId: number, relay: Relay, chopsticks: boole
     }
 
     if(relay == 'kusama' && paraId == 2000){
-        let rpcEndpoint = chopsticks ? localRpcs[node] : karRpc
+        let rpcEndpoint = chopsticks ? localRpcs[chain] : karRpc
         let walletConfigs: WalletConfigs = {
             evmProvider: EvmRpcProvider.from(rpcEndpoint),
             wsProvider: new WsProvider(rpcEndpoint)
@@ -597,7 +658,7 @@ export async function getBalance(paraId: number, relay: Relay, chopsticks: boole
         let adapterWallet = new Wallet(chainApi, walletConfigs);
         await destAdapter.init(chainApi, adapterWallet);
     } else if(relay == 'polkadot' && paraId == 2000){
-        let rpcEndpoint = chopsticks ? localRpcs[node] : acaRpc
+        let rpcEndpoint = chopsticks ? localRpcs[chain] : acaRpc
         let walletConfigs: WalletConfigs = {
             evmProvider: EvmRpcProvider.from(rpcEndpoint),
             wsProvider: new WsProvider(rpcEndpoint)
@@ -614,7 +675,7 @@ export async function getBalance(paraId: number, relay: Relay, chopsticks: boole
     } else {
         tokenSymbol = asset.getSymbol()
     }
-    console.log(`Get Token Balance: Watching chain ${node} | Token ${tokenSymbol} | Address ${accountAddress}`)
+    console.log(`Get Token Balance: Watching chain ${chain} | Token ${tokenSymbol} | Address ${accountAddress}`)
 
     if(relay == "kusama" && paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"
     || relay == "polkadot" && paraId == 2004 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "GLMR"){
@@ -632,7 +693,12 @@ export async function getBalance(paraId: number, relay: Relay, chopsticks: boole
     let balance = await firstValueFrom(balanceObservable)
     console.log("Balance: " + JSON.stringify(balance.available.toNumber()))
 
-    return balance
+    return formatBalanceData(balance)
+}
+
+function formatBalanceData(data: BalanceData): bn{
+    let balance = (data.free as any).inner
+    return new bn(balance)
 }
 
 // Call this where ever calling getBalance()
@@ -772,11 +838,47 @@ function getBalanceAdapterSymbol(chainId: number, tokenSymbol: string, asset: My
     return validatedSymbol
 }
 
-// Take balance and decimals, return displayable balance
-export function getDisplayBalance(balance: bn, decimals: number): string {
-    return balance.shiftedBy(-decimals).toFixed(decimals);
+/**
+ *  Take balance in chain format, convert to display format
+ * - Input balance can be bn or string
+ * 
+ * Will shift decimal places to the left by specified decimals parameter
+ * 
+ * @param balance 
+ * @param decimals 
+ * @returns 
+ */
+export function getDisplayBalance(balance: bn | string, decimals: number): string {
+    let balanceBN: bn = new bn(balance)
+    
+
+    return balanceBN.shiftedBy(-decimals).toFixed(decimals);
 }
 
-export function getBalanceFromDisplay(displayBalance: bn, decimals: number): bn {
-    return displayBalance.shiftedBy(decimals)
+export function balanceChangeDisplay(balanceChange: BalanceChange){
+    return getDisplayBalance(balanceChange.changeInBalance, balanceChange.decimals)
+}
+
+/**
+ * Takes an amount in display format and converts it to chain format
+ * - if amount is passed in as a string, it will be converted to a bn
+ * 
+ * Shifts decimal place over by specified decimals parameter
+ * 
+ * @param displayBalance 
+ * @param decimals 
+ * @returns 
+ */
+export function getBalanceFromDisplay(displayBalance: bn | string, decimals: number): bn {
+    let balanceBN: bn;
+    
+    if (typeof displayBalance === 'string') {
+        balanceBN = new bn(displayBalance);
+    } else if (displayBalance instanceof bn) {
+        balanceBN = displayBalance;
+    } else {
+        throw new Error('Invalid input type for displayBalance');
+    }
+
+    return balanceBN.shiftedBy(decimals).integerValue();
 }

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import * as paraspell from '@paraspell/sdk'
 import { TNode } from '@paraspell/sdk'
-import { getNode, getSigner, increaseIndex, toFullAssetAmount } from '../utils/utils.ts'
+import { getNode, getSigner, toFullAssetAmount } from '../utils/utils.ts'
 import { InstructionType, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, SwapExtrinsicContainer, ExtrinsicObject, ChainNonces, TransferExtrinsicContainer, IndexObject, PreExecutionTransfer, Relay, PathType, PNode } from './../types/types.ts'
 import { AssetNode } from '../core/AssetNode.ts'
 import { fileURLToPath } from 'url';
@@ -186,8 +186,8 @@ export async function buildTransferExtrinsicFromInstruction(
     let txContainer: TransferExtrinsicContainer = {
         relay: relay,
         type: "Transfer",
-        startNode: startNode,
-        destinationNode: destinationNode,
+        startChain: startNode,
+        destinationChain: destinationNode,
         // assetSymbol: assetSymbol,
         startAsset: startAsset,
         destinationAsset: destinationAsset,
@@ -275,7 +275,6 @@ export async function buildSwapExtrinsicDynamic(
     let destAsset = instructions[instructions.length - 1].assetNodes[1].getAssetSymbol()    
     let amountIn = instructions[0].assetNodes[0].pathValue;
     instructions[0].assetInAmount = amountIn
-    instructions[0].assetInAmountFixed = new FixedPointNumber(amountIn)
     let expectedAmountOut = instructions[instructions.length - 1].assetNodes[1].pathValue;
 
     let swapContainer, remainingInstructions
@@ -434,49 +433,49 @@ async function buildPolkadotSwapExtrinsic(instructions, chainId, swapType: PathT
 //     return extrinsicObj
 // }
 
-export async function buildTransferToKsm(relay: Relay, fromChainId: number, amount: FixedPointNumber, chopsticks: boolean){
-    if(fromChainId == 0){
-        throw new Error("Trying to transfer kusama away from home chain to kusama")
-    }
-    let fromNode = getNode(relay, fromChainId) as TNode
-    let fromApi = await getApiForNode(fromNode, false)
-    let fromAccount = fromNode == "Moonriver" ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false);
-    let ksmAccount = await getSigner(chopsticks, false)
+// export async function buildTransferToKsm(relay: Relay, fromChainId: number, amount: FixedPointNumber, chopsticks: boolean){
+//     if(fromChainId == 0){
+//         throw new Error("Trying to transfer kusama away from home chain to kusama")
+//     }
+//     let fromNode = getNode(relay, fromChainId) as TNode
+//     let fromApi = await getApiForNode(fromNode, false)
+//     let fromAccount = fromNode == "Moonriver" ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false);
+//     let ksmAccount = await getSigner(chopsticks, false)
 
-    let transferTx = paraspell.Builder(fromApi).from(fromNode).amount(amount.toChainData()).address(ksmAccount.address).build()
-    let transfer: PreExecutionTransfer = {
-        fromChainId: fromChainId,
-        fromChainNode: fromNode,
-        fromChainAccount: fromAccount,
-        toChainNode: "Kusama",
-        toChainAccount: ksmAccount,
-        toChainId: 0,
-        transferAmount: amount,
-        extrinsic: transferTx
-    }
-    return transfer
-}
+//     let transferTx = paraspell.Builder(fromApi).from(fromNode).amount(amount.toChainData()).address(ksmAccount.address).build()
+//     let transfer: PreExecutionTransfer = {
+//         fromChainId: fromChainId,
+//         fromChainNode: fromNode,
+//         fromChainAccount: fromAccount,
+//         toChainNode: "Kusama",
+//         toChainAccount: ksmAccount,
+//         toChainId: 0,
+//         transferAmount: amount,
+//         extrinsic: transferTx
+//     }
+//     return transfer
+// }
 
-export async function buildTransferKsmToChain(relay: Relay, toChainId: number, amount: FixedPointNumber, chopsticks: boolean){
-    if(toChainId == 0){
-        throw new Error("Trying to transfer kusama to non kusama chain")
-    }
+// export async function buildTransferKsmToChain(relay: Relay, toChainId: number, amount: FixedPointNumber, chopsticks: boolean){
+//     if(toChainId == 0){
+//         throw new Error("Trying to transfer kusama to non kusama chain")
+//     }
 
-    let toNode: TNode = getNode(relay, toChainId) as TNode
-    let toApi = await getApiForNode(toNode, false)
-    let toAccount = toNode == "Moonriver" ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false);
-    let fromAccount = await getSigner(chopsticks, false)
+//     let toNode: TNode = getNode(relay, toChainId) as TNode
+//     let toApi = await getApiForNode(toNode, false)
+//     let toAccount = toNode == "Moonriver" ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false);
+//     let fromAccount = await getSigner(chopsticks, false)
 
-    let transferTx = paraspell.Builder(toApi).to(toNode).amount(amount.toChainData()).address(toAccount.address).build()
-    let transfer: PreExecutionTransfer = {
-        fromChainId: 0,
-        fromChainNode: "Kusama",
-        fromChainAccount: fromAccount,
-        toChainNode: toNode,
-        toChainAccount: toAccount,
-        toChainId: toChainId,
-        transferAmount: amount,
-        extrinsic: transferTx
-    }
-    return transfer
-}
+//     let transferTx = paraspell.Builder(toApi).to(toNode).amount(amount.toChainData()).address(toAccount.address).build()
+//     let transfer: PreExecutionTransfer = {
+//         fromChainId: 0,
+//         fromChainNode: "Kusama",
+//         fromChainAccount: fromAccount,
+//         toChainNode: toNode,
+//         toChainAccount: toAccount,
+//         toChainId: toChainId,
+//         transferAmount: amount,
+//         extrinsic: transferTx
+//     }
+//     return transfer
+// }

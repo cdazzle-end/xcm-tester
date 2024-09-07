@@ -10,7 +10,7 @@ import { ethers } from 'ethers';
 import { privateKeyToAccount } from 'viem/accounts';
 import { dexAbis, localRpc, movrContractAddress, routerFees } from './const.ts';
 import { erc20Abi } from 'viem';
-import { getAssetRegistry } from '../../../utils/index.ts';
+import { getAssetMapAssets, getAssetRegistry } from '../../../utils/index.ts';
 import { IMyAsset } from '../../../types/types.ts';
 // import { dexAbis, localRpc, routerFees } from './const';
 // const acquireMutex2 = require('mutexify')();
@@ -315,13 +315,13 @@ async function readFromFile(filePath): Promise<any[]> {
     }
 }
 function lookupXcLocalIdByAddress(address: string){
-    const assetRegistry: IMyAsset[] = getAssetRegistry('kusama')
+    const assetRegistry: IMyAsset[] = getAssetMapAssets('kusama')
     // console.log(assetRegistry)
     const xcToken = assetRegistry.find((asset: any) => asset.tokenData.chain == 2023 && asset.tokenData.contractAddress.toString().toLowerCase() == address.toLowerCase())!
     return xcToken.tokenData.localId
 }
 function lookupXcAddressByLocalId(localId: string){
-    const assetRegistry: IMyAsset[] = getAssetRegistry('kusama')
+    const assetRegistry: IMyAsset[] = getAssetMapAssets('kusama')
     const xcToken = assetRegistry.find((asset: any) => asset.tokenData.chainId == 2023 && asset.tokenData.localId == localId)!
     return xcToken.tokenData.contractAddress
 }
@@ -421,7 +421,7 @@ export function checkForSubstrateToken(address: string){
         // console.log("Not a substrate token")
         return false
     } else {
-        const assetRegistry: IMyAsset[] = getAssetRegistry('kusama')
+        const assetRegistry: IMyAsset[] = getAssetMapAssets('kusama')
         const substrateToken = assetRegistry.find((asset: any) => asset.tokenData.localId == address)
         if(substrateToken){
             return true

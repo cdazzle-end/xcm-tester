@@ -11,8 +11,9 @@ import { fileURLToPath } from 'url';
 import { AssetNode } from '../../core/AssetNode.ts';
 // import {  } from '../../utils/utils.ts';
 import { FixedPointNumber } from '@acala-network/sdk-core';
-import { getApiForNode, getAssetRegistry, increaseIndex } from '../../utils/index.ts';
+import { getApiForNode, getAssetMapAssets, getAssetRegistry, } from '../../utils/index.ts';
 import { live_wallet_3 } from '../../config/index.ts';
+import bn from 'bignumber.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // console.log(__dirname)
 // Patch BigInt for JSON serialization
@@ -25,7 +26,7 @@ declare global {
 BigInt.prototype.toJSON = function() {
     return this.toString();
 };
-const assetRegistry: IMyAsset[] = getAssetRegistry('kusama')
+const assetRegistry: IMyAsset[] = getAssetMapAssets('kusama')
 const routerFees = [
     solarFee,
     zenFee
@@ -372,8 +373,8 @@ export async function formatMovrTx(
         txString: descriptorString,
         assetIn: assetIn,
         assetOut: assetOut,
-        assetAmountIn: inputFixedPoint,
-        expectedAmountOut: outputFixedPoint,
+        assetAmountIn: new bn(inputFixedPoint.toChainData()),
+        expectedAmountOut: new bn(outputFixedPoint.toChainData()),
         // pathInLocalId: pathStartLocalId,
         // pathOutLocalId: pathDestLocalId,
         pathType: swapType,
@@ -898,7 +899,7 @@ function getDexInfo(dexAddress: string): DexInfo{
 
 // }
 function getXcTokens(){
-    const assetRegistry: IMyAsset[] = getAssetRegistry('kusama')
+    const assetRegistry: IMyAsset[] = getAssetMapAssets('kusama')
     let xcAssets = assetRegistry.filter((asset: any) => asset.tokenData.chain == "2023" && asset.tokenData.symbol.toLowerCase().includes("xc"))
     return xcAssets
 }

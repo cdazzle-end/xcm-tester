@@ -100,6 +100,14 @@ export function stateSetResultData(resultData: SingleSwapResultData | SingleTran
     globalState.setResultData(resultData)
 }
 
+/**
+ * Set transaction state
+ * - PreSubmission | Broadcasted | Finalized // REVIEW: Add more states if needed. ex FAILED
+ * 
+ * If transaction is set to Broadcasted and this program execution fails, we'll be able to check if the transaction succeeded or failed and continue from there
+ * 
+ * @param transactionState 
+ */
 export function stateSetTransactionState(transactionState: TransactionState) {
     const globalState = GlobalState.getInstance();
     globalState.setTransactionState(transactionState)

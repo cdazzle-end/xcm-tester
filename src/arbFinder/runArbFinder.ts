@@ -20,12 +20,13 @@ const __dirname = path.dirname(__filename);
  * @param relay 
  * @returns 
  */
-export async function runArbFallback(args: string, relay: Relay) {
+export async function arbRunFallbackSearch(startKey: string, destinationKey: string, inputValue: string, relay: Relay): Promise<boolean> {
     return new Promise((resolve, reject) => {
-        let functionCall =
-            relay === "kusama"
-                ? "fallback_search_a_to_b_kusama " + args
-                : "fallback_search_a_to_b_polkadot " + args;
+        // let functionCall =
+        //     relay === "kusama"
+        //         ? "fallback_search_a_to_b_kusama " + args
+        //         : "fallback_search_a_to_b_polkadot " + args;
+        let functionCall = `fallback_search ${relay} ${startKey} ${destinationKey} ${inputValue}`;
         const command = `cd ${arbFinderPath} && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
 
         console.log("Executing arb: " + functionCall);
@@ -65,16 +66,18 @@ export async function runArbFallback(args: string, relay: Relay) {
  * 
  * `search_best_path_a_to_b_${relay} ` + args
  * 
+ * @param args: String = assetKey(startNode) + assetKey(destinationNode) + inputValue
+ * 
  * Resolves true if arb-finder completes successfully, or throws error
  * 
  * @param args - Input for arb-finder executable
  * @param relay - relay
  * @returns 
  */
-export async function runArbTarget(args: string, relay: Relay): Promise<boolean> {
+export async function arbRunTargetSearch(startKey: string, destinationKey: string, inputValue: string, relay: Relay): Promise<boolean> {
     return new Promise((resolve, reject) => {
         // let functionCall = `search_best_path_a_to_b_${relay} ` + args;
-        let functionCall = `target_search ${relay}` + args;
+        let functionCall = `target_search ${relay} ${startKey} ${destinationKey} ${inputValue}`;
         const command = `cd ${arbFinderPath} && set RUSTFLAGS=-Awarnings && cargo run --quiet -- ${functionCall}`;
         // const command = `cd ${arbFinderPath} && set RUSTFLAGS=-Awarnings && cargo run -- ${functionCall}`;
 
@@ -94,7 +97,7 @@ export async function runArbTarget(args: string, relay: Relay): Promise<boolean>
         });
     });
 }
-async function findLatestDirectory(dirPath: string): Promise<string | null> {
+export async function findLatestDirectory(dirPath: string): Promise<string | null> {
     try {
         const items = await readdir(dirPath, { withFileTypes: true });
         let latestDir: string | null = null;
@@ -118,7 +121,7 @@ async function findLatestDirectory(dirPath: string): Promise<string | null> {
     }
 }
 
-async function findLatestFile(dirPath: string): Promise<string | null> {
+export async function findLatestFile(dirPath: string): Promise<string | null> {
     try {
         const files = await readdir(dirPath);
         let latestFile: string | null = null;
@@ -143,7 +146,7 @@ async function findLatestFile(dirPath: string): Promise<string | null> {
     }
 }
 
-async function findLatestFileInLatestDirectory(baseDir: string) {
+export async function findLatestFileInLatestDirectory(baseDir: string) {
     const latestDirectory = await findLatestDirectory(baseDir);
     if (latestDirectory) {
         console.log(`The latest directory is: ${latestDirectory}`);
@@ -366,8 +369,9 @@ export async function findNewTargetArb(
 ): Promise<ArbFinderNode[]> {
     await updateAssetsAndLps(chopsticks, relay)
     try{
-        const arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
-        let arbCompleted = await runArbTarget(arbArgs, relay);
+        // const arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
+        let assetKey  = relay === 'kusama' ? ksmTargetNode : dotTargetNode
+        let arbCompleted = await arbRunTargetSearch(assetKey, assetKey, inputAmount.toString(), relay);
         if (arbCompleted) {
             // const targetLogFolder = await path.join(
             //     __dirname,
@@ -407,14 +411,17 @@ export async function findNewTargetArb(
  * @returns 
  */
 export async function findFallbackArb(
-    args: string,
+    // args: string,
+    startKey: string,
+    destinationKey: string,
+    inputValue: string,
     chopsticks: boolean,
     relay: Relay
 ): Promise<ArbFinderNode[]> {
     await updateAssetsAndLps(chopsticks,relay)
 
     try {
-        let arbCompleted = await runArbFallback(args, relay);
+        let arbCompleted = await arbRunFallbackSearch(startKey, destinationKey, inputValue, relay);
         if (arbCompleted) {
             const fallbackLogFolder = `${arbFinderPath}/fallback_log_data/${relay}/`
             const latestFile = await findLatestFileInLatestDirectory(fallbackLogFolder);
@@ -436,32 +443,32 @@ export async function findFallbackArb(
 }
 
 
-async function testArbFinder(relay: Relay) {
-    let arbArgs =
-        relay === "kusama"
-            ? `${ksmTargetNode} ${ksmTargetNode} 1.0`
-            : `${dotTargetNode} ${dotTargetNode} 1.0`;
-    // let arbArgs = `${ksmTargetNode} ${ksmTargetNode} 1.0`
-    try {
-        let arbCompleted = await runArbTarget(arbArgs, relay);
-        if (arbCompleted) {
-            const targetLogFolder = `${arbFinderPath}/target_log_data/`
-            const latestFile = await findLatestFileInLatestDirectory(
-                targetLogFolder
-            );
-            let latestFileData: ArbFinderNode[] = JSON.parse(
-                fs.readFileSync(latestFile, "utf8")
-            );
-            return latestFileData;
-        } else {
-            throw new Error("Arb Fallback failed");
-        }
-    } catch (e) {
-        console.log("Error running and returning fallback arb");
-        console.log(e);
-        throw new Error("Error running and returning fallback arb");
-    }
-}
+// async function testArbFinder(relay: Relay) {
+//     let arbArgs =
+//         relay === "kusama"
+//             ? `${ksmTargetNode} ${ksmTargetNode} 1.0`
+//             : `${dotTargetNode} ${dotTargetNode} 1.0`;
+//     // let arbArgs = `${ksmTargetNode} ${ksmTargetNode} 1.0`
+//     try {
+//         let arbCompleted = await arbRunTargetSearch(arbArgs, relay);
+//         if (arbCompleted) {
+//             const targetLogFolder = `${arbFinderPath}/target_log_data/`
+//             const latestFile = await findLatestFileInLatestDirectory(
+//                 targetLogFolder
+//             );
+//             let latestFileData: ArbFinderNode[] = JSON.parse(
+//                 fs.readFileSync(latestFile, "utf8")
+//             );
+//             return latestFileData;
+//         } else {
+//             throw new Error("Arb Fallback failed");
+//         }
+//     } catch (e) {
+//         console.log("Error running and returning fallback arb");
+//         console.log(e);
+//         throw new Error("Error running and returning fallback arb");
+//     }
+// }
 async function run() {
     //  await testArbFinder()
     // await updateLps(true)

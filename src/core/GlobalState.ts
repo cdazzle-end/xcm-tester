@@ -139,6 +139,7 @@ export class GlobalState {
         if (this.state.extrinsicSetResults == null) {
             this.state.extrinsicSetResults = {
                 allExtrinsicResults: [],
+                executionSummary: [],
                 success: false,
                 lastSuccessfulNode: null,
             };

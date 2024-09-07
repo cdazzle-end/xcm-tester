@@ -32,7 +32,7 @@
         "node": ""
       },
       "{\"NativeAssetId\":{\"Token\":\"ACA\"}}": {
-        "xcmAmount": "34987959151052",
+        "xcmAmount": "80663097825872",
         "xcmAssetSymbol": "ACA",
         "xcmAssetId": {
           "NativeAssetId": {
@@ -40,7 +40,7 @@
           }
         },
         "xcmAssetDecimals": "12",
-        "feeAmount": "2540002411",
+        "feeAmount": "2660002411",
         "feeAssetSymbol": "ACA",
         "feeAssetId": {
           "NativeAssetId": {
@@ -139,15 +139,15 @@
         "node": "Moonbeam"
       },
       "\"110021739665376159354538090254163045594\"": {
-        "xcmAmount": "1315254795153",
-        "xcmDecimals": "12",
-        "xcmAssetSymbol": "aSEED",
+        "xcmAmount": "14061562572868",
+        "xcmAssetSymbol": "xcaUSD",
         "xcmAssetId": "110021739665376159354538090254163045594",
+        "xcmAssetDecimals": "12",
         "feeAmount": "8471675474163200",
-        "feeDecimals": "18",
         "feeAssetSymbol": "GLMR",
         "feeAssetId": "GLMR",
-        "node": ""
+        "feeAssetDecimals": "18",
+        "node": "Moonbeam"
       },
       "\"29085784439601774464560083082574142143\"": {
         "xcmAmount": "752632367",
@@ -185,15 +185,15 @@
     },
     "2012": {
       "\"114\"": {
-        "xcmAmount": "35789223534968885619",
-        "xcmDecimals": "18",
+        "xcmAmount": "13330720727575678970",
         "xcmAssetSymbol": "GLMR",
         "xcmAssetId": "114",
+        "xcmAssetDecimals": "18",
         "feeAmount": "175646538461",
-        "feeDecimals": "12",
         "feeAssetSymbol": "PARA",
         "feeAssetId": "1",
-        "node": ""
+        "feeAssetDecimals": "12",
+        "node": "Parallel"
       },
       "\"102\"": {
         "xcmAmount": "654176",
@@ -220,19 +220,19 @@
     },
     "2030": {
       "{\"VToken2\":\"0\"}": {
-        "xcmAmount": "752631725",
-        "xcmDecimals": "10",
+        "xcmAmount": "3608627783",
         "xcmAssetSymbol": "vDOT",
         "xcmAssetId": {
           "VToken2": "0"
         },
-        "feeAmount": "82656771537",
-        "feeDecimals": "12",
+        "xcmAssetDecimals": "10",
+        "feeAmount": "82481045925",
         "feeAssetSymbol": "BNC",
         "feeAssetId": {
           "Native": "BNC"
         },
-        "node": ""
+        "feeAssetDecimals": "12",
+        "node": "BifrostPolkadot"
       },
       "{\"Native\":\"BNC\"}": {
         "xcmAmount": "32637928151314",
@@ -452,7 +452,7 @@
     },
     "2000": {
       "{\"NativeAssetId\":{\"Token\":\"ACA\"}}": {
-        "xcmAmount": "52559198791519",
+        "xcmAmount": "80663097825872",
         "xcmAssetSymbol": "ACA",
         "xcmAssetId": {
           "NativeAssetId": {
@@ -460,7 +460,7 @@
           }
         },
         "xcmAssetDecimals": "12",
-        "feeAmount": "6429600000",
+        "feeAmount": "2660002411",
         "feeAssetSymbol": "ACA",
         "feeAssetId": {
           "NativeAssetId": {
@@ -471,19 +471,23 @@
         "node": "Acala"
       },
       "{\"NativeAssetId\":{\"Token\":\"AUSD\"}}": {
-        "xcmAmount": "1314251127008",
-        "xcmDecimals": "",
-        "xcmAssetSymbol": "",
-        "xcmAssetId": "",
-        "feeAmount": "1003668145",
-        "feeDecimals": "12",
+        "xcmAmount": "6635681368448",
+        "xcmAssetSymbol": "aSEED",
+        "xcmAssetId": {
+          "NativeAssetId": {
+            "Token": "AUSD"
+          }
+        },
+        "xcmAssetDecimals": "12",
+        "feeAmount": "1126108730",
         "feeAssetSymbol": "aSEED",
         "feeAssetId": {
           "NativeAssetId": {
             "Token": "AUSD"
           }
         },
-        "node": ""
+        "feeAssetDecimals": "12",
+        "node": "Acala"
       },
       "{\"ForeignAssetId\":\"4\"}": {
         "xcmAmount": "2140549535572",
@@ -529,7 +533,7 @@
         "node": ""
       },
       "\"GLMR\"": {
-        "xcmAmount": "13993647625331363536",
+        "xcmAmount": "13327289357575678970",
         "xcmAssetSymbol": "GLMR",
         "xcmAssetId": "GLMR",
         "xcmAssetDecimals": "18",
@@ -551,26 +555,26 @@
         "node": "Moonbeam"
       },
       "\"110021739665376159354538090254163045594\"": {
-        "xcmAmount": "18909128917051",
+        "xcmAmount": "14061562572868",
         "xcmAssetSymbol": "xcaUSD",
         "xcmAssetId": "110021739665376159354538090254163045594",
         "xcmAssetDecimals": "12",
-        "feeAmount": "4236259259",
-        "feeAssetSymbol": "xcaUSD",
-        "feeAssetId": "110021739665376159354538090254163045594",
-        "feeAssetDecimals": "12",
+        "feeAmount": "8471675474163200",
+        "feeAssetSymbol": "GLMR",
+        "feeAssetId": "GLMR",
+        "feeAssetDecimals": "18",
         "node": "Moonbeam"
       },
       "\"29085784439601774464560083082574142143\"": {
-        "xcmAmount": "752632367",
-        "xcmDecimals": "",
-        "xcmAssetSymbol": "",
-        "xcmAssetId": "",
+        "xcmAmount": "3593099449",
+        "xcmAssetSymbol": "xcvDOT",
+        "xcmAssetId": "29085784439601774464560083082574142143",
+        "xcmAssetDecimals": "10",
         "feeAmount": "10566189",
-        "feeDecimals": "10",
         "feeAssetSymbol": "xcvDOT",
         "feeAssetId": "29085784439601774464560083082574142143",
-        "node": ""
+        "feeAssetDecimals": "10",
+        "node": "Moonbeam"
       },
       "\"311091173110107856861649819128533077277\"": {
         "xcmAmount": "1998899",
@@ -630,7 +634,7 @@
         "node": ""
       },
       "\"108\"": {
-        "xcmAmount": "52438891730285",
+        "xcmAmount": "78956070783523",
         "xcmAssetSymbol": "ACA",
         "xcmAssetId": "108",
         "xcmAssetDecimals": "12",
@@ -654,17 +658,19 @@
     },
     "2030": {
       "{\"VToken2\":\"0\"}": {
-        "xcmAmount": "9531444552",
-        "xcmDecimals": "",
-        "xcmAssetSymbol": "",
-        "xcmAssetId": "",
-        "feeAmount": "642",
-        "feeDecimals": "10",
-        "feeAssetSymbol": "vDOT",
-        "feeAssetId": {
+        "xcmAmount": "3608627783",
+        "xcmAssetSymbol": "vDOT",
+        "xcmAssetId": {
           "VToken2": "0"
         },
-        "node": ""
+        "xcmAssetDecimals": "10",
+        "feeAmount": "82481045925",
+        "feeAssetSymbol": "BNC",
+        "feeAssetId": {
+          "Native": "BNC"
+        },
+        "feeAssetDecimals": "12",
+        "node": "BifrostPolkadot"
       },
       "{\"Native\":\"BNC\"}": {
         "xcmAmount": "32720392922851",
@@ -762,15 +768,15 @@
         "node": "HydraDX"
       },
       "\"15\"": {
-        "xcmAmount": "751491709",
-        "xcmDecimals": "",
-        "xcmAssetSymbol": "",
-        "xcmAssetId": "",
-        "feeAmount": "1140016",
-        "feeDecimals": "10",
+        "xcmAmount": "3619064972",
+        "xcmAssetSymbol": "vDOT",
+        "xcmAssetId": "15",
+        "xcmAssetDecimals": "10",
+        "feeAmount": "781719",
         "feeAssetSymbol": "vDOT",
         "feeAssetId": "15",
-        "node": ""
+        "feeAssetDecimals": "10",
+        "node": "HydraDX"
       },
       "\"10\"": {
         "xcmAmount": "611929",

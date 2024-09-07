@@ -1,5 +1,6 @@
 import { FixedPointNumber } from "@acala-network/sdk-core";
 import { ApiPromise } from "@polkadot/api";
+import bn from 'bignumber.js'
 
 import "@galacticcouncil/api-augment/basilisk";
 import "@galacticcouncil/api-augment/hydradx";
@@ -13,7 +14,7 @@ import {
     ZERO
 } from "hydra-sdk";
 import { localRpcs } from "../config/txConsts.ts";
-import { getApiForNode, getSigner } from "./../utils/index.ts";
+import { getApiForNode, getBalanceFromDisplay, getSigner } from "./../utils/index.ts";
 import {
     IndexObject,
     PathData,
@@ -88,20 +89,23 @@ export async function getHdxSwapExtrinsicDynamic(
     const hdxAssetOut: HdxAsset = path[path.length - 1];
 
     let number = new BigNumber(ZERO);
-    let fnInputAmount = new FixedPointNumber(
-        assetInAmount.toString(),
-        hdxAssetIn.decimals
-    );
-    let fnOutputAmount = new FixedPointNumber(
-        expectedOutDynamic.toString(),
-        hdxAssetOut.decimals
-    );
+    // let fnInputAmount = new FixedPointNumber(
+    //     assetInAmount.toString(),
+    //     hdxAssetIn.decimals
+    // );
+    // let fnOutputAmount = new FixedPointNumber(
+    //     expectedOutDynamic.toString(),
+    //     hdxAssetOut.decimals
+    // );
+    let inputAmount: bn = getBalanceFromDisplay(assetInAmount, hdxAssetIn.decimals)
+    let outputAmount: bn = getBalanceFromDisplay(expectedOutDynamic, hdxAssetOut.decimals)
 
     //2% acceptable price deviation 2 / 100
-    let priceDeviation = fnOutputAmount
-        .mul(new FixedPointNumber(priceDeviationPercent))
-        .div(new FixedPointNumber(100));
-    let expectedOutMinusDeviation = fnOutputAmount.sub(priceDeviation);
+    let priceDeviation = outputAmount
+        .times(new bn(priceDeviationPercent))
+        .div(new bn(100))
+        .integerValue(bn.ROUND_DOWN);
+    let expectedOutMinusDeviation: bn = outputAmount.minus(priceDeviation);
 
     let bestBuy = await router.getBestSell(
         hdxAssetIn.id,
@@ -125,15 +129,15 @@ export async function getHdxSwapExtrinsicDynamic(
     }
     console.log(`Removed commas from route: ${JSON.stringify(route, null)}`)
 
-    console.log(`Asset in id: ${hdxAssetIn.id} | Asset out id: ${hdxAssetOut.id} | Aset amount in: ${fnInputAmount.toChainData()} | expected out: ${expectedOutMinusDeviation.toChainData()}`);
+    console.log(`Asset in id: ${hdxAssetIn.id} | Asset out id: ${hdxAssetOut.id} | Aset amount in: ${inputAmount.toString} | expected out: ${expectedOutMinusDeviation.toString()}`);
     // console.log(` FN INput amount: ${fnInputAmount.toChainData()}`)
     let txFormatted
     try {
         txFormatted = await api.tx.router.sell(
             hdxAssetIn.id,
             hdxAssetOut.id,
-            fnInputAmount.toChainData(),
-            expectedOutMinusDeviation.toChainData(),
+            inputAmount.toString(),
+            expectedOutMinusDeviation.toString(),
             route
         );
     } catch (e) {
@@ -142,15 +146,13 @@ export async function getHdxSwapExtrinsicDynamic(
                 hdxAssetIn
             )} | AssetOut: ${JSON.stringify(
                 hdxAssetOut
-            )} | Input amount: ${fnInputAmount.toChainData()} | Expected amount out: ${expectedOutMinusDeviation.toChainData()} | Route: ${JSON.stringify(
+            )} | Input amount: ${inputAmount.toString()} | Expected amount out: ${expectedOutMinusDeviation.toString()} | Route: ${JSON.stringify(
                 route
             )} | Error: ${JSON.stringify(e, null, 2)}`
         );
     }
 
-    let pathInId = hdxAssetIn.id;
-    let pathOutId = hdxAssetOut.id;
-    let pathAmount = fnInputAmount.toChainData();
+    let pathAmount = inputAmount.toString();
     let pathSwapType = swapType;
     let swapTxContainer: SwapExtrinsicContainer = {
         relay: "polkadot",
@@ -161,8 +163,8 @@ export async function getHdxSwapExtrinsicDynamic(
         extrinsic: txFormatted,
         assetIn: assetIn,
         assetOut: assetOut,
-        assetAmountIn: fnInputAmount,
-        expectedAmountOut: fnOutputAmount,
+        assetAmountIn: inputAmount,
+        expectedAmountOut: outputAmount,
         pathType: pathSwapType,
         pathAmount: pathAmount,
         api: api,

@@ -8,6 +8,7 @@ import { BN } from '@polkadot/util'
 import { AssetNode } from '../core/index.ts'
 import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from '../types/types.ts'
 import { getApiForNode } from './../utils/index.ts'
+import bn from 'bignumber.js'
 
 const wsLocalChain = "ws://172.26.130.75:8008"
 // const wsLocalDestination = "ws://172.26.130.75:8008" 
@@ -132,8 +133,8 @@ export async function getKarSwapExtrinsicDynamic(
             type: "Swap",
             assetNodes: extrinsicNodes,
             extrinsic: swapTx,
-            assetAmountIn: supplyAmount,
-            expectedAmountOut: expectedOutAmountFixed,
+            assetAmountIn: new bn(supplyAmount.toChainData()),
+            expectedAmountOut: new bn(expectedOutAmountFixed.toChainData()),
             assetIn: assetIn,
             assetOut: assetOut,
             pathType: swapType,

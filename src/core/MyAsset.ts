@@ -1,4 +1,4 @@
-import { deepEqual, findValueByKey, getAssetRegistry, getNode } from "../utils/index.ts";
+import { deepEqual, findValueByKey, getAssetMapAssets, getNode } from "../utils/index.ts";
 import { TokenData, IMyAsset, Relay, PNode } from "../types/types.ts";
 import { TNode } from "@paraspell/sdk";
 
@@ -75,7 +75,8 @@ export class MyAsset implements IMyAsset {
      * @returns 
      */
     getOriginAsset(): MyAsset {
-        let assetRegistry: IMyAsset[] = getAssetRegistry(this.getRelay())
+        // let assetRegistry: IMyAsset[] = getAssetRegistry(this.getRelay())
+        let assetRegistry: IMyAsset[] = getAssetMapAssets(this.getRelay())
         let originChain = this.getOriginChainId()
         let originAsset = assetRegistry.find((asset: IMyAsset) => 
             asset.tokenData.chain === originChain && 
