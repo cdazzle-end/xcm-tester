@@ -45,7 +45,7 @@ export async function getHdxSwapExtrinsicDynamic(
     const poolService = new PoolService(api);
     const router = new TradeRouter(poolService);
 
-    let signer = await getSigner(chopsticks, false);
+    let signer = await getSigner(chopsticks, swapInstructions[0].assetNodes[0].chain);
 
     let startAssetId = swapInstructions[0].assetInLocalId;
 

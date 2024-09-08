@@ -42,7 +42,7 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
 
   let rpc = chopsticks ? wsLocalChain : bncRpc
 
-  let accountPair = await getSigner(chopsticks, false);
+  let accountPair = await getSigner(chopsticks, swapInstructions[0].assetNodes[0].chain);
 
 
   let assetNodes = [swapInstructions[0].assetNodes[0]]

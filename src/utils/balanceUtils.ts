@@ -46,14 +46,13 @@ export async function manualCheckBalanceChange(
     asset: MyAsset, 
     address: string
 ): Promise<BalanceChange | null>{
-    console.log("Waited 10 seconds. QUERYING BALANCE...")
+    console.log("Manual Check Balance Change. Querying balance...")
     let currentBalance: bn = await getBalance(relay, chopsticks, api, asset, address)
     console.log(`Current Balance: ${currentBalance.toString()}`)
 
     let changeInBalance = currentBalance.minus(startBalance).abs()
-    let tokenDepositConfirmed
     if(changeInBalance.gt(new bn(0))){
-        console.log("QUERIED BALANCE AND FOUND CHANGE")
+        console.log("Queried balance and found change. Returning balance change...")
 
         let balanceChange: BalanceChange = {
             startBalance: startBalance,
@@ -61,17 +60,29 @@ export async function manualCheckBalanceChange(
             changeInBalance: changeInBalance,
             decimals: asset.getDecimals()
         }
-        tokenDepositConfirmed = true
         return balanceChange
         
     }  else {
-        console.log("BALANCE QUERIED AND NO CHANGE IN BALANCE, waiting 10 seconds")
+        console.log("BALANCE QUERIED AND NO CHANGE IN BALANCE, returning null...")
         return null
-        // tokenDepositConfirmed = false
-        // await new Promise(resolve => setTimeout(resolve, 1000))
     }
 }
 
+/**
+ * Initiate observable to watch balance of asset on specified chain (watchTokenBalanceChange)
+ * 
+ * Make observable into promise that will resolve when balance changes
+ * 
+ * @return Promise (BalanceChange) absolute value
+ * 
+ * @param relay 
+ * @param chopsticks 
+ * @param destChainApi 
+ * @param asset 
+ * @param depositAddress 
+ * @param setUnsubscribeCallback 
+ * @returns 
+ */
 export async function transferWatchBalanceChange(
     relay: Relay, 
     chopsticks: boolean, 
@@ -81,7 +92,7 @@ export async function transferWatchBalanceChange(
     setUnsubscribeCallback: (unsubscribe: () => void) => void // New parameter
 ): Promise<BalanceChange> {
     let paraId = asset.getChainId()
-    let balanceObservable$ = await watchTokenDeposit(relay, paraId, chopsticks, destChainApi, asset, depositAddress);
+    let balanceObservable$ = await watchTokenBalanceChange(relay, paraId, chopsticks, destChainApi, asset, depositAddress);
     let balanceChange = getBalanceChange(balanceObservable$, (unsubscribe) => {
         setUnsubscribeCallback(unsubscribe); // Set the unsubscribe function
     });
@@ -89,27 +100,39 @@ export async function transferWatchBalanceChange(
 }
 
 // ***
-// Used in executeSingleTransferExtrinsic
-export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks: boolean, destChainApi: ApiPromise, asset: MyAsset, depositAddress: string){
+/**
+ * Used for transfer extrinsic to setup observable to watch balance change on specified chain for given asset
+ * - Watch token withdraw or deposit
+ * - Observable will output current balance, and the next available balance after updating, then complete
+ * 
+ * @param relay 
+ * @param paraId 
+ * @param chopsticks 
+ * @param chainApi 
+ * @param asset 
+ * @param address 
+ * @returns 
+ */
+export async function watchTokenBalanceChange(relay: Relay, paraId: number, chopsticks: boolean, chainApi: ApiPromise, asset: MyAsset, address: string){
     // let tokenSymbol: string = transferrableAssetObject.assetRegistryObject.tokenData.symbol 
     let tokenSymbol = asset.getSymbol()
 
-    console.log(`Watch Token Deposit: Source Chain Name ${asset.getChainNode()} | Token Symbol ${tokenSymbol} | Deposit Address ${depositAddress} `)
+    let chain = getNodeFromChainId(paraId, relay)
+
+    console.log(`Watch Token Balance Change: Chain ${asset.getChainNode()} | Symbol ${tokenSymbol} | Address ${address} `)
 
     // Make sure api is conencted
-    console.log(`Watch Token Deposit: API connected: ${destChainApi.isConnected}`)
-    if(!destChainApi.isConnected){
-        console.log("Watch Token Deposit: API not connected. Connecting...")
-        await destChainApi.connect()
-        console.log("Watch Token Deposit: API connected: " + destChainApi.isConnected)
+    if(!chainApi.isConnected){
+        console.log("Watch Token Balance Change: API not connected. Connecting...")
+        await chainApi.connect()
+        console.log("Watch Token Balance Change: API connected: " + chainApi.isConnected)
     }
 
-    let destAdapter = getAdapter(relay, paraId)
+    let balanceAdapter = getAdapter(relay, paraId)
     let currentBalance: BalanceData;
-    if(paraId == 2000){
+    if(chain === "Karura" || chain === "Acala"){
         // let evmProvider: EvmRpcProvider = new EvmRpcProvider("ws://172.26.130.75:8008")
-        let rpcEndpoint = chopsticks ?
-            relay == 'kusama' ? localRpcs["Karura"] : localRpcs["Acala"]
+        let rpcEndpoint = chopsticks ? localRpcs[chain]
             : relay == 'kusama' ? karRpc : acaRpc
 
         // let rpcEndpoint = chopsticks ? localRpcs["Karura"] : karRpc
@@ -117,35 +140,34 @@ export async function watchTokenDeposit(relay: Relay, paraId: number, chopsticks
             evmProvider: EvmRpcProvider.from(rpcEndpoint),
             wsProvider: new WsProvider(rpcEndpoint)
         }
-        let adapterWallet = new Wallet(destChainApi, walletConfigs);
-        await destAdapter.init(destChainApi, adapterWallet);
+        let adapterWallet = new Wallet(chainApi, walletConfigs);
+        await balanceAdapter.init(chainApi, adapterWallet);
     } else {
-        await destAdapter.init(destChainApi);
-    }
-    
-    // If chain is movr, make sure tokens have xc prefix
-    if(relay == "kusama" && paraId == 2023 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"
-    || relay == "polkadot" && paraId == 2004 && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "GLMR"){
-        // console.log("Adding XC from token symbol")
-        tokenSymbol = "xc" + tokenSymbol
-    // if chain isnt movr, no prefix
-    } else if(relay == 'kusama' && paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")
-    || relay == 'polkadot' && paraId != 2004 && tokenSymbol.toUpperCase().startsWith("XC")){
-        // console.log("Removing XC from token symbol")
-        tokenSymbol = tokenSymbol.slice(2)
+        await balanceAdapter.init(chainApi);
     }
 
-    let validatedTokenSymbol = getBalanceAdapterSymbol(paraId, tokenSymbol, asset, relay)
-    const assetId = asset.getLocalId()
-    const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, depositAddress, assetId);
-    console.log("Watch Token Deposit: Subscribed to balance")
+    //REVIEW Since using our asset regigstry, symbol will be properly formatted
+    
+    // If chain is movr, make sure tokens have xc prefix
+    // if(destinationChain == "Moonriver" && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"
+    // || destinationChain == "Moonbeam" && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "GLMR"){
+    //     // console.log("Adding XC from token symbol")
+    //     tokenSymbol = "xc" + tokenSymbol
+    // // if chain isnt movr, no prefix
+    // } else if(relay == 'kusama' && paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")
+    // || relay == 'polkadot' && paraId != 2004 && tokenSymbol.toUpperCase().startsWith("XC")){
+    //     // console.log("Removing XC from token symbol")
+    //     tokenSymbol = tokenSymbol.slice(2)
+    // }
+
+    const balanceObservable = balanceAdapter.subscribeTokenBalance(tokenSymbol, address, asset.getLocalId());
     return new Observable<BalanceData>((subscriber) => {
         const subscription = balanceObservable.subscribe({
             next(balance) {
                 if(currentBalance){
                     subscriber.next(balance);
                     subscriber.complete();
-                    console.log("Watch Token Deposit: Token deposit complete")
+                    console.log(`Watch Token Balance Change: ${asset.getChainNode()} ${tokenSymbol} Observable completed `)
                     // destAdapter.getApi().disconnect()
                 } else {
                     currentBalance = balance;
@@ -270,13 +292,26 @@ export async function watchTokenBalance(
 
 // Used  on balance adapter observable
 // Used in executeSingleTransferExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
+/**
+ * Create promise that will resolve when balance changes
+ * - Observable outputs balance data
+ * - When observable outputs second balance data, create BalanceChange 
+ * - Takes absolute value of difference between 2 balances
+ * - On error, resolve with 0 balance change. Start balance will be set to first balance data if recieved
+ * 
+ * Returns Promise<BalanceChange> which resolves when BalanceChange is created
+ * 
+ * @param balanceObservable$ 
+ * @param setUnsubscribeCallback 
+ * @returns Promise <BalanceChange>
+ */
 export async function getBalanceChange(
     balanceObservable$: Observable<BalanceData>,
     setUnsubscribeCallback: (unsubscribe: () => void) => void
   ): Promise<BalanceChange> {
     console.log("Get Balance Change: waiting for balance change")
     let currentBalance: BalanceData;
-    let balanceChangeStats: BalanceChange = {
+    let balanceChange: BalanceChange = {
         startBalance: new bn(0),
         endBalance: new bn(0),
         changeInBalance: new bn(0),
@@ -284,25 +319,24 @@ export async function getBalanceChange(
     }
     const balanceChangePromise = new Promise<BalanceChange>((resolve, reject) => {
         const subscription = balanceObservable$.pipe(timeout(120000)).subscribe({
-            next(balance) {
-                if(currentBalance){
-                    let decimals = balance.free.getPrecision()
-                    let startBalance = currentBalance.free._getInner()
-                    let endBalance = balance.free._getInner()        
-                    let changeInBalance = endBalance.minus(startBalance).abs()
-            
-                    balanceChangeStats = {
-                        startBalance,
-                        endBalance,
-                        changeInBalance,
-                        decimals
+            next(newBalance) {
+                
+                // Set current balance, or create balance change object
+                if(!currentBalance){
+                    currentBalance = newBalance;
+                    balanceChange.startBalance = currentBalance.free._getInner();
+                    console.log(`Get Balance Change: Current Balance: ${newBalance.free}`);
+                } else {
+
+                    // Take difference between 2 balances (absolute value)
+                    balanceChange = {
+                        startBalance: currentBalance.free._getInner(),
+                        endBalance: newBalance.free._getInner(),
+                        changeInBalance: newBalance.free._getInner().minus(currentBalance.free._getInner()).abs(),
+                        decimals: newBalance.free.getPrecision()
                     }
                     subscription.unsubscribe();
-                    resolve(balanceChangeStats)
-                } else {
-                    balanceChangeStats.startBalance = balance.free._getInner()
-                    currentBalance = balance;
-                    console.log(`Get Balance Change: Current Balance: ${balance.free}`);
+                    resolve(balanceChange)
                 }
             },
             
@@ -311,26 +345,26 @@ export async function getBalanceChange(
                     console.log('Get Balance Change: No balance change reported within 120 seconds');
                     // logError(err, "No balance change reported within 120 seconds")
                     subscription.unsubscribe();
-                    resolve(balanceChangeStats)
+                    resolve(balanceChange)
                 } else {
                     console.log("Get Balance Change: ERROR")
                     console.log(err)
                     subscription.unsubscribe()
-                    resolve(balanceChangeStats)
+                    resolve(balanceChange)
                 }
                 
             },
             complete(){
                 console.log('Get Balance Change: Balance change subscription completed for some reason');
                 subscription.unsubscribe();
-                resolve(balanceChangeStats)
+                resolve(balanceChange)
             }
         });
         // Providing a way to unsubscribe from outside this function
         setUnsubscribeCallback(() => {
             console.log("Get Balance Change: Something went wrong. Unsubscribing from balance change observable")
             subscription.unsubscribe();
-            resolve(balanceChangeStats)
+            resolve(balanceChange)
         });
     });
     return balanceChangePromise
@@ -338,8 +372,8 @@ export async function getBalanceChange(
 
 // Used in getRelayTokenBalanceAcrossChains, getRelayTokenBalances, allocateKsmFromPreTransferPaths
 export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, node: PNode, chainId: number, assetSymbol: string, assetId: string): Promise<BalanceData>{
-    let evm = node == "Moonbeam" || node == "Moonriver" ? true : false
-    let account = await getSigner(chopsticks, evm)
+    // let evm = node == "Moonbeam" || node == "Moonriver" ? true : false
+    let account = await getSigner(chopsticks, node)
 
     console.log(`Get balance chain asset: ${chainId} ${assetSymbol} ${assetSymbol}`)
 
@@ -605,7 +639,7 @@ export async function getRelayChainBalance(chopsticks: boolean, relay: Relay){
     let relayApi = await getApiForNode(relayNode, chopsticks)
     let relayTokenDecimals = relay === 'kusama' ? 12 : 10
 
-    let signer = await getSigner(chopsticks, false)
+    let signer = await getSigner(chopsticks, relayNode)
 
     let balance = await relayApi.query.system.account(signer.address)
     let balanceBn: bn = new bn(balance.data.free.toString())

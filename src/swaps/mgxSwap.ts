@@ -33,7 +33,7 @@ export async function getMgxSwapExtrinsic(
   
 
   // await apiStandard.isReady;
-  let signer = await getSigner(chopsticks, false)
+  let signer = await getSigner(chopsticks, swapInstructions[0].assetNodes[0].chain)
 
   // apiStandard.tx.xyk.
   // mangata.xyk.

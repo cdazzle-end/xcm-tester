@@ -41,14 +41,15 @@ export function shouldExecuteTransfer(chopsticks: boolean, startChain: PNode, de
  * @returns 
  */
 export async function getSigners(chopsticks: boolean, startChain: PNode, destinationChain: PNode): Promise<[KeyringPair, KeyringPair]>{
-    let startSigner: KeyringPair = isEvmChain(startChain) ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false)
-    let destSigner: KeyringPair = isEvmChain(destinationChain) ? await getSigner(chopsticks, true) : await getSigner(chopsticks, false)
+    let startSigner: KeyringPair = await getSigner(chopsticks, startChain)
+    let destSigner: KeyringPair = await getSigner(chopsticks, destinationChain)
     return [startSigner, destSigner]
 }
 
 /**
  * Creates balance change observable, as a promise, that will complete upon balance change. Initiate before extrinsic execution
  * - Transfers: Use for start chain and destination chain
+ * - Swap: Can be used for asset in and asset out
  * 
  * @return PromiseTracker<BalanceChange> and unsubscribe function
  * 
@@ -209,7 +210,9 @@ export async function waitForDestinationBalanceChange(
             if(destinationBalanceChange !== null){
                 destBalanceChangeStats = destinationBalanceChange
                 tokenDepositConfirmed = true
+                console.log("Call destination balance unsub...")
                 destBalanceUnsub();
+                console.log("Destination balance unsub called")
 
                 
             } else {
@@ -266,8 +269,9 @@ export async function waitForDepositEventData(
         transferFeeData = createFeeDatas(container, startTransferEventData, 'Transfer')
         depositFeeData = createFeeDatas(container, destDepositEventData, 'Deposit')
 
-        reserveFees.forEach((feeData) => console.log(`Fee Data: ${feeData.feeAssetId} ${feeData.feeAssetAmount} | Reserve Data: ${feeData.reserveAssetId} ${feeData.reserveAssetAmount}`))
-        console.log(`Transfer fees: ${transferFeeData.feeAssetId} ${transferFeeData.feeAmount} | Deposit fees: ${destDepositEventData.feeAssetId} ${destDepositEventData.feeAmount}`)
+
+        reserveFees.forEach((feeData) => console.log(`Reserves | Fee Data: ${JSON.stringify(feeData.feeAssetId)} ${feeData.feeAssetAmount} | Reserve Data: ${JSON.stringify(feeData.reserveAssetId)} ${feeData.reserveAssetAmount}`))
+        console.log(`Transfer fees: ${JSON.stringify(transferFeeData.feeAssetId)} ${transferFeeData.feeAmount} | Deposit fees: ${JSON.stringify(destDepositEventData.feeAssetId)} ${destDepositEventData.feeAmount}`)
 
 
     } catch (error) {
@@ -318,8 +322,8 @@ export function createTransferResultData(
     console.log(
         `Execute Extrinsic Set Loop: Start Balance Change: ${JSON.stringify(startBalanceChangeStats.changeInBalance)} | 
         Destination Balance Change: ${JSON.stringify(destBalanceChangeStats.changeInBalance)} | 
-        Transfer Fee Amount: (${transferFeeData.feeAssetId}) ${transferFeeData.feeAmount} | 
-        Transfer Reserve Amount: (${transferFeeData.reserveAssetId}) ${transferFeeData.reserveAssetAmount} | 
+        Transfer Fee Amount: (${JSON.stringify(transferFeeData.feeAssetId)}) ${transferFeeData.feeAmount} | 
+        Transfer Reserve Amount: (${JSON.stringify(transferFeeData.reserveAssetId)}) ${transferFeeData.reserveAssetAmount} | 
         Deposit Fee Amount: (${JSON.stringify(depositFeeData.feeAssetId)}) ${depositFeeData.feeAmount} | 
         Deposit Reserve Amount: (${JSON.stringify(depositFeeData.reserveAssetId)}) ${depositFeeData.reserveAssetAmount}`
     )
@@ -377,13 +381,9 @@ export async function transferUpdateStateAndFeeBook(
     relay: Relay
 ): Promise<void> {
     // Implementation
-    // Need to check that received amount is within 1% of expected, so we know the change is not just the fee being paid
     let minimumExpected = new bn(container.pathAmount).times(.95)
     let sufficient = transferResultData.transferTxStats?.destBalanceStats.changeInBalance.minus(minimumExpected)!   
 
-    // REVIEW This is where thought i was await transfer execution.
-    // console.log("AWAIT txDetailsPromise")
-    // let txDetails = await txDetailsPromise! as TxDetails
     let success
     if(sufficient.gt(new bn(0))){
         console.log("CHANGE In balance is sufficient")
@@ -435,7 +435,7 @@ export function handleTransferError(
 
     // REVIEW declaring these functions as null or empty function
     startBalanceUnsub!()
-    destBalanceUnsub()
+    destBalanceUnsub!()
 
     let { startChain, destinationChain, startAsset, destinationAsset, pathAmount } = container
     

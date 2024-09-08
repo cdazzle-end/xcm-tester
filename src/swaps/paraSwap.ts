@@ -33,29 +33,10 @@ export async function getParaSwapExtrinsic(
   const assetIn = assetNodes[0]
   const assetOut = assetNodes[assetNodes.length - 1]
 
-      let signer = await getSigner(chopsticks, false)
-      console.log("Signer: ", signer.address)
 
-      console.log("Swap instructions: ", swapInstructions.length)
-      // let assetIn = getAssetBySymbol(relay, startAssetSymbol)
-      console.log("Asset in: ", assetIn)
-      let assetInLocalId = assetIn.getLocalId()
-      let assetInDecimals = assetIn.getDecimals()
-      // let assetInAmountFn = new FixedPointNumber(assetInAmount, assetInDecimals)
-      console.log(`Input: ${assetIn.pathValue}`)
-      console.log(`Output: ${assetOut.pathValue}`)
       let inputAmount = assetIn.getChainBalance()
       let outputAmount = assetOut.getChainBalance()
 
-      console.log(`Input formatted: ${inputAmount.toString()}`)
-      console.log(`Output formatted: ${outputAmount.toString()}`)
-
-      // let assetOut = getAssetBySymbol(relay, destAssetSymbol)
-      let assetOutLocalId = assetOut.getLocalId()
-      let assetOutDecimals = assetOut.getDecimals()
-      // let outputAmount = new FixedPointNumber(assetOutAmount,assetOutDecimals)
-
-      console.log(`Asset in ${assetInLocalId} -- AssetOut ${assetOutLocalId}`)
 
       let priceDeviation = outputAmount.times(new bn(priceDeviationPercent)).div(new bn(100)).integerValue(bn.ROUND_DOWN)
       let expectedOutMinusDeviation = outputAmount.minus(priceDeviation)
@@ -69,11 +50,8 @@ export async function getParaSwapExtrinsic(
         let asset = getAssetBySymbol(relay, symbol)
         return Number.parseInt(asset.tokenData.localId)
       })
-      console.log("Create swap tx:")
-      console.log(`Para swap params: ${JSON.stringify(tokenPathIds)} | ${JSON.stringify(inputAmount.toString())} | ${JSON.stringify(expectedOutMinusDeviation.toString())}`)
       let swapTx = await api.tx.ammRoute.swapExactTokensForTokens(tokenPathIds, inputAmount.toString(), expectedOutMinusDeviation.toString())
 
-      console.log("Swap tx: ", JSON.stringify(swapTx, null, 2))
 
       let swapTxContainer: SwapExtrinsicContainer = {
         relay: 'polkadot',
@@ -89,7 +67,6 @@ export async function getParaSwapExtrinsic(
         assetAmountIn: inputAmount,
         expectedAmountOut: expectedOutMinusDeviation,
         api: api,
-        // reverseTx: reverseTxParams
 
       }
       return swapTxContainer

@@ -35,7 +35,7 @@ export async function getAcaSwapExtrinsicDynamic(
 
     console.log("Acala api is ready")
     
-    const signer = await getSigner(chopsticks, false);
+    const signer = await getSigner(chopsticks, swapInstructions[0].assetNodes[0].chain);
 
     const wallet = new Wallet(api)
     await wallet.isReady
@@ -67,8 +67,6 @@ export async function getAcaSwapExtrinsicDynamic(
     const priceDeviation = expectedOutAmountFixed.mul(new FixedPointNumber(priceDeviationPercent)).div(new FixedPointNumber(100));
     let expectedAmountOutWithDeviation = expectedOutAmountFixed.sub(priceDeviation);
     let swapTx: SubmittableExtrinsic<"promise", ISubmittableResult> | SubmittableExtrinsic<"rxjs", ISubmittableResult>;
-
-    console.log(`*** Acala swap PathType: ${swapType}`)
 
     if(swapType == PathType.DexV2){
         // Dex swap

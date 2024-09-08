@@ -124,9 +124,7 @@ export async function buildAndExecuteSwapExtrinsics(
 
         // Set input of swap to output of last transaction
         const nextInputValue = stateGetNextInputValue()
-        console.log(`*** Build and execute swap extrinsics, NEXT INPUT VALUE TEST: ${nextInputValue}`)
         if(Number.parseFloat(nextInputValue) > 0){
-            console.log(`Setting swap asset node path value to nextInputValue: ${nextInputValue}`)
             swapInstructionQueue[0].assetNodes[0].pathValue = nextInputValue
         }
 
@@ -189,10 +187,8 @@ export async function buildAndExecuteTransferExtrinsics(
     while(transferInstructions.length > 0){
         // --- TRACKING
         const nextInputValue = stateGetNextInputValue()
-        console.log(`*** Build and execute transfer extrinsic TEST NEXT INPUT VALUE: ${nextInputValue}`)
         if(Number.parseFloat(nextInputValue) > 0){
             transferInstructions[0].assetNodes[0].pathValue = nextInputValue
-            console.log(`Setting instruction.assetNodes[0].pathValue to previous output: ${nextInputValue}`)
         }
 
         let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, transferInstructions[0], chopsticks);
@@ -210,7 +206,6 @@ export async function buildAndExecuteTransferExtrinsics(
             stateSetNextInputValue('0')
             break;
         }
-        // if(!wasLastExtrinsicSuccessful()){
         if(transferExtrinsicResultData.success === false){
             console.log("Extrinsic failed")
             console.log(transferExtrinsicResultData.arbExecutionResult)
@@ -223,7 +218,6 @@ export async function buildAndExecuteTransferExtrinsics(
 
         // --- TRACKING
         stateSetNextInputValue(transferExtrinsicResultData.lastNode!.assetValue)
-        console.log(`*** Completed extrinsic. Setting next input value to: ${nextInputValue}`)
         transferInstructions = remainingInstructions
     }
 }

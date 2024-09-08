@@ -346,8 +346,9 @@ export function delay(ms: number) {
 
 export async function getSigner(
     chopsticks: boolean,
-    eth: boolean
+    chain: PNode
 ): Promise<KeyringPair> {
+    let eth = isEvmChain(chain);
     let keyring;
     let key;
 
@@ -362,9 +363,7 @@ export async function getSigner(
         } else {
             // CHOPSTICKS SUBSTRATE WALLET
             await cryptoWaitReady();
-            keyring = new Keyring({
-                type: "sr25519",
-            });
+            keyring = new Keyring({ type: "sr25519" });
             return keyring.addFromUri("//Alice");
         }
     } else {
@@ -704,7 +703,7 @@ export async function getTotalArbResultAmount(
     let originalInputValue: bn;
 
     if(isSwapResult(firstExtrinsic)){
-        originalInputValue = new bn(firstExtrinsic.swapTxStats.tokenInBalanceChange.changeInBalance)
+        originalInputValue = new bn(firstExtrinsic.swapTxStats.assetInBalanceChange.changeInBalance)
 
     } else if(isTransferResult(firstExtrinsic)){
         originalInputValue = new bn(firstExtrinsic.transferTxStats.startBalanceStats.changeInBalance)
@@ -716,7 +715,7 @@ export async function getTotalArbResultAmount(
     let finalOutputValue: bn
 
     if(isSwapResult(lastExtrinsic)){
-        finalOutputValue = new bn(lastExtrinsic.swapTxStats.tokenOutBalanceChange.changeInBalance)
+        finalOutputValue = new bn(lastExtrinsic.swapTxStats.assetOutBalanceChange.changeInBalance)
 
     } else if(isTransferResult(lastExtrinsic)){
         finalOutputValue = new bn(lastExtrinsic.transferTxStats.destBalanceStats.changeInBalance)
@@ -844,9 +843,6 @@ export function getChainIdFromNode(node: PNode) {
 }
 
 export function deepEqual(obj1: any, obj2: any) {
-    // console.log("***** DEEP EQUAL *****")
-    // console.log("obj1: " + JSON.stringify(obj1))
-    // console.log("obj2: " + JSON.stringify(obj2))
     if (obj1 === obj2) {
         return true;
     }

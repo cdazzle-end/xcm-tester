@@ -108,7 +108,6 @@ export async function buildTransferExtrinsicFromInstruction(
     console.log(`Reserve amount: ${transferReserveAmount.toString()}`)
     console.log(`Fee amount: ${transferFeeAmount.toString()}`)
     if(!transferReserveAmount.isZero() && transferFeeAmount.isZero()){
-        console.log(`*** Reserve amount but not fee should be an ERROR`)
         throw new Error("Reserve amount but no fee")
     }
     //
@@ -118,15 +117,12 @@ export async function buildTransferExtrinsicFromInstruction(
     // 
 
     if(transferReserveAmount.isZero() && transferFeeAmount.isZero()){
-        console.log(`*** No fee or reserve amount | Fee book not updated`)
     } else if(transferReserveAmount.isZero() && !transferFeeAmount.isZero()){
         // REVIEW Subtracting estimated fee amount from transfer amount. Why? Because transfer fee is deducted from account seperately, not from the transfer amount. So we deduct it from our transfer amount to cover it on the sending chain.
         // Can consider fee paid for in our execution once we deduct it from transfer amount
-        console.log(`*** Should be transferring native token so dont need to convert fee to reserve`)
         transferAmount = transferAmount.minus(transferFeeAmount)
     } else {
         // REVIEW Subtracting reserve amount from transfer amount. Transfer fee is paid seperately, and we need to reserve an amount of the transferred token in order to cover the fee at a later point.
-        console.log(`*** Fee amount and reserve amount detected. | Fee amount converted to reserve. Reserve amount deducted from transfer amount`)
         transferAmount = transferAmount.minus(transferReserveAmount)
     }
 
@@ -136,30 +132,29 @@ export async function buildTransferExtrinsicFromInstruction(
         throw new Error(`Deposit reserve amount > 0 but deposit fee amount == 0`)
     } else if(depositReserveAmount.isGreaterThan(new bn(0))){
         // REVIEW Does it matter if we deduct from start node transfer amount vs destination node deposit amount? Assuming no for now
-        console.log(`*** Removing deposit reserve amount from transfer amount`)
         transferAmount = transferAmount.minus(depositReserveAmount)
     }
 
     console.log(`Adjusted transfer amount: ${transferAmount.toString()}`)
 
-    let signer;
+    let destinationSigner = await getSigner(chopsticks, destinationAsset.chain)
 
-    if(startAsset.chain == "Moonriver" || destinationAsset.chain == "Moonbeam"){
-        signer = await getSigner(chopsticks, true);
-    } else {
-        signer = await getSigner(chopsticks, false);
-    }
-    let destinationAddress = signer.address
+    // if(startAsset.chain == "Moonriver" || destinationAsset.chain == "Moonbeam"){
+    //     signer = await getSigner(chopsticks, true);
+    // } else {
+    //     signer = await getSigner(chopsticks, false);
+    // }
+    // let destinationSigner.address = destinationSigner.address
 
     let xcmTx: paraspell.Extrinsic;
     if((startAsset.chain == "Kusama" || startAsset.chain == "Polkadot")  && (destinationAsset.chain != "Kusama" && destinationAsset.chain != "Polkadot")) {
-        xcmTx = paraspell.Builder(startApi).to(destinationAsset.chain).amount(transferAmount.toString()).address(destinationAddress).build()
+        xcmTx = paraspell.Builder(startApi).to(destinationAsset.chain).amount(transferAmount.toString()).address(destinationSigner.address).build()
     } else if((destinationAsset.chain == "Kusama" || destinationAsset.chain == "Polkadot") && (startAsset.chain != "Kusama" && startAsset.chain != "Polkadot")) {
         // console.log("Transfer to relay chain")
-        xcmTx = paraspell.Builder(startApi).from(startAsset.chain).amount(transferAmount.toString()).address(destinationAddress).build()
+        xcmTx = paraspell.Builder(startApi).from(startAsset.chain).amount(transferAmount.toString()).address(destinationSigner.address).build()
     } else if((startAsset.chain != "Kusama" && startAsset.chain != "Polkadot") && (destinationAsset.chain != "Kusama" && destinationAsset.chain != "Polkadot")) {
         // console.log("Transfer between parachains")
-        xcmTx = paraspell.Builder(startApi).from(startAsset.chain).to(destinationAsset.chain).currency(inputAssetId).amount(transferAmount.toString()).address(destinationAddress).build()
+        xcmTx = paraspell.Builder(startApi).from(startAsset.chain).to(destinationAsset.chain).currency(inputAssetId).amount(transferAmount.toString()).address(destinationSigner.address).build()
     } else {
         throw new Error("Invalid transfer instruction")
     }
