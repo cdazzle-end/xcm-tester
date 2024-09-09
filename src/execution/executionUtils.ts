@@ -909,7 +909,7 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
         const assetInCurrentBalance: bn = await getBalance(relay, swapProperties.chopsticks, swapNodeApi,  assetIn.asset, swapProperties.address)
         const assetOutCurrentBalance: bn = await getBalance(relay, swapProperties.chopsticks, swapNodeApi, assetOut.asset, swapProperties.address)
 
-        console.log("SWAP PROPERTIES: " + JSON.stringify(swapProperties, null, 2))
+        // console.log("SWAP PROPERTIES: " + JSON.stringify(swapProperties, null, 2))
         console.log("ASSET IN START BALANCE: " + JSON.stringify(swapProperties.assetInStartBalance))
 
         const assetInBalanceChange = swapProperties.assetInStartBalance.minus(assetInCurrentBalance).abs()
