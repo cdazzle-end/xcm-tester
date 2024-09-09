@@ -1,5 +1,18 @@
 {
   "polkadot-transfer": {
+    "0": {
+      "\"DOT\"": {
+        "xcmAmount": "6000000000",
+        "xcmAssetSymbol": "DOT",
+        "xcmAssetId": "DOT",
+        "xcmAssetDecimals": "10",
+        "feeAmount": "577633495",
+        "feeAssetSymbol": "DOT",
+        "feeAssetId": "DOT",
+        "feeAssetDecimals": "10",
+        "node": "Polkadot"
+      }
+    },
     "1000": {
       "\"1984\"": {
         "xcmAmount": "NaN",
@@ -478,6 +491,19 @@
     }
   },
   "polkadot-deposit": {
+    "0": {
+      "\"DOT\"": {
+        "xcmAmount": "6000000000",
+        "xcmAssetSymbol": "DOT",
+        "xcmAssetId": "DOT",
+        "xcmAssetDecimals": "10",
+        "feeAmount": "577633495",
+        "feeAssetSymbol": "DOT",
+        "feeAssetId": "DOT",
+        "feeAssetDecimals": "10",
+        "node": "Polkadot"
+      }
+    },
     "1000": {
       "\"1984\"": {
         "xcmAmount": "2156429",
