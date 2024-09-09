@@ -421,11 +421,7 @@ export function printInstruction(
     if (instruction.type == InstructionType.Swap) {
         // console.log("Swap Instruction: " + JSON.stringify(instruction))
         console.log(
-            `SWAP chain: ${instruction.chain} ${
-                instruction.assetNodes[0].chain
-            } ${JSON.stringify(instruction.assetInLocalId)} -> ${JSON.stringify(
-                instruction.assetOutLocalId
-            )}`
+            `SWAP chain: ${instruction.chain} ${ instruction.assetNodes[0].chain} ${JSON.stringify(instruction.assetInLocalId)} -> ${JSON.stringify(instruction.assetOutLocalId)} ${JSON.stringify(instruction.assetOutTargetAmount)}`
         );
     } else if (
         instruction.type == InstructionType.TransferToHomeThenDestination
