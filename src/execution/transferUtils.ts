@@ -180,7 +180,7 @@ export async function waitForDestinationBalanceChange(
     let { relay, destinationApi, destinationAsset, destinationChain } = container
 
     console.log("Execute TRANSFER: AWAIT destBalanceChangePromise")
-    let queryIndex = 0
+    let queryIndex = 1
     let tokenDepositConfirmed = false
     let destBalanceChangeStats: BalanceChange = {} as BalanceChange
     while(!tokenDepositConfirmed){
@@ -211,7 +211,7 @@ export async function waitForDestinationBalanceChange(
                 destBalanceChangeStats = destinationBalanceChange
                 tokenDepositConfirmed = true
                 console.log("Call destination balance unsub...")
-                destBalanceUnsub();
+                destBalanceUnsub!();
                 console.log("Destination balance unsub called")
 
                 
