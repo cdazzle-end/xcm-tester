@@ -245,7 +245,7 @@ export async function buildAndExecuteTransferExtrinsic(
     chopsticks: boolean, 
     executeMovr: boolean
 ): Promise<SingleTransferResultData>{
-    let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, transferInstruction[0], chopsticks);
+    let [transferExtrinsic, remainingInstructions] = await buildTransferExtrinsicDynamic(relay, transferInstruction, chopsticks);
     
 
     let transferExtrinsicResultData = await executeAndReturnExtrinsic(transferExtrinsic, chopsticks, executeMovr)

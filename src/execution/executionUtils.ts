@@ -969,7 +969,7 @@ export async function collectRelayToken(relay: Relay, chopsticks: boolean, execu
     stateSetTracking(false)
 
     transferInstructions.forEach((instruction) => {
-        console.log(`Allocation Transfer instruction: ${JSON.stringify(instruction, null, 2)}`)
+        // console.log(`Allocation Transfer instruction: ${JSON.stringify(instruction, null, 2)}`)
     })
 
     let allTransferResultsPromise: Promise<SingleTransferResultData>[] = transferInstructions.map(async (transferInstruction: TransferInstruction) => {
