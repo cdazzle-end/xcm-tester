@@ -464,7 +464,7 @@ export function getStartChainAllocationPath(
         let relayAsset = new MyAsset(getMyAssetBySymbol(0, relayTokenSymbol, relay))
         let relayPathNode: ArbFinderNode = createXcmPathNode(relay, relayAsset, actualAmountToTransfer.toNumber())
         transferPathNodes = [relayPathNode]
-        fs.writeFileSync(path.join(__dirname, './preTransferNodes.json'), JSON.stringify(transferPathNodes))
+        // fs.writeFileSync(path.join(__dirname, './preTransferNodes.json'), JSON.stringify(transferPathNodes))
     }
 
     // CONSTRUCT nodes from paths
