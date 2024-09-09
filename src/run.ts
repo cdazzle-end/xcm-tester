@@ -7,31 +7,24 @@ import { dotTargetNode, ksmTargetNode } from './config/index.ts';
 import { AssetNode, GlobalState } from './core/index.ts';
 import { allocateToStartChain, buildAndExecuteTransferExtrinsic, buildAndExecuteExtrinsics, buildInstructionSet, allocateToRelay, confirmLastTransactionSuccess, allocateFunds } from './execution/index.ts';
 import { ExecutionState, ExtrinsicSetResultDynamic, InstructionType, ArbFinderNode, LastNode, Relay, SwapInstruction, SwapProperties, TransactionState, TransferInstruction, TransferProperties } from './types/types.ts';
-import { closeApis, stateGetExecutionAttempts, stateGetExecutionSuccess, stateGetLastNode, getLatestDefaultArb, getLastTargetArb, getTotalArbResultAmount, stateGetTransactionProperties, stateGetTransactionState, initializeLastGlobalState, logAllResultsDynamic, logProfits, nodeLogger, pathLogger, printInstructionSet, readLogData, resetGlobalState, stateSetExecutionRelay, stateSetExecutionSuccess, stateSetLastNode, stateSetTransactionState, stateSetLastFile, truncateAssetPath, constructAssetNodesFromPath, getTargetNode } from './utils/index.ts';
+import { closeApis, stateGetExecutionAttempts, stateGetExecutionSuccess, stateGetLastNode, getLatestDefaultArb, getLastTargetArb, getTotalArbResultAmount, stateGetTransactionProperties, stateGetTransactionState, initializeLastGlobalState, logAllResultsDynamic, logProfits, nodeLogger, pathLogger, printInstructionSet, readLogData, resetGlobalState, stateSetExecutionRelay, stateSetExecutionSuccess, stateSetLastNode, stateSetTransactionState, stateSetLastFile, truncateAssetPath, constructAssetNodesFromPath, getTargetNode, stateGetExtrinsicSetResults } from './utils/index.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // REVIEW Over use of getLastNode() here is redundant, could be cleaned up
 async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: boolean, customInput: number = 0){
-    const executionState: Readonly<ExecutionState> = initializeLastGlobalState(relay)
+    initializeLastGlobalState(relay)
 
-    console.log(`Last Global State: ${JSON.stringify(executionState.lastNode, null, 2)} | 
-        ${JSON.stringify(executionState.transactionProperties, null, 2)} | 
-        ${JSON.stringify(executionState.transactionState, null, 2)}`)
-    
-    let lastNode: LastNode | null = executionState.lastNode
-    let logFilePath: string = executionState.lastFilePath!
-    let lastExtrinsicSet: ExtrinsicSetResultDynamic = executionState.extrinsicSetResults!
-    let lastTransactionState: TransactionState = executionState.transactionState!
-    let lastTransactionProperties: TransferProperties | SwapProperties = executionState.transactionProperties!
+    console.log(`Last Global State: ${JSON.stringify(stateGetLastNode()!, null, 2)} | 
+        ${JSON.stringify(stateGetTransactionProperties(), null, 2)} | 
+        ${JSON.stringify(stateGetTransactionState(), null, 2)}`)
 
-
-    lastExtrinsicSet.allExtrinsicResults.forEach((extrinsicData) => {
+    stateGetExtrinsicSetResults()!.allExtrinsicResults.forEach((extrinsicData) => {
         console.log(JSON.stringify(extrinsicData.arbExecutionResult, null, 2))
     })
 
-    if(lastNode === null){
+    if(stateGetLastNode() === null){
         console.log("Last node is undefined. No extrinsics executed successfully. Exiting")
         return;
     }
@@ -45,58 +38,45 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
 
     //Rerun arb until success or last node is Kusama/Dot Token
     while(!arbSuccess && stateGetLastNode()!.chainId != 0 && arbLoops < 1){
-        arbLoops += 1
+        console.log("Arb Execution failed, trying again...")
 
-        // If last transaction has been submitted but not finalized, we need to query the balances to see if it completed successfully or not
-        if(lastTransactionState == TransactionState.Broadcasted){
-            console.log(`Last transaction was BROADCASTED. Confirm status`)
-            await confirmLastTransactionSuccess(lastTransactionProperties)
+        // Confirm status of last extrinsic
+        if(stateGetTransactionState() == TransactionState.Broadcasted){
+            await confirmLastTransactionSuccess(stateGetTransactionProperties()!)
             stateSetTransactionState(TransactionState.PreSubmission)
-            lastNode = stateGetLastNode()!
-        } else {
-            console.log(`Last transaction not BROADCASTED`)
         }
-        // let lastNodeValueTemp = '40.00'
-        let arbInput = customInput > 0 ? customInput : lastNode.assetValue
-        let targetNode = relay === 'kusama' ? ksmTargetNode : dotTargetNode
-        let functionArgs = `${lastNode.assetKey} ${targetNode} ${arbInput}`
-        customInput = 0
-        console.log("Executing Arb Fallback with args: " + functionArgs)
-        
-        let fallbackStartKey = lastNode.assetKey
-        let fallbackDestinationKey = targetNode
-        let fallbackInputValue = arbInput.toString()
 
-        let arbResults: ArbFinderNode[];
+        // Find arb from last successful node (asset and value) to destination node
+        let targetNode = getTargetNode(relay)
+        let fallbackStartKey = stateGetLastNode()!.assetKey
+        let fallbackDestinationKey = targetNode
+        let fallbackInputValue = stateGetLastNode()!.assetValue
+        let functionArgs = `${stateGetLastNode()!.assetKey} ${targetNode} ${stateGetLastNode()!.assetValue}`
+        console.log("Executing Arb Fallback with args: " + functionArgs)
+        let assetPath: AssetNode[]
         try{
-            arbResults = await findFallbackArb(fallbackStartKey, fallbackDestinationKey, fallbackInputValue, chopsticks, relay)
+            const fallbackArbPath: ArbFinderNode[] = await findFallbackArb(fallbackStartKey, fallbackDestinationKey, fallbackInputValue, chopsticks, relay)
+            assetPath = constructAssetNodesFromPath(relay, fallbackArbPath)
         } catch {
             console.log("Failed to run fallback arb")
             continue;
         }
-        console.log("ARB PATH FIRST INPUT VALUE: ", arbResults[0].path_value)
-        let assetPath: AssetNode[] = arbResults.map(result => readLogData(result, relay))
-        let instructions = await buildInstructionSet(relay, assetPath)
+        let instructionsToExecute = await buildInstructionSet(relay, assetPath)
 
-        // ****************************************************
-        let inputPathValue = instructions[0].assetNodes[0].pathValue
-        console.log("INPUT PATH VALUE: ", inputPathValue)
-        // ****************************************************
-        
-        await printInstructionSet(instructions)
-        let extrinsicSetResults = await buildAndExecuteExtrinsics(relay, instructions, chopsticks, executeMovr, true)
+        arbLoops += 1
+
+
+        let executionResults = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, executeMovr, false)
 
         await logAllResultsDynamic(chopsticks)
-        // await logAllArbAttempts(relay, logFilePath, chopsticks)
-        if(extrinsicSetResults.success){
-            arbSuccess = true
-        }
+        arbSuccess = executionResults.success
 
-        lastNode = stateGetLastNode()
-        if(lastNode === null){
+        if(stateGetLastNode() === null){
             console.log("Last node undefined. ERROR: some extrinsics have executed successfully")
             throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
         }
+        
+        // -----------
     }
     if(arbSuccess){
         await stateSetExecutionSuccess(true)
