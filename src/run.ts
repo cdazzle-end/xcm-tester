@@ -14,7 +14,6 @@ const __dirname = path.dirname(__filename);
 
 // REVIEW Over use of getLastNode() here is redundant, could be cleaned up
 async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: boolean, customInput: number = 0){
-    // setExecutionSuccess(false, relay)
     const executionState: Readonly<ExecutionState> = initializeLastGlobalState(relay)
 
     console.log(`Last Global State: ${JSON.stringify(executionState.lastNode, null, 2)} | 
