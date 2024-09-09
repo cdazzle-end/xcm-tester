@@ -423,21 +423,15 @@ export function printInstruction(
         console.log(
             `SWAP chain: ${instruction.chain} ${ instruction.assetNodes[0].chain} ${JSON.stringify(instruction.assetInLocalId)} -> ${JSON.stringify(instruction.assetOutLocalId)} ${JSON.stringify(instruction.assetOutTargetAmount)}`
         );
-    } else if (
-        instruction.type == InstructionType.TransferToHomeThenDestination
-    ) {
+    } else if (instruction.type == InstructionType.TransferToHomeThenDestination) {
         // console.log("Transfer instruction")
         const nodes = instruction.assetNodes;
         console.log(
-            `TRANSFER ${instruction.startAsset.getAssetSymbol()} --- ${
-                instruction.startAsset.getAssetKey()
-            } -> ${instruction.middleAsset.getAssetKey()} -> ${instruction.destinationAsset.getAssetKey()}`
+            `TRANSFER ${instruction.startAsset.getAssetSymbol()} --- ${instruction.startAsset.getAssetKey()} -> ${instruction.middleAsset.getAssetKey()} -> ${instruction.destinationAsset.getAssetKey()} ${JSON.stringify(instruction.destinationAsset.pathValue)}`
         );
     } else {
         console.log(
-            `TRANSFER ${instruction.startAsset.getAssetSymbol()} --- ${
-                instruction.startAsset.getAssetKey()
-            } -> ${instruction.destinationAsset.getAssetKey()}`
+            `TRANSFER ${instruction.startAsset.getAssetSymbol()} --- ${instruction.startAsset.getAssetKey()} -> ${instruction.destinationAsset.getAssetKey()} ${JSON.stringify(instruction.destinationAsset.pathValue)}`
         );
     }
 }
