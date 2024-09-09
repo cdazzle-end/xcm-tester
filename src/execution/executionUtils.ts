@@ -516,7 +516,7 @@ export async function executeSingleTransferExtrinsic(
     const [startNodeStartBalance, destNodeStartBalance] = await getInitialBalances(relay, chopsticks, transferTxContainer, startSigner, destSigner);
     
     const transferProperties: TransferProperties = createTransferProperties(transferTxContainer, chopsticks, startSigner.address, startNodeStartBalance, destSigner.address, destNodeStartBalance)
-    await stateSetTransactionProperties(transferProperties);
+    stateSetTransactionProperties(transferProperties);
 
     const { balanceChangeTracker: startBalanceChangeTracker, unsubscribe: startBalanceUnsub } = await setupBalanceWatch(relay, startAsset.asset, startApi, startSigner.address, chopsticks);
     const { balanceChangeTracker: destinationBalanceChangeTracker, unsubscribe: destBalanceUnsub } = await setupBalanceWatch(relay, destinationAsset.asset, destinationApi, destSigner.address, chopsticks);

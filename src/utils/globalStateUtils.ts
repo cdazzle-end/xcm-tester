@@ -109,13 +109,18 @@ export function stateSetResultData(resultData: SingleSwapResultData | SingleTran
  * @param transactionState 
  */
 export function stateSetTransactionState(transactionState: TransactionState) {
-    const globalState = GlobalState.getInstance();
-    globalState.setTransactionState(transactionState)
+
+    if(stateGetTracking()){
+        const globalState = GlobalState.getInstance();
+        globalState.setTransactionState(transactionState)    
+    }
 }
 
 export function stateSetTransactionProperties(properties: TransferProperties | SwapProperties) {
-    const globalState = GlobalState.getInstance();
-    globalState.setTransactionProperties(properties)
+    if(stateGetTracking()){
+        const globalState = GlobalState.getInstance();
+        globalState.setTransactionProperties(properties)    
+    }
 }
 export function stateSetTracking(tracking: boolean){
     const globalState = GlobalState.getInstance();
