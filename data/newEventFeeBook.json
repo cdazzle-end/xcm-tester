@@ -182,15 +182,15 @@
         "node": "Moonbeam"
       },
       "\"29085784439601774464560083082574142143\"": {
-        "xcmAmount": "752632367",
-        "xcmDecimals": "10",
-        "xcmAssetSymbol": "VDOT",
+        "xcmAmount": "4329403896",
+        "xcmAssetSymbol": "xcvDOT",
         "xcmAssetId": "29085784439601774464560083082574142143",
-        "feeAmount": "8471675474163200",
-        "feeDecimals": "18",
+        "xcmAssetDecimals": "10",
+        "feeAmount": "8471775482680900",
         "feeAssetSymbol": "GLMR",
         "feeAssetId": "GLMR",
-        "node": ""
+        "feeAssetDecimals": "18",
+        "node": "Moonbeam"
       },
       "\"101170542313601871197860408087030232491\"": {
         "xcmAmount": "6424039814045",
@@ -663,14 +663,14 @@
         "node": "Moonbeam"
       },
       "\"29085784439601774464560083082574142143\"": {
-        "xcmAmount": "3593099449",
+        "xcmAmount": "4329403896",
         "xcmAssetSymbol": "xcvDOT",
         "xcmAssetId": "29085784439601774464560083082574142143",
         "xcmAssetDecimals": "10",
-        "feeAmount": "10566189",
-        "feeAssetSymbol": "xcvDOT",
-        "feeAssetId": "29085784439601774464560083082574142143",
-        "feeAssetDecimals": "10",
+        "feeAmount": "8471775482680900",
+        "feeAssetSymbol": "GLMR",
+        "feeAssetId": "GLMR",
+        "feeAssetDecimals": "18",
         "node": "Moonbeam"
       },
       "\"311091173110107856861649819128533077277\"": {
