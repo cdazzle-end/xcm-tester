@@ -274,7 +274,7 @@
     },
     "2030": {
       "{\"VToken2\":\"0\"}": {
-        "xcmAmount": "3587915462",
+        "xcmAmount": "4339970086",
         "xcmAssetSymbol": "vDOT",
         "xcmAssetId": {
           "VToken2": "0"
@@ -777,7 +777,7 @@
     },
     "2030": {
       "{\"VToken2\":\"0\"}": {
-        "xcmAmount": "3587915462",
+        "xcmAmount": "4339970086",
         "xcmAssetSymbol": "vDOT",
         "xcmAssetId": {
           "VToken2": "0"
