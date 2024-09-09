@@ -72,8 +72,10 @@ export function stateSetExecutionSuccess(success: boolean){
  * @param node - Formatted node data (LastNode)
  */
 export function stateSetLastNode(node: LastNode) {
-    const globalState = GlobalState.getInstance();
-    globalState.setLastNode(node)
+    if(stateGetTracking()){
+        const globalState = GlobalState.getInstance();
+        globalState.setLastNode(node)    
+    }
 }
 
 /**
@@ -96,8 +98,10 @@ export function stateSetLastExtrinsicSet(extrinsicSet: ExtrinsicSetResultDynamic
 }
 
 export function stateSetResultData(resultData: SingleSwapResultData | SingleTransferResultData) {
-    const globalState = GlobalState.getInstance();
-    globalState.setResultData(resultData)
+    if(stateGetTracking()){
+        const globalState = GlobalState.getInstance();
+        globalState.setResultData(resultData)    
+    }
 }
 
 /**
