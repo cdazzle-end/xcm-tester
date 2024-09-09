@@ -420,6 +420,7 @@ export async function findFallbackArb(
 ): Promise<ArbFinderNode[]> {
     await updateAssetsAndLps(chopsticks,relay)
 
+    console.log(`Running fallback arb with params ${startKey} ${destinationKey} ${inputValue}`)
     try {
         let arbCompleted = await arbRunFallbackSearch(startKey, destinationKey, inputValue, relay);
         if (arbCompleted) {

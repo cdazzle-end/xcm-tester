@@ -132,12 +132,9 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
             }
 
             // Find arb from last successful node (asset and value) to destination node
-            let targetNode = getTargetNode(relay)
             let fallbackStartKey = stateGetLastNode()!.assetKey
-            let fallbackDestinationKey = targetNode
+            let fallbackDestinationKey = getTargetNode(relay)
             let fallbackInputValue = stateGetLastNode()!.assetValue
-            let functionArgs = `${stateGetLastNode()!.assetKey} ${targetNode} ${stateGetLastNode()!.assetValue}`
-            console.log("Executing Arb Fallback with args: " + functionArgs)
             try{
                 const fallbackArbPath: ArbFinderNode[] = await findFallbackArb(fallbackStartKey, fallbackDestinationKey, fallbackInputValue, chopsticks, relay)
                 assetPath = constructAssetNodesFromPath(relay, fallbackArbPath)
