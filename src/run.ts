@@ -117,7 +117,11 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     let arbSuccess = false
 
     // Loop to build and execute extrinsics from asset nodes
-    while(!arbSuccess && stateGetLastNode()!.chainId != 0 && arbLoops < 1){
+    while(!arbSuccess && arbLoops < 1){
+        if(stateGetLastNode()?.chainId == 0){
+            console.log(`Last node is relay chain, so we could exit here and log profits`)
+            break
+        }
 
         if(arbLoops > 0){ // After first attempt, re run arb and try again
             console.log("Arb Execution failed, trying again...")
