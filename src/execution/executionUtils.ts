@@ -963,7 +963,7 @@ export async function collectRelayToken(relay: Relay, chopsticks: boolean, execu
         return instructionSet[0]
     })
 
-    console.log("Executing allocations from chains to Kusama")
+    console.log(`Executing allocations from chains to Relay: ${relay}`)
 
     // Turn tracking off because this is done asyncronously
     stateSetTracking(false)
