@@ -912,8 +912,8 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
         // console.log("SWAP PROPERTIES: " + JSON.stringify(swapProperties, null, 2))
         console.log("ASSET IN START BALANCE: " + JSON.stringify(swapProperties.assetInStartBalance))
 
-        const assetInBalanceChange = swapProperties.assetInStartBalance.minus(assetInCurrentBalance).abs()
-        const assetOutBalanceChange = swapProperties.assetOutStartBalance.minus(assetOutCurrentBalance).abs()
+        const assetInBalanceChange = new bn(swapProperties.assetInStartBalance).minus(assetInCurrentBalance).abs()
+        const assetOutBalanceChange = new bn(swapProperties.assetOutStartBalance).minus(assetOutCurrentBalance).abs()
 
         const assetInBalanceChangeMinimum = new bn(swapProperties.inputAmount).times(new bn(0.90))
 
