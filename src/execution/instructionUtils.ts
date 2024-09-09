@@ -545,7 +545,11 @@ export function createXcmPathNode(
         path_type: "Xcm",
         path_data: {
             "path_type": "Xcm",
-            "lp_id": null
+            "lp_id": null,
+            "xcm_transfer_fee_amounts": ["0","0"],
+            "xcm_transfer_reserve_amounts": ["0","0"],
+            "xcm_deposit_fee_amounts": ["0","0"],
+            "xcm_deposit_reserve_amounts": ["0","0"]
         }
     }
     return pathNode
