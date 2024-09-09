@@ -158,7 +158,7 @@
         "node": "Moonbeam"
       },
       "\"110021739665376159354538090254163045594\"": {
-        "xcmAmount": "18104936011481",
+        "xcmAmount": "13877108045270",
         "xcmAssetSymbol": "xcaUSD",
         "xcmAssetId": "110021739665376159354538090254163045594",
         "xcmAssetDecimals": "12",
@@ -261,7 +261,7 @@
     },
     "2030": {
       "{\"VToken2\":\"0\"}": {
-        "xcmAmount": "7232867657",
+        "xcmAmount": "3597880906",
         "xcmAssetSymbol": "vDOT",
         "xcmAssetId": {
           "VToken2": "0"
@@ -626,7 +626,7 @@
         "node": "Moonbeam"
       },
       "\"110021739665376159354538090254163045594\"": {
-        "xcmAmount": "18104936011481",
+        "xcmAmount": "13877108045270",
         "xcmAssetSymbol": "xcaUSD",
         "xcmAssetId": "110021739665376159354538090254163045594",
         "xcmAssetDecimals": "12",
@@ -751,7 +751,7 @@
     },
     "2030": {
       "{\"VToken2\":\"0\"}": {
-        "xcmAmount": "7232867657",
+        "xcmAmount": "3597880906",
         "xcmAssetSymbol": "vDOT",
         "xcmAssetId": {
           "VToken2": "0"
