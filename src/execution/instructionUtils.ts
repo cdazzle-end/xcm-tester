@@ -1,6 +1,6 @@
 import * as paraspell from "@paraspell/sdk";
 import { AssetNode } from "../core/AssetNode.ts";
-import { IndexObject, InstructionType, IMyAsset, RelayTokenBalances, Relay, ArbFinderNode, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, PNode, RelayTokenSymbol } from "./../types/types.ts";
+import { IndexObject, PathType, InstructionType, IMyAsset, RelayTokenBalances, Relay, ArbFinderNode, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, PNode, RelayTokenSymbol } from "./../types/types.ts";
 import { getNode, getAssetRegistryObjectBySymbol, constructRouteFromFile, constructAssetNodesFromPath, findValueByKey, printInstructionSet, readLogData, getRelayTokenSymbol, getRelayMinimum } from "../utils/utils.ts";
 import fs from 'fs'
 import path from 'path'
