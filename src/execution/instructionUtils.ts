@@ -138,7 +138,7 @@ function createInstructionTransferToHomeThenDestination(
         type: InstructionType.TransferToHomeThenDestination,
         
         startAsset: startAssetNode,
-        // REVIEW will only be undefined when allocating from relay to start ndoe
+        // REVIEW will only be undefined when allocating from relay to start node, and fee data isnt properly logged yet
         startTransferFee: xcmTransferFees![0] === undefined ? "0" : xcmTransferFees![0],
         startTransferReserve: xcmTransferReserves![0] === undefined ? "0" : xcmTransferReserves![0],
 
