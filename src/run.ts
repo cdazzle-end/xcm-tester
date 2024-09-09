@@ -108,7 +108,7 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     // Parse path into asset nodes
     let assetPath: AssetNode[] = constructAssetNodesFromPath(relay, arbPathData)
     assetPath = await truncateAssetPath(assetPath) // Remove beginning xcm tx's before swap
-    assetPath = await allocateFunds(relay, assetPath, chopsticks, inputAmount, executeMovr) // Add transfer from relay -> start if needed
+    assetPath = await allocateFunds(relay, assetPath, chopsticks, inputAmount) // Add transfer from relay -> start if needed
     stateSetLastNode(assetPath[0].asLastNode())
 
     let instructionsToExecute: (SwapInstruction | TransferInstruction)[];

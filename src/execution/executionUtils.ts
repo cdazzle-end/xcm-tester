@@ -952,7 +952,7 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
  * @param startChainId 
  * @returns 
  */
-export async function collectRelayToken(relay: Relay, chopsticks: boolean, executeMovr: boolean, nativeBalances: RelayTokenBalances, startChainId: number){
+export async function collectRelayToken(relay: Relay, chopsticks: boolean, nativeBalances: RelayTokenBalances, startChainId: number){
     let assetPaths: AssetNode[][] = await createAllocationAssetPaths(relay,  nativeBalances, startChainId)
     let transferInstructions: TransferInstruction[] = assetPaths.map((path) => {
         const instructionSet: TransferInstruction[] = buildInstructionSet(relay, path).map((instruction) => {
@@ -972,6 +972,7 @@ export async function collectRelayToken(relay: Relay, chopsticks: boolean, execu
         // console.log(`Allocation Transfer instruction: ${JSON.stringify(instruction, null, 2)}`)
     })
 
+    let executeMovr = true
     let allTransferResultsPromise: Promise<SingleTransferResultData>[] = transferInstructions.map(async (transferInstruction: TransferInstruction) => {
         return buildAndExecuteTransferExtrinsic(relay, transferInstruction, chopsticks, executeMovr)
     })
@@ -1007,11 +1008,10 @@ export async function allocateFunds(
     relay: Relay, 
     assetPath: AssetNode[],
     chopsticks: boolean, 
-    inputAmount: number, 
-    executeMovr: boolean
+    inputAmount: number,
 ): Promise<AssetNode[]> {
     const startChainId = assetPath[0].getChainId()
-    await allocateToRelay(relay, startChainId, chopsticks, inputAmount, executeMovr)
+    await allocateToRelay(relay, startChainId, chopsticks, inputAmount)
     return await allocateToStartChain(relay, assetPath, chopsticks)
 }
 
@@ -1030,8 +1030,7 @@ export async function allocateToRelay(
     relay: Relay, 
     startChainId: number, 
     chopsticks: boolean, 
-    inputAmount: number, 
-    executeMovr: boolean
+    inputAmount: number,
 ): Promise<RelayTokenBalances>{
 
     let nativeBalances: RelayTokenBalances;
@@ -1050,7 +1049,7 @@ export async function allocateToRelay(
         return nativeBalances
     }
 
-    await collectRelayToken(relay, chopsticks,  executeMovr, nativeBalances, startChainId)
+    await collectRelayToken(relay, chopsticks, nativeBalances, startChainId)
 
     // Query balances again after allocation
     try{
