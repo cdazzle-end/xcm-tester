@@ -202,11 +202,12 @@ function createInstructionTransfer(
     let transferInstruction: TransferInstruction = {
         type: transferType,
         startAsset: startAsset,
-        startTransferFee: xcmTransferFees![0],
-        startTransferReserve: xcmTransferReserves![0],
+        // REVIEW will only be undefined when allocating from relay to start node, and fee data isnt properly logged yet
+        startTransferFee: xcmTransferFees![0] === undefined ? "0" : xcmTransferFees![0],
+        startTransferReserve: xcmTransferReserves![0] === undefined ? "0": xcmTransferReserves![0],
         destinationAsset: destinationAsset,
-        destinationDepositFee: xcmDepositFees![0],
-        destinationDepositReserve: xcmDepositReserves![0],
+        destinationDepositFee: xcmDepositFees![0] === undefined ? "0" : xcmDepositFees![0],
+        destinationDepositReserve: xcmDepositReserves![0] === undefined ? "0" : xcmDepositReserves![0],
         assetNodes,
     };
 
