@@ -159,16 +159,14 @@ export async function buildTransferExtrinsicFromInstruction(
     let destinationSigner = await getSigner(chopsticks, destinationNode)
 
     let xcmTx: paraspell.Extrinsic;
-    if((startNode == "Kusama" || startNode == "Polkadot")  && (destinationNode != "Kusama" && destinationNode != "Polkadot")) {
-        xcmTx = paraspell.Builder(startApi).to(destinationNode).amount(transferAmount.toString()).address(destinationSigner.address).build()
-    } else if((destinationNode == "Kusama" || destinationNode == "Polkadot") && (startNode != "Kusama" && startNode != "Polkadot")) {
+    if((startNode == "Kusama" || startNode == "Polkadot")) {
+        xcmTx = paraspell.Builder(startApi).to(destinationNode as TNode).amount(transferAmount.toString()).address(destinationSigner.address).build()
+    } else if((destinationNode == "Kusama" || destinationNode == "Polkadot")) {
         // console.log("Transfer to relay chain")
         xcmTx = paraspell.Builder(startApi).from(startNode).amount(transferAmount.toString()).address(destinationSigner.address).build()
-    } else if((startNode != "Kusama" && startNode != "Polkadot") && (destinationNode != "Kusama" && destinationNode != "Polkadot")) {
+    } else {
         // console.log("Transfer between parachains")
         xcmTx = paraspell.Builder(startApi).from(startNode).to(destinationNode).currency(currencyInput).amount(transferAmount.toString()).address(destinationSigner.address).build()
-    } else {
-        throw new Error("Invalid transfer instruction")
     }
 
     let txContainer: TransferExtrinsicContainer = {
