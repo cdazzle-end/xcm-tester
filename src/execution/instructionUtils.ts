@@ -562,6 +562,9 @@ export function createXcmPathNode(
 export function createAllocationPath(relay: Relay, relayAsset: MyAsset, pathValue: number): [ArbFinderNode, ArbFinderNode]{
     let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
     let assetKeyOne = relayAsset.getAssetKey()
+    
+    // REVIEW Constructiong allocation nodes without fee data
+    // REVIEW Create arb finder nodes with strict type, compatable with arb finder
     let pathNodeOne: ArbFinderNode ={
         node_key: assetKeyOne,
         asset_name: nativeAssetName,
@@ -569,7 +572,11 @@ export function createAllocationPath(relay: Relay, relayAsset: MyAsset, pathValu
         path_type: "Xcm",
         path_data: {
             "path_type": "Xcm",
-            "lp_id": null
+            "lp_id": null,
+            "xcm_transfer_fee_amounts": [],
+            "xcm_transfer_reserve_amounts": [],
+            "xcm_deposit_fee_amounts": [],
+            "xcm_deposit_reserve_amounts": []
         }
     }
     let relayAssetRegistryObject = new MyAsset(getAssetRegistryObjectBySymbol(0, nativeAssetName, relay))
@@ -581,7 +588,11 @@ export function createAllocationPath(relay: Relay, relayAsset: MyAsset, pathValu
         path_type: "Xcm",
         path_data: {
             "path_type": "Xcm",
-            "lp_id": null
+            "lp_id": null,
+            "xcm_transfer_fee_amounts": [],
+            "xcm_transfer_reserve_amounts": [],
+            "xcm_deposit_fee_amounts": [],
+            "xcm_deposit_reserve_amounts": []
         }
     }
     return [pathNodeOne, pathNodeTwo] 
