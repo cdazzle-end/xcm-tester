@@ -137,23 +137,16 @@ function createInstructionTransferToHomeThenDestination(
     let transferInstruction: TransferToHomeThenDestInstruction = {
         type: InstructionType.TransferToHomeThenDestination,
         
-        // startNode: getNode(relay, startAssetNode.getChainId()),
-        // startNodeLocalId: startAssetNode.asset.tokenData.localId,
-        // startAssetNode,
         startAsset: startAssetNode,
         startTransferFee: xcmTransferFees![0],
         startTransferReserve: xcmTransferReserves![0],
 
-        // middleNode: getNode(relay, middleAssetNode.getChainId()),
-        // middleNodeLocalId: middleAssetNode.asset.tokenData.localId,
         middleAsset: middleAssetNode,
         middleTransferFee: xcmTransferFees![1],
         middleTransferReserve: xcmTransferReserves![1],
         middleDepositFee: xcmDepositFees![0],
         middleDepositReserve: xcmDepositReserves![0],
 
-        // destinationNode: getNode(relay, destinationAssetNode.getChainId()),
-        // destinationNodeLocalId: destinationAssetNode.asset.tokenData.localId,
         destinationAsset: destinationAssetNode,
         destinationDepositFee: xcmDepositFees![1],
         destinationDepositReserve: xcmDepositReserves![1],
