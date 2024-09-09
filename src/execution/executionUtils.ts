@@ -900,8 +900,8 @@ export async function confirmLastTransactionSuccess(lastTransactionProperties: T
         const swapProperties = lastTransactionProperties as SwapProperties
 
         const relay = swapProperties.relay
-        const assetIn = swapProperties.assetIn
-        const assetOut = swapProperties.assetOut
+        const assetIn = new AssetNode(swapProperties.assetIn)
+        const assetOut = new AssetNode(swapProperties.assetOut)
         const chain = assetIn.chain
         const chainId = assetIn.getChainId()
     
