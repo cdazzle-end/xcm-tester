@@ -188,11 +188,11 @@ export async function waitForDestinationBalanceChange(
 
         // Check this every second, at 10 sec query manually
         if (queryIndex % 10 != 0 ){
-            // console.log(`Deposit Event Tracker: ${destEventTracker.isResolved()} | Waiting 1 sec...`)
+            console.log(`Deposit Balance Change Tracker: ${destBalanceChangeTracker.isResolved()} | Waiting 1 sec...`)
 
             // Check if balance change has resolved, balance observable has logged a change in balance
             if(destBalanceChangeTracker.isResolved()){
-                console.log("Token Deposit resolved NORMALLY")
+                console.log("Balance Change resolved successfully")
 
                 // Get balance change data from resolved promise
                 destBalanceChangeStats = await destBalanceChangeTracker.trackedPromise
@@ -210,10 +210,13 @@ export async function waitForDestinationBalanceChange(
             if(destinationBalanceChange !== null){
                 destBalanceChangeStats = destinationBalanceChange
                 tokenDepositConfirmed = true
-                console.log("Call destination balance unsub...")
-                destBalanceUnsub!();
-                console.log("Destination balance unsub called")
 
+                // If balance change has not resolved yet, but we have confirmed balance change manually, call unsub
+                if(!destBalanceChangeTracker.isResolved()){
+                    console.log("Call destination balance unsub...")
+                    destBalanceUnsub!();
+                    console.log("Destination balance unsub called")
+                }
                 
             } else {
                 console.log("BALANCE QUERIED AND NO CHANGE IN BALANCE, waiting 10 seconds")
