@@ -750,6 +750,7 @@ export function printInstructionSet(
     instructionSet: (SwapInstruction | TransferInstruction)[]
 ) {
     console.log("*********************INSTRUCTION SET***********************");
+    console.log(JSON.stringify(instructionSet[0].assetNodes[0].pathValue))
     instructionSet.forEach((instruction) => {
         printInstruction(instruction);
     });
