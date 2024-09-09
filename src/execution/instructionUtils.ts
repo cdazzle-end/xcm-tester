@@ -573,10 +573,10 @@ export function createAllocationPath(relay: Relay, relayAsset: MyAsset, pathValu
         path_data: {
             "path_type": "Xcm",
             "lp_id": null,
-            "xcm_transfer_fee_amounts": [],
-            "xcm_transfer_reserve_amounts": [],
-            "xcm_deposit_fee_amounts": [],
-            "xcm_deposit_reserve_amounts": []
+            "xcm_transfer_fee_amounts": ["0","0"],
+            "xcm_transfer_reserve_amounts": ["0","0"],
+            "xcm_deposit_fee_amounts": ["0","0"],
+            "xcm_deposit_reserve_amounts": ["0","0"]
         }
     }
     let relayAssetRegistryObject = new MyAsset(getAssetRegistryObjectBySymbol(0, nativeAssetName, relay))
@@ -589,43 +589,43 @@ export function createAllocationPath(relay: Relay, relayAsset: MyAsset, pathValu
         path_data: {
             "path_type": "Xcm",
             "lp_id": null,
-            "xcm_transfer_fee_amounts": [],
-            "xcm_transfer_reserve_amounts": [],
-            "xcm_deposit_fee_amounts": [],
-            "xcm_deposit_reserve_amounts": []
+            "xcm_transfer_fee_amounts": ["0","0"],
+            "xcm_transfer_reserve_amounts": ["0","0"],
+            "xcm_deposit_fee_amounts": ["0","0"],
+            "xcm_deposit_reserve_amounts": ["0","0"]
         }
     }
     return [pathNodeOne, pathNodeTwo] 
 }
-export async function createAllocationKusamaToStartPath(relay: Relay, startAssetRegistryObject: IMyAsset, pathValue: number){
-    let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
-    let relayAssetRegistryObject = getAssetRegistryObjectBySymbol(0, nativeAssetName, relay)
-    let relayAssetKey = JSON.stringify(relayAssetRegistryObject.tokenData.chain) + JSON.stringify(relayAssetRegistryObject.tokenData.localId)
-    let relayNode: ArbFinderNode ={
-        node_key: relayAssetKey,
-        asset_name: nativeAssetName,
-        path_value: pathValue,
-        path_type: "Xcm",
-        path_data: {
-            "path_type": "Xcm",
-            "lp_id": null
-        }
-    }
-    let startAssetKey = JSON.stringify(startAssetRegistryObject.tokenData.chain) + JSON.stringify(startAssetRegistryObject.tokenData.localId)
-    let startNode: ArbFinderNode ={
-        node_key: startAssetKey,
-        asset_name: nativeAssetName,
-        path_value: pathValue,
-        path_type:"Xcm",
-        path_data: {
-            "path_type": "Xcm",
-            "lp_id": null
-        }
-    }
-    return [relayNode, startNode] 
-}
+// export async function createAllocationKusamaToStartPath(relay: Relay, startAssetRegistryObject: IMyAsset, pathValue: number){
+//     let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
+//     let relayAssetRegistryObject = getAssetRegistryObjectBySymbol(0, nativeAssetName, relay)
+//     let relayAssetKey = JSON.stringify(relayAssetRegistryObject.tokenData.chain) + JSON.stringify(relayAssetRegistryObject.tokenData.localId)
+//     let relayNode: ArbFinderNode ={
+//         node_key: relayAssetKey,
+//         asset_name: nativeAssetName,
+//         path_value: pathValue,
+//         path_type: "Xcm",
+//         path_data: {
+//             "path_type": "Xcm",
+//             "lp_id": null
+//         }
+//     }
+//     let startAssetKey = JSON.stringify(startAssetRegistryObject.tokenData.chain) + JSON.stringify(startAssetRegistryObject.tokenData.localId)
+//     let startNode: ArbFinderNode ={
+//         node_key: startAssetKey,
+//         asset_name: nativeAssetName,
+//         path_value: pathValue,
+//         path_type:"Xcm",
+//         path_data: {
+//             "path_type": "Xcm",
+//             "lp_id": null
+//         }
+//     }
+//     return [relayNode, startNode] 
+// }
 
-// export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPaths: AssetNode[][], chopsticks: boolean, executeMovr: boolean){
+// // export async function allocateKsmFromPreTransferPaths(relay: Relay, allocationPaths: AssetNode[][], chopsticks: boolean, executeMovr: boolean){
 //     //Dynamic allocation from multiple chains. Execute allocations first
 //     let allocationInstructions = await Promise.all(allocationPaths.map(async (path) => buildInstructionSet(relay, path)))
 //     printAllocations(allocationInstructions)
