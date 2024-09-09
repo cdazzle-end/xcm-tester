@@ -182,7 +182,7 @@
         "node": "Moonbeam"
       },
       "\"29085784439601774464560083082574142143\"": {
-        "xcmAmount": "4329403896",
+        "xcmAmount": "3607533314",
         "xcmAssetSymbol": "xcvDOT",
         "xcmAssetId": "29085784439601774464560083082574142143",
         "xcmAssetDecimals": "10",
@@ -663,7 +663,7 @@
         "node": "Moonbeam"
       },
       "\"29085784439601774464560083082574142143\"": {
-        "xcmAmount": "4329403896",
+        "xcmAmount": "3607533314",
         "xcmAssetSymbol": "xcvDOT",
         "xcmAssetId": "29085784439601774464560083082574142143",
         "xcmAssetDecimals": "10",
