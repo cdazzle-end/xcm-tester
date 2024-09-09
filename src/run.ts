@@ -28,10 +28,6 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
         console.log("Last node is undefined. No extrinsics executed successfully. Exiting")
         return;
     }
-    
-    const currentDateTime = new Date().toString();
-
-    console.log(currentDateTime);
 
     let arbLoops = 0
     let arbSuccess = false
