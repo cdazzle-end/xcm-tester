@@ -151,10 +151,10 @@ export function getAssetKeyFromChainAndSymbol(
     symbol: string,
     relay: Relay
 ): string {
-    return new MyAsset(getAssetRegistryObjectBySymbol(chainId, symbol, relay)).getAssetKey()
+    return new MyAsset(getMyAssetBySymbol(chainId, symbol, relay)).getAssetKey()
 
 }
-export function getAssetRegistryObjectBySymbol(
+export function getMyAssetBySymbol(
     chainId: number,
     symbol: string,
     relay: Relay
@@ -168,22 +168,13 @@ export function getAssetRegistryObjectBySymbol(
             ).toLowerCase() == JSON.stringify(symbol).toLowerCase()
         );
     });
-    if (asset) {
-        return asset;
-    }
 
-    if (symbol.toUpperCase() == "XCKSM" && chainId == 2023) {
-        asset = assetRegistry.find((assetRegistryObject: IMyAsset) => {
-            return (
-                assetRegistryObject.tokenData.chain == chainId &&
-                assetRegistryObject.tokenData.symbol.toUpperCase() == "XCKSM"
-            );
-        });
-    }
     if (asset) return asset;
 
+    // REVIEW Make this more efficient, just add or remove xc for evm chains
     // Try again but account for xc
     if (symbol.toLowerCase().startsWith("xc")) {
+        // Try removing prefix
         let symbolNoPrefix = symbol.slice(2);
         asset = assetRegistry.find((assetRegistryObject: IMyAsset) => {
             return (
@@ -193,6 +184,7 @@ export function getAssetRegistryObjectBySymbol(
             );
         });
     } else {
+        // Try adding prefix
         let symbolYesPrefix = "xc" + symbol;
         asset = assetRegistry.find((assetRegistryObject: IMyAsset) => {
             return (
@@ -725,13 +717,13 @@ export async function getTotalArbResultAmount(
 
     let totalProfit = finalOutputValue.minus(originalInputValue)
 
-    let testAsset = new MyAsset(getAssetRegistryObjectBySymbol(2000, 'DOT', 'polkadot'))
+    let testAsset = new MyAsset(getMyAssetBySymbol(2000, 'DOT', 'polkadot'))
     let assetLocation = testAsset.getLocation();
 
     let xcmAssets = getAssetsAtLocation(assetLocation, 'polkadot')
 
     let lastNode = stateGetLastNode()
-    let lastNodeAsset = new MyAsset(getAssetRegistryObjectBySymbol(lastNode?.chainId!, lastNode?.assetSymbol!, 'polkadot'))
+    let lastNodeAsset = new MyAsset(getMyAssetBySymbol(lastNode?.chainId!, lastNode?.assetSymbol!, 'polkadot'))
 
     let foundAsset = xcmAssets.find((xcmAsset) => {
         return new MyAsset(xcmAsset).getAssetKey() == lastNodeAsset.getAssetKey()

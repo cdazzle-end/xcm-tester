@@ -1,7 +1,7 @@
 import * as paraspell from "@paraspell/sdk";
 import { AssetNode } from "../core/AssetNode.ts";
 import { IndexObject, PathType, InstructionType, IMyAsset, RelayTokenBalances, Relay, ArbFinderNode, SwapInstruction, TransferInstruction, TransferToHomeThenDestInstruction, PNode, RelayTokenSymbol } from "./../types/types.ts";
-import { getNode, getAssetRegistryObjectBySymbol, constructRouteFromFile, constructAssetNodesFromPath, findValueByKey, printInstructionSet, readLogData, getRelayTokenSymbol, getRelayMinimum } from "../utils/utils.ts";
+import { getNode, getMyAssetBySymbol, constructRouteFromFile, constructAssetNodesFromPath, findValueByKey, printInstructionSet, readLogData, getRelayTokenSymbol, getRelayMinimum } from "../utils/utils.ts";
 import fs from 'fs'
 import path from 'path'
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
@@ -179,7 +179,7 @@ function createMiddleNode(relay: Relay, startAssetNode: AssetNode) {
     let middleAsset: MyAsset;
     if(middleNode == "Kusama" || middleNode == "Polkadot"){
         let assetSymbol = middleNode == "Kusama" ? "KSM" : "DOT"
-        middleAsset = new MyAsset(getAssetRegistryObjectBySymbol(0, assetSymbol, relay))
+        middleAsset = new MyAsset(getMyAssetBySymbol(0, assetSymbol, relay))
     } else {
         middleAsset = startAssetNode.getAssetOriginRegistryObject()
     }
@@ -461,7 +461,7 @@ export function getStartChainAllocationPath(
         console.log(`Start chain: ${startChainId} has insufficient funds to allocate. Need to allocate from relay`)
         if (relayTokenBalance.lt(requiredRelayBalance)) throw new Error("Relay does not have enough funds to allocate for swap")
 
-        let relayAsset = new MyAsset(getAssetRegistryObjectBySymbol(0, relayTokenSymbol, relay))
+        let relayAsset = new MyAsset(getMyAssetBySymbol(0, relayTokenSymbol, relay))
         let relayPathNode: ArbFinderNode = createXcmPathNode(relay, relayAsset, actualAmountToTransfer.toNumber())
         transferPathNodes = [relayPathNode]
         fs.writeFileSync(path.join(__dirname, './preTransferNodes.json'), JSON.stringify(transferPathNodes))
@@ -503,7 +503,7 @@ export function createAllocationPaths(relay: Relay, nativeBalances: RelayTokenBa
     // Create node paths from each chain to relay
     let allocationPaths: ArbFinderNode[][] = []
     for(let allocationNode of nodesToAllocateFrom){
-        let relayAsset = new MyAsset(getAssetRegistryObjectBySymbol(allocationNode.chainId, nativeAssetSymbol, relay))
+        let relayAsset = new MyAsset(getMyAssetBySymbol(allocationNode.chainId, nativeAssetSymbol, relay))
         let pathNodes: ArbFinderNode[] = createAllocationPath(relay, relayAsset, allocationNode.balance)
         allocationPaths.push(pathNodes)
         console.log(`Allocating ${allocationNode.balance} from chain ${allocationNode.chainId}`)
@@ -579,7 +579,7 @@ export function createAllocationPath(relay: Relay, relayAsset: MyAsset, pathValu
             "xcm_deposit_reserve_amounts": ["0","0"]
         }
     }
-    let relayAssetRegistryObject = new MyAsset(getAssetRegistryObjectBySymbol(0, nativeAssetName, relay))
+    let relayAssetRegistryObject = new MyAsset(getMyAssetBySymbol(0, nativeAssetName, relay))
     let assetKeyTwo = relayAssetRegistryObject.getAssetKey()
     let pathNodeTwo: ArbFinderNode ={
         node_key: assetKeyTwo,

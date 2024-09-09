@@ -10,12 +10,12 @@ import { acaRpc, karRpc, localRpcs } from '../config/txConsts.ts';
 import {EvmRpcProvider} from '@acala-network/eth-providers';
 import { Wallet } from '@acala-network/sdk/wallet/wallet.js';
 import { WalletConfigs } from '@acala-network/sdk/wallet/index.js';
-import { getSigner, getNodeFromChainId, delay, getAssetRegistryObjectBySymbol } from './utils.ts';
+import { getSigner, getNodeFromChainId, delay, getMyAssetBySymbol } from './utils.ts';
 import { getApiForNode } from './apiUtils.ts';
 // import { balanceAdapterMap } from './liveTest.ts';
 import bn from "bignumber.js"
 import { MyAsset } from '../core/index.ts';
-import { getRelayTokenSymbol, stateGetRelayTokenBalances, stateSetRelayTokenBalances } from './index.ts';
+import { getChainIdFromNode, getRelayTokenSymbol, stateGetRelayTokenBalances, stateSetRelayTokenBalances } from './index.ts';
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
 
 const balanceAdapterMap: Map<PNode, BalanceAdapter> = new Map<TNode, BalanceAdapter>();
@@ -475,7 +475,7 @@ export async function queryRelayTokenBalances(chopsticks: boolean, relay: Relay)
     }
 
     let relayToken = getRelayTokenSymbol(relay)
-
+    
 
 
     let chainIds = Object.keys(nativeBalances)
@@ -484,14 +484,23 @@ export async function queryRelayTokenBalances(chopsticks: boolean, relay: Relay)
         // if (chainId != 0){
             let node = getNodeFromChainId(Number.parseInt(chainKey), relay)
             // REVIEW Getting asset object by symbol, might cause issues? Chains like moonbeam might have other assets w the symbol of DOT or KSM
-            let relayAssetId = getAssetRegistryObjectBySymbol(chainId, relayToken, relay).tokenData.localId
-            let chainBalance = await getBalanceChainAsset(chopsticks, relay, node, chainId, relayToken, relayAssetId)
-            nativeBalances[chainId] = chainBalance.available.toString()    
+            let relayAsset: MyAsset = new MyAsset(getMyAssetBySymbol(chainId, relayToken, relay))
+            // let chainBalance = await getBalanceChainAsset(chopsticks, relay, node, chainId, relayToken, relayAssetId)
+            let signer = await getSigner(chopsticks, node)
+
+            let api = await getApiForNode(node, chopsticks);
+            let chainBalance: bn = await getBalance(relay, chopsticks, api, relayAsset, signer.address)
+            nativeBalances[chainId] = chainBalance.toString()    
         // }
     })
     await Promise.all(nativeBalancesPromise)
     return nativeBalances
 }
+
+// export function getRelayAssetOnChain(chain: PNode, ): MyAsset{
+//     let chainId = getChainIdFromNode(chain);
+//     getMyAssetBySymbol(chainId)
+// }
 
 /**
  * Makes multiple attempts to call getRelayTokenBalances()
@@ -560,6 +569,20 @@ export async function getBalanceAdapter(relay: Relay, api: ApiPromise, chainId: 
 
 // Gets current balance
 // Used in executeSingleTransferExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
+/**
+ * Query current balance of an asset for address on specified chain
+ * 
+ * Main balance query function
+ * 
+ * Use balance adapter
+ * 
+ * @param relay 
+ * @param chopsticks 
+ * @param chainApi 
+ * @param asset 
+ * @param accountAddress 
+ * @returns 
+ */
 export async function getBalance(
     relay: Relay, 
     chopsticks: boolean, 

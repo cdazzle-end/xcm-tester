@@ -1,7 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { EventRecord } from "@polkadot/types/interfaces";
 import { FeeData, IMyAsset, PNode, PromiseTracker, Relay, ReserveFeeData, TransferDepositEventData, TransferExtrinsicContainer, TransferOrDeposit } from './../types/types.ts';
-import { findValueByKey, getMyAssetById, getAssetRegistryObjectBySymbol, getChainIdFromNode } from './utils.ts';
+import { findValueByKey, getMyAssetById, getMyAssetBySymbol, getChainIdFromNode } from './utils.ts';
 
 import { getParaId, getRelayChainSymbol, TNode } from '@paraspell/sdk';
 import { BN } from '@polkadot/util/bn/bn';
@@ -425,7 +425,7 @@ export function getXcmTransferEventData(
 
     let transferAmount = new bn(balanceEvents[nodeBalanceEvent.eventIndex].event.data[nodeBalanceEvent.amountIndex].toString())
 
-    let nativeAssetObject = getAssetRegistryObjectBySymbol(chainId, nativeCurrencySymbol, relay)
+    let nativeAssetObject = getMyAssetBySymbol(chainId, nativeCurrencySymbol, relay)
     let feeAssetDecimals = nativeAssetObject.tokenData.decimals
 
     let transferAssetDecimals = transferredAssetObject.tokenData.decimals
@@ -850,7 +850,7 @@ export function createFeeDatas(txContainer: TransferExtrinsicContainer, xcmEvent
     const destinationAsset: MyAsset = txContainer.destinationAsset.asset
 
     const chainId = eventType === 'Transfer' ?  startAsset.getChainId() : destinationAsset.getChainId()
-    const feeAssetObject = getAssetRegistryObjectBySymbol(chainId, xcmEventData.feeAssetSymbol, txContainer.relay)
+    const feeAssetObject = getMyAssetBySymbol(chainId, xcmEventData.feeAssetSymbol, txContainer.relay)
     const feeAssetLocation = feeAssetObject.tokenLocation!
     
     return {
