@@ -481,11 +481,12 @@ export function getStartChainAllocationPath(
  * @returns 
  */
 export function createAllocationPaths(relay: Relay, nativeBalances: RelayTokenBalances, startChainId: number){
+    let decimalPlaces = relay == 'kusama' ? 12 : 10
     let nodesToAllocateFrom: any[] = []
     let minimumTokenBalance = relay == 'kusama' ? 0.01 : 0.02
     Object.entries(nativeBalances).forEach(([chainId, balance]) => {
         if(Number.parseInt(chainId) != 0 && Number.parseInt(chainId) != startChainId){
-            let chainBalance = new bn(balance)
+            let chainBalance = new bn(getDisplayBalance(balance, decimalPlaces))
             let amountToTransfer: bn;
             if(chainBalance.gt(minimumTokenBalance)){
                 amountToTransfer = chainBalance.minus(minimumTokenBalance)
