@@ -245,7 +245,7 @@ async function createDepositEventListener(
     tokenType: TokenType,
     transferType: TransferType,
     depositAddress: string,
-    manualBalanceDepositTracker: PromiseTracker,
+    balanceChangeTracker: PromiseTracker,
     xcmpMessageId?: string, 
     xcmpMessageHash?: string
 ): Promise<FrameSystemEventRecord[]>{
@@ -320,7 +320,7 @@ async function createDepositEventListener(
             // Check if balance observable has resolved.
             // If it has resolved, wait 15 seconds for the events to show and if the events aren't found then throw
 
-            let balanceDepositResolve = manualBalanceDepositTracker.isResolved()
+            let balanceDepositResolve = balanceChangeTracker.isResolved()
 
             // If balance deposit has resolved true, and we haven't found the xcm event, then reject the promise after a wait
             if(balanceDepositResolve){
