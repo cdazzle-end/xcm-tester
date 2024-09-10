@@ -269,8 +269,8 @@ async function executeLatestArb(relay: Relay, chopsticks: boolean, executeMovr: 
 // Run with arg kusama
 async function run() {
     const relay = process.argv.slice(2)[0] as Relay
-    let chopsticks = false
-    let executeMovr = true
+    let chopsticks = true
+    let executeMovr = false
     let useLatestTarget = false
     let inputAmount = 0.2
     let startNew = true
