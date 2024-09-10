@@ -278,6 +278,7 @@ async function createDepositEventListener(
                                 resolve(eventRecords);
                             }
                         } catch (error){
+                            // This throws if the event we matched
                             console.log("*********** ERROR *************8")
                             console.log(`Can't find xcm deposit even in registry for ${node} | ${transferType} | ${tokenType}`)
                             console.log("Registry Node Data:")
