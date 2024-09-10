@@ -6,7 +6,7 @@ import fs from 'fs'
 import path from 'path'
 import { FixedPointNumber, Token } from "@acala-network/sdk-core";
 import { fileURLToPath } from 'url';
-import { getBalance, getBalanceChainAsset} from "../utils/balanceUtils.ts";
+import { getBalance, getBalanceChainAsset, getDisplayBalance} from "../utils/balanceUtils.ts";
 import { getApiForNode } from "../utils/apiUtils.ts";
 import bn from "bignumber.js";
 import { buildAndExecuteTransferExtrinsic } from "./arbExecutor.ts";
@@ -446,6 +446,8 @@ export function getStartChainAllocationPath(
     const transferAmountPadding = relay == 'kusama' ? new bn(0.01) : new bn(0.05) // Pad transfer amount to account for fees, so we have enough to start swaps with intended amount. Theres a better way to do this
     const amountNeededToTransfer = arbInputAmount.minus(startChainBalance)
     const actualAmountToTransfer = amountNeededToTransfer.plus(transferAmountPadding)
+
+    console.log(`Arb input amount: ${arbInputAmount} | Start chain balance: ${startChainBalance} | Amount needed to transfer: ${amountNeededToTransfer} | Actual amount to transfer: ${actualAmountToTransfer}`)
     
     let transferPathNodes: ArbFinderNode[] = []
 
@@ -456,7 +458,9 @@ export function getStartChainAllocationPath(
         if (relayChainBalance.lt(requiredRelayBalance)) throw new Error("Relay does not have enough funds to allocate for swap")
 
         let relayAsset = new MyAsset(getMyAssetBySymbol(0, relayTokenSymbol, relay))
-        let relayPathNode: ArbFinderNode = createXcmPathNode(relay, relayAsset, actualAmountToTransfer.toNumber())
+
+        let displayAmount = getDisplayBalance(actualAmountToTransfer.toString(), relayAsset.getDecimals())
+        let relayPathNode: ArbFinderNode = createXcmPathNode(relay, relayAsset, displayAmount)
         transferPathNodes = [relayPathNode]
         // fs.writeFileSync(path.join(__dirname, './preTransferNodes.json'), JSON.stringify(transferPathNodes))
     }
@@ -530,7 +534,7 @@ export function createAllocationPaths(relay: Relay, nativeBalances: RelayTokenBa
 export function createXcmPathNode(
     relay: Relay, 
     asset: MyAsset,
-    pathValue: number
+    pathValue: string
 ): ArbFinderNode {
     let pathNode: ArbFinderNode = {
         node_key: asset.getAssetKey(),
@@ -557,7 +561,7 @@ export function createXcmPathNode(
  * @param pathValue 
  * @returns [nodeOne, nodeTwo]
  */
-export function createAllocationPath(relay: Relay, relayAsset: MyAsset, pathValue: number): [ArbFinderNode, ArbFinderNode]{
+export function createAllocationPath(relay: Relay, relayAsset: MyAsset, pathValue: string): [ArbFinderNode, ArbFinderNode]{
     let nativeAssetName = relay == 'kusama' ? "KSM" : "DOT"
     let assetKeyOne = relayAsset.getAssetKey()
     

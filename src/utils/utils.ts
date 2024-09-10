@@ -947,14 +947,13 @@ export async function getLatestDefaultArb(
             fs.readFileSync(filePath, "utf8")
         );
 
-        let estimatedOutput =
-            latestFileData[latestFileData.length - 1].path_value - inputAmount;
+        let estimatedOutput = new bn(latestFileData[latestFileData.length - 1].path_value).minus(inputAmount);
         console.log(
             `Estimated output for input amount ${inputAmount}: ${estimatedOutput}`
         );
         let asyncFileData: AsyncFileData = {
-            inputAmount: inputAmount,
-            estimatedOutput: estimatedOutput,
+            inputAmount: inputAmount.toString(),
+            estimatedOutput: estimatedOutput.toString(),
             latestFileData: latestFileData,
         };
         return asyncFileData;
