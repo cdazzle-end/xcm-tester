@@ -1123,16 +1123,16 @@ export async function allocateToRelay(
  */
 export async function allocateToStartChain(relay: Relay, assetPath: AssetNode[], chopsticks: boolean){
     let startChainId = assetPath[0].getChainId()
-    let startValue = assetPath[0].getChainBalance()
+    let arbInputValue = assetPath[0].getChainBalance()
 
     let relayTokenBalances: RelayTokenBalances = await getRelayTokenBalances(chopsticks, relay)
 
     
     let executionPath: AssetNode[] = assetPath
-    if(new bn(relayTokenBalances[startChainId]).lt(startValue)){
+    if(new bn(relayTokenBalances[startChainId]).lt(arbInputValue)){
         // Build allocation relay chain -> startChain 
         console.log("StartNode has insufficient start balance. Need to allocate")
-        let allocationNode: AssetNode[] = await getStartChainAllocationPath(relay, startChainId, assetPath[0].getPathValueAsNumber(), relayTokenBalances)
+        let allocationNode: AssetNode[] = await getStartChainAllocationPath(relay, startChainId, arbInputValue, relayTokenBalances)
         executionPath = allocationNode.concat(assetPath)
     }  else {
         console.log("SWAP CHAIN HAS ENOUGH FUNDS")

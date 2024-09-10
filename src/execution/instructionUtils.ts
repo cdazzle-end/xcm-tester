@@ -427,34 +427,33 @@ export function buildTransferrableAssetObject(relay: Relay, asset: IMyAsset){
  * 
  * @param relay 
  * @param startChainId 
- * @param inputAmount 
+ * @param arbInputAmount 
  * @param nativeBalances 
  * @returns 
  */
 export function getStartChainAllocationPath(
     relay: Relay, 
     startChainId: number, 
-    inputAmount: number, 
+    arbInputAmount: bn, 
     nativeBalances: any
 ): AssetNode[]{
     const relayTokenSymbol: RelayTokenSymbol = getRelayTokenSymbol(relay)
-    const relayTokenBalance: bn = new bn(nativeBalances[0])
-    const startTokenBalance: bn = new bn(nativeBalances[startChainId])
-
-    const requiredInputAmount = new bn(inputAmount)
+    const relayChainBalance: bn = new bn(nativeBalances[0])
+    const startChainBalance: bn = new bn(nativeBalances[startChainId])
 
     const minimumRelayBalance = new bn(getRelayMinimum(relay))
-    const transferAmountPadding = relay == 'kusama' ? new bn(0.01) : new bn(0.1) // Pad transfer amount to account for fees, so we have enough to start swaps with intended amount. Theres a better way to do this
-    const amountNeededToTransfer = requiredInputAmount.minus(startTokenBalance)
+    // REVIEW Amount to pad transfer for initial fee
+    const transferAmountPadding = relay == 'kusama' ? new bn(0.01) : new bn(0.05) // Pad transfer amount to account for fees, so we have enough to start swaps with intended amount. Theres a better way to do this
+    const amountNeededToTransfer = arbInputAmount.minus(startChainBalance)
     const actualAmountToTransfer = amountNeededToTransfer.plus(transferAmountPadding)
     
     let transferPathNodes: ArbFinderNode[] = []
 
     const requiredRelayBalance: bn = amountNeededToTransfer.plus(minimumRelayBalance).plus(transferAmountPadding)
 
-    if(startTokenBalance.lt(requiredInputAmount)){
+    if(startChainBalance.lt(arbInputAmount)){
         console.log(`Start chain: ${startChainId} has insufficient funds to allocate. Need to allocate from relay`)
-        if (relayTokenBalance.lt(requiredRelayBalance)) throw new Error("Relay does not have enough funds to allocate for swap")
+        if (relayChainBalance.lt(requiredRelayBalance)) throw new Error("Relay does not have enough funds to allocate for swap")
 
         let relayAsset = new MyAsset(getMyAssetBySymbol(0, relayTokenSymbol, relay))
         let relayPathNode: ArbFinderNode = createXcmPathNode(relay, relayAsset, actualAmountToTransfer.toNumber())
