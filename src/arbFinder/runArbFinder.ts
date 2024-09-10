@@ -364,14 +364,14 @@ async function updateAssetsAndLps(chopsticks: boolean, relay: Relay){
  */
 export async function findNewTargetArb(
     relay: Relay,
-    inputAmount: number,
+    inputAmount: string,
     chopsticks: boolean
 ): Promise<ArbFinderNode[]> {
     await updateAssetsAndLps(chopsticks, relay)
     try{
         // const arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
         let assetKey  = relay === 'kusama' ? ksmTargetNode : dotTargetNode
-        let arbCompleted = await arbRunTargetSearch(assetKey, assetKey, inputAmount.toString(), relay);
+        let arbCompleted = await arbRunTargetSearch(assetKey, assetKey, inputAmount, relay);
         if (arbCompleted) {
             // const targetLogFolder = await path.join(
             //     __dirname,

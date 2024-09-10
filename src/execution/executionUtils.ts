@@ -1008,7 +1008,7 @@ export async function allocateFunds(
     relay: Relay, 
     assetPath: AssetNode[],
     chopsticks: boolean, 
-    inputAmount: number,
+    inputAmount: string,
 ): Promise<AssetNode[]> {
     const startChainId = assetPath[0].getChainId()
     await allocateToRelay(relay, startChainId, chopsticks, inputAmount)
@@ -1030,7 +1030,7 @@ export async function allocateToRelay(
     relay: Relay, 
     startChainId: number, 
     chopsticks: boolean, 
-    inputAmount: number,
+    inputAmount: string,
 ): Promise<RelayTokenBalances>{
 
     let nativeBalances: RelayTokenBalances;

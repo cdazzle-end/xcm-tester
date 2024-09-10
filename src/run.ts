@@ -91,7 +91,7 @@ async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: b
  * @param useLatestTarget - To use latest arb found instead of searching for a new one
  * @returns 
  */
-async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr: boolean, inputAmount: number, useLatestTarget: boolean = false){
+async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr: boolean, inputAmount: string, useLatestTarget: boolean = false){
     if (relay !== 'kusama' && relay !== 'polkadot') throw new Error('Relay not specified')
     GlobalState.initializeAndResetGlobalState(relay)
 
@@ -214,7 +214,7 @@ async function checkAndRunLatest(relay: Relay, chopsticks: boolean, executeMovr:
             return;
         } else {
             console.log("Running arb with input amount: ", latest.inputAmount)
-            await findAndExecuteArb(relay, chopsticks, executeMovr, Number.parseFloat(latest.inputAmount))
+            await findAndExecuteArb(relay, chopsticks, executeMovr, latest.inputAmount)
         }
     } else {
         console.log("Last execution was not successful. Check total attempts")
@@ -229,7 +229,7 @@ async function checkAndRunLatest(relay: Relay, chopsticks: boolean, executeMovr:
                 return;
             } else {
                 console.log("Running arb with input amount: ", latest.inputAmount)
-                await findAndExecuteArb(relay, chopsticks, executeMovr, Number.parseFloat(latest.inputAmount))
+                await findAndExecuteArb(relay, chopsticks, executeMovr, latest.inputAmount)
             }
         }
     }
@@ -272,11 +272,12 @@ async function run() {
     let chopsticks = false
     let executeMovr = true
     let useLatestTarget = false
+    let inputAmount = 0.2
     let startNew = true
     let customInput = 0
 
     // await runFromLastNode(relay, chopsticks, executeMovr)  
-    await findAndExecuteArb(relay, chopsticks, executeMovr, 0.20, useLatestTarget)
+    await findAndExecuteArb(relay, chopsticks, executeMovr, inputAmount.toString(), useLatestTarget)
     
     // await executeTestPath(relay, chopsticks, executeMovr)
     // await testAssetLookup()
