@@ -2,11 +2,11 @@
   "polkadot-transfer": {
     "0": {
       "\"DOT\"": {
-        "xcmAmount": "6000000000",
+        "xcmAmount": "1177599942",
         "xcmAssetSymbol": "DOT",
         "xcmAssetId": "DOT",
         "xcmAssetDecimals": "10",
-        "feeAmount": "577633495",
+        "feeAmount": "574633495",
         "feeAssetSymbol": "DOT",
         "feeAssetId": "DOT",
         "feeAssetDecimals": "10",
@@ -493,11 +493,11 @@
   "polkadot-deposit": {
     "0": {
       "\"DOT\"": {
-        "xcmAmount": "6000000000",
+        "xcmAmount": "1177599942",
         "xcmAssetSymbol": "DOT",
         "xcmAssetId": "DOT",
         "xcmAssetDecimals": "10",
-        "feeAmount": "577633495",
+        "feeAmount": "574633495",
         "feeAssetSymbol": "DOT",
         "feeAssetId": "DOT",
         "feeAssetDecimals": "10",
