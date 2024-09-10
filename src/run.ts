@@ -214,7 +214,7 @@ async function checkAndRunLatest(relay: Relay, chopsticks: boolean, executeMovr:
             return;
         } else {
             console.log("Running arb with input amount: ", latest.inputAmount)
-            await findAndExecuteArb(relay, chopsticks, executeMovr, latest.inputAmount)
+            await findAndExecuteArb(relay, chopsticks, executeMovr, Number.parseFloat(latest.inputAmount))
         }
     } else {
         console.log("Last execution was not successful. Check total attempts")
@@ -229,7 +229,7 @@ async function checkAndRunLatest(relay: Relay, chopsticks: boolean, executeMovr:
                 return;
             } else {
                 console.log("Running arb with input amount: ", latest.inputAmount)
-                await findAndExecuteArb(relay, chopsticks, executeMovr, latest.inputAmount)
+                await findAndExecuteArb(relay, chopsticks, executeMovr, Number.parseFloat(latest.inputAmount))
             }
         }
     }
