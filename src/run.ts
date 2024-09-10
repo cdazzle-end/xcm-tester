@@ -111,6 +111,10 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
     assetPath = await allocateFunds(relay, assetPath, chopsticks, inputAmount) // Add transfer from relay -> start if needed
     stateSetLastNode(assetPath[0].asLastNode())
 
+    assetPath.forEach((assetNode) => {
+        console.log(`Asset: ${assetNode.getAssetKey()} | Value: ${assetNode.pathValue} | Type: ${assetNode.pathType}`)
+    })
+
     let instructionsToExecute: (SwapInstruction | TransferInstruction)[];
     let executionResults: ExtrinsicSetResultDynamic
     let arbLoops = 0
