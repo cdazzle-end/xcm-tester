@@ -174,7 +174,7 @@ export function stateGetExtrinsicSetResults(): Readonly<ExtrinsicSetResultDynami
 }
 export function confirmLastExtrinsicSuccess(): boolean{
     let success = stateGetExtrinsicSetResults()!.success
-    console.log(`Last extrinsic success: ${success}`)
+    console.log(`*****************************8 Last extrinsic success: ${success}`)
     if(!success){
         throw new Error("Last extrinsic failed. Can't continue")
     }
