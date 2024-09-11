@@ -1,7 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { EventRecord } from "@polkadot/types/interfaces";
 import { FeeData, IMyAsset, PNode, PromiseTracker, Relay, ReserveFeeData, TransferDepositEventData, TransferExtrinsicContainer, TransferOrDeposit } from './../types/types.ts';
-import { findValueByKey, getMyAssetById, getMyAssetBySymbol, getChainIdFromNode, trackPromise } from './utils.ts';
+import { findValueByKey, getMyAssetById, getMyAssetBySymbol, getChainIdFromNode, trackPromise, getRelayTokenSymbol } from './utils.ts';
 
 import { getParaId, getRelayChainSymbol, TNode } from '@paraspell/sdk';
 import { BN } from '@polkadot/util/bn/bn';
@@ -11,6 +11,8 @@ import { FrameSystemEventRecord } from '@polkadot/types/lookup';
 import bn from 'bignumber.js';
 import { depositEventDictionary, multiassetsDepositEventDictionary, TokenType, transferEventDictionary, TransferType, XcmDepositEventData } from '../config/feeConsts.ts';
 import { MyAsset } from '../core/index.ts';
+import path from 'path';
+import fs from 'fs'
 
 
 
@@ -1028,3 +1030,23 @@ export function createFeeDatas(txContainer: TransferExtrinsicContainer, xcmEvent
         reserveAssetId: eventType === 'Transfer' ? startAsset.getLocalId() : destinationAsset.getLocalId()
     }
 }
+
+/**
+ * Check fee book for fee amount cost of transferreing relay token from relay to destination chain
+ */
+export function getRelayTransferFee(relay: Relay): string {
+    let feeBookPath = path.join(__dirname, './../../data/newEventFeeBook.json')
+    let feeBook = JSON.parse(fs.readFileSync(feeBookPath, 'utf8'))
+
+    let relaySymbol = getRelayTokenSymbol(relay)
+
+    let relayAsset = new MyAsset(getMyAssetBySymbol(0, relaySymbol, relay))
+    let relayAssetId = JSON.stringify(relayAsset.getLocalId())
+
+    let transferKey = `${relay}-transfer`
+
+    let feeEntry = feeBook[transferKey]['0'][relayAssetId]
+
+    return feeEntry.feeAmount
+}
+
