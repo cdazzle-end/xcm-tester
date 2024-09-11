@@ -276,8 +276,8 @@ async function run() {
     let startNew = true
     let customInput = 0
 
-    await runFromLastNode(relay, chopsticks, executeMovr)  
-    // await findAndExecuteArb(relay, chopsticks, executeMovr, inputAmount.toString(), useLatestTarget)
+    // await runFromLastNode(relay, chopsticks, executeMovr)  
+    await findAndExecuteArb(relay, chopsticks, executeMovr, inputAmount.toString(), useLatestTarget)
     
     // await executeTestPath(relay, chopsticks, executeMovr)
     // await testAssetLookup()
