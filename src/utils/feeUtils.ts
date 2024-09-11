@@ -245,6 +245,20 @@ export async function listenForXcmpDepositEvent(
 
 }
 
+/**
+ * Listen to events on destination chain.
+ * 
+ * @param api 
+ * @param nodeEventData 
+ * @param depositNode 
+ * @param tokenType 
+ * @param transferType 
+ * @param depositAddress 
+ * @param balanceChangeTracker 
+ * @param xcmpMessageId 
+ * @param xcmpMessageHash 
+ * @returns 
+ */
 async function createDepositEventListenerRefactor(
     api: ApiPromise, 
     nodeEventData: XcmDepositEventData,
