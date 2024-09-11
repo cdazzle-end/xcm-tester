@@ -134,14 +134,14 @@ export async function listenForXcmpDepositEvent(
     nodeEventData = nodeEventData as XcmDepositEventData
 
     let eventListener: Promise<FrameSystemEventRecord[]> = createDepositEventListener(
-        receivingApi, 
-        nodeEventData, 
-        receivingChain, 
-        tokenType, 
-        transferType, 
-        depositAddress, 
-        balanceDepositTracker, 
-        xcmpMessageId, 
+        receivingApi,
+        nodeEventData,
+        receivingChain,
+        tokenType,
+        transferType,
+        depositAddress,
+        balanceDepositTracker,
+        xcmpMessageId,
         xcmpMessageHash
     )
 
