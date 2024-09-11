@@ -71,6 +71,8 @@ export async function manualCheckBalanceChange(
 /**
  * Initiate observable to watch balance of asset on specified chain (watchTokenBalanceChange)
  * 
+ * Use for transfer or swap
+ * 
  * Make observable into promise that will resolve when balance changes
  * 
  * @return Promise (BalanceChange) absolute value
@@ -83,7 +85,7 @@ export async function manualCheckBalanceChange(
  * @param setUnsubscribeCallback 
  * @returns 
  */
-export async function transferWatchBalanceChange(
+export async function watchBalanceChange(
     relay: Relay, 
     chopsticks: boolean, 
     destChainApi: ApiPromise, 
@@ -145,20 +147,6 @@ export async function watchTokenBalanceChange(relay: Relay, paraId: number, chop
     } else {
         await balanceAdapter.init(chainApi);
     }
-
-    //REVIEW Since using our asset regigstry, symbol will be properly formatted
-    
-    // If chain is movr, make sure tokens have xc prefix
-    // if(destinationChain == "Moonriver" && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "MOVR"
-    // || destinationChain == "Moonbeam" && !tokenSymbol.toUpperCase().startsWith("XC") && tokenSymbol.toUpperCase() != "GLMR"){
-    //     // console.log("Adding XC from token symbol")
-    //     tokenSymbol = "xc" + tokenSymbol
-    // // if chain isnt movr, no prefix
-    // } else if(relay == 'kusama' && paraId != 2023 && tokenSymbol.toUpperCase().startsWith("XC")
-    // || relay == 'polkadot' && paraId != 2004 && tokenSymbol.toUpperCase().startsWith("XC")){
-    //     // console.log("Removing XC from token symbol")
-    //     tokenSymbol = tokenSymbol.slice(2)
-    // }
 
     const balanceObservable = balanceAdapter.subscribeTokenBalance(tokenSymbol, address, asset.getLocalId());
     return new Observable<BalanceData>((subscriber) => {
