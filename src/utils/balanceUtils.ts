@@ -330,8 +330,7 @@ export async function getBalanceChange(
             
             error(err) {
                 if(err.name == 'TimeoutError'){
-                    console.log('Get Balance Change: No balance change reported within 120 seconds');
-                    // logError(err, "No balance change reported within 120 seconds")
+                    console.log('Get Balance Change: No balance change reported within 12 seconds');
                     subscription.unsubscribe();
                     resolve(balanceChange)
                 } else {
