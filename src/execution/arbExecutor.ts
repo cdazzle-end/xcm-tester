@@ -269,6 +269,8 @@ export async function buildAndExecuteTransferExtrinsic(
         console.log(transferExtrinsicResultData.arbExecutionResult)
         return transferExtrinsicResultData
     }
+
+    confirmLastExtrinsicSuccess()
     return transferExtrinsicResultData
     
 }
