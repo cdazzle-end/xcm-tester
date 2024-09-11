@@ -319,11 +319,8 @@ async function createDepositEventListener(
             // Gone through all the events up to this point and still have not found the xcm event.
             // Check if balance observable has resolved.
             // If it has resolved, wait 15 seconds for the events to show and if the events aren't found then throw
-
-            let balanceDepositResolve = balanceChangeTracker.isResolved()
-
             // If balance deposit has resolved true, and we haven't found the xcm event, then reject the promise after a wait
-            if(balanceDepositResolve){
+            if(balanceChangeTracker.isResolved()){
                 console.log("*** Balance deposit promise has resolved, but xcm events not found yet. WAIT 15 sec...")
                 await new Promise(resolve => setTimeout(resolve, 15000))
                 console.log(`Checking if event promise resolved...`)
