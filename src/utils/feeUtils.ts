@@ -150,6 +150,10 @@ export async function listenForXcmpDepositEvent(
         console.log(`Initiated deposit event listener for ${receivingChain} ${depositAssetSymbol}`)
         console.log(`Balance change tracker resolved: ${balanceDepositTracker.isResolved()}`)
         console.log(`Deposit event listener: ${JSON.stringify(depositEventListener.promiseTracker.isResolved, null, 2)}`)
+        while(!depositEventListener.promiseTracker.isResolved()){
+            console.log(`Deposit events not resolved yet. Waiting 1 second...`)
+            await new Promise(resolve => setTimeout(resolve, 1000))
+        }
         events = await depositEventListener.promiseTracker.trackedPromise;
     } catch (error) {
         console.error("Error listening for XCMP Deposit event:", error);
