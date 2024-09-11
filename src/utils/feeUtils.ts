@@ -238,6 +238,149 @@ export async function listenForXcmpDepositEvent(
 
 }
 
+async function createDepositEventListenerRefactor(
+    api: ApiPromise, 
+    nodeEventData: XcmDepositEventData,
+    depositNode: PNode,
+    tokenType: TokenType,
+    transferType: TransferType,
+    depositAddress: string,
+    balanceChangeTracker: PromiseTracker,
+    xcmpMessageId: string | undefined, 
+    xcmpMessageHash?: string | undefined,
+): Promise<{ promise: Promise<FrameSystemEventRecord[]>, unsubscribe: () => void }> {
+    let unsubscribe: (() => void) | undefined;
+    
+    const promise = new Promise<FrameSystemEventRecord[]>(async (resolve, reject) => {
+        let eventPromiseResolved = false;
+        const xcmEventSection = nodeEventData.xcm.section;
+        const xcmEventMethod = nodeEventData.xcm.method;
+        const eventRecords: FrameSystemEventRecord[] = [];
+
+        unsubscribe = await api.query.system.events(async (events) => {
+            for (const record of events) {
+                eventRecords.push(record);
+                const { event } = record;
+
+                if (event.section === xcmEventSection && event.method === xcmEventMethod) {
+                    if (await handleXcmDepositEvent(depositNode, transferType, tokenType, event, nodeEventData, xcmpMessageHash, xcmpMessageId, depositAddress, eventRecords)) {
+                        eventPromiseResolved = true;
+                        unsubscribe!();
+                        resolve(eventRecords);
+                        return;
+                    }
+                }
+            }
+
+            if (await shouldRejectPromise(balanceChangeTracker, eventPromiseResolved)) {
+                unsubscribe!();
+                reject("Balance Change observed BUT No xcm event found so rejecting");
+            }
+        });
+    });
+
+    return { 
+        promise, 
+        unsubscribe: () => {
+            if (unsubscribe) unsubscribe();
+        }
+    };
+}
+
+async function handleXcmDepositEvent(
+    depositNode: PNode,
+    transferType: TransferType,
+    tokenType: TokenType,
+    event: any,
+    nodeEventData: XcmDepositEventData,
+    xcmpMessageHash: string | undefined,
+    xcmpMessageId: string | undefined,
+    depositAddress: string,
+    eventRecords: FrameSystemEventRecord[]
+): Promise<boolean> {
+    if (nodeEventData.xcm.idIndex !== -1) {
+        try {
+            const messageHash = event.data[nodeEventData.xcm.idIndex].toString();
+            if (messageHash === xcmpMessageHash || messageHash === xcmpMessageId) {
+                return true;
+            }
+        } catch (error) {
+            console.error("Error matching XCM event:", error);
+            logXcmEventError(nodeEventData, event, depositNode, transferType, tokenType, xcmpMessageId, xcmpMessageHash);
+            throw error;
+        }
+    } else {
+        return await checkDepositEvent(nodeEventData, depositAddress, eventRecords, depositNode);
+    }
+    return false;
+}
+
+async function checkDepositEvent(
+
+    nodeEventData: XcmDepositEventData,
+    depositAddress: string,
+    eventRecords: FrameSystemEventRecord[],
+    depositNode: PNode,
+
+): Promise<boolean> {
+    const reversedEventArray = [...eventRecords].reverse();
+    try {
+        const depositEvent = reversedEventArray.find(
+            (event) => event.event.section === nodeEventData.deposit.section && 
+                       event.event.method === nodeEventData.deposit.method
+        );
+        if (depositEvent) {
+            const eventDepositAddress = depositEvent.event.data[nodeEventData.deposit.addressIndex].toString();
+            return eventDepositAddress === depositAddress;
+        }
+    } catch (e) {
+        console.error("Error matching deposit XCM event:", e);
+        logDepositEventError(nodeEventData, reversedEventArray, depositNode);
+    }
+    return false;
+}
+
+async function shouldRejectPromise(
+    balanceChangeTracker: PromiseTracker,
+    eventPromiseResolved: boolean
+): Promise<boolean> {
+    if (balanceChangeTracker.isResolved()) {
+        console.log("*** Balance deposit promise has resolved, but xcm events not found yet. WAIT 15 sec...");
+        await new Promise(resolve => setTimeout(resolve, 15000));
+        console.log("Checking if event promise resolved...");
+        return !eventPromiseResolved;
+    }
+    return false;
+}
+
+function logXcmEventError(
+    nodeEventData: XcmDepositEventData, 
+    event: any, 
+    node: PNode, 
+    transferType: TransferType, 
+    tokenType: TokenType, 
+    xcmpMessageId: string | undefined, 
+    xcmpMessageHash: string| undefined,
+) {
+    console.log("*********** ERROR *************");
+    console.log(`Can't find xcm deposit event in registry for ${node} | ${transferType} | ${tokenType}`);
+    console.log("Registry Node Data:");
+    console.log(JSON.stringify(nodeEventData, null, 2));
+    console.log("Event:");
+    console.log(JSON.stringify(event.toHuman(), null, 2));
+    console.log("Event data: " + JSON.stringify(event.data.toHuman(), null, 2));
+    console.log(`Trying to match against registry xcmpMessage id/hash ${xcmpMessageId} | ${xcmpMessageHash}`);
+    console.log(`*** Problem usually can't find ID index: ${nodeEventData.xcm.idIndex} in event.data: ${JSON.stringify(event.data.toHuman())}`);
+}
+
+function logDepositEventError(nodeEventData: XcmDepositEventData, reversedEventArray: FrameSystemEventRecord[], node: PNode) {
+    console.log(`ERROR matching deposit xcm event for ${node}`);
+    console.log("Captured events:");
+    reversedEventArray.forEach((event) => console.log(`Section: ${event.event.section} | Method: ${event.event.method}`));
+    console.log('-----------------------------');
+    console.log(`${node} registry deposit events: Section: ${nodeEventData.deposit.method} | Method: ${nodeEventData.deposit.section} | Event index:${nodeEventData.deposit.index}`);
+}
+
 async function createDepositEventListener(
     api: ApiPromise, 
     nodeEventData: XcmDepositEventData,
