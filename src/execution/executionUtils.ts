@@ -149,17 +149,19 @@ export async function executeSingleSwapExtrinsicMovr(
     )
     stateSetTransactionProperties(swapProperties)
     // ******************************************************
-    let unsubscribeOne: (() => void) = () => {}; 
-    let unsubscribeTwo: (() => void) = () => {}; 
+    const { balanceChangeTracker: assetInBalanceChangeTracker, unsubscribe: assetInBalanceUnsub } = await setupBalanceWatch(relay, assetIn.asset, api, signer.address, chopsticks);
+    const { balanceChangeTracker: assetOutBalanceChangeTracker, unsubscribe: assetOutBalanceUnsub } = await setupBalanceWatch(relay, assetOut.asset, api, signer.address, chopsticks);
+    // let unsubscribeOne: (() => void) = () => {}; 
+    // let unsubscribeTwo: (() => void) = () => {}; 
 
-    let balanceObservableIn$: Observable<BalanceData> = await watchTokenBalance(relay, chainId, chopsticks, api, assetIn.asset, liveWallet.address)
-    let balanceObservableOut$: Observable<BalanceData> = await watchTokenBalance(relay, chainId, chopsticks, api, assetOut.asset, liveWallet.address)
-    let balancePromiseIn: Promise<BalanceChange> = getBalanceChange(balanceObservableIn$, (unsub) => {
-        unsubscribeOne = unsub
-    })
-    let balancePromiseOut: Promise<BalanceChange> = getBalanceChange(balanceObservableOut$, (unsub) => {
-        unsubscribeTwo = unsub
-    })
+    // let balanceObservableIn$: Observable<BalanceData> = await watchTokenBalance(relay, chainId, chopsticks, api, assetIn.asset, liveWallet.address)
+    // let balanceObservableOut$: Observable<BalanceData> = await watchTokenBalance(relay, chainId, chopsticks, api, assetOut.asset, liveWallet.address)
+    // let balancePromiseIn: Promise<BalanceChange> = getBalanceChange(balanceObservableIn$, (unsub) => {
+    //     unsubscribeOne = unsub
+    // })
+    // let balancePromiseOut: Promise<BalanceChange> = getBalanceChange(balanceObservableOut$, (unsub) => {
+    //     unsubscribeTwo = unsub
+    // })
 
     try{
         // **************************************************************************************
@@ -169,8 +171,8 @@ export async function executeSingleSwapExtrinsicMovr(
         blockHash = txHash.blockHash
         // **************************************************************************************
 
-        let tokenInBalanceStats = await balancePromiseIn
-        let tokenOutBalanceStats = await balancePromiseOut
+        let tokenInBalanceStats = await assetInBalanceChangeTracker.trackedPromise
+        let tokenOutBalanceStats = await assetOutBalanceChangeTracker.trackedPromise
         console.log(`EXPECTED TOKEN IN ${expectedAmountIn.toString()} || ACTUAL TOKEN IN ${JSON.stringify(tokenInBalanceStats.changeInBalance.toString())}`)
         console.log(`EXPECTED TOKEN OUT ${expectedAmountOut.toString()} || ACTUAL TOKEN OUT ${JSON.stringify(tokenOutBalanceStats.changeInBalance.toString())}`)
         let assetRegistryObject = swapExtrinsicContainer.assetNodes[swapExtrinsicContainer.assetNodes.length - 1].asset;
@@ -229,8 +231,8 @@ export async function executeSingleSwapExtrinsicMovr(
         await stateSetResultData(swapResultData)
         return swapResultData
     } catch(e){
-        if (unsubscribeOne) unsubscribeOne();
-        if (unsubscribeTwo) unsubscribeTwo();
+        if (assetInBalanceUnsub) assetInBalanceUnsub();
+        if (assetOutBalanceUnsub) assetOutBalanceUnsub();
         console.log("ERROR: " + e)
         console.log("MOVR swap failed")
         let txDetails: TxDetails = {
@@ -305,16 +307,18 @@ export async function executeSingleSwapExtrinsicGlmr(
     let swapProperties: SwapProperties = createSwapProperties(chopsticks, signer.address, tokenInBalanceStart, tokenOutBalanceStart, swapExtrinsicContainer)
     stateSetTransactionProperties(swapProperties)
     // ******************************************************
-    let unsubscribeOne: (() => void) = () => {}; 
-    let unsubscribeTwo: (() => void) = () => {}; 
-    let balanceObservableIn$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetIn.asset, signer.address)
-    let balanceObservableOut$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetOut.asset, signer.address)
-    let balancePromiseIn = getBalanceChange(balanceObservableIn$, (unsub) => {
-        unsubscribeOne = unsub
-    })
-    let balancePromiseOut = getBalanceChange(balanceObservableOut$, (unsub) => {
-        unsubscribeTwo = unsub
-    })
+    const { balanceChangeTracker: assetInBalanceChangeTracker, unsubscribe: assetInBalanceUnsub } = await setupBalanceWatch(relay, assetIn.asset, api, signer.address, chopsticks);
+    const { balanceChangeTracker: assetOutBalanceChangeTracker, unsubscribe: assetOutBalanceUnsub } = await setupBalanceWatch(relay, assetOut.asset, api, signer.address, chopsticks);
+    // let unsubscribeOne: (() => void) = () => {}; 
+    // let unsubscribeTwo: (() => void) = () => {}; 
+    // let balanceObservableIn$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetIn.asset, signer.address)
+    // let balanceObservableOut$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetOut.asset, signer.address)
+    // let balancePromiseIn = getBalanceChange(balanceObservableIn$, (unsub) => {
+    //     unsubscribeOne = unsub
+    // })
+    // let balancePromiseOut = getBalanceChange(balanceObservableOut$, (unsub) => {
+    //     unsubscribeTwo = unsub
+    // })
 
     try{
         // **************************************************************************************
@@ -326,8 +330,8 @@ export async function executeSingleSwapExtrinsicGlmr(
         blockHash = txHash.blockHash
         // **************************************************************************************
 
-        let tokenInBalanceStats = await balancePromiseIn
-        let tokenOutBalanceStats = await balancePromiseOut
+        let tokenInBalanceStats = await assetInBalanceChangeTracker.trackedPromise
+        let tokenOutBalanceStats = await assetOutBalanceChangeTracker.trackedPromise
         console.log(`EXPECTED TOKEN IN ${expectedAmountIn.toString()} || ACTUAL TOKEN IN ${JSON.stringify(tokenInBalanceStats.changeInBalance.toString())}`)
         console.log(`EXPECTED TOKEN OUT ${expectedAmountOut.toString()} || ACTUAL TOKEN OUT ${JSON.stringify(tokenOutBalanceStats.changeInBalance.toString())}`)
         let lastNode: LastNode = {
@@ -379,8 +383,8 @@ export async function executeSingleSwapExtrinsicGlmr(
         await stateSetResultData(swapResultData)
         return swapResultData
     } catch(e){
-        unsubscribeOne()
-        unsubscribeTwo()
+        assetInBalanceUnsub()
+        assetOutBalanceUnsub()
         console.log("ERROR: " + e)
         console.log("GLMR swap failed")
         let txDetails: TxDetails = {
@@ -449,6 +453,11 @@ export async function executeSingleSwapExtrinsic(
 
     const { balanceChangeTracker: assetInBalanceChangeTracker, unsubscribe: assetInBalanceUnsub } = await setupBalanceWatch(relay, assetIn.asset, api, signer.address, chopsticks);
     const { balanceChangeTracker: assetOutBalanceChangeTracker, unsubscribe: assetOutBalanceUnsub } = await setupBalanceWatch(relay, assetOut.asset, api, signer.address, chopsticks);
+
+    console.log(`Balance in tracker unsub: ${assetInBalanceUnsub}`)
+    console.log(`Balance out tracker unsub: ${assetOutBalanceUnsub}`)
+
+    if(!assetInBalanceUnsub || !assetOutBalanceUnsub) throw new Error("Balance change tracker unsub failed")
 
     let tx: TxDetails;
     try {
