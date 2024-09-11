@@ -425,8 +425,8 @@ export function handleTransferError(
     let decodedError = error.decodedError
 
     // REVIEW declaring these functions as null or empty function
-    startBalanceUnsub!()
-    destBalanceUnsub!()
+    if(startBalanceUnsub) startBalanceUnsub()
+    if(destBalanceUnsub) destBalanceUnsub()
 
     let { startChain, destinationChain, startAsset, destinationAsset, pathAmount } = container
     

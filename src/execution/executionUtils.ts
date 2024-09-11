@@ -529,6 +529,9 @@ export async function executeSingleTransferExtrinsic(
     const { balanceChangeTracker: startBalanceChangeTracker, unsubscribe: startBalanceUnsub } = await setupBalanceWatch(relay, startAsset.asset, startApi, startSigner.address, chopsticks);
     const { balanceChangeTracker: destinationBalanceChangeTracker, unsubscribe: destBalanceUnsub } = await setupBalanceWatch(relay, destinationAsset.asset, destinationApi, destSigner.address, chopsticks);
 
+    // REMOVE
+    if(!startBalanceUnsub || !destBalanceUnsub) throw new Error("Balance change tracker unsub failed")
+
     // Extract properties before extrinsic is executed
     const xcmTxProperties = extrinsic.toHuman() as any
     let txDetails: TxDetails;
