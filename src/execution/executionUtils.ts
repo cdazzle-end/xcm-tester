@@ -459,6 +459,8 @@ export async function executeSingleSwapExtrinsic(
             waitForAssetOutBalanceChange(assetOutBalanceChangeTracker, assetOutBalanceStart, assetOutBalanceUnsub, swapTxContainer, chopsticks, signer.address)
         ]);
 
+        if(!assetInBalanceChange.changeInBalance.abs().gt(0)) throw new Error(`Asset in balance change not detected: ${JSON.stringify(assetInBalanceChange)}`)
+
         
         let swapTxResultData: SingleSwapResultData = createSwapResultData(swapTxContainer, assetInBalanceChange, assetOutBalanceChange, tx);
 
