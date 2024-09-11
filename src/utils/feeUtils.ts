@@ -1,7 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { EventRecord } from "@polkadot/types/interfaces";
 import { FeeData, IMyAsset, PNode, PromiseTracker, Relay, ReserveFeeData, TransferDepositEventData, TransferExtrinsicContainer, TransferOrDeposit } from './../types/types.ts';
-import { findValueByKey, getMyAssetById, getMyAssetBySymbol, getChainIdFromNode } from './utils.ts';
+import { findValueByKey, getMyAssetById, getMyAssetBySymbol, getChainIdFromNode, trackPromise } from './utils.ts';
 
 import { getParaId, getRelayChainSymbol, TNode } from '@paraspell/sdk';
 import { BN } from '@polkadot/util/bn/bn';
@@ -133,7 +133,7 @@ export async function listenForXcmpDepositEvent(
     }
     nodeEventData = nodeEventData as XcmDepositEventData
 
-    let eventListener: Promise<{ promise: Promise<FrameSystemEventRecord[]>, unsubReturnFunction: () => void }> = createDepositEventListenerRefactor(
+    let depositEventListener: { trackedPromise: PromiseTracker, unsubReturnFunction: () => void } = await createDepositEventListenerRefactor(
         receivingApi,
         nodeEventData,
         receivingChain,
@@ -149,8 +149,8 @@ export async function listenForXcmpDepositEvent(
     try {
         console.log(`Initiated deposit event listener for ${receivingChain} ${depositAssetSymbol}`)
         console.log(`Balance change tracker resolved: ${balanceDepositTracker.isResolved()}`)
-        console.log(`Deposit event listener: ${JSON.stringify(eventListener, null, 2)}`)
-        events = await eventListener;
+        console.log(`Deposit event listener: ${JSON.stringify(depositEventListener.trackedPromise.isResolved, null, 2)}`)
+        events = await depositEventListener.trackedPromise.trackedPromise;
     } catch (error) {
         console.error("Error listening for XCMP Deposit event:", error);
         throw new Error(`Failed to listen for XCMP Deposit event. Depositing to -> ${receivingChain} ${depositAssetSymbol} `);
@@ -251,7 +251,7 @@ async function createDepositEventListenerRefactor(
     balanceChangeTracker: PromiseTracker,
     xcmpMessageId: string | undefined, 
     xcmpMessageHash?: string | undefined,
-): Promise<{ promise: Promise<FrameSystemEventRecord[]>, unsubReturnFunction: () => void }> {
+): Promise<{ trackedPromise: PromiseTracker, unsubReturnFunction: () => void }> {
     let unsubscribe: (() => void) | undefined;
     
     const promise = new Promise<FrameSystemEventRecord[]>(async (resolve, reject) => {
@@ -276,9 +276,10 @@ async function createDepositEventListenerRefactor(
             }
         });
     });
+    let trackedPromise = trackPromise(promise)
 
     return { 
-        promise, 
+        trackedPromise, 
         unsubReturnFunction: () => {
             if (unsubscribe) unsubscribe();
         }
