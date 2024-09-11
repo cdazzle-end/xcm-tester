@@ -454,9 +454,6 @@ export async function executeSingleSwapExtrinsic(
     const { balanceChangeTracker: assetInBalanceChangeTracker, unsubscribe: assetInBalanceUnsub } = await setupBalanceWatch(relay, assetIn.asset, api, signer.address, chopsticks);
     const { balanceChangeTracker: assetOutBalanceChangeTracker, unsubscribe: assetOutBalanceUnsub } = await setupBalanceWatch(relay, assetOut.asset, api, signer.address, chopsticks);
 
-    console.log(`Balance in tracker unsub: ${assetInBalanceUnsub}`)
-    console.log(`Balance out tracker unsub: ${assetOutBalanceUnsub}`)
-
     if(!assetInBalanceUnsub || !assetOutBalanceUnsub) throw new Error("Balance change tracker unsub failed")
 
     let tx: TxDetails;

@@ -69,8 +69,8 @@ export async function handleSwapError(e: any, container: SwapExtrinsicContainer,
     let txDetails = e as TxDetails
     console.log("DECODED ERROR: " + JSON.stringify(decodedError, null, 2))               
     
-    await assetInUnsub()
-    await assetOutUnsub()
+    if(assetInUnsub) await assetInUnsub()
+    if(assetOutUnsub) await assetOutUnsub()
     
     let { chain, chainId, assetAmountIn, assetIn, assetOut } = container
 
