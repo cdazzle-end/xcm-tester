@@ -2,11 +2,11 @@
   "polkadot-transfer": {
     "0": {
       "\"DOT\"": {
-        "xcmAmount": "2000000000",
+        "xcmAmount": "46332253",
         "xcmAssetSymbol": "DOT",
         "xcmAssetId": "DOT",
         "xcmAssetDecimals": "10",
-        "feeAmount": "574633495",
+        "feeAmount": "571633495",
         "feeAssetSymbol": "DOT",
         "feeAssetId": "DOT",
         "feeAssetDecimals": "10",
@@ -171,7 +171,7 @@
         "node": "Moonbeam"
       },
       "\"110021739665376159354538090254163045594\"": {
-        "xcmAmount": "13877240478739",
+        "xcmAmount": "8209747119116",
         "xcmAssetSymbol": "xcaUSD",
         "xcmAssetId": "110021739665376159354538090254163045594",
         "xcmAssetDecimals": "12",
@@ -274,7 +274,7 @@
     },
     "2030": {
       "{\"VToken2\":\"0\"}": {
-        "xcmAmount": "3590131167",
+        "xcmAmount": "1443415497",
         "xcmAssetSymbol": "vDOT",
         "xcmAssetId": {
           "VToken2": "0"
@@ -493,11 +493,11 @@
   "polkadot-deposit": {
     "0": {
       "\"DOT\"": {
-        "xcmAmount": "2000000000",
+        "xcmAmount": "46332253",
         "xcmAssetSymbol": "DOT",
         "xcmAssetId": "DOT",
         "xcmAssetDecimals": "10",
-        "feeAmount": "574633495",
+        "feeAmount": "571633495",
         "feeAssetSymbol": "DOT",
         "feeAssetId": "DOT",
         "feeAssetDecimals": "10",
@@ -652,7 +652,7 @@
         "node": "Moonbeam"
       },
       "\"110021739665376159354538090254163045594\"": {
-        "xcmAmount": "13877240478739",
+        "xcmAmount": "8209747119116",
         "xcmAssetSymbol": "xcaUSD",
         "xcmAssetId": "110021739665376159354538090254163045594",
         "xcmAssetDecimals": "12",
@@ -777,7 +777,7 @@
     },
     "2030": {
       "{\"VToken2\":\"0\"}": {
-        "xcmAmount": "3590131167",
+        "xcmAmount": "1443415497",
         "xcmAssetSymbol": "vDOT",
         "xcmAssetId": {
           "VToken2": "0"
