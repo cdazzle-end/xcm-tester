@@ -2,7 +2,7 @@ import '@galacticcouncil/api-augment/basilisk';
 import { dotNodeKeys, kusamaNodeKeys } from '../config/txConsts.ts';
 import { getAllNodes, isEvmChain, isTransferResult, printExtrinsicSetResults, printInstruction } from '../utils/utils.ts';
 import { ExtrinsicObject, ExtrinsicSetResultDynamic, IndexObject, InstructionType, LastNode, Relay, SingleTransferResultData, SwapInstruction, TransferInstruction } from './../types/types.ts';
-import { stateGetExtrinsicSetResults, stateGetLastNode, stateGetNextInputValue, stateSetNextInputValue, wasLastExtrinsicSuccessful } from './../utils/globalStateUtils.ts';
+import { confirmLastExtrinsicSuccess, stateGetExtrinsicSetResults, stateGetLastNode, stateGetNextInputValue, stateSetNextInputValue, wasLastExtrinsicSuccessful } from './../utils/globalStateUtils.ts';
 import { executeAndReturnExtrinsic } from './executionUtils.ts';
 import { buildSwapExtrinsicDynamic, buildTransferExtrinsicDynamic } from './extrinsicUtils.ts';
 
@@ -59,6 +59,8 @@ export async function buildAndExecuteExtrinsics(
                         // If extrinsic failed then return
                         let extrinsicResults = stateGetExtrinsicSetResults()
                         if(extrinsicResults!.success === false) throw new Error(`Extrinsic failed. Returning results...`)  
+
+                        confirmLastExtrinsicSuccess()
                         
                         // After executing swap instruction queue, clear queue and add this new swap instruction to queue
                         swapInstructionQueue = [instruction];
@@ -74,6 +76,8 @@ export async function buildAndExecuteExtrinsics(
                         // If extrinsic failed then return
                         let extrinsicResults = stateGetExtrinsicSetResults()
                         if(extrinsicResults!.success === false) throw new Error(`Extrinsic failed. Returning results...`)   
+
+                        confirmLastExtrinsicSuccess()
                     }
                     
 
@@ -83,7 +87,8 @@ export async function buildAndExecuteExtrinsics(
 
                     // If extrinsic failed then return
                     let extrinsicResults = stateGetExtrinsicSetResults()
-                    if(extrinsicResults!.success === false) throw new Error(`Extrinsic failed. Returning results...`)                
+                    if(extrinsicResults!.success === false) throw new Error(`Extrinsic failed. Returning results...`)    
+                    confirmLastExtrinsicSuccess()            
                    
                     break;
 
@@ -96,6 +101,8 @@ export async function buildAndExecuteExtrinsics(
         // If extrinsic failed then return
         let extrinsicResults = stateGetExtrinsicSetResults()
         if(extrinsicResults!.success === false) throw new Error(`Extrinsic failed. Returning results...`)  
+
+        confirmLastExtrinsicSuccess()
 
         swapInstructionQueue = [];   
     } catch(e){
