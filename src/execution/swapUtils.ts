@@ -38,11 +38,11 @@ export async function waitForAssetOutBalanceChange(
                 
                 // Confirm token deposit
                 balanceChangeResolved = true
+            } else {
+                console.log("Balance change tracker not resolved yet...")
+                await new Promise(resolve => setTimeout(resolve, 1000))    
             }
 
-            console.log("Balance change tracker not resolved yet...")
-            // wait 1 second
-            await new Promise(resolve => setTimeout(resolve, 1000))
         } else {
             console.log("10 seconds passed, balance change tracker not resolved. Querying balance manually...")
             // Query balance manually, confirm if change or not
