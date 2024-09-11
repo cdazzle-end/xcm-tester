@@ -70,6 +70,10 @@ export async function buildAndExecuteExtrinsics(
                     if (swapInstructionQueue.length > 0) {
                         await buildAndExecuteSwapExtrinsics(relay, swapInstructionQueue, chopsticks, executeMovr, allocationExtrinsic)
                         swapInstructionQueue = [];   
+
+                        // If extrinsic failed then return
+                        let extrinsicResults = stateGetExtrinsicSetResults()
+                        if(extrinsicResults!.success === false) throw new Error(`Extrinsic failed. Returning results...`)   
                     }
                     
 
