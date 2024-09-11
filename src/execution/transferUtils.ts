@@ -1,6 +1,6 @@
 import { testNets } from "../config/txConsts.ts"
 import { getSigner, getWalletAddressFormatted, isEvmChain, isTxDetails, trackPromise } from "../utils/utils.ts"
-import { ArbExecutionResult, BalanceChange, FeeData, LastNode, PNode, PromiseTracker, Relay, ReserveFeeData, SingleTransferResultData, TransactionState, TransferDepositEventData, TransferExtrinsicContainer, TransferTxStats, TxDetails } from "./../types/types.ts"
+import { ArbExecutionResult, BalanceChange, BalanceChangePromiseTracker, FeeData, LastNode, PNode, PromiseTracker, Relay, ReserveFeeData, SingleTransferResultData, TransactionState, TransferDepositEventData, TransferExtrinsicContainer, TransferTxStats, TxDetails } from "./../types/types.ts"
 import { KeyringPair } from '@polkadot/keyring/types'
 import { balanceChangeDisplay, getBalance, getDisplayBalance, manualCheckBalanceChange, watchBalanceChange } from "./../utils/balanceUtils.ts"
 import { stateSetLastNode, stateSetResultData, stateSetTransactionState, updateXcmFeeReserves } from "./../utils/globalStateUtils.ts"
@@ -66,7 +66,7 @@ export async function setupBalanceWatch(
     api: ApiPromise, 
     address: string, 
     chopsticks: boolean
-): Promise<{ balanceChangeTracker: PromiseTracker, unsubscribe: () => void }> {
+): Promise<{ balanceChangeTracker: BalanceChangePromiseTracker, unsubscribe: () => void }> {
     // Implementation
     let balanceUnsub: (() => void) | null = null; // Initialize as null or a function type
     let balanceChangePromise: Promise<BalanceChange> = watchBalanceChange(
