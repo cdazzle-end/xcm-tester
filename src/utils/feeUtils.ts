@@ -247,6 +247,8 @@ export async function listenForXcmpDepositEvent(
 
 /**
  * Listen to events on destination chain.
+ * - Looks for event to match section and method of xcm event registry
+ * - 
  * 
  * @param api 
  * @param nodeEventData 
