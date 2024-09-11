@@ -248,7 +248,11 @@ export async function listenForXcmpDepositEvent(
 /**
  * Listen to events on destination chain.
  * - Looks for event to match section and method of xcm event registry
- * - 
+ * - Confirms the xcmp event by matching message id or deposit address
+ * 
+ * Listener resolves with the event records.
+ * 
+ * Function returns promise tracker of the event listener and a function to unsubscribe from the event listener
  * 
  * @param api 
  * @param nodeEventData 
