@@ -149,7 +149,7 @@ export async function listenForXcmpDepositEvent(
     try {
         console.log(`Initiated deposit event listener for ${receivingChain} ${depositAssetSymbol}`)
         console.log(`Balance change tracker resolved: ${balanceDepositTracker.isResolved()}`)
-        console.log(`Deposit event listener: ${JSON.stringify(depositEventListener.promiseTracker.isResolved, null, 2)}`)
+        console.log(`Deposit event listener: ${JSON.stringify(depositEventListener.promiseTracker.isResolved(), null, 2)}`)
         while(!depositEventListener.promiseTracker.isResolved()){
             console.log(`Deposit events not resolved yet. Waiting 1 second...`)
             await new Promise(resolve => setTimeout(resolve, 1000))
