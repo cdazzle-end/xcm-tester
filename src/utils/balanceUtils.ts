@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { AcalaAdapter, AltairAdapter, AstarAdapter, BalanceData, BasiliskAdapter, BifrostAdapter, BifrostPolkadotAdapter, CalamariAdapter, CentrifugeAdapter, CrabAdapter, CrustAdapter, DarwiniaAdapter, HeikoAdapter, HydraDxAdapter, IntegriteeAdapter, InterlayAdapter, InvarchAdapter, KaruraAdapter, KhalaAdapter, KicoAdapter, KiltAdapter, KintsugiAdapter, KusamaAdapter, ListenAdapter, MangataAdapter, MantaAdapter, MoonbeamAdapter, MoonriverAdapter, NodleAdapter, OakAdapter, ParallelAdapter, PendulumAdapter, PhalaAdapter, PichiuAdapter, PolkadotAdapter, QuartzAdapter, RobonomicsAdapter, ShadowAdapter, ShidenAdapter, StatemineAdapter, StatemintAdapter, SubsocialAdapter, TinkernetAdapter, TuringAdapter, UniqueAdapter, ZeitgeistAdapter, getAdapter } from '@polkawallet/bridge';
 import { TNode } from '@paraspell/sdk'
-import { firstValueFrom, Observable, timeout } from "rxjs";
+import { firstValueFrom, Observable, Subscription, timeout } from "rxjs";
 import { BalanceChange, IMyAsset, RelayTokenBalances, Relay, PNode, BalanceDataBN  } from './../types/types.ts'
 import { ApiPromise, WsProvider } from '@polkadot/api';
 // import { TransferrableAssetObject, BalanceChangeStats } from './../types/types.ts'
@@ -91,14 +91,11 @@ export async function watchBalanceChange(
     destChainApi: ApiPromise, 
     asset: MyAsset, 
     depositAddress: string,
-    setUnsubscribeCallback: (unsubscribe: () => void) => void // New parameter
-): Promise<BalanceChange> {
+    // setUnsubscribeCallback: (unsubscribe: () => void) => void // New parameter
+): Promise<{ balanceChangePromise: Promise<BalanceChange>, unsubscribe: () => void }> {
     let paraId = asset.getChainId()
     let balanceObservable$ = await watchTokenBalanceChange(relay, paraId, chopsticks, destChainApi, asset, depositAddress);
-    let balanceChange = getBalanceChange(balanceObservable$, (unsubscribe) => {
-        setUnsubscribeCallback(unsubscribe); // Set the unsubscribe function
-    });
-    return balanceChange
+    return getBalanceChange(balanceObservable$);
 }
 
 // ***
@@ -293,12 +290,13 @@ export async function watchTokenBalance(
  * @param setUnsubscribeCallback 
  * @returns Promise <BalanceChange>
  */
-export async function getBalanceChange(
+export function getBalanceChange(
     balanceObservable$: Observable<BalanceData>,
-    setUnsubscribeCallback: (unsubscribe: () => void) => void
-  ): Promise<BalanceChange> {
+    // setUnsubscribeCallback: (unsubscribe: () => void) => void
+  ): { balanceChangePromise: Promise<BalanceChange>, unsubscribe: () => void } {
     console.log("Get Balance Change: waiting for balance change")
     let currentBalance: BalanceData;
+    let subscription: Subscription;
     let balanceChange: BalanceChange = {
         startBalance: new bn(0),
         endBalance: new bn(0),
@@ -306,13 +304,14 @@ export async function getBalanceChange(
         decimals: 0
     }
     const balanceChangePromise = new Promise<BalanceChange>((resolve, reject) => {
-        const subscription = balanceObservable$.pipe(timeout(120000)).subscribe({
+        subscription = balanceObservable$.pipe(timeout(120000)).subscribe({
             next(newBalance) {
                 
                 // Set current balance, or create balance change object
                 if(!currentBalance){
                     currentBalance = newBalance;
                     balanceChange.startBalance = currentBalance.free._getInner();
+                    balanceChange.decimals = currentBalance.free.getPrecision();
                     console.log(`Get Balance Change: Current Balance: ${newBalance.free}`);
                 } else {
 
@@ -348,13 +347,20 @@ export async function getBalanceChange(
             }
         });
         // Providing a way to unsubscribe from outside this function
-        setUnsubscribeCallback(() => {
-            console.log("Get Balance Change: Something went wrong. Unsubscribing from balance change observable")
-            subscription.unsubscribe();
-            resolve(balanceChange)
-        });
+        // setUnsubscribeCallback(() => {
+        //     console.log("Get Balance Change: Something went wrong. Unsubscribing from balance change observable")
+        //     subscription.unsubscribe();
+        //     resolve(balanceChange)
+        // });
+
     });
-    return balanceChangePromise
+    const unsubscribe = () => {
+        console.log("Get Balance Change: Unsubscribing from balance change observable");
+        if (subscription) {
+            subscription.unsubscribe();
+        }
+    };
+    return {balanceChangePromise, unsubscribe}
 }
 
 // Used in getRelayTokenBalanceAcrossChains, getRelayTokenBalances, allocateKsmFromPreTransferPaths

@@ -67,20 +67,9 @@ export async function setupBalanceWatch(
     address: string, 
     chopsticks: boolean
 ): Promise<{ balanceChangeTracker: BalanceChangePromiseTracker, unsubscribe: () => void }> {
-    // Implementation
-    let balanceUnsub: (() => void) | null = null; // Initialize as null or a function type
-    let balanceChangePromise: Promise<BalanceChange> = watchBalanceChange(
-        relay,
-        chopsticks, 
-        api, 
-        asset, 
-        address, 
-        (unsub: () => void) => { // Explicitly type the parameter
-            balanceUnsub = unsub; // Set the unsubscribe function
-        }
-    );
-    let balanceChangeTracker = trackPromise(balanceChangePromise)
-    return {balanceChangeTracker, unsubscribe: balanceUnsub!}
+    const { balanceChangePromise: balanceChangePromise, unsubscribe } = await watchBalanceChange(relay, chopsticks, api, asset, address);
+    const balanceChangeTracker = trackPromise(balanceChangePromise);
+    return { balanceChangeTracker, unsubscribe };
 }
 
 /**
