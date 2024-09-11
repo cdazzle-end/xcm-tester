@@ -133,7 +133,7 @@ export async function listenForXcmpDepositEvent(
     }
     nodeEventData = nodeEventData as XcmDepositEventData
 
-    let eventListener: Promise<FrameSystemEventRecord[]> = createDepositEventListener(
+    let eventListener: Promise<{ promise: Promise<FrameSystemEventRecord[]>, unsubReturnFunction: () => void }> = createDepositEventListenerRefactor(
         receivingApi,
         nodeEventData,
         receivingChain,
@@ -271,11 +271,6 @@ async function createDepositEventListenerRefactor(
                     }
                 }
             }
-
-            // if (await shouldRejectPromise(balanceChangeTracker, eventPromiseResolved)) {
-            //     unsubscribe!();
-            //     reject("Balance Change observed BUT No xcm event found so rejecting");
-            // }
         });
     });
 
