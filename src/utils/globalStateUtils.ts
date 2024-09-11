@@ -172,6 +172,11 @@ export function stateGetExtrinsicSetResults(): Readonly<ExtrinsicSetResultDynami
     const globalState = GlobalState.getInstance();
     return globalState.getState().extrinsicSetResults
 }
+export function confirmLastExtrinsicSuccess(): boolean{
+    let success = stateGetExtrinsicSetResults()!.success
+    console.log(`Last extrinsic success: ${success}`)
+    return success
+}
 export function stateGetAccumulatedFeeData(): Readonly<AccumulatedFeeData | null>{
     const globalState = GlobalState.getInstance();
     return globalState.getState().accumulatedFeeData
