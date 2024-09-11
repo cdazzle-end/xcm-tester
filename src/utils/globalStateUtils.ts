@@ -139,7 +139,7 @@ export function stateSetNextInputValue(nextInputValue: string){
     const globalState = GlobalState.getInstance()
     globalState.setNextInputValue(nextInputValue)
 }
-export async function updateXcmFeeReserves(reserveFees: ReserveFeeData[]){
+export function updateXcmFeeReserves(reserveFees: ReserveFeeData[]){
     const globalState = GlobalState.getInstance();
     globalState.updateXcmFeeReserves(reserveFees)
 }

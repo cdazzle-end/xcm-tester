@@ -363,36 +363,36 @@ export function createTransferResultData(
  * @param reserveFeeData 
  * @param relay 
  */
-export async function transferUpdateStateAndFeeBook(
+export function transferUpdateStateAndFeeBook(
     container: TransferExtrinsicContainer, 
     transferResultData: SingleTransferResultData, 
     startTransferEventData: TransferDepositEventData, 
     destDepositEventData: TransferDepositEventData, 
     reserveFeeData: ReserveFeeData[],
     relay: Relay
-): Promise<void> {
+): void {
     // Implementation
     let minimumExpected = new bn(container.pathAmount).times(.95)
     let sufficient = transferResultData.transferTxStats?.destBalanceStats.changeInBalance.minus(minimumExpected)!   
 
     let success
     if(sufficient.gt(new bn(0))){
-        console.log("CHANGE In balance is sufficient")
+        console.log("Transfer deposit balance change is sufficient")
         console.log("Transfer Extrinsic successful. setting last node...")
-        await stateSetLastNode(transferResultData.lastNode!)
-        await stateSetTransactionState(TransactionState.Finalized)
+        stateSetLastNode(transferResultData.lastNode!)
+        stateSetTransactionState(TransactionState.Finalized)
         success = true
     } else {
-        console.log("CHANGE In balance is NOT sufficient")
+        console.log("Transfer deposit balance change is NOT sufficient")
         console.log("Balance Change: ", transferResultData.transferTxStats?.destBalanceStats.changeInBalance.toString())
         console.log("Minimum expected: ", minimumExpected.toString())
-        console.log("Suffixient: ", sufficient.toString())
+        console.log("Sufficient: ", sufficient.toString())
         success = false
     }
     logEventFeeBook(startTransferEventData, destDepositEventData, relay)
-    await updateXcmFeeReserves(reserveFeeData)
+    updateXcmFeeReserves(reserveFeeData)
     transferResultData.success = success
-    await stateSetResultData(transferResultData)
+    stateSetResultData(transferResultData)
 
 }
 
