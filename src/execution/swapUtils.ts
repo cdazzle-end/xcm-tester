@@ -20,7 +20,7 @@ export async function waitForAssetOutBalanceChange(
     let { relay, api, assetOut } = container
 
     // Confirm assetOut balance change
-    console.log("Execute Swap: confirming asset out balance change...")
+    console.log("Execute Swap: waiting asset out balance change...")
     let queryIndex = 0
     let balanceChangeResolved = false
     let assetOutBalanceChange: BalanceChange = {} as BalanceChange
