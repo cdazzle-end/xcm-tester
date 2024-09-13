@@ -7,10 +7,23 @@ import { dotTargetNode, ksmTargetNode } from './config/index.ts';
 import { AssetNode, GlobalState } from './core/index.ts';
 import { allocateToStartChain, buildAndExecuteTransferExtrinsic, buildAndExecuteExtrinsics, buildInstructionSet, allocateToRelay, confirmLastTransactionSuccess, allocateFunds } from './execution/index.ts';
 import { ExecutionState, ExtrinsicSetResultDynamic, InstructionType, ArbFinderNode, LastNode, Relay, SwapInstruction, SwapProperties, TransactionState, TransferInstruction, TransferProperties } from './types/types.ts';
+import './logFilter.ts'
+// import './logFilterTwo.ts';
 import { closeApis, stateGetExecutionAttempts, stateGetExecutionSuccess, stateGetLastNode, getLatestDefaultArb, getLastTargetArb, getTotalArbResultAmount, stateGetTransactionProperties, stateGetTransactionState, initializeLastGlobalState, logAllResultsDynamic, logProfits, nodeLogger, pathLogger, printInstructionSet, readLogData, resetGlobalState, stateSetExecutionRelay, stateSetExecutionSuccess, stateSetLastNode, stateSetTransactionState, stateSetLastFile, truncateAssetPath, constructAssetNodesFromPath, getTargetNode, stateGetExtrinsicSetResults } from './utils/index.ts';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const originalConsoleLog = console.log;
+
+// Filter out unwanted console logs from APIs
+console.log = function(...args) {
+    const message = args.join(' ');
+    if (!message.includes('API/INIT') && !message.includes('RPC methods not decorated')) {
+        originalConsoleLog.apply(console, args);
+    }
+};
 
 // REVIEW Over use of getLastNode() here is redundant, could be cleaned up
 async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: boolean, customInput: number = 0){
@@ -156,12 +169,12 @@ async function findAndExecuteArb(relay: Relay, chopsticks: boolean, executeMovr:
             // REVIEW I think this is only needed for logs that depend on the first node, and we change the first node to the original swap 
             // REMOVE
             // For some reason, instead o executing path as is, we remove the first transfer instruction from the path (if it exists) and execute it by itself
-            if(instructionsToExecute[0].type != InstructionType.Swap){
-                let firstInstruction: TransferInstruction = instructionsToExecute.splice(0, 1)[0] as TransferInstruction
-                await buildAndExecuteTransferExtrinsic(relay, firstInstruction, chopsticks, executeMovr)
-                await logAllResultsDynamic(chopsticks)
-                instructionsToExecute[0].assetNodes[0].pathValue = stateGetLastNode()!.assetValue
-            }
+            // if(instructionsToExecute[0].type != InstructionType.Swap){
+            //     let firstInstruction: TransferInstruction = instructionsToExecute.splice(0, 1)[0] as TransferInstruction
+            //     await buildAndExecuteTransferExtrinsic(relay, firstInstruction, chopsticks, executeMovr)
+            //     await logAllResultsDynamic(chopsticks)
+            //     instructionsToExecute[0].assetNodes[0].pathValue = stateGetLastNode()!.assetValue
+            // }
         }
         arbLoops += 1
 
@@ -264,7 +277,45 @@ async function executeLatestArb(relay: Relay, chopsticks: boolean, executeMovr: 
 
 }
 
+async function testXcmAllocation(){
+    const relay: Relay = 'polkadot'
+    const chopsticks = true
+    const inputAmount = '0.2'
+    // if (relay !== 'kusama' && relay !== 'polkadot') throw new Error('Relay not specified')
+        GlobalState.initializeAndResetGlobalState(relay)
+    
+    // Execute new arb-finder, or just parse results from last arb file
+    // let arbPathData: ArbFinderNode[] = await findNewTargetArb(relay, inputAmount, chopsticks)
 
+    let latestFile = 'C:/Users/dazzl/CodingProjects/substrate/xcm-test/src/testScripts/testBncPath.json'
+    let arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
+    let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
+    
+    console.log(`Arb finder path nodes:`)
+    arbPathData.forEach((node) => console.log(`${node.node_key} ${node.path_value} ${node.path_type}`))
+
+    // Parse path into asset nodes
+    // // let assetPath: AssetNode[] = constructAssetNodesFromPath(relay, arbPathData)
+    // assetPath = await truncateAssetPath(assetPath) // Remove beginning xcm tx's before swap
+    // assetPath = await allocateFunds(relay, assetPath, chopsticks, inputAmount) // Add transfer from relay -> start if needed
+    stateSetLastNode(assetPath[0].asLastNode())
+
+    assetPath.forEach((assetNode) => {
+        console.log(`Asset: ${assetNode.getAssetKey()} | Value: ${assetNode.pathValue} | Type: ${assetNode.pathType}`)
+    })
+
+    let instructionsToExecute = buildInstructionSet(relay, assetPath)
+    let executionResults = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, false, false)
+
+    await logAllResultsDynamic(chopsticks)
+    let arbSuccess = executionResults.success
+
+    if(stateGetLastNode() === null){
+        console.log("Last node undefined. ERROR: some extrinsics have executed successfully")
+        throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
+    }
+        
+}
 
 // Run with arg kusama
 async function run() {
@@ -276,9 +327,11 @@ async function run() {
     let startNew = true
     let customInput = 0
 
+
+
     // await runFromLastNode(relay, chopsticks, executeMovr)  
     await findAndExecuteArb(relay, chopsticks, executeMovr, inputAmount.toString(), useLatestTarget)
-    
+    // await testXcmAllocation()
     // await executeTestPath(relay, chopsticks, executeMovr)
     // await testAssetLookup()
     // await checkAndRunLatest(relay, chopsticks, executeMovr, startNew)

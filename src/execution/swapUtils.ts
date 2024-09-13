@@ -9,9 +9,9 @@ import bn from 'bignumber.js'
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
 
 
-export async function waitForAssetOutBalanceChange(
+export async function waitForAssetBalanceChange(
     balanceChangeTracker: PromiseTracker, 
-    assetOutStartBalance: bn,
+    assetStartBalance: bn,
     balanceUnsub: () => void,
     container: SwapExtrinsicContainer,
     chopsticks: boolean, 
@@ -46,7 +46,7 @@ export async function waitForAssetOutBalanceChange(
         } else {
             console.log("10 seconds passed, balance change tracker not resolved. Querying balance manually...")
             // Query balance manually, confirm if change or not
-            let balanceChange = await manualCheckBalanceChange(assetOutStartBalance, relay, chopsticks, api, assetOut.asset, signerAddress)
+            let balanceChange = await manualCheckBalanceChange(assetStartBalance, relay, chopsticks, api, assetOut.asset, signerAddress)
             if(balanceChange !== null){
                 assetOutBalanceChange = balanceChange
                 balanceChangeResolved = true
@@ -133,6 +133,9 @@ export function createSwapResultData(
         txString: `(${chain}) ${chainId} ${assetIn.getAssetSymbol()} -> ${assetOut.getAssetSymbol()}`,
         txDetails: txDetails
     }
+
+    console.log(`Asset in balance change: ${JSON.stringify(assetInBalanceChange, null, 2)}`)
+    console.log(`Asset out balance change: ${JSON.stringify(assetOutBalanceChange, null, 2)}`)
     
     let arbExecutionResult: ArbExecutionResult = {
         assetSymbolIn: assetIn.getAssetSymbol(),

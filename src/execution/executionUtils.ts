@@ -9,15 +9,15 @@ import * as paraspell from '@paraspell/sdk'
 import { KeyringPair } from '@polkadot/keyring/types'
 import { BalanceData } from "@polkawallet/bridge"
 import { getApiForNode } from "../utils/apiUtils.ts"
-import { attemptQueryRelayTokenBalances, balanceChangeDisplay, getBalance, getBalanceChange, getDisplayBalance, getRelayTokenBalances, manualCheckBalanceChange, watchTokenBalance } from "./../utils/balanceUtils.ts"
+import { attemptQueryRelayTokenBalances, balanceChangeDisplay, getBalance, getBalanceChange, getDisplayBalance, getRelayTokenBalances, watchBalanceChangeReworked,  } from "./../utils/balanceUtils.ts"
 import { stateSetLastNode, stateSetResultData, stateSetTracking, stateSetTransactionProperties, stateSetTransactionState } from "./../utils/globalStateUtils.ts"
 import { buildInstructionSet, createAllocationPaths as createAllocationAssetPaths, getStartChainAllocationPath } from "./instructionUtils.ts"
 // import {BigNumber as bn } from "bignumber.js"
 import bn from 'bignumber.js'
 import { Observable } from "rxjs"
 import { buildAndExecuteTransferExtrinsic } from "./arbExecutor.ts"
-import { createTransferResultData, getInitialBalances, getSigners, handleTransferError, processTransferEvents, setupBalanceWatch, shouldExecuteTransfer, transferUpdateStateAndFeeBook, waitForDepositEventData, waitForDestinationBalanceChange } from "./transferUtils.ts"
-import { createSwapResultData, handleSwapError, waitForAssetOutBalanceChange } from "./swapUtils.ts"
+import { createTransferResultData, getInitialBalances, getSigners, handleTransferError, processTransferEvents, shouldExecuteTransfer, transferUpdateStateAndFeeBook, waitForDepositEventData, waitForDestinationBalanceChange } from "./transferUtils.ts"
+import { createSwapResultData, handleSwapError, waitForAssetBalanceChange } from "./swapUtils.ts"
 // import { H256 } from '@polkadot/types/primitive';
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
 
@@ -149,8 +149,8 @@ export async function executeSingleSwapExtrinsicMovr(
     )
     stateSetTransactionProperties(swapProperties)
     // ******************************************************
-    const { balanceChangeTracker: assetInBalanceChangeTracker, unsubscribe: assetInBalanceUnsub } = await setupBalanceWatch(relay, assetIn.asset, api, signer.address, chopsticks);
-    const { balanceChangeTracker: assetOutBalanceChangeTracker, unsubscribe: assetOutBalanceUnsub } = await setupBalanceWatch(relay, assetOut.asset, api, signer.address, chopsticks);
+    const { balanceChangeTracker: assetInBalanceChangeTracker, unsubscribe: assetInBalanceUnsub } = await watchBalanceChangeReworked(relay, assetIn.asset, api, signer.address, chopsticks);
+    const { balanceChangeTracker: assetOutBalanceChangeTracker, unsubscribe: assetOutBalanceUnsub } = await watchBalanceChangeReworked(relay, assetOut.asset, api, signer.address, chopsticks);
     // let unsubscribeOne: (() => void) = () => {}; 
     // let unsubscribeTwo: (() => void) = () => {}; 
 
@@ -307,8 +307,8 @@ export async function executeSingleSwapExtrinsicGlmr(
     let swapProperties: SwapProperties = createSwapProperties(chopsticks, signer.address, tokenInBalanceStart, tokenOutBalanceStart, swapExtrinsicContainer)
     stateSetTransactionProperties(swapProperties)
     // ******************************************************
-    const { balanceChangeTracker: assetInBalanceChangeTracker, unsubscribe: assetInBalanceUnsub } = await setupBalanceWatch(relay, assetIn.asset, api, signer.address, chopsticks);
-    const { balanceChangeTracker: assetOutBalanceChangeTracker, unsubscribe: assetOutBalanceUnsub } = await setupBalanceWatch(relay, assetOut.asset, api, signer.address, chopsticks);
+    const { balanceChangeTracker: assetInBalanceChangeTracker, unsubscribe: assetInBalanceUnsub } = await watchBalanceChangeReworked(relay, assetIn.asset, api, signer.address, chopsticks);
+    const { balanceChangeTracker: assetOutBalanceChangeTracker, unsubscribe: assetOutBalanceUnsub } = await watchBalanceChangeReworked(relay, assetOut.asset, api, signer.address, chopsticks);
     // let unsubscribeOne: (() => void) = () => {}; 
     // let unsubscribeTwo: (() => void) = () => {}; 
     // let balanceObservableIn$ = await watchTokenBalance(relay, chainId, chopsticks, api, assetIn.asset, signer.address)
@@ -451,8 +451,8 @@ export async function executeSingleSwapExtrinsic(
     const swapProperties: SwapProperties = createSwapProperties(chopsticks, signer.address, assetInBalanceStart, assetOutBalanceStart, swapTxContainer);
     await stateSetTransactionProperties(swapProperties);
 
-    const { balanceChangeTracker: assetInBalanceChangeTracker, unsubscribe: assetInBalanceUnsub } = await setupBalanceWatch(relay, assetIn.asset, api, signer.address, chopsticks);
-    const { balanceChangeTracker: assetOutBalanceChangeTracker, unsubscribe: assetOutBalanceUnsub } = await setupBalanceWatch(relay, assetOut.asset, api, signer.address, chopsticks);
+    const { balanceChangeTracker: assetInBalanceChangeTracker, unsubscribe: assetInBalanceUnsub } = await watchBalanceChangeReworked(relay, assetIn.asset, api, signer.address, chopsticks);
+    const { balanceChangeTracker: assetOutBalanceChangeTracker, unsubscribe: assetOutBalanceUnsub } = await watchBalanceChangeReworked(relay, assetOut.asset, api, signer.address, chopsticks);
 
     if(!assetInBalanceUnsub || !assetOutBalanceUnsub) throw new Error("Balance change tracker unsub failed")
 
@@ -461,8 +461,8 @@ export async function executeSingleSwapExtrinsic(
         tx = await executeSwapExtrinsic(swapTxContainer, chopsticks);
 
         const [assetInBalanceChange, assetOutBalanceChange] = await Promise.all([
-            waitForAssetOutBalanceChange(assetInBalanceChangeTracker, assetInBalanceStart, assetInBalanceUnsub, swapTxContainer, chopsticks, signer.address),
-            waitForAssetOutBalanceChange(assetOutBalanceChangeTracker, assetOutBalanceStart, assetOutBalanceUnsub, swapTxContainer, chopsticks, signer.address)
+            waitForAssetBalanceChange(assetInBalanceChangeTracker, assetInBalanceStart, assetInBalanceUnsub, swapTxContainer, chopsticks, signer.address),
+            waitForAssetBalanceChange(assetOutBalanceChangeTracker, assetOutBalanceStart, assetOutBalanceUnsub, swapTxContainer, chopsticks, signer.address)
         ]);
 
         // if(!assetInBalanceChange.changeInBalance.abs().gt(0)) throw new Error(`Asset in balance change not detected: ${JSON.stringify(assetInBalanceChange)}`)
@@ -526,11 +526,15 @@ export async function executeSingleTransferExtrinsic(
     const transferProperties: TransferProperties = createTransferProperties(transferTxContainer, chopsticks, startSigner.address, startNodeStartBalance, destSigner.address, destNodeStartBalance)
     stateSetTransactionProperties(transferProperties);
 
-    const { balanceChangeTracker: startBalanceChangeTracker, unsubscribe: startBalanceUnsub } = await setupBalanceWatch(relay, startAsset.asset, startApi, startSigner.address, chopsticks);
-    const { balanceChangeTracker: destinationBalanceChangeTracker, unsubscribe: destBalanceUnsub } = await setupBalanceWatch(relay, destinationAsset.asset, destinationApi, destSigner.address, chopsticks);
+    // const { balanceChangeTracker: startBalanceChangeTracker, unsubscribe: startBalanceUnsub } = await watchBalanceChangeReworked(relay, startAsset.asset, startApi, startSigner.address, chopsticks);
+    // const { balanceChangeTracker: destinationBalanceChangeTracker, unsubscribe: destBalanceUnsub } = await watchBalanceChangeReworked(relay, destinationAsset.asset, destinationApi, destSigner.address, chopsticks);
 
+    const { balanceChangeTracker: startBalanceChangeTracker, unsubscribe: startBalanceUnsub } = await watchBalanceChangeReworked(relay, startAsset.asset, startApi, startSigner.address, chopsticks);
+    const { balanceChangeTracker: destinationBalanceChangeTracker, unsubscribe: destBalanceUnsub } = await watchBalanceChangeReworked(relay, destinationAsset.asset, destinationApi, destSigner.address, chopsticks)
+    // let startBalanceChangeTracker: PromiseTracker = trackPromise(startBalanceChangePromise)
+    // let destinationBalanceChangeTracker: PromiseTracker = trackPromise(destinationBalanceChangePromise)
     // REMOVE
-    if(!startBalanceUnsub || !destBalanceUnsub) throw new Error("Balance change tracker unsub failed")
+    // if(!startBalanceUnsub || !destBalanceUnsub) throw new Error("Balance change tracker unsub failed")
 
     // Extract properties before extrinsic is executed
     const xcmTxProperties = extrinsic.toHuman() as any
@@ -1178,6 +1182,7 @@ export async function allocateToStartChain(relay: Relay, assetPath: AssetNode[],
 // }
 
 export async function executeXcmTransfer(xcmTx: paraspell.Extrinsic, signer: KeyringPair): Promise<TxDetails>{
+    console.log(`Execute transfer extrinsic: ${JSON.stringify(xcmTx.toHuman())}`)
     return new Promise((resolve, reject) => {
         let success = false;
         let included: EventRecord[] = [];

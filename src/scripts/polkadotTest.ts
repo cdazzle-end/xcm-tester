@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { localRpcs } from './../config/txConsts.ts';
 import { ExecutionState, ExtrinsicSetResultDynamic, ArbFinderNode, LastNode, NewFeeBook, PromiseTracker, Relay, SwapInstruction, TransferInstruction, TxDetails, SingleTransferResultData, SingleSwapResultData, AssetMap, IMyAsset } from './../types/types.ts';
-import { getAssetRegistryObjectBySymbol, getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, queryRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, watchTokenDeposit, trackPromise, stateGetExtrinsicSetResults, isSwapResult, isTransferResult, stateGetLastNode, getAssetRegistry, getAssetRegistryMap, getMyAssetById } from './../utils/index.ts';
+import { getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, queryRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, trackPromise, stateGetExtrinsicSetResults, isSwapResult, isTransferResult, stateGetLastNode, getAssetRegistry, getAssetRegistryMap, getMyAssetById, getRelayTransferFee, getMyAssetBySymbol, watchTokenBalanceChange, watchBalanceChange } from './../utils/index.ts';
 import { getParaId, TNode } from '@paraspell/sdk';
 import { getAdapter,  } from '@polkawallet/bridge';
 import bn from 'bignumber.js';
@@ -725,25 +725,25 @@ async function testXcm(){
     let relay: Relay = 'polkadot'
 
     
-    let assetId = "USDT" // USDT
-    let amount = "1000000" // 1000 hdx
+    // let assetId = "USDT" // USDT
+    // let amount = "1000000" // 1000 hdx
     
-    let fromNode: TNode = 'HydraDX'
-    let signer = await getSigner(chopsticks, false)
+    // let fromNode: TNode = 'HydraDX'
+    // let signer = await getSigner(chopsticks, false)
     
-    let toNode: TNode = 'AssetHubPolkadot'
-    let destWallet = await getSigner(chopsticks, false)
+    // let toNode: TNode = 'AssetHubPolkadot'
+    // let destWallet = await getSigner(chopsticks, false)
 
-    let fromApi = await getApiForNode(fromNode, chopsticks)
-    let toApi = await getApiForNode(toNode, chopsticks)
+    // let fromApi = await getApiForNode(fromNode, chopsticks)
+    // let toApi = await getApiForNode(toNode, chopsticks)
     
-    let xcmTx = paraspell.Builder(fromApi).from(fromNode).to(toNode).currency(assetId).amount(amount).address(destWallet.address).build()
-    // let xcmTx = paraspell.Builder(fromApi).to(toNode).amount(amount).address(destWallet.address).build()
-    console.log(JSON.stringify(xcmTx.toHuman()))
+    // let xcmTx = paraspell.Builder(fromApi).from(fromNode).to(toNode).currency(assetId).amount(amount).address(destWallet.address).build()
+    // // let xcmTx = paraspell.Builder(fromApi).to(toNode).amount(amount).address(destWallet.address).build()
+    // console.log(JSON.stringify(xcmTx.toHuman()))
 
-    let txResult: Promise<TxDetails> = executeXcmTransfer(xcmTx, signer); 
-    console.log("Execute Transfer: tx promise created. Waiting for result...")
-    let txResultData = await txResult
+    // let txResult: Promise<TxDetails> = executeXcmTransfer(xcmTx, signer); 
+    // console.log("Execute Transfer: tx promise created. Waiting for result...")
+    // let txResultData = await txResult
 
     // let xcmEventPromise = listenForDestinationDepositAmounts(toApi, toNode, "hrmp", destWallet.address, txResultData.xcmMessageHash);
 
@@ -759,15 +759,15 @@ async function testDepositEventListeners(){
     const fromParaId = getChainIdFromNode(fromNode)
     const toNode: TNode = 'HydraDX'
     const toParaId = getChainIdFromNode(toNode)
-    const startAsset = new MyAsset(getAssetRegistryObjectBySymbol(fromParaId, 'GLMR', 'polkadot'))
-    const destAsset = new MyAsset(getAssetRegistryObjectBySymbol(toParaId, 'GLMR', 'polkadot'))
+    const startAsset = new MyAsset(getMyAssetBySymbol(fromParaId, 'GLMR', 'polkadot'))
+    const destAsset = new MyAsset(getMyAssetBySymbol(toParaId, 'GLMR', 'polkadot'))
     const amount = '100000000000000000000'
     
     const fromEvm = fromParaId === 2004 ? true : false
     const toEvm = toParaId === 2004 ? true : false
 
-    const fromSigner = await getSigner(chopsticks, fromEvm)
-    const toSigner = await getSigner(chopsticks, toEvm)
+    const fromSigner = await getSigner(chopsticks, fromNode)
+    const toSigner = await getSigner(chopsticks, toNode)
 
     const fromApi = await getApiForNode(fromNode, chopsticks)
     const toApi = await getApiForNode(toNode, chopsticks)
@@ -789,33 +789,36 @@ async function testDepositEventListeners(){
     const destinationAssetDecimals = Number.parseInt(startAsset.tokenData.decimals)
 
     let destBalanceUnsub: any
-    let destBalanceObservable$ = await watchTokenDeposit(relay, toParaId, chopsticks, toApi, destAsset, toSigner.address)
-    let destAdapterBalanceChangePromise = getBalanceChange(destBalanceObservable$, (unsub) =>{
-        destBalanceUnsub = unsub
-    })
+    // const { balanceChangePromise: balanceChangePromise, unsubscribe } = await watchBalanceChange(relay, chopsticks, api, asset, address);
+    // const balanceChangeTracker = trackPromise(balanceChangePromise);
+    // return { balanceChangeTracker, unsubscribe };
+    // let destBalanceObservable$ = await watchTokenBalanceChange(relay, toParaId, chopsticks, toApi, destAsset, toSigner.address)
+    // let destAdapterBalanceChangePromise = getBalanceChange(destBalanceObservable$, (unsub) =>{
+    //     destBalanceUnsub = unsub
+    // })
 
-    let destBalanceDepositTracker: PromiseTracker = trackPromise(destAdapterBalanceChangePromise)
+    // let destBalanceDepositTracker: PromiseTracker = trackPromise(destAdapterBalanceChangePromise)
 
-    let txResult = executeXcmTransfer(xcmTx, fromSigner)
-    let txDetails = await txResult
-    let xcmTransferId = txDetails.xcmMessageHash
+    // let txResult = executeXcmTransfer(xcmTx, fromSigner)
+    // let txDetails = await txResult
+    // let xcmTransferId = txDetails.xcmMessageHash
 
-    let depositEventPromise = listenForXcmpDepositEvent(
-        toApi, 
-        toNode, 
-        transferType,
-        destAsset, 
-        destWalletFormatted, 
-        destBalanceDepositTracker, 
-        xcmTxProperties, 
-        xcmTransferId
-    ) 
+    // let depositEventPromise = listenForXcmpDepositEvent(
+    //     toApi, 
+    //     toNode, 
+    //     transferType,
+    //     destAsset, 
+    //     destWalletFormatted, 
+    //     destBalanceDepositTracker, 
+    //     xcmTxProperties, 
+    //     xcmTransferId
+    // ) 
 
-    let depositEventTracker = trackPromise(depositEventPromise)
+    // let depositEventTracker = trackPromise(depositEventPromise)
 
-    const depositEventData = await depositEventPromise
+    // const depositEventData = await depositEventPromise
 
-    console.log(JSON.stringify(depositEventData, null, 2))
+    // console.log(JSON.stringify(depositEventData, null, 2))
 }
 
 async function buildTest(){
@@ -875,7 +878,7 @@ async function testApi(){
 async function testAssetLookup(){
     const key = {"NativeAssetId":{"Token":"AUSD"}}
     // let assetObject = getAssetRegistryObject(2000, key, 'polkadot')
-    let asset = getAssetRegistryObjectBySymbol(2000, 'ACA', 'polkadot')
+    let asset = getMyAssetBySymbol(2000, 'ACA', 'polkadot')
     const id = asset.tokenData.localId
     console.log(id)
     console.log(JSON.stringify(id))
@@ -1001,8 +1004,8 @@ async function testAssetLookup(){
 //     let originChainId = getChainIdFromNode(originTransferData.node)
 //     let destinationChainId = getChainIdFromNode(depositEventData.node)
 
-//     let originFeeAsset = getAssetRegistryObjectBySymbol(originChainId, originTransferData.feeAssetSymbol, relay)
-//     let destinationFeeAsset = getAssetRegistryObjectBySymbol(destinationChainId, depositEventData.assetSymbol, relay)
+//     let originFeeAsset = getMyAssetBySymbol(originChainId, originTransferData.feeAssetSymbol, relay)
+//     let destinationFeeAsset = getMyAssetBySymbol(destinationChainId, depositEventData.assetSymbol, relay)
 
 //     let originFeeAssetKey = getAssetKey(originFeeAsset);
 //     let destinationFeeAssetKey = getAssetKey(destinationFeeAsset);
@@ -1027,7 +1030,7 @@ async function testAssetLocation(){
     let assetSymbol = "GLMR"
     let relay: Relay = "polkadot"
 
-    let assetObject = getAssetRegistryObjectBySymbol(chainId, assetSymbol, relay)
+    let assetObject = getMyAssetBySymbol(chainId, assetSymbol, relay)
 
     console.log(JSON.stringify(assetObject, null, 2))
 
@@ -1044,7 +1047,7 @@ async function testAssetLocation(){
         console.log(asset.tokenData.symbol + " " + asset.tokenData.chain + " " + asset.tokenData.localId)
     })
     // console.log(JSON.stringify(assetsAtLocation, null, 2))
-    // let destinationFeeAsset = getAssetRegistryObjectBySymbol(destinationChainId, depositEventData.assetSymbol, relay)
+    // let destinationFeeAsset = getMyAssetBySymbol(destinationChainId, depositEventData.assetSymbol, relay)
 }
 
 async function testChopsticks(){
@@ -1107,26 +1110,6 @@ async function newBlock(node: TNode){
     console.log("RPC Response: " + JSON.stringify(rpcResponse, null, 2))
 }
 
-async function testBifrostWallet(){
-    let chopsticks = true
-    let api = await getApiForNode("BifrostPolkadot", chopsticks)
-    let signer = await getSigner(chopsticks, false)
-
-    console.log("Signer address: " + signer.address)
-
-    let ss58Format = await api.consts.system.ss58Prefix;
-    console.log("SS58 Format: " + ss58Format.toNumber())
-    let keyring = new Keyring({
-        ss58Format: 0,
-        type: 'sr25519'
-    })
-
-    let destAddress = keyring.encodeAddress(signer.address, ss58Format.toNumber())
-
-    console.log("Dest Address: " + destAddress)
-
-
-}
 
 // async function testBncStableSwap(){
 //     const wsLocalChain = localRpcs["BifrostPolkadot"]
@@ -1229,13 +1212,13 @@ async function testParaspellReworked(){
     // let destParaId = getChainIdFromNode(destNode)
 
     let assetSymbol = 'PINK'
-    let startNodeAsset = new MyAsset(getAssetRegistryObjectBySymbol(startParaId, assetSymbol, relay))
-    // let destNodeAsset = await getAssetRegistryObjectBySymbol(destParaId, assetSymbol, relay)
+    let startNodeAsset = new MyAsset(getMyAssetBySymbol(startParaId, assetSymbol, relay))
+    // let destNodeAsset = await getMyAssetBySymbol(destParaId, assetSymbol, relay)
 
     let startAssetId = startNodeAsset.tokenData.localId
     // let destAssetId = destNodeAsset.tokenData.localId
 
-    let signer = await getSigner(chopsticks, eth);
+    let signer = await getSigner(chopsticks, startNode);
 
     let startNodeBalance = await getBalanceFromId(startParaId, relay, chopsticks, startApi, startNodeAsset, startNode, signer.address)
     // let destNodeBalance = await getBalanceFromId(destParaId, relay, chopsticks, destApi, destNodeAsset, destNode, signer.address)
@@ -1297,7 +1280,7 @@ async function testHydraTx(){
     await api.isReady
     await cryptoWaitReady()
 
-    let signer = await getSigner(true, false)
+    let signer = await getSigner(true,"HydraDX")
 
     let balance = await api.query.system.account(signer.address)
     console.log(balance.toHuman())
@@ -1404,12 +1387,12 @@ async function testBalanceAdapters(){
     let relay: Relay = 'polkadot'
     let paraId = 2030
     let assetSymbol = 'vglmr'
-    let assetObject = new MyAsset(getAssetRegistryObjectBySymbol(paraId, assetSymbol, relay))
+    let assetObject = new MyAsset(getMyAssetBySymbol(paraId, assetSymbol, relay))
     let assetId = assetObject.tokenData.localId
 
     let chopsticks = true
     let eth = false
-    let signer = await getSigner(chopsticks, eth);
+    let signer = await getSigner(chopsticks, "BifrostPolkadot");
 
     let node: TNode = 'BifrostPolkadot'
     let api = await getApiForNode(node, chopsticks)
@@ -1421,7 +1404,7 @@ async function testBalanceAdapters(){
 
 async function callArbFinderTargetSearch(){
     let relay: Relay = 'polkadot';
-    let testAsset = new MyAsset(getAssetRegistryObjectBySymbol(2000, 'DOT', relay))
+    let testAsset = new MyAsset(getMyAssetBySymbol(2000, 'DOT', relay))
     let assetKey = testAsset.getAssetKey()
     let functionArgs = `${assetKey} ${assetKey} 1`
     let arbCompleted = await arbRunFallbackSearch(assetKey, assetKey, "1", relay)
@@ -1533,7 +1516,7 @@ async function testArbProfit(){
     console.log("FIRST")
     if(isSwapResult(firstExtrinsic)){
         console.log("Swap")
-        originalInputValue = new bn(firstExtrinsic.swapTxStats.tokenInBalanceChange.changeInBalance)
+        originalInputValue = new bn(firstExtrinsic.swapTxStats.assetInBalanceChange.changeInBalance)
 
     } else if(isTransferResult(firstExtrinsic)){
         console.log("Trasnfer")
@@ -1548,7 +1531,7 @@ async function testArbProfit(){
     console.log("LAST")
     if(isSwapResult(lastExtrinsic)){
         console.log("Swap")
-        finalOutputValue = new bn(lastExtrinsic.swapTxStats.tokenOutBalanceChange.changeInBalance)
+        finalOutputValue = new bn(lastExtrinsic.swapTxStats.assetOutBalanceChange.changeInBalance)
 
     } else if(isTransferResult(lastExtrinsic)){
         console.log("Trasnfer")
@@ -1561,14 +1544,14 @@ async function testArbProfit(){
     let totalProfit = finalOutputValue.minus(originalInputValue)
     console.log(`Total profit: ${totalProfit.toString()}`)
 
-    let testAsset = new MyAsset(getAssetRegistryObjectBySymbol(2000, 'DOT', 'polkadot'))
+    let testAsset = new MyAsset(getMyAssetBySymbol(2000, 'DOT', 'polkadot'))
     let assetLocation = testAsset.getLocation();
 
     let xcmAssets = getAssetsAtLocation(assetLocation, 'polkadot')
     console.log(`Assets at location: ${JSON.stringify(xcmAssets, null, 2)}`)
 
     let lastNode = stateGetLastNode()
-    let lastNodeAsset = new MyAsset(getAssetRegistryObjectBySymbol(lastNode?.chainId!, lastNode?.assetSymbol!, 'polkadot'))
+    let lastNodeAsset = new MyAsset(getMyAssetBySymbol(lastNode?.chainId!, lastNode?.assetSymbol!, 'polkadot'))
 
     console.log(`Last node: ${lastNodeAsset.getAssetKey()}`)
 
@@ -1607,7 +1590,10 @@ function testExecutionTimes(){
     console.log(`One (Create registry each time): ${timeOne} | Two (Create registry once): `)
 }
 
-
+function testFee(){
+    let fee = getRelayTransferFee('polkadot')
+    console.log(`Transfer fee: ${fee}`)
+}
 async function main(){
 
     // await testBalanceAdapters()
@@ -1615,8 +1601,9 @@ async function main(){
     // await testFilePaths()
     // await testArbProfit()
     // await testAssetRegistryOne()
-    testExecutionTimes()
+    // testExecutionTimes()
     // await callArbFinderTargetSearch()
+    testFee()
     process.exit(0)
 }
 

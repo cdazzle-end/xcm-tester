@@ -47,6 +47,8 @@ import {
     PromiseTracker,
     RelayTokenSymbol,
     AssetMap,
+    BalanceChange,
+    BalanceChangePromiseTracker,
 } from "./../types/types.ts";
 import { GlobalState, MyAsset } from "../core/index.ts";
 import { arbFinderPath, kusamaAssetRegistryPath, polkadotAssetRegistryPath } from "../config/index.ts";
@@ -1011,6 +1013,31 @@ export function toFullAssetAmount(
     decimals: string | number
 ): bn {
     return new bn(inputAmount).times(new bn(10).pow(new bn(decimals)));
+}
+
+export function trackBalanceChangePromise(promise: Promise<BalanceChange>): BalanceChangePromiseTracker {
+    let isResolved = false;
+
+    // Create a new promise that resolves the same way the original does
+    // and updates the `isResolved` flag
+    const trackedPromise = promise.then(
+        (result) => {
+            isResolved = true;
+            return result; // Pass through the result
+        },
+        (error) => {
+            isResolved = true;
+            throw error; // Rethrow the error to be caught later
+        }
+    );
+    let promiseTracker: BalanceChangePromiseTracker = {
+        trackedPromise: trackedPromise,
+        isResolved: () => isResolved
+    }
+
+    // Return both the new promise and a function to check if it's resolved
+    // return { trackedPromise, isResolved: () => isResolved };
+    return promiseTracker;
 }
 
 export function trackPromise(promise: Promise<any>): PromiseTracker {

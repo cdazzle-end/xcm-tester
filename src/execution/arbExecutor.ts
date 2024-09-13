@@ -42,7 +42,6 @@ export async function buildAndExecuteExtrinsics(
             
             switch (instruction.type) {
                 case InstructionType.Swap:
-                    console.log("SWAP INSTRUCTION")
                     // TESTS if EVM, SKIP and set next to 0
                     if (chopsticks === true && isEvmChain(instruction.assetNodes[0].chain)) {
                         console.log("Skipping EVM swap")

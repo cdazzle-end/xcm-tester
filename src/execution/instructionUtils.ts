@@ -12,6 +12,7 @@ import bn from "bignumber.js";
 import { buildAndExecuteTransferExtrinsic } from "./arbExecutor.ts";
 import { stateSetTracking } from "./../utils/globalStateUtils.ts";
 import { MyAsset } from "../core/index.ts";
+import { getRelayTransferFee } from "../utils/index.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -443,9 +444,11 @@ export function getStartChainAllocationPath(
 
     const minimumRelayBalance = new bn(getRelayMinimum(relay))
     // REVIEW Amount to pad transfer for initial fee
-    const transferAmountPadding = relay == 'kusama' ? new bn(0.01) : new bn(0.05) // Pad transfer amount to account for fees, so we have enough to start swaps with intended amount. Theres a better way to do this
+    // const transferAmountPadding = relay == 'kusama' ? new bn(0.01) : new bn(0.05) // Pad transfer amount to account for fees, so we have enough to start swaps with intended amount. Theres a better way to do this
+    const transferAmountPadding = getRelayTransferFee(relay)
+    
     const amountNeededToTransfer = arbInputAmount.minus(startChainBalance)
-    const actualAmountToTransfer = amountNeededToTransfer.plus(transferAmountPadding)
+    const actualAmountToTransfer = amountNeededToTransfer.plus(0)
 
     console.log(`Arb input amount: ${arbInputAmount} | Start chain balance: ${startChainBalance} | Amount needed to transfer: ${amountNeededToTransfer} | Actual amount to transfer: ${actualAmountToTransfer}`)
     

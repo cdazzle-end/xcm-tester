@@ -2,13 +2,13 @@ import { testNets } from "../config/txConsts.ts"
 import { getSigner, getWalletAddressFormatted, isEvmChain, isTxDetails, trackPromise } from "../utils/utils.ts"
 import { ArbExecutionResult, BalanceChange, BalanceChangePromiseTracker, FeeData, LastNode, PNode, PromiseTracker, Relay, ReserveFeeData, SingleTransferResultData, TransactionState, TransferDepositEventData, TransferExtrinsicContainer, TransferTxStats, TxDetails } from "./../types/types.ts"
 import { KeyringPair } from '@polkadot/keyring/types'
-import { balanceChangeDisplay, getBalance, getDisplayBalance, manualCheckBalanceChange, watchBalanceChange } from "./../utils/balanceUtils.ts"
+import { balanceChangeDisplay, getBalance, getDisplayBalance, manualCheckBalanceChange } from "./../utils/balanceUtils.ts"
 import { stateSetLastNode, stateSetResultData, stateSetTransactionState, updateXcmFeeReserves } from "./../utils/globalStateUtils.ts"
 // import {BigNumber as bn } from "bignumber.js"
 import { ApiPromise, Keyring } from '@polkadot/api'
 import bn from 'bignumber.js'
 import { MyAsset } from "../core"
-import { createFeeDatas, createReserveFees, getXcmTransferEventData, listenForXcmpDepositEvent } from "../utils/index.ts"
+import { createFeeDatas, createReserveFees, getXcmTransferEventData, listenForXcmpDepositEvent, trackBalanceChangePromise, WithObservableReworked } from "../utils/index.ts"
 import { logEventFeeBook } from "../utils/logUtils.ts"
 // import { H256 } from '@polkadot/types/primitive';
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
@@ -67,8 +67,8 @@ export async function setupBalanceWatch(
     address: string, 
     chopsticks: boolean
 ): Promise<{ balanceChangeTracker: BalanceChangePromiseTracker, unsubscribe: () => void }> {
-    const { balanceChangePromise: balanceChangePromise, unsubscribe } = await watchBalanceChange(relay, chopsticks, api, asset, address);
-    const balanceChangeTracker = trackPromise(balanceChangePromise);
+    const { balanceChangePromise: balanceChangePromise, unsubscribe } = await WithObservableReworked(relay, chopsticks, api, asset, address);
+    const balanceChangeTracker = trackBalanceChangePromise(balanceChangePromise);
     return { balanceChangeTracker, unsubscribe };
 }
 
