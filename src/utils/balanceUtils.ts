@@ -68,6 +68,19 @@ export async function manualCheckBalanceChange(
     }
 }
 
+/**
+ * Reworked version of watchBalanceChange
+ * 
+ * Get first 2 balance outputs from token balance observable. Return as a tracked promise 
+ * 
+ * @param relay 
+ * @param asset 
+ * @param api 
+ * @param address 
+ * @param chopsticks 
+ * @param timeoutMs 
+ * @returns 
+ */
 export async function watchBalanceChangeReworked(
     relay: Relay,
     asset: MyAsset,
