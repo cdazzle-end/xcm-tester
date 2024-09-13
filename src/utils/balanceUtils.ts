@@ -93,13 +93,10 @@ export async function watchBalanceChangeReworked(
     let chainId = asset.getChainId();
     let chain = getNodeFromChainId(chainId, relay)
 
-    console.log(`Watch Token Balance Change: Chain ${asset.getChainNode()} | Symbol ${tokenSymbol} | Address ${address} `)
 
     // Make sure api is conencted
     if(!api.isConnected){
-        console.log("Watch Token Balance Change: API not connected. Connecting...")
         await api.connect()
-        console.log("Watch Token Balance Change: API connected: " + api.isConnected)
     }
 
     let balanceAdapter = getAdapter(relay, chainId)
@@ -124,7 +121,7 @@ export async function watchBalanceChangeReworked(
     const balanceChangePromise = new Promise<BalanceChange>(async (resolve, reject) => {
         try {
             const startBalance = await firstValueFrom(balanceObservable);
-            console.log(`Get Balance Change: Current Balance: ${startBalance.free}`);
+            console.log(`Watch Balance Change: ${chain} | ${tokenSymbol} | Start ${startBalance.free} `)
 
             const endBalance = await firstValueFrom(
                 race(
@@ -141,6 +138,7 @@ export async function watchBalanceChangeReworked(
                 )
             );
 
+            console.log(`Watch Balance Change: ${chain} | ${tokenSymbol} | End ${endBalance.free} `)
             resolve({
                 startBalance: startBalance.free._getInner(),
                 endBalance: endBalance.free._getInner(),
@@ -162,7 +160,7 @@ export async function watchBalanceChangeReworked(
     };
 }
 
-
+// REMOVE
 /**
  * Initiate observable to watch balance of asset on specified chain (watchTokenBalanceChange)
  * 
@@ -180,20 +178,20 @@ export async function watchBalanceChangeReworked(
  * @param setUnsubscribeCallback 
  * @returns 
  */
-export async function WithObservableReworked(
-    relay: Relay, 
-    chopsticks: boolean, 
-    destChainApi: ApiPromise, 
-    asset: MyAsset, 
-    depositAddress: string,
-    // setUnsubscribeCallback: (unsubscribe: () => void) => void // New parameter
-): Promise<{ balanceChangePromise: Promise<BalanceChange>, unsubscribe: () => void }> {
-    let paraId = asset.getChainId()
-    let balanceObservable$ = await subscribeBalanceChange(relay, paraId, chopsticks, destChainApi, asset, depositAddress);
-    return getBalanceChange(balanceObservable$);
-}
+// export async function WithObservableReworked(
+//     relay: Relay, 
+//     chopsticks: boolean, 
+//     destChainApi: ApiPromise, 
+//     asset: MyAsset, 
+//     depositAddress: string,
+//     // setUnsubscribeCallback: (unsubscribe: () => void) => void // New parameter
+// ): Promise<{ balanceChangePromise: Promise<BalanceChange>, unsubscribe: () => void }> {
+//     let paraId = asset.getChainId()
+//     let balanceObservable$ = await subscribeBalanceChange(relay, paraId, chopsticks, destChainApi, asset, depositAddress);
+//     return getBalanceChange(balanceObservable$);
+// }
 
-// ***
+// REMOVE
 /**
  * Subscribes to token balance. Observable will resolve when balance changes. 
  * 
@@ -213,70 +211,72 @@ export async function WithObservableReworked(
  * @param address 
  * @returns 
  */
-export async function subscribeBalanceChange(relay: Relay, paraId: number, chopsticks: boolean, chainApi: ApiPromise, asset: MyAsset, address: string): Promise<Observable<BalanceData>>{
-    // let tokenSymbol: string = transferrableAssetObject.assetRegistryObject.tokenData.symbol 
-    let tokenSymbol = asset.getSymbol()
+// export async function subscribeBalanceChange(relay: Relay, paraId: number, chopsticks: boolean, chainApi: ApiPromise, asset: MyAsset, address: string): Promise<Observable<BalanceData>>{
+//     // let tokenSymbol: string = transferrableAssetObject.assetRegistryObject.tokenData.symbol 
+//     let tokenSymbol = asset.getSymbol()
 
-    let chain = getNodeFromChainId(paraId, relay)
+//     let chain = getNodeFromChainId(paraId, relay)
 
-    console.log(`Watch Token Balance Change: Chain ${asset.getChainNode()} | Symbol ${tokenSymbol} | Address ${address} `)
+//     console.log(`Watch Token Balance Change: Chain ${asset.getChainNode()} | Symbol ${tokenSymbol} | Address ${address} `)
 
-    // Make sure api is conencted
-    if(!chainApi.isConnected){
-        console.log("Watch Token Balance Change: API not connected. Connecting...")
-        await chainApi.connect()
-        console.log("Watch Token Balance Change: API connected: " + chainApi.isConnected)
-    }
+//     // Make sure api is conencted
+//     if(!chainApi.isConnected){
+//         console.log("Watch Token Balance Change: API not connected. Connecting...")
+//         await chainApi.connect()
+//         console.log("Watch Token Balance Change: API connected: " + chainApi.isConnected)
+//     }
 
-    let balanceAdapter = getAdapter(relay, paraId)
-    let currentBalance: BalanceData;
-    if(chain === "Karura" || chain === "Acala"){
-        // let evmProvider: EvmRpcProvider = new EvmRpcProvider("ws://172.26.130.75:8008")
-        let rpcEndpoint = chopsticks ? localRpcs[chain]
-            : relay == 'kusama' ? karRpc : acaRpc
+//     let balanceAdapter = getAdapter(relay, paraId)
+//     let currentBalance: BalanceData;
+//     if(chain === "Karura" || chain === "Acala"){
+//         // let evmProvider: EvmRpcProvider = new EvmRpcProvider("ws://172.26.130.75:8008")
+//         let rpcEndpoint = chopsticks ? localRpcs[chain]
+//             : relay == 'kusama' ? karRpc : acaRpc
 
-        // let rpcEndpoint = chopsticks ? localRpcs["Karura"] : karRpc
-        let walletConfigs: WalletConfigs = {
-            evmProvider: EvmRpcProvider.from(rpcEndpoint),
-            wsProvider: new WsProvider(rpcEndpoint)
-        }
-        let adapterWallet = new Wallet(chainApi, walletConfigs);
-        await balanceAdapter.init(chainApi, adapterWallet);
-    } else {
-        await balanceAdapter.init(chainApi);
-    }
+//         // let rpcEndpoint = chopsticks ? localRpcs["Karura"] : karRpc
+//         let walletConfigs: WalletConfigs = {
+//             evmProvider: EvmRpcProvider.from(rpcEndpoint),
+//             wsProvider: new WsProvider(rpcEndpoint)
+//         }
+//         let adapterWallet = new Wallet(chainApi, walletConfigs);
+//         await balanceAdapter.init(chainApi, adapterWallet);
+//     } else {
+//         await balanceAdapter.init(chainApi);
+//     }
 
-    const balanceObservable = balanceAdapter.subscribeTokenBalance(tokenSymbol, address, asset.getLocalId());
+//     const balanceObservable = balanceAdapter.subscribeTokenBalance(tokenSymbol, address, asset.getLocalId());
     
-    return new Observable<BalanceData>((subscriber) => {
-        const subscription = balanceObservable.subscribe({
-            next(balance) {
-                if(currentBalance){
-                    subscriber.next(balance);
-                    subscriber.complete();
-                    console.log(`Watch Token Balance Change: ${asset.getChainNode()} ${tokenSymbol} Observable completed `)
-                    // destAdapter.getApi().disconnect()
-                } else {
-                    currentBalance = balance;
-                    subscriber.next(balance);
-                }
-            },
-            error(err) {
-                subscriber.error(new Error(err));
-                subscriber.complete(); // Complete the outer Observable on error
-                // destAdapter.getApi().disconnect()
-            },
-            complete() {
-                subscriber.complete(); // Complete the outer Observable when the inner one completes
-                // destAdapter.getApi().disconnect()
-            }
-        });
-        return () => {
-            subscription.unsubscribe();
-            // destAdapter.getApi().disconnect()
-        };
-    })
-}
+//     return new Observable<BalanceData>((subscriber) => {
+//         const subscription = balanceObservable.subscribe({
+//             next(balance) {
+//                 if(currentBalance){
+//                     subscriber.next(balance);
+//                     subscriber.complete();
+//                     console.log(`Watch Token Balance Change: ${asset.getChainNode()} ${tokenSymbol} Observable completed `)
+//                     // destAdapter.getApi().disconnect()
+//                 } else {
+//                     currentBalance = balance;
+//                     subscriber.next(balance);
+//                 }
+//             },
+//             error(err) {
+//                 subscriber.error(new Error(err));
+//                 subscriber.complete(); // Complete the outer Observable on error
+//                 // destAdapter.getApi().disconnect()
+//             },
+//             complete() {
+//                 subscriber.complete(); // Complete the outer Observable when the inner one completes
+//                 // destAdapter.getApi().disconnect()
+//             }
+//         });
+//         return () => {
+//             subscription.unsubscribe();
+//             // destAdapter.getApi().disconnect()
+//         };
+//     })
+// }
+
+// REMOVE
 // ***
 // Used in executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
 // export async function watchTokenBalance(
@@ -374,6 +374,7 @@ export async function subscribeBalanceChange(relay: Relay, paraId: number, chops
     
 // }
 
+// REMOVE
 // Used  on balance adapter observable
 // Used in executeSingleTransferExtrinsic, executeSingleSwapExtrinsicMovr, executeSingleSwapExtrinsicGlmr, executeSingleSwapExtrinsic, execitPreTransfers
 /**
@@ -389,78 +390,78 @@ export async function subscribeBalanceChange(relay: Relay, paraId: number, chops
  * @param setUnsubscribeCallback 
  * @returns Promise <BalanceChange>
  */
-export function getBalanceChange(
-    balanceObservable$: Observable<BalanceData>,
-    // setUnsubscribeCallback: (unsubscribe: () => void) => void
-  ): { balanceChangePromise: Promise<BalanceChange>, unsubscribe: () => void } {
-    console.log("Get Balance Change: waiting for balance change")
-    let currentBalance: BalanceData;
-    let subscription: Subscription;
-    let balanceChange: BalanceChange = {
-        startBalance: new bn(0),
-        endBalance: new bn(0),
-        changeInBalance: new bn(0),
-        decimals: 0
-    }
-    const balanceChangePromise = new Promise<BalanceChange>((resolve, reject) => {
-        subscription = balanceObservable$.pipe(timeout(120000)).subscribe({
-            next(newBalance) {
+// export function getBalanceChange(
+//     balanceObservable$: Observable<BalanceData>,
+//     // setUnsubscribeCallback: (unsubscribe: () => void) => void
+//   ): { balanceChangePromise: Promise<BalanceChange>, unsubscribe: () => void } {
+//     console.log("Get Balance Change: waiting for balance change")
+//     let currentBalance: BalanceData;
+//     let subscription: Subscription;
+//     let balanceChange: BalanceChange = {
+//         startBalance: new bn(0),
+//         endBalance: new bn(0),
+//         changeInBalance: new bn(0),
+//         decimals: 0
+//     }
+//     const balanceChangePromise = new Promise<BalanceChange>((resolve, reject) => {
+//         subscription = balanceObservable$.pipe(timeout(120000)).subscribe({
+//             next(newBalance) {
                 
-                // Set current balance, or create balance change object
-                if(!currentBalance){
-                    currentBalance = newBalance;
-                    balanceChange.startBalance = currentBalance.free._getInner();
-                    balanceChange.decimals = currentBalance.free.getPrecision();
-                    console.log(`Get Balance Change: Current Balance: ${newBalance.free}`);
-                } else {
+//                 // Set current balance, or create balance change object
+//                 if(!currentBalance){
+//                     currentBalance = newBalance;
+//                     balanceChange.startBalance = currentBalance.free._getInner();
+//                     balanceChange.decimals = currentBalance.free.getPrecision();
+//                     console.log(`Get Balance Change: Current Balance: ${newBalance.free}`);
+//                 } else {
 
-                    // Take difference between 2 balances (absolute value)
-                    balanceChange = {
-                        startBalance: currentBalance.free._getInner(),
-                        endBalance: newBalance.free._getInner(),
-                        changeInBalance: newBalance.free._getInner().minus(currentBalance.free._getInner()).abs(),
-                        decimals: newBalance.free.getPrecision()
-                    }
-                    subscription.unsubscribe();
-                    resolve(balanceChange)
-                }
-            },
+//                     // Take difference between 2 balances (absolute value)
+//                     balanceChange = {
+//                         startBalance: currentBalance.free._getInner(),
+//                         endBalance: newBalance.free._getInner(),
+//                         changeInBalance: newBalance.free._getInner().minus(currentBalance.free._getInner()).abs(),
+//                         decimals: newBalance.free.getPrecision()
+//                     }
+//                     subscription.unsubscribe();
+//                     resolve(balanceChange)
+//                 }
+//             },
             
-            error(err) {
-                if(err.name == 'TimeoutError'){
-                    console.log('Get Balance Change: No balance change reported within 12 seconds');
-                    subscription.unsubscribe();
-                    resolve(balanceChange)
-                } else {
-                    console.log("Get Balance Change: ERROR")
-                    console.log(err)
-                    subscription.unsubscribe()
-                    resolve(balanceChange)
-                }
+//             error(err) {
+//                 if(err.name == 'TimeoutError'){
+//                     console.log('Get Balance Change: No balance change reported within 12 seconds');
+//                     subscription.unsubscribe();
+//                     resolve(balanceChange)
+//                 } else {
+//                     console.log("Get Balance Change: ERROR")
+//                     console.log(err)
+//                     subscription.unsubscribe()
+//                     resolve(balanceChange)
+//                 }
                 
-            },
-            complete(){
-                console.log('Get Balance Change: Balance change subscription completed for some reason');
-                subscription.unsubscribe();
-                resolve(balanceChange)
-            }
-        });
-        // Providing a way to unsubscribe from outside this function
-        // setUnsubscribeCallback(() => {
-        //     console.log("Get Balance Change: Something went wrong. Unsubscribing from balance change observable")
-        //     subscription.unsubscribe();
-        //     resolve(balanceChange)
-        // });
+//             },
+//             complete(){
+//                 console.log('Get Balance Change: Balance change subscription completed for some reason');
+//                 subscription.unsubscribe();
+//                 resolve(balanceChange)
+//             }
+//         });
+//         // Providing a way to unsubscribe from outside this function
+//         // setUnsubscribeCallback(() => {
+//         //     console.log("Get Balance Change: Something went wrong. Unsubscribing from balance change observable")
+//         //     subscription.unsubscribe();
+//         //     resolve(balanceChange)
+//         // });
 
-    });
-    const unsubscribe = () => {
-        console.log("Get Balance Change: Unsubscribing from balance change observable");
-        if (subscription) {
-            subscription.unsubscribe();
-        }
-    };
-    return {balanceChangePromise, unsubscribe}
-}
+//     });
+//     const unsubscribe = () => {
+//         console.log("Get Balance Change: Unsubscribing from balance change observable");
+//         if (subscription) {
+//             subscription.unsubscribe();
+//         }
+//     };
+//     return {balanceChangePromise, unsubscribe}
+// }
 
 // Used in getRelayTokenBalanceAcrossChains, getRelayTokenBalances, allocateKsmFromPreTransferPaths
 export async function getBalanceChainAsset(chopsticks: boolean, relay: Relay, node: PNode, chainId: number, assetSymbol: string, assetId: string): Promise<BalanceData>{
@@ -732,7 +733,7 @@ export async function getBalance(
     const tokenId = asset.getLocalId()
     const balanceObservable = destAdapter.subscribeTokenBalance(validatedTokenSymbol, accountAddress, tokenId);
     let balance = await firstValueFrom(balanceObservable)
-    console.log(`Get Balance: ${chain} ${tokenSymbol} ${balance.available.toNumber()}`)
+    // console.log(`Get Balance: ${chain} ${tokenSymbol} ${balance.available.toNumber()}`)
 
     return formatBalanceData(balance)
 }

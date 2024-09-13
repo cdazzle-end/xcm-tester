@@ -4,10 +4,12 @@ import { readdir, stat } from "fs/promises";
 import path, { join } from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { Relay, ArbFinderNode } from "./../types/types.ts";
+import { Relay, ArbFinderNode, PNode, ApiMap } from "./../types/types.ts";
 import { dotTargetNode, ksmTargetNode } from "../config/txConsts.js";
 import { acalaStableLpsPath, arbFinderPath, assetRegistryPath, glmrLpsPath, kusamaAssetRegistryPath, lpRegistryPath, polkadotAssetRegistryPath} from "../config/index.ts"
-import { stateSetLastFile } from "../utils/index.ts";
+import { getApiForNode, getApiMap, stateSetLastFile } from "../utils/index.ts";
+import { updateAssetRegistryWithMap } from './../../../polkadot_assets/assets/assetHandler.ts';
+import { updateLpsWithMap } from './../../../polkadot_assets/lps/all_lps.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -206,6 +208,7 @@ export async function updateAssets(chopsticks: boolean, relay: Relay) {
         });
     });
 }
+
 export async function updateLps(chop: boolean, relay: Relay) {
     // let relayParameter = relay === "Kusama" ? 'kusama' : 'polkadot'
 
@@ -284,70 +287,24 @@ async function updateAssetsAndLps(chopsticks: boolean, relay: Relay){
     console.log(lpsResult);
 }
 
-/**
- * Updates assets and lps, then executes new target arb.
- * - arb-finder will log the path in /target_log_data/
- * - After arb-finder completes successfully, the path file is retrieved and returned  
- * 
- * @param args - args to pass to arb-finder executable
- * @param chopsticks - testnet/live
- * @param relay - relay
- * @returns - filepath to arb-finder output log
- */
-// export async function runAndReturnTargetArb(
-//     args: string,
-//     relay: Relay
-// ): Promise<string> {
-
-//     try {
-//         let arbCompleted = await runArbTarget(args, relay);
-//         if (arbCompleted) {
-//             const targetLogFolder = await path.join(
-//                 __dirname,
-//                 `${arbFinderPath}/target_log_data/${relay}/`
-//             );
-//             const latestFile = await findLatestFileInLatestDirectory(
-//                 targetLogFolder
-//             );
-//             return latestFile
-//             // let latestFileData: ArbFinderNode[] = JSON.parse(
-//             //     fs.readFileSync(latestFile, "utf8")
-//             // );
-//             // return latestFileData;
-//         } else {
-//             throw new Error("Arb Fallback failed");
-//         }
-//     } catch (e) {
-//         console.log("Error running and returning fallback arb");
-//         console.log(e);
-//         throw new Error("Error running and returning fallback arb");
-//     }
-// }
-
-// export async function getArbExecutionPath(
-//     relay: Relay, 
-//     latestFile: string, 
-//     inputAmount: number, 
-//     useLatestTarget: boolean, 
-//     chopsticks: boolean
-// ){
-//     let arbPathData: ArbFinderNode[] | ArbFinderNode[] = []
+export async function updateAssetsAndLpsReworked(chopsticks: boolean, relay: Relay) {
     
-//     // If useLatestTarget is false, will update LPs and run arb
-//     if(!useLatestTarget){
-//         try{
-//             let arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
-//             arbPathData = await runAndReturnTargetArb(arbArgs, chopsticks, relay)
-//         }  catch {
-//             console.log("Failed to run target arb")
-//             throw new Error("Failed to run target arb")
-//         }
-//     } else {
-//         arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
-//     }
+    console.log(`Update assets and lps`)
+    let apiMap: ApiMap = getApiMap()
+    let assetUpdate = updateAssetRegistryWithMap(chopsticks, relay, apiMap)
+    let lpUpdate = updateLpsWithMap(chopsticks, relay, apiMap)
 
-//     return arbPathData
+    await Promise.all([assetUpdate, lpUpdate])
+}
+// export async function updateAssetsReworked(chopsticks: boolean, relay: Relay) {
+//     await updateAssetRegistryWithMap(chopsticks, relay, apiMap)
 // }
+// export async function updateLpsReworked(chopsticks: boolean, relay: Relay) {
+//     let apiMap: ApiMap = getApiMap()
+//     await updateLpsWithMap(chopsticks, relay, apiMap)
+// }
+
+
 
 /**
  * Use at the start of a new run
@@ -443,33 +400,24 @@ export async function findFallbackArb(
     // return results;
 }
 
+export async function getBlockNumbers(relay: Relay, chopsticks: boolean) {
+    if (relay === 'kusama'){
+        
+    }
+    const chains: PNode[] = relay === 'polkadot' ? ['BifrostPolkadot', 'Parallel', 'Acala', 'Moonbeam', 'HydraDX'] 
+        : ['BifrostKusama', 'ParallelHeiko', 'Karura', 'Moonriver', 'Basilisk', 'Mangata'];
+        
+    const blockNumbers: { [key: string]: number } = {};
 
-// async function testArbFinder(relay: Relay) {
-//     let arbArgs =
-//         relay === "kusama"
-//             ? `${ksmTargetNode} ${ksmTargetNode} 1.0`
-//             : `${dotTargetNode} ${dotTargetNode} 1.0`;
-//     // let arbArgs = `${ksmTargetNode} ${ksmTargetNode} 1.0`
-//     try {
-//         let arbCompleted = await arbRunTargetSearch(arbArgs, relay);
-//         if (arbCompleted) {
-//             const targetLogFolder = `${arbFinderPath}/target_log_data/`
-//             const latestFile = await findLatestFileInLatestDirectory(
-//                 targetLogFolder
-//             );
-//             let latestFileData: ArbFinderNode[] = JSON.parse(
-//                 fs.readFileSync(latestFile, "utf8")
-//             );
-//             return latestFileData;
-//         } else {
-//             throw new Error("Arb Fallback failed");
-//         }
-//     } catch (e) {
-//         console.log("Error running and returning fallback arb");
-//         console.log(e);
-//         throw new Error("Error running and returning fallback arb");
-//     }
-// }
+    await Promise.all(chains.map(async (chain) => {
+        const api = await getApiForNode(chain, chopsticks);
+        const blockNumber = await api.query.system.number();
+        console.log(`${chain} block number: ${blockNumber.toNumber()}`);
+        blockNumbers[chain] = blockNumber.toNumber();
+    }));
+
+    return blockNumbers
+}
 async function run() {
     //  await testArbFinder()
     // await updateLps(true)

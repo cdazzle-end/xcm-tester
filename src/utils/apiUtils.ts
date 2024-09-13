@@ -1,37 +1,74 @@
 
 import { firstValueFrom, combineLatest, map, Observable, race, EMPTY, timeout } from "rxjs";
 import * as paraspell from "@paraspell/sdk";
-import { ApiSet, PNode } from './../types/types.ts'
+import { ApiMap, ApiSet, PNode, Relay } from './../types/types.ts'
 import { ApiPromise, ApiRx, WsProvider } from '@polkadot/api';
 import { options } from '@acala-network/api/dist/index.js';
 import { prodParasKusama, prodParasKusamaCommon, prodRelayKusama } from '@polkadot/apps-config/endpoints';
 import { TNode } from "@paraspell/sdk";
 import { dotRpc, ksmRpc, localRpcs } from "./../config/txConsts.ts";
+import { BifrostConfig, ModuleBApi } from "@zenlink-dex/sdk-api";
 // import { apiMap } from "./liveTest.ts";
 
-const apiMap: Map<PNode, ApiPromise> = new Map<TNode, ApiPromise>();
+const apiMap: Map<PNode, ApiPromise | ModuleBApi> = new Map<PNode, ApiPromise>();
 const allConnectionPromises = new Map<string, Promise<ApiPromise>>();
 const allConnections = new Map<string, ApiPromise>();
 const promiseApis: Record<number, ApiPromise> = {};
 const observableApis: Record<number, ApiRx> = {};
 
+export function getApiMap(): ApiMap{
+    return apiMap
+}
+
+/**
+ * Using this to get/set dex API for bifrost, so we dont have to change return type of main function
+ * 
+ * Main function will also get and set dex api, but return ApiPromise
+ * 
+ * This will return the actual entry in the apiMap for bifrost, which is a ModuleBApi
+ * 
+ * @returns 
+ */
+export async function getBifrostDexApi(relay: Relay, chopsticks: boolean): Promise<ModuleBApi>{
+    let map = apiMap
+
+    let node: TNode = relay === "polkadot" ? "BifrostPolkadot" : "BifrostKusama"
+
+    let endpoint = chopsticks ? localRpcs[node] : paraspell.getAllNodeProviders(node)
+
+    if(map.has(node)){
+        console.log(`Returning dex api for BifrostPolkadot`)
+        return map.get(node) as ModuleBApi
+    } else {
+        let provider = new WsProvider(endpoint)
+        let dexApi = new ModuleBApi(provider, BifrostConfig)
+        await provider.isReady
+        await dexApi.initApi()
+        map.set(node, dexApi)
+        return dexApi
+    }
+}
 // Keep a map of all connections. If a connection to a chain already exists, return it
 // POLKADOT_ASSETS HAS THE SAME FUNCTION
 export async function getApiForNode(node: PNode, chopsticks: boolean): Promise<ApiPromise>{
     let map = apiMap
 
-    console.log("**********************************************")
-    console.log("Checking for existing api for node: ", node)
+    // console.log("**********************************************")
+    // console.log("Checking for existing api for node: ", node)
     if(map.has(node)){
+        if(node == "BifrostPolkadot") {
+            console.log("Returning existing api for node: ", node)
+            let dexApi = map.get(node) as ModuleBApi
+            return dexApi.api as unknown as ApiPromise
+        }
         console.log("Returning existing api for node: ", node)
         return map.get(node) as ApiPromise
     }
 
-    console.log("No existing api for node: ", node)
-    console.log("**********************************************")
+    // console.log("No existing api for node: ", node)
+    // console.log("**********************************************")
 
     let apiEndpoint: string[];
-    console.log("Get api for node: ", node)
     if(node == "Kusama"){
         apiEndpoint = [ksmRpc]
         // throw new Error("Trying to transfer kusama away from home chain to kusama")
@@ -40,8 +77,6 @@ export async function getApiForNode(node: PNode, chopsticks: boolean): Promise<A
     } else if(node == "CrustShadow"){
         apiEndpoint = ["wss://rpc2-shadow.crust.network"]
     } else if (node == "Parallel") {
-        // apiEndpoint = ['wss://rpc.parallel.fi']
-        // apiEndpoint = ["wss://parallel.api.onfinality.io/public-ws"]
         apiEndpoint = ["wss://parallel-rpc.dwellir.com"]
     } else{
         apiEndpoint = paraspell.getAllNodeProviders(node)
@@ -54,7 +89,7 @@ export async function getApiForNode(node: PNode, chopsticks: boolean): Promise<A
             apiEndpoint = [localRpc]
         }
     }
-    console.log("Node RPC: ", apiEndpoint[0])
+    console.log(`Initialize api for ${node} | ${apiEndpoint[0]} `)
     let api: ApiPromise | undefined;
     let apiConnected = false;
     if(node == "Mangata"){
@@ -63,9 +98,9 @@ export async function getApiForNode(node: PNode, chopsticks: boolean): Promise<A
             api = await MangataSDK.Mangata.instance([apiEndpoint[0]]).api()
             await api.isReady
             if(api.isConnected) {
-                console.log("API is connected: TRUE")
+                // console.log("API is connected: TRUE")
             } else {
-                console.log("API is connected: FALSE")
+                console.log("EDGE CASE | INVESTIGATE: API is connected: FALSE")
                 await api.connect()
                 console.log("API now connected")
             }
@@ -85,26 +120,42 @@ export async function getApiForNode(node: PNode, chopsticks: boolean): Promise<A
             }
             apiConnected = true;
         }
+    } else if (node === "BifrostPolkadot") {
+        const provider = new WsProvider(apiEndpoint);
+        const dexApi = new ModuleBApi(
+          provider,
+          BifrostConfig
+        );
+        await provider.isReady;
+        await dexApi.initApi(); // init the api;
+        if(!dexApi.api){
+            throw new Error("BNC Polkadot dexApi.api is undefined")
+          }
+
+        map.set(node, dexApi)
+        apiConnected = true;
+        api = dexApi.api as unknown as ApiPromise
+        return api
     } else {
         let endpointIndex = 0;
         if(node == "Moonbeam" && !chopsticks){
             endpointIndex = 1 // Currently the working endpoint for moonbeam
         }
         while(endpointIndex < apiEndpoint.length && !apiConnected){
-            console.log("Connecting to api: ", apiEndpoint[endpointIndex])
+            // console.log("Connecting to api: ", apiEndpoint[endpointIndex])
             try{
-                console.log("Trying connect")
+                // console.log("Trying connect")
                 let provider = new WsProvider(apiEndpoint[endpointIndex])
-                console.log("Provider set")
+                // console.log("Provider set")
                 api = await ApiPromise.create({ provider: provider });
-                console.log("Api initialized")
+                // console.log("Api initialized")
                 await api.isReady
                 
-                console.log("API is ready: TRUE")
+                // console.log("API is ready: TRUE")
                 if(api.isConnected) {
-                    console.log("API is connected: TRUE")
+                    // console.log("API is connected: TRUE")
                 } else {
-                    console.log("API is connected: FALSE")
+                    console.log("EDGE CASE | INVESTIGATE: API is connected: FALSE")
                     await api.connect()
                     console.log("API now connected")
                 }
@@ -121,7 +172,7 @@ export async function getApiForNode(node: PNode, chopsticks: boolean): Promise<A
     }
 
     map.set(node, api)
-    console.log("Returning api for node: ", node)
+    // console.log("Returning api for node: ", node)
     return api
 }
 
@@ -129,8 +180,13 @@ export async function closeApis(){
     console.log("Close out all APIs")
     let apiClosePromises: Promise<void>[] = [];
     apiMap.forEach((api, node) => {
+        if(node === "BifrostPolkadot"){
+            let dexApi = api as ModuleBApi
+            console.log("Disconnecting from dex api: ", node)
+            apiClosePromises.push(dexApi.api!.disconnect())
+        }
         console.log("Disconnecting from node: ", node)
-        apiClosePromises.push(api.disconnect())
+        apiClosePromises.push((api as ApiPromise).disconnect())
     })
     await Promise.all(apiClosePromises)
 }

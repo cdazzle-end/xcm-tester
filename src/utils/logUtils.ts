@@ -1,7 +1,7 @@
 import bn from 'bignumber.js';
 import fs from 'fs';
 import path from 'path';
-import { AccumulatedFeeData, ArbExecutionResult, ExtrinsicObject, ExtrinsicSetResultDynamic, InstructionType, Relay, ReserveFeeData, SwapInstruction, SwapTxStats, TransferDepositEventData, TransferDepositJsonData, TransferInstruction, TransferTxStats } from "./../types/types.ts";
+import { AccumulatedFeeData, ArbExecutionResult, ArbFinderNode, ExtrinsicObject, ExtrinsicSetResultDynamic, InstructionType, Relay, ReserveFeeData, SwapInstruction, SwapTxStats, TransferDepositEventData, TransferDepositJsonData, TransferInstruction, TransferTxStats } from "./../types/types.ts";
 // import { globalState } from "./liveTest.ts";
 // import 
 declare const fetch: any;
@@ -9,11 +9,21 @@ declare const fetch: any;
 import { getParaId } from "@paraspell/sdk";
 import { fileURLToPath } from 'url';
 import { isSwapResult, isTransferResult, stateGetAccumulatedFeeData, stateGetExtrinsicSetResults, stateGetXcmFeeReserves, stateGetLastFilePath, stateGetRelay } from "./index.ts";
+import { getBlockNumbers } from '../arbFinder/runArbFinder.ts';
 // import { getAccumulatedFeeData, getExtrinsicSetResults, getXcmFeeReserves } from './globalStateUtils.ts';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/**
+ * Log arb path and block numbers so that we can replay state in the future
+ * 
+ */
+export async function logChainStates(arbNodes: ArbFinderNode[], fileName: string, relay: Relay, chopsticks: boolean){
+    let blockNumbers = await getBlockNumbers(relay, chopsticks)
+    let blockStatesPath = path.join(__dirname, `./../../data/blockStates/${relay}/${fileName}.json`)
 
+    fs.writeFileSync(blockStatesPath, JSON.stringify({blockNumbers, arbNodes}, null, 2))
+}
 
 export async function queryUsdPriceKucoin(assetSymbol: string){
     let baseUrl = "https://api.kucoin.com";

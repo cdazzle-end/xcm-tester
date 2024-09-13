@@ -15,16 +15,6 @@ import { closeApis, stateGetExecutionAttempts, stateGetExecutionSuccess, stateGe
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const originalConsoleLog = console.log;
-
-// Filter out unwanted console logs from APIs
-console.log = function(...args) {
-    const message = args.join(' ');
-    if (!message.includes('API/INIT') && !message.includes('RPC methods not decorated')) {
-        originalConsoleLog.apply(console, args);
-    }
-};
-
 // REVIEW Over use of getLastNode() here is redundant, could be cleaned up
 async function runFromLastNode(relay: Relay, chopsticks: boolean, executeMovr: boolean, customInput: number = 0){
     initializeLastGlobalState(relay)
@@ -275,46 +265,6 @@ async function executeLatestArb(relay: Relay, chopsticks: boolean, executeMovr: 
 
     let executionResults: ExtrinsicSetResultDynamic = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, executeMovr, true)
 
-}
-
-async function testXcmAllocation(){
-    const relay: Relay = 'polkadot'
-    const chopsticks = true
-    const inputAmount = '0.2'
-    // if (relay !== 'kusama' && relay !== 'polkadot') throw new Error('Relay not specified')
-        GlobalState.initializeAndResetGlobalState(relay)
-    
-    // Execute new arb-finder, or just parse results from last arb file
-    // let arbPathData: ArbFinderNode[] = await findNewTargetArb(relay, inputAmount, chopsticks)
-
-    let latestFile = 'C:/Users/dazzl/CodingProjects/substrate/xcm-test/src/testScripts/testBncPath.json'
-    let arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
-    let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
-    
-    console.log(`Arb finder path nodes:`)
-    arbPathData.forEach((node) => console.log(`${node.node_key} ${node.path_value} ${node.path_type}`))
-
-    // Parse path into asset nodes
-    // // let assetPath: AssetNode[] = constructAssetNodesFromPath(relay, arbPathData)
-    // assetPath = await truncateAssetPath(assetPath) // Remove beginning xcm tx's before swap
-    // assetPath = await allocateFunds(relay, assetPath, chopsticks, inputAmount) // Add transfer from relay -> start if needed
-    stateSetLastNode(assetPath[0].asLastNode())
-
-    assetPath.forEach((assetNode) => {
-        console.log(`Asset: ${assetNode.getAssetKey()} | Value: ${assetNode.pathValue} | Type: ${assetNode.pathType}`)
-    })
-
-    let instructionsToExecute = buildInstructionSet(relay, assetPath)
-    let executionResults = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, false, false)
-
-    await logAllResultsDynamic(chopsticks)
-    let arbSuccess = executionResults.success
-
-    if(stateGetLastNode() === null){
-        console.log("Last node undefined. ERROR: some extrinsics have executed successfully")
-        throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
-    }
-        
 }
 
 // Run with arg kusama

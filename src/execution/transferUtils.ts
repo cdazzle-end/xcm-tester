@@ -8,7 +8,7 @@ import { stateSetLastNode, stateSetResultData, stateSetTransactionState, updateX
 import { ApiPromise, Keyring } from '@polkadot/api'
 import bn from 'bignumber.js'
 import { MyAsset } from "../core"
-import { createFeeDatas, createReserveFees, getXcmTransferEventData, listenForXcmpDepositEvent, trackBalanceChangePromise, WithObservableReworked } from "../utils/index.ts"
+import { createFeeDatas, createReserveFees, getXcmTransferEventData, listenForXcmpDepositEvent, trackBalanceChangePromise } from "../utils/index.ts"
 import { logEventFeeBook } from "../utils/logUtils.ts"
 // import { H256 } from '@polkadot/types/primitive';
 bn.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 }) // Set to max precision
@@ -46,6 +46,7 @@ export async function getSigners(chopsticks: boolean, startChain: PNode, destina
     return [startSigner, destSigner]
 }
 
+// REMOVE
 /**
  * Creates balance change observable, as a promise, that will complete upon balance change. Initiate before extrinsic execution
  * - Transfers: Use for start chain and destination chain
@@ -60,17 +61,17 @@ export async function getSigners(chopsticks: boolean, startChain: PNode, destina
  * @param chopsticks 
  * @returns 
  */
-export async function setupBalanceWatch(
-    relay: Relay, 
-    asset: MyAsset, 
-    api: ApiPromise, 
-    address: string, 
-    chopsticks: boolean
-): Promise<{ balanceChangeTracker: BalanceChangePromiseTracker, unsubscribe: () => void }> {
-    const { balanceChangePromise: balanceChangePromise, unsubscribe } = await WithObservableReworked(relay, chopsticks, api, asset, address);
-    const balanceChangeTracker = trackBalanceChangePromise(balanceChangePromise);
-    return { balanceChangeTracker, unsubscribe };
-}
+// export async function setupBalanceWatch(
+//     relay: Relay, 
+//     asset: MyAsset, 
+//     api: ApiPromise, 
+//     address: string, 
+//     chopsticks: boolean
+// ): Promise<{ balanceChangeTracker: BalanceChangePromiseTracker, unsubscribe: () => void }> {
+//     const { balanceChangePromise: balanceChangePromise, unsubscribe } = await WithObservableReworked(relay, chopsticks, api, asset, address);
+//     const balanceChangeTracker = trackBalanceChangePromise(balanceChangePromise);
+//     return { balanceChangeTracker, unsubscribe };
+// }
 
 /**
  * Use for transfers to query the balances of an asset on the start chain and the destination chain

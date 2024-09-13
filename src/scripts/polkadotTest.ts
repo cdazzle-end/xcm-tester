@@ -7,8 +7,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { localRpcs } from './../config/txConsts.ts';
-import { ExecutionState, ExtrinsicSetResultDynamic, ArbFinderNode, LastNode, NewFeeBook, PromiseTracker, Relay, SwapInstruction, TransferInstruction, TxDetails, SingleTransferResultData, SingleSwapResultData, AssetMap, IMyAsset } from './../types/types.ts';
-import { getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, queryRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, getBalanceChange, trackPromise, stateGetExtrinsicSetResults, isSwapResult, isTransferResult, stateGetLastNode, getAssetRegistry, getAssetRegistryMap, getMyAssetById, getRelayTransferFee, getMyAssetBySymbol, watchTokenBalanceChange, watchBalanceChange } from './../utils/index.ts';
+import { ExecutionState, ExtrinsicSetResultDynamic, ArbFinderNode, LastNode, NewFeeBook, PromiseTracker, Relay, SwapInstruction, TransferInstruction, TxDetails, SingleTransferResultData, SingleSwapResultData, AssetMap, IMyAsset, PNode } from './../types/types.ts';
+import { getAssetsAtLocation, getChainIdFromNode, getSigner, printInstructionSet, readLogData, stateSetExecutionSuccess, stateSetExecutionRelay, stateSetLastNode, apiLogger, mainLogger, getApiForNode, getBalanceFromId, queryRelayTokenBalances, getTransferType, getWalletAddressFormatted, listenForXcmpDepositEvent, trackPromise, stateGetExtrinsicSetResults, isSwapResult, isTransferResult, stateGetLastNode, getAssetRegistry, getAssetRegistryMap, getMyAssetById, getRelayTransferFee, getMyAssetBySymbol, logChainStates, getApiMap, getBifrostDexApi, } from './../utils/index.ts';
 import { getParaId, TNode } from '@paraspell/sdk';
 import { getAdapter,  } from '@polkawallet/bridge';
 import bn from 'bignumber.js';
@@ -16,7 +16,7 @@ import { testGlmrRpc } from './../swaps/index.ts';
 import * as Chopsticks from '@acala-network/chopsticks';
 import { buildAndExecuteExtrinsics, buildInstructionSet, buildInstructionSetTest, executeTransferExtrinsic, executeXcmTransfer } from './../execution/index.ts';
 import { AssetNode, GlobalState, MyAsset } from './../core/index.ts';
-import { arbRunFallbackSearch, arbRunTargetSearch, findLatestFileInLatestDirectory } from './../arbFinder/runArbFinder.ts'
+import { arbRunFallbackSearch, arbRunTargetSearch, findLatestFileInLatestDirectory, findNewTargetArb, getBlockNumbers, updateAssetsAndLpsReworked } from './../arbFinder/runArbFinder.ts'
 import keyring from '@polkadot/keyring';
 import { arbFinderPath } from '../config/index.ts';
 // import { acalaFileTest } from '../config/index.ts';
@@ -24,11 +24,11 @@ import { arbFinderPath } from '../config/index.ts';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const allConnectionPromises = new Map<string, Promise<ApiPromise>>();
-export const allConnections = new Map<string, ApiPromise>();
-export let promiseApis: Record<number, ApiPromise> = {};
-export let observableApis: Record<number, ApiRx> = {};
-export let apiMap: Map<TNode | "Kusama" | "Polkadot", ApiPromise> = new Map<TNode, ApiPromise>();
+// export const allConnectionPromises = new Map<string, Promise<ApiPromise>>();
+// export const allConnections = new Map<string, ApiPromise>();
+// export let promiseApis: Record<number, ApiPromise> = {};
+// export let observableApis: Record<number, ApiRx> = {};
+// export let apiMap: Map<PNode, ApiPromise> = new Map<TNode, ApiPromise>();
 
 const aliceAddress = "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F"
 
@@ -1594,6 +1594,103 @@ function testFee(){
     let fee = getRelayTransferFee('polkadot')
     console.log(`Transfer fee: ${fee}`)
 }
+
+async function logChain(relay: Relay){
+    if (relay !== 'kusama' && relay !== 'polkadot') throw new Error('Relay not specified')
+    GlobalState.initializeAndResetGlobalState(relay)
+
+    let inputAmount = '1.0'
+    let chopsticks = true
+
+    let latestFile = 'C:/Users/dazzl/CodingProjects/substrate/xcm-test/src/testScripts/testBncPath.json'
+    let arbPathData: ArbFinderNode[] = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
+    
+    await logChainStates(arbPathData, 'testFile', relay, chopsticks)
+}
+// async function testNumbers(){
+//     await getBlockNumbers(true)
+// }
+
+
+async function testXcmAllocation(){
+    const relay: Relay = 'polkadot'
+    const chopsticks = true
+    const inputAmount = '0.2'
+    // if (relay !== 'kusama' && relay !== 'polkadot') throw new Error('Relay not specified')
+        GlobalState.initializeAndResetGlobalState(relay)
+    
+    // Execute new arb-finder, or just parse results from last arb file
+    // let arbPathData: ArbFinderNode[] = await findNewTargetArb(relay, inputAmount, chopsticks)
+
+    let latestFile = 'C:/Users/dazzl/CodingProjects/substrate/xcm-test/src/testScripts/testBncPath.json'
+    let arbPathData = JSON.parse(fs.readFileSync(latestFile, 'utf8'))
+    let assetPath: AssetNode[] = arbPathData.map(result => readLogData(result, relay))
+    
+    console.log(`Arb finder path nodes:`)
+    arbPathData.forEach((node) => console.log(`${node.node_key} ${node.path_value} ${node.path_type}`))
+
+    // Parse path into asset nodes
+    // let assetPath: AssetNode[] = constructAssetNodesFromPath(relay, arbPathData)
+    // assetPath = await truncateAssetPath(assetPath) // Remove beginning xcm tx's before swap
+    // assetPath = await allocateFunds(relay, assetPath, chopsticks, inputAmount) // Add transfer from relay -> start if needed
+    stateSetLastNode(assetPath[0].asLastNode())
+
+    assetPath.forEach((assetNode) => {
+        console.log(`Asset: ${assetNode.getAssetKey()} | Value: ${assetNode.pathValue} | Type: ${assetNode.pathType}`)
+    })
+
+    let instructionsToExecute = buildInstructionSet(relay, assetPath)
+    let executionResults = await buildAndExecuteExtrinsics(relay, instructionsToExecute, chopsticks, false, false)
+
+    // await logAllResultsDynamic(chopsticks)
+    let arbSuccess = executionResults.success
+
+    if(stateGetLastNode() === null){
+        console.log("Last node undefined. ERROR: some extrinsics have executed successfully")
+        throw new Error("Last node undefined. ERROR: some extrinsics have executed successfully")
+    }
+        
+}
+
+import { updateAssetRegistryWithMap } from './../../../polkadot_assets/assets/assetHandler.ts';
+import { updateLpsWithMap } from './../../../polkadot_assets/lps/all_lps.ts';
+import axios from 'axios';
+import { Token } from '@zenlink-dex/sdk-core';
+import { firstValueFrom } from 'rxjs';
+export async function testAssetUpdater(){
+    console.log(`TESTING UPDATER`)
+    let apiMap = getApiMap()
+    let relay: Relay = 'polkadot'
+    let chopsticks = true
+    await updateAssetsAndLpsReworked(chopsticks, relay)
+
+    console.log(`Finished updating assets. Now api map is:`)
+    apiMap.forEach((_, key) => {
+        console.log(`Api initialized for ${key}`)
+    });
+    console.log(`Finished UPDATER TEST`)
+}
+
+// async function bifrostApi(){
+//     let api = await getApiForNode("BifrostPolkadot", true)
+
+//     let block = await api.query.system.number()
+//     console.log(`Block: ${block}`)
+
+//     let dexApi = await getBifrostDexApi('polkadot', true)
+//     const response = await axios.get('https://raw.githubusercontent.com/zenlinkpro/token-list/main/tokens/bifrost-polkadot.json');
+//     const tokensMeta = response.data.tokens;
+
+//     const zenTokens = tokensMeta.map((item: any) => {
+//         return new Token(item);
+//     });
+//     const standardPairs = await firstValueFrom(dexApi.standardPairOfTokens(zenTokens));
+
+//     console.log(`Standard pairs: ${JSON.stringify(standardPairs, null, 2)}`)
+
+
+// }
+
 async function main(){
 
     // await testBalanceAdapters()
@@ -1603,7 +1700,11 @@ async function main(){
     // await testAssetRegistryOne()
     // testExecutionTimes()
     // await callArbFinderTargetSearch()
-    testFee()
+    // testFee()
+    // await testNumbers()
+    // await logChain('polkadot')
+    // await testAssetUpdater()
+    await testAssetUpdater()
     process.exit(0)
 }
 

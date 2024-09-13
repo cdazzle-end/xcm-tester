@@ -13,7 +13,7 @@ import { localRpcs } from '../config/txConsts.ts';
 import { IndexObject, PathType, SwapExtrinsicContainer, SwapInstruction } from '../types/types.ts';
 import { getSigner } from '../utils/utils.ts';
 import bn from 'bignumber.js'
-import { getBalanceFromDisplay } from '../utils/index.ts';
+import { getBalanceFromDisplay, getBifrostDexApi } from '../utils/index.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,7 +40,7 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   let amountIn = swapInstructions[0].assetNodes[0].pathValue;
   let expectedAmountOut = swapInstructions[swapInstructions.length - 1].assetNodes[1].pathValue;
 
-  let rpc = chopsticks ? wsLocalChain : bncRpc
+
 
   let accountPair = await getSigner(chopsticks, swapInstructions[0].assetNodes[0].chain);
 
@@ -79,16 +79,18 @@ export async function getBncPolkadotSwapExtrinsicDynamic(
   }, tokensMap);
 
   // generate the dex api
-  const provider = new WsProvider(rpc);
-  const dexApi = new ModuleBApi(
-    provider,
-    BifrostConfig
-  );
+  // let rpc = chopsticks ? wsLocalChain : bncRpc
+  // const provider = new WsProvider(rpc);
+  // const dexApi = new ModuleBApi(
+  //   provider,
+  //   BifrostConfig
+  // );
 
 
 
-  await provider.isReady;
-  await dexApi.initApi(); // init the api;
+  // await provider.isReady;
+  // await dexApi.initApi(); // init the api;
+  const dexApi = await getBifrostDexApi('polkadot', chopsticks)
 
   if(!dexApi.api){
     throw new Error("BNC Polkadot dexApi.api is undefined")

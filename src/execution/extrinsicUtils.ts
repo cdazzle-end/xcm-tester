@@ -121,19 +121,12 @@ export async function buildTransferExtrinsicFromInstruction(
     let destinationApi = await getApiForNode(destinationNode, chopsticks)
 
     console.log("**************************************")
-    console.log(`${startNode} -> ${destinationNode} (${assetSymbol}) | Currency: ${currencyInput}  | Amount: ${transferAmount.toString()})`)
+    console.log(`Build: ${startNode} -> ${destinationNode} (${assetSymbol}) | Currency: ${currencyInput}  | Amount: ${transferAmount.toString()} | Reserve amount: ${transferReserveAmount.toString()} | Fee amount: ${transferFeeAmount.toString()}`)
     console.log("**************************************")
-    console.log(`Transfer Amount: ${transferAmount.toString()}`)
-    console.log(`Reserve amount: ${transferReserveAmount.toString()}`)
-    console.log(`Fee amount: ${transferFeeAmount.toString()}`)
     if(!transferReserveAmount.isZero() && transferFeeAmount.isZero()){
         throw new Error("Reserve amount but no fee")
     }
-    //
-    // Transfer currency asset A -> B
-    // Remove transfer fee from input on A | Remove reserve fee from input on A
-    // Is deposit fee from native token?
-    // 
+
 
     if(transferReserveAmount.isZero() && transferFeeAmount.isZero()){
     } else if(transferReserveAmount.isZero() && !transferFeeAmount.isZero()){

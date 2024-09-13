@@ -9,7 +9,7 @@ import * as paraspell from '@paraspell/sdk'
 import { KeyringPair } from '@polkadot/keyring/types'
 import { BalanceData } from "@polkawallet/bridge"
 import { getApiForNode } from "../utils/apiUtils.ts"
-import { attemptQueryRelayTokenBalances, balanceChangeDisplay, getBalance, getBalanceChange, getDisplayBalance, getRelayTokenBalances, watchBalanceChangeReworked,  } from "./../utils/balanceUtils.ts"
+import { attemptQueryRelayTokenBalances, balanceChangeDisplay, getBalance, getDisplayBalance, getRelayTokenBalances, watchBalanceChangeReworked,  } from "./../utils/balanceUtils.ts"
 import { stateSetLastNode, stateSetResultData, stateSetTracking, stateSetTransactionProperties, stateSetTransactionState } from "./../utils/globalStateUtils.ts"
 import { buildInstructionSet, createAllocationPaths as createAllocationAssetPaths, getStartChainAllocationPath } from "./instructionUtils.ts"
 // import {BigNumber as bn } from "bignumber.js"
@@ -439,7 +439,7 @@ export async function executeSingleSwapExtrinsic(
     swapTxContainer: SwapExtrinsicContainer,
     chopsticks: boolean
 ): Promise<SingleSwapResultData>{
-    console.log("Execute Single Swap Extrinsic")
+    // console.log("Execute Single Swap Extrinsic")
     let { relay, chain, api, assetIn, assetOut } = swapTxContainer
 
     let signer: KeyringPair = await getSigner(chopsticks, chain)
@@ -507,7 +507,7 @@ export async function executeSingleTransferExtrinsic(
     transferTxContainer: TransferExtrinsicContainer,
     chopsticks: boolean
 ):Promise<SingleTransferResultData | undefined>{
-    console.log("Execute Single Transfer Extrinsic ()")
+    // console.log("Execute Single Transfer Extrinsic ()")
 
     const { relay, extrinsic, startAsset, startChain, startApi, destinationAsset, destinationApi, destinationChain } = transferTxContainer
 
@@ -516,7 +516,7 @@ export async function executeSingleTransferExtrinsic(
         return undefined;
     }
 
-    console.log(`Execute Extrinsic Set Loop: Start Chain: ${startChain} ${startAsset.getChainId()}| Destination Chain: ${destinationChain} ${destinationAsset.getChainId()} | Asset Symbol: ${JSON.stringify(startAsset.getAssetSymbol())} `)
+    console.log(`Execute Extrinsic Set Loop: Start Chain: ${startChain} | Destination Chain: ${destinationChain} | Asset Symbol: ${JSON.stringify(startAsset.getAssetSymbol())} `)
 
     stateSetTransactionState(TransactionState.PreSubmission)
 
