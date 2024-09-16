@@ -167,125 +167,125 @@ export async function findLatestFileInLatestDirectory(baseDir: string) {
         throw new Error(`No directories found in the base directory.`);
     }
 }
-export async function updateAssets(chopsticks: boolean, relay: Relay) {
-    // const command = `cd ${assetRegistryPath} && ts-node assetHandler.ts ${relay} ${chopsticks}`;
-    return new Promise((resolve, reject) => {
-        // let functionCall = 'search_best_path_a_to_b ' + chop;
-        const command = `cd ${assetRegistryPath} && ts-node assetHandler.ts ${relay} ${chopsticks}`;
+// export async function updateAssets(chopsticks: boolean, relay: Relay) {
+//     // const command = `cd ${assetRegistryPath} && ts-node assetHandler.ts ${relay} ${chopsticks}`;
+//     return new Promise((resolve, reject) => {
+//         // let functionCall = 'search_best_path_a_to_b ' + chop;
+//         const command = `cd ${assetRegistryPath} && ts-node assetHandler.ts ${relay} ${chopsticks}`;
 
-        console.log("Updating Assets");
-        let child = exec(command, (error, stdout, stderr) => {
-            // stdio: 'ignore' // This ignores the output
-            if (error) {
-                console.error(`exec error: ${error}`);
-                reject(error); // Reject the promise on execution error, including non-zero exit codes
-                return;
-            }
-            resolve(true); // Resolve with true if execution was successful without errors
-        });
+//         console.log("Updating Assets");
+//         let child = exec(command, (error, stdout, stderr) => {
+//             // stdio: 'ignore' // This ignores the output
+//             if (error) {
+//                 console.error(`exec error: ${error}`);
+//                 reject(error); // Reject the promise on execution error, including non-zero exit codes
+//                 return;
+//             }
+//             resolve(true); // Resolve with true if execution was successful without errors
+//         });
 
-        if (!child.stdout || !child.stderr) {
-            throw new Error("Execute arb fallback std error");
-        }
-        // Ignore package manager warnings
-        child.stdout.on("data", (data) => {
-            if (
-                !data.includes("The following conflicting packages were found:")
-            ) {
-                process.stdout.write(data);
-            }
-        });
+//         if (!child.stdout || !child.stderr) {
+//             throw new Error("Execute arb fallback std error");
+//         }
+//         // Ignore package manager warnings
+//         child.stdout.on("data", (data) => {
+//             if (
+//                 !data.includes("The following conflicting packages were found:")
+//             ) {
+//                 process.stdout.write(data);
+//             }
+//         });
 
-        child.stderr.on("data", (data) => {
-            if (
-                !data.includes(
-                    "The following conflicting packages were found:"
-                ) &&
-                !data.includes("API/INIT")
-            ) {
-                process.stderr.write(data);
-            }
-        });
-    });
-}
+//         child.stderr.on("data", (data) => {
+//             if (
+//                 !data.includes(
+//                     "The following conflicting packages were found:"
+//                 ) &&
+//                 !data.includes("API/INIT")
+//             ) {
+//                 process.stderr.write(data);
+//             }
+//         });
+//     });
+// }
 
-export async function updateLps(chop: boolean, relay: Relay) {
-    // let relayParameter = relay === "Kusama" ? 'kusama' : 'polkadot'
+// export async function updateLps(chop: boolean, relay: Relay) {
+//     // let relayParameter = relay === "Kusama" ? 'kusama' : 'polkadot'
 
-    return new Promise((resolve, reject) => {
-        // let functionCall = 'search_best_path_a_to_b ' + chop;
-        const command = `cd ${lpRegistryPath} && ts-node all_lps.ts ${relay} ${chop}`;
+//     return new Promise((resolve, reject) => {
+//         // let functionCall = 'search_best_path_a_to_b ' + chop;
+//         const command = `cd ${lpRegistryPath} && ts-node all_lps.ts ${relay} ${chop}`;
 
-        console.log("Updating Lps");
-        let child = exec(command, (error, stdout, stderr) => {
-            // stdio: 'ignore' // This ignores the output
-            if (error) {
-                console.error(`exec error: ${error}`);
-                reject(error); // Reject the promise on execution error, including non-zero exit codes
-                return;
-            }
-            resolve(true); // Resolve with true if execution was successful without errors
-        });
-        // let child = exec(command)
+//         console.log("Updating Lps");
+//         let child = exec(command, (error, stdout, stderr) => {
+//             // stdio: 'ignore' // This ignores the output
+//             if (error) {
+//                 console.error(`exec error: ${error}`);
+//                 reject(error); // Reject the promise on execution error, including non-zero exit codes
+//                 return;
+//             }
+//             resolve(true); // Resolve with true if execution was successful without errors
+//         });
+//         // let child = exec(command)
 
-        if (!child.stdout || !child.stderr) {
-            throw new Error("Execute arb fallback std error");
-        }
-        // Ignore package manager warnings
-        child.stdout.on("data", (data) => {
-            if (
-                !data.includes("The following conflicting packages were found:")
-            ) {
-                process.stdout.write(data);
-            }
-        });
+//         if (!child.stdout || !child.stderr) {
+//             throw new Error("Execute arb fallback std error");
+//         }
+//         // Ignore package manager warnings
+//         child.stdout.on("data", (data) => {
+//             if (
+//                 !data.includes("The following conflicting packages were found:")
+//             ) {
+//                 process.stdout.write(data);
+//             }
+//         });
 
-        child.stderr.on("data", (data) => {
-            if (
-                !data.includes(
-                    "The following conflicting packages were found:"
-                ) &&
-                !data.includes("API/INIT")
-            ) {
-                process.stderr.write(data);
-            }
-        });
-    });
-}
+//         child.stderr.on("data", (data) => {
+//             if (
+//                 !data.includes(
+//                     "The following conflicting packages were found:"
+//                 ) &&
+//                 !data.includes("API/INIT")
+//             ) {
+//                 process.stderr.write(data);
+//             }
+//         });
+//     });
+// }
 
 
 
-async function updateAssetsAndLps(chopsticks: boolean, relay: Relay){
-  let assetsResult;  
-  let lpsResult;
-    try {
-        let assetsPromise = updateAssets(chopsticks, relay)
-        lpsResult = await updateLps(chopsticks, relay);
-        assetsResult = await assetsPromise
-    } catch (e) {
-        console.log("Error updating assets and lps. Attempting to update again.");
-        console.log(e);
-        let updateComplete = false;
-        let updateAttempts = 0;
-        while (!updateComplete && updateAttempts < 3) {
-            try {
-                let assetsPromise = updateAssets(chopsticks, relay)
-                lpsResult = await updateLps(chopsticks, relay);
-                assetsResult = await assetsPromise
-                updateComplete = true;
-            } catch (e) {
-                console.log("Error updating lps");
-                console.log(e);
-            }
-        }
-        if (!updateComplete) {
-            throw new Error("Error updating lps");
-        }
-    }
-    console.log("Lps update complete");
-    console.log(assetsResult)
-    console.log(lpsResult);
-}
+// async function updateAssetsAndLps(chopsticks: boolean, relay: Relay){
+//   let assetsResult;  
+//   let lpsResult;
+//     try {
+//         let assetsPromise = updateAssets(chopsticks, relay)
+//         lpsResult = await updateLps(chopsticks, relay);
+//         assetsResult = await assetsPromise
+//     } catch (e) {
+//         console.log("Error updating assets and lps. Attempting to update again.");
+//         console.log(e);
+//         let updateComplete = false;
+//         let updateAttempts = 0;
+//         while (!updateComplete && updateAttempts < 3) {
+//             try {
+//                 let assetsPromise = updateAssets(chopsticks, relay)
+//                 lpsResult = await updateLps(chopsticks, relay);
+//                 assetsResult = await assetsPromise
+//                 updateComplete = true;
+//             } catch (e) {
+//                 console.log("Error updating lps");
+//                 console.log(e);
+//             }
+//         }
+//         if (!updateComplete) {
+//             throw new Error("Error updating lps");
+//         }
+//     }
+//     console.log("Lps update complete");
+//     console.log(assetsResult)
+//     console.log(lpsResult);
+// }
 
 export async function updateAssetsAndLpsReworked(chopsticks: boolean, relay: Relay) {
     
@@ -324,7 +324,7 @@ export async function findNewTargetArb(
     inputAmount: string,
     chopsticks: boolean
 ): Promise<ArbFinderNode[]> {
-    await updateAssetsAndLps(chopsticks, relay)
+    await updateAssetsAndLpsReworked(chopsticks, relay)
     try{
         // const arbArgs = relay === 'kusama' ? `${ksmTargetNode} ${ksmTargetNode} ${inputAmount}` : `${dotTargetNode} ${dotTargetNode} ${inputAmount}`
         let assetKey  = relay === 'kusama' ? ksmTargetNode : dotTargetNode
@@ -375,7 +375,7 @@ export async function findFallbackArb(
     chopsticks: boolean,
     relay: Relay
 ): Promise<ArbFinderNode[]> {
-    await updateAssetsAndLps(chopsticks,relay)
+    await updateAssetsAndLpsReworked(chopsticks,relay)
 
     console.log(`Running fallback arb with params ${startKey} ${destinationKey} ${inputValue}`)
     try {
