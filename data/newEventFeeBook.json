@@ -149,7 +149,7 @@
         "node": ""
       },
       "\"224821240862170613278369189818311486111\"": {
-        "xcmAmount": "18052948730470",
+        "xcmAmount": "66488524139589",
         "xcmAssetSymbol": "xcACA",
         "xcmAssetId": "224821240862170613278369189818311486111",
         "xcmAssetDecimals": "12",
@@ -228,7 +228,7 @@
     },
     "2012": {
       "\"114\"": {
-        "xcmAmount": "13330720727575678970",
+        "xcmAmount": "5378958161369117608",
         "xcmAssetSymbol": "GLMR",
         "xcmAssetId": "114",
         "xcmAssetDecimals": "18",
@@ -709,7 +709,7 @@
         "node": ""
       },
       "\"224821240862170613278369189818311486111\"": {
-        "xcmAmount": "18052948730470",
+        "xcmAmount": "66488524139589",
         "xcmAssetSymbol": "xcACA",
         "xcmAssetId": "224821240862170613278369189818311486111",
         "xcmAssetDecimals": "12",
@@ -755,14 +755,14 @@
         "node": "Parallel"
       },
       "\"114\"": {
-        "xcmAmount": "14003192887538883087",
+        "xcmAmount": "5378958161369117608",
         "xcmAssetSymbol": "GLMR",
         "xcmAssetId": "114",
         "xcmAssetDecimals": "18",
-        "feeAmount": "44033465433729636",
-        "feeAssetSymbol": "GLMR",
-        "feeAssetId": "114",
-        "feeAssetDecimals": "18",
+        "feeAmount": "175646538461",
+        "feeAssetSymbol": "PARA",
+        "feeAssetId": "1",
+        "feeAssetDecimals": "12",
         "node": "Parallel"
       },
       "\"101\"": {
